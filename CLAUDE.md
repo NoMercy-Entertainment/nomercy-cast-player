@@ -12,9 +12,10 @@ Chromecast CAF receiver app for casting playback, both music and video.
 
 ## Conventions
 
+Shared with `nomercy-app-web` (both Vue clients): component PascalCase,
+`@/` path alias — see `../VUE-CLIENTS.md`, not repeated here.
+
 - Files: camelCase
-- Vue components: PascalCase
-- Path alias: `@/` maps to `src/`
 
 ## Rules
 
