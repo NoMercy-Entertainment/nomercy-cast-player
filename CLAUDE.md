@@ -2,7 +2,7 @@
 
 Chromecast CAF receiver app for casting playback, both music and video.
 
-> **Parked, not dead** (see `audit/ALIGNMENT.md` D3). This project needs a full rewrite. The current codebase is broken and unreliable, and not functional end to end. Do not build on top of the existing code - plan a clean implementation from scratch. It is pinned to the v1 player libraries (`@nomercy-entertainment/nomercy-music-player@0.2.15`, `@nomercy-entertainment/nomercy-video-player@^1.2.7`), not the shipped 2.1.x web trio, as part of the same parked state. Backlog tracked in `audit/EXECUTION-PLAN.md` "Parked".
+> **Being finished.** The receiver is the web twin of the KMP 10-foot TV app, and the work is to complete it on this codebase, not to rewrite it. It runs on the 1.x player libraries (`@nomercy-entertainment/nomercy-music-player@0.2.15`, `@nomercy-entertainment/nomercy-video-player@^1.2.7`), not the 2.x web trio. For parity, the KMP TV screen is the reference for behavior.
 
 ## Tech Stack
 
