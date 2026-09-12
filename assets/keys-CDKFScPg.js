@@ -1,0 +1,2 @@
+var e=/^\//,t={home:()=>[`home`],library:t=>[`library`,...t.replace(e,``).split(`/`)],libraries:()=>[`libraries`],cardItems:e=>[`card-items`,e],info:(e,t)=>[`info`,e,t],available:(e,t)=>[`info`,e,t,`available`],person:e=>[`person`,e],search:(e,t)=>[`search`,e,t],musicStart:()=>[`music`,`start`],musicCards:t=>[`music`,...t.replace(e,``).split(`/`)],musicLists:(e,t)=>[`music`,e,t],component:e=>[`component`,e],playlist:(e,t)=>[`playlist`,e,t],trailer:e=>[`trailer`,...e]};export{t};
+//# sourceMappingURL=keys-CDKFScPg.js.map
