@@ -10,6 +10,7 @@ export interface InfoVideo {
 	type?: string;
 	name?: string;
 	src?: string;
+	official?: boolean;
 }
 
 export interface InfoColorPalette {

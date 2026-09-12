@@ -21,6 +21,7 @@ export const QueryKeys = {
 	musicLists: (type: string, id: string) => ['music', type, id] as const,
 	component: (link: string) => ['component', link] as const,
 	playlist: (type: string, id: string) => ['playlist', type, id] as const,
+	trailer: (candidates: readonly string[]) => ['trailer', ...candidates] as readonly string[],
 } as const;
 
 export type QueryKey = readonly unknown[];

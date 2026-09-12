@@ -70,7 +70,11 @@ export function mountLanguageScreen(opts: LanguageScreenOptions): () => void {
 		opts.currentSubtitleId ?? 'off',
 		id => opts.onPickSubtitle(id),
 	);
-	layout.append(audioCol, subsCol);
+	// A source with a single audio stream reports none to choose from; an
+	// empty Audio heading beside the subtitles reads as broken.
+	if (opts.audioTracks.length > 0)
+		layout.append(audioCol);
+	layout.append(subsCol);
 
 	if (opts.onToggleAutoSkip) {
 		const playbackCol = document.createElement('section');
@@ -159,7 +163,14 @@ function makeColumn(
 		if (t.id === currentId)
 			btn.classList.add('current');
 		btn.textContent = t.label;
-		btn.addEventListener('click', () => onPick(t.id));
+		btn.addEventListener('click', () => {
+			onPick(t.id);
+			// The panel stays open after a pick, so the mark has to move with
+			// it or the old choice still reads as the active one.
+			for (const row of wrap.querySelectorAll('.track-row.current'))
+				row.classList.remove('current');
+			btn.classList.add('current');
+		});
 		wrap.append(btn);
 	}
 

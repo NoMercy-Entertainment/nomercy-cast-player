@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, toRefs, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, toRefs, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useInfoQuery } from '@/queries/useInfoQuery';
@@ -14,6 +14,8 @@ import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { apiFetch } from '@/lib/http/client';
 import { QueryKeys } from '@/queries/keys';
+import { useTrailerQuery } from '@/queries/useTrailerQuery';
+import TrailerOverlay from '@/players/video/TrailerOverlay.vue';
 
 /*
  * Movie / TV detail page. Mirrors APK InfoScreen.kt:
@@ -61,11 +63,15 @@ const watchPath = computed(() => {
 	return link.endsWith('/watch') ? link : `${link}/watch`;
 });
 
-const hasTrailer = computed(() =>
-	(info.value?.videos ?? []).some(
-		v => v.site?.toLowerCase() === 'youtube' && v.type?.toLowerCase() === 'trailer',
-	),
-);
+// Metadata listing a trailer is not a trailer. The button waits until the
+// API has one ready to play, as the KMP TV screen does, so it never opens
+// nothing.
+const trailerLookup = useTrailerQuery(computed(() => info.value?.videos));
+const readyTrailer = computed(() => {
+	const result = trailerLookup.data.value;
+	return result?.state === 'available' ? result.trailer : null;
+});
+const trailerOpen = ref(false);
 
 const watchlistLabel = computed(() =>
 	info.value?.watchlist ? 'Remove from watchlist' : 'Add to watchlist',
@@ -110,10 +116,21 @@ useFocusEntry({
 useFocusEntry({
 	key: 'info-trailer',
 	el: trailerEl,
-	onAction: () => {
-		// Trailer overlay player lands in a follow-up; for now no-op.
-	},
+	onAction: () => openTrailer(),
 });
+
+// Also bound to click. The button only renders once the lookup answers, which
+// is after this screen mounted, so the focus entry's own Enter listener was
+// never attached to it; the remote's Enter reaches it as a click instead.
+function openTrailer(): void {
+	if (readyTrailer.value)
+		trailerOpen.value = true;
+}
+
+function closeTrailer(): void {
+	trailerOpen.value = false;
+	void nextTick(() => trailerEl.value?.focus());
+}
 
 const queryClient = useQueryClient();
 const isPostingWatchlist = ref(false);
@@ -231,11 +248,12 @@ async function toggleWatchlist(): Promise<void> {
 				Watch
 			</button>
 			<button
-				v-if="hasTrailer"
+				v-if="readyTrailer"
 				ref="trailerEl"
 				class="nm-pill nm-pill-secondary"
 				data-focusable
 				tabindex="0"
+				@click="openTrailer"
 			>
 				<svg
 					width="18"
@@ -281,6 +299,12 @@ async function toggleWatchlist(): Promise<void> {
 				{{ watchlistLabel }}
 			</button>
 		</div>
+		<TrailerOverlay
+			v-if="trailerOpen && readyTrailer"
+			:trailer="readyTrailer"
+			:fallback-title="info.title ?? ''"
+			@close="closeTrailer"
+		/>
 	</section>
 </template>
 
