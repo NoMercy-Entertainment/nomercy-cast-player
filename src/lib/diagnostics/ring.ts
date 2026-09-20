@@ -4,11 +4,12 @@ import type {
 	DiagnosticsEntry,
 } from './events';
 import { DIAGNOSTICS_CATEGORIES, DIAGNOSTICS_CODES } from './events';
+import { censorLabel } from './censor';
 
 export const DEFAULT_DIAGNOSTICS_CAPACITY = 2000;
 
 const NO_LABEL = -1;
-const MAX_LABELS = 256;
+const MAX_LABELS = 2048;
 
 /**
  * A fixed ring of the most recent events, so a fault on a television nobody is
@@ -67,8 +68,11 @@ export class DiagnosticsRing {
 		this.written += 1;
 	}
 
-	/** Beyond the cap a new name is dropped rather than growing the table forever. */
-	private intern(label: string | undefined): number {
+	// Censoring happens here and nowhere else, so a recorder anywhere in the app
+	// can hand over whatever it has without knowing the privacy rules.
+	// Beyond the cap a new name is dropped rather than growing the table forever.
+	private intern(raw: string | undefined): number {
+		const label = censorLabel(raw);
 		if (!label)
 			return NO_LABEL;
 

@@ -3,6 +3,8 @@ import type { Router } from 'vue-router';
 import { focusStore } from '@/stores/focusStore';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import { screensaverStore } from '@/stores/screensaverStore';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 /**
  * Window-level D-pad handler per spec §10.5. Mounted once at App.vue.
@@ -33,6 +35,11 @@ function isInputFocused(): boolean {
 
 export function useDPad(router: Router): void {
 	function handler(e: KeyboardEvent): void {
+		// Every key, bound or not. A remote button the receiver never learned
+		// is invisible to a report that only records the nine it handles.
+		// See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
+		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.KeyPressed, e.repeat ? 1 : 0, 0, 0, e.code || e.key);
+
 		if (!DPAD_KEYS.has(e.key))
 			return;
 		if (isInputFocused())

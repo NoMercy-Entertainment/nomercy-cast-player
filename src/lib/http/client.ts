@@ -40,6 +40,18 @@ function buildUrl(path: string): string {
 	return `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+/**
+ * `METHOD /route` — the censor strips the origin and every query value. The
+ * leading slash is added when a caller left it off: without it a one-segment
+ * path is a bare word, and the censor drops it as prose rather than reading it
+ * as the route it is.
+ */
+export function requestLabel(opts: FetchOptions): string {
+	const route = opts.path.startsWith('/') ? opts.path : `/${opts.path}`;
+
+	return `${(opts.method ?? 'GET').toUpperCase()} ${route}`;
+}
+
 async function singleAttempt(opts: FetchOptions): Promise<Response> {
 	const headers = new Headers(opts.headers ?? {});
 	headers.set('Accept', 'application/json');
@@ -48,7 +60,33 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 		if (token)
 			headers.set('Authorization', `Bearer ${token}`);
 	}
-	return fetch(buildUrl(opts.path), { ...opts, headers });
+
+	// Every request, not only the failures. A request that succeeded slowly is
+	// the evidence for a stall no failure line can show. Recorded per attempt,
+	// so the 401 retry ladder above is visible as the three calls it really is.
+	// See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
+	const startedAt = performance.now();
+
+	try {
+		const response = await fetch(buildUrl(opts.path), { ...opts, headers });
+		recordCompleted(opts, response.status, startedAt);
+		return response;
+	}
+	catch (error) {
+		recordCompleted(opts, 0, startedAt);
+		throw error;
+	}
+}
+
+function recordCompleted(opts: FetchOptions, status: number, startedAt: number): void {
+	recordDiagnostic(
+		DiagnosticsCategory.Network,
+		DiagnosticsCode.RequestCompleted,
+		status,
+		Math.round(performance.now() - startedAt),
+		0,
+		requestLabel(opts),
+	);
 }
 
 export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
@@ -75,7 +113,7 @@ export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
 			response.status,
 			0,
 			0,
-			opts.path,
+			requestLabel(opts),
 		);
 		throw new HttpError(`HTTP ${response.status} on ${opts.path}`, response.status, text);
 	}

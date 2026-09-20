@@ -7,6 +7,7 @@ import { defaultQueryClientOptions, setQueryClient, staleSweep } from './queries
 import { socketStore } from './stores/socketStore';
 import { scheduleIdle } from './composables/useIdleCallback';
 import { installCrashHandlers } from './lib/diagnostics/crashHandler';
+import { installDiagnosticsConsoleTap } from './lib/diagnostics/consoleTap';
 import { DiagnosticsCategory, DiagnosticsCode } from './lib/diagnostics/events';
 import { recordDiagnostic } from './lib/diagnostics/sink';
 import './styles/tailwind.css';
@@ -26,6 +27,10 @@ import './styles/tailwind.css';
 
 installCrashHandlers();
 
+// Every error and warning the receiver catches and swallows. One seam covers
+// every `catch` block that logs instead of throwing.
+installDiagnosticsConsoleTap();
+
 const queryClient = new QueryClient(defaultQueryClientOptions);
 setQueryClient(queryClient);
 
@@ -44,6 +49,8 @@ document.addEventListener('visibilitychange', () => {
 	// Which screen was on when the receiver went away is half the story of
 	// every "it just stopped" report.
 	const screen = String(router.currentRoute.value.name ?? router.currentRoute.value.path);
+	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.VisibilityChanged, 0, 0, 0, `${document.visibilityState} ${screen}`);
+
 	if (document.visibilityState === 'visible') {
 		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppForegrounded, 0, 0, 0, screen);
 		socketStore.onForegroundResume();

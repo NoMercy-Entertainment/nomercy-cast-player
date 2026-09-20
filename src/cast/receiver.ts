@@ -108,9 +108,11 @@ export function bootCastReceiver(router: Router): void {
 			console.warn('[cast] navigate message carried no token');
 			return;
 		}
+		// A session start is its own transition, not a foreground: the receiver
+		// was already running when the sender arrived.
 		recordDiagnostic(
 			DiagnosticsCategory.Lifecycle,
-			DiagnosticsCode.AppForegrounded,
+			DiagnosticsCode.CastSessionStarted,
 			0,
 			0,
 			0,
@@ -151,7 +153,7 @@ export function bootCastReceiver(router: Router): void {
 	context.addEventListener('SHUTDOWN', () => {
 		recordDiagnostic(
 			DiagnosticsCategory.Lifecycle,
-			DiagnosticsCode.AppBackgrounded,
+			DiagnosticsCode.CastSessionEnded,
 			0,
 			0,
 			0,

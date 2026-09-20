@@ -53,6 +53,7 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 	// eslint-disable-next-line no-unmodified-loop-condition
 	while (!stopRequested) {
 		try {
+			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketConnecting, HUB_ORDINAL[name], 0, 0, name);
 			await hub.start();
 			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
 			console.debug(`[socket] ${name} started`);
@@ -177,7 +178,9 @@ function bindConnectedDevices(hub: TypedHub): void {
 function bindLifecycle(hub: TypedHub, name: HubName): void {
 	const conn = hub.raw();
 	conn.onreconnecting(() => {
-		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name], 0, 0, name);
+		// A reconnect attempt is its own transition. Recorded as a failure, a
+		// hub that dropped and recovered read as a hub that never came back.
+		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketReconnecting, HUB_ORDINAL[name], 0, 0, name);
 		connectionState.value = 'reconnecting';
 		console.debug(`[socket] ${name} reconnecting`);
 	});

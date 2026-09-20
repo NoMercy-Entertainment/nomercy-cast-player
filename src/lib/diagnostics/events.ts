@@ -48,6 +48,18 @@ export const DIAGNOSTICS_CODES = [
 	'ScreenOpened',
 	'ScreenClosed',
 	'KeyPressed',
+	// Appended, never reordered: a code is stored as its ordinal and an
+	// existing report has to keep decoding.
+	'RequestCompleted',
+	'SocketConnecting',
+	'SocketReconnecting',
+	'PlayerEvent',
+	'InputAction',
+	'VisibilityChanged',
+	'CastSessionStarted',
+	'CastSessionEnded',
+	'ErrorCaught',
+	'WarningLogged',
 ] as const;
 
 export type DiagnosticsCodeName = (typeof DIAGNOSTICS_CODES)[number];
@@ -76,6 +88,16 @@ export const DiagnosticsCode = {
 	ScreenOpened: 20,
 	ScreenClosed: 21,
 	KeyPressed: 22,
+	RequestCompleted: 23,
+	SocketConnecting: 24,
+	SocketReconnecting: 25,
+	PlayerEvent: 26,
+	InputAction: 27,
+	VisibilityChanged: 28,
+	CastSessionStarted: 29,
+	CastSessionEnded: 30,
+	ErrorCaught: 31,
+	WarningLogged: 32,
 } as const;
 
 export type DiagnosticsCodeValue = (typeof DiagnosticsCode)[keyof typeof DiagnosticsCode];

@@ -2,8 +2,9 @@ import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { ConnectedDeviceSnapshot, CurrentTrackSnapshot } from '@/stores/playbackStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
-import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
+import type { DiagnosticsEngine } from '@/lib/diagnostics/playerEvents';
+import { attachEngineDiagnostics } from '@/lib/diagnostics/playerEvents';
 
 type Throttled<T extends (...args: never[]) => void> = T;
 
@@ -173,22 +174,10 @@ function bindOutbound(p: MusicEngineLike): void {
 	);
 }
 
-// The events that explain a music fault nobody watched. `time` is left alone
-// deliberately — it is the hot path.
-const DIAGNOSTIC_PLAYBACK_EVENTS: Array<[string, DiagnosticsCodeValue]> = [
-	['waiting', DiagnosticsCode.Buffering],
-	['stalled', DiagnosticsCode.PlaybackStalled],
-	['ended', DiagnosticsCode.PlaybackEnded],
-	['error', DiagnosticsCode.PlayerError],
-];
-
-function bindDiagnostics(p: MusicEngineLike): void {
-	for (const [event, code] of DIAGNOSTIC_PLAYBACK_EVENTS) {
-		const handler = (): void =>
-			recordDiagnostic(DiagnosticsCategory.Playback, code, 0, 0, 0, trackLabel(p));
-		p.on(event, handler);
-		unsubs.push(() => p.off(event, handler));
-	}
+// Every event the engine emits, not the four that once looked interesting.
+// See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
+function bindDiagnostics(p: MusicEngineLike): number {
+	return attachEngineDiagnostics(p as DiagnosticsEngine, () => trackLabel(p), unsubs);
 }
 
 function bindInbound(p: MusicEngineLike): void {

@@ -3,6 +3,7 @@ import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import { authStore } from '@/stores/authStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
+import { allowDiagnosticsWords } from '@/lib/diagnostics/censor';
 
 /**
  * Two-tier routing per spec §10.6 (KeepAlive cache):
@@ -218,6 +219,11 @@ export const router = createRouter({
 		return savedPosition ?? { top: 0 };
 	},
 });
+
+// The censor drops any capitalised word it was not told about, because it
+// cannot otherwise tell a screen name from a viewer's library. The route table
+// is that vocabulary, declared once by the owner of it.
+allowDiagnosticsWords(router.getRoutes().map(route => String(route.name ?? '')));
 
 /**
  * Auth guard per spec §13 Phase 1 + Phase 4 — pre-auth, send to splash.

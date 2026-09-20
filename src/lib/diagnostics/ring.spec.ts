@@ -78,17 +78,27 @@ describe('diagnosticsRing', () => {
 		expect(ring.snapshot().map(entry => entry.label)).toEqual(['library', 'watch']);
 	});
 
-	it('a 257th distinct name is dropped and the event still records', () => {
-		const ring = new DiagnosticsRing(300, fixedClock());
+	it('a 2049th distinct name is dropped and the event still records', () => {
+		const ring = new DiagnosticsRing(2100, fixedClock());
 
-		for (let i = 0; i < 257; i += 1)
+		for (let i = 0; i < 2049; i += 1)
 			ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, `screen${i}`);
 
 		const entries = ring.snapshot();
 
-		expect(entries).toHaveLength(257);
-		expect(ring.labelCount()).toBe(256);
-		expect(entries[255].label).toBe('screen255');
-		expect(entries[256].label).toBeUndefined();
+		expect(entries).toHaveLength(2049);
+		expect(ring.labelCount()).toBe(2048);
+		expect(entries[2047].label).toBe('screen2047');
+		expect(entries[2048].label).toBeUndefined();
+	});
+
+	it('a private name is removed where it is interned, not by the recorder', () => {
+		// The censor lives in the ring so no call site has to remember it.
+		const ring = new DiagnosticsRing(4, fixedClock());
+
+		ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, 'The Matrix Reloaded');
+
+		expect(ring.snapshot()[0].label).toBeUndefined();
+		expect(ring.labelCount()).toBe(0);
 	});
 });
