@@ -13,6 +13,7 @@ export function recordDiagnostic(
 	a = 0,
 	b = 0,
 	c = 0,
+	label?: string,
 ): void {
-	diagnosticsRing.record(category, code, a, b, c);
+	diagnosticsRing.record(category, code, a, b, c, label);
 }

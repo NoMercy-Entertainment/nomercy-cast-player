@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import type { RouteRecordRaw } from 'vue-router';
+import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router';
 import { authStore } from '@/stores/authStore';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 /**
  * Two-tier routing per spec §10.6 (KeepAlive cache):
@@ -198,6 +200,17 @@ routes.push({
 	redirect: '/',
 });
 
+// "info-movie 672" reads as a place a viewer was; "info-movie" alone does not
+// separate the title that stalled from the twenty that played.
+function screenLabel(route: RouteLocationNormalized): string {
+	const name = String(route.name ?? route.path);
+	const id = route.params.id;
+	if (typeof id === 'string' && id.length > 0)
+		return `${name} ${id}`;
+
+	return name;
+}
+
 export const router = createRouter({
 	history: createWebHistory(),
 	routes,
@@ -221,6 +234,15 @@ router.beforeEach((to) => {
 		return { name: 'splash', replace: true };
 	}
 	return true;
+});
+
+// The trail of screens is what turns a fault into a story — a report has to
+// say where the viewer was, not only that something broke.
+router.afterEach((to, from) => {
+	if (from.name)
+		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenClosed, 0, 0, 0, screenLabel(from));
+
+	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, screenLabel(to));
 });
 
 export default router;

@@ -81,10 +81,20 @@ function toSnapshot(raw: RawTrack | null | undefined): CurrentTrackSnapshot | nu
 let engine: MusicEngineLike | null = null;
 const unsubs: Array<() => void> = [];
 
+// "PlaybackStalled" with no name cannot say which track stalled, which is the
+// first thing anyone reading the report wants to know.
+function trackLabel(p: MusicEngineLike): string | undefined {
+	const track = p.currentTrack?.();
+	if (!track)
+		return undefined;
+
+	return `track-${track.id}`;
+}
+
 function bindOutbound(p: MusicEngineLike): void {
 	// Player events → SignalR. Server tracks state, propagates to other senders.
 	const onPlay = (): void => {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted);
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, trackLabel(p));
 		void socketStore.musicHub.value?.invoke('PlayCommand');
 		playbackStore.music.applyPlayState(true);
 	};
@@ -112,9 +122,16 @@ function bindOutbound(p: MusicEngineLike): void {
 		});
 	}, 5000);
 	const onSong = (...args: unknown[]): void => {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.Prepared);
 		const raw = args[0] as RawTrack | null;
 		const snap = toSnapshot(raw);
+		recordDiagnostic(
+			DiagnosticsCategory.Playback,
+			DiagnosticsCode.Prepared,
+			0,
+			0,
+			0,
+			snap ? `track-${snap.id}` : undefined,
+		);
 		const queue = playbackStore.music.queue.value;
 		playbackStore.music.applyTrack(snap, queue);
 	};
@@ -167,7 +184,8 @@ const DIAGNOSTIC_PLAYBACK_EVENTS: Array<[string, DiagnosticsCodeValue]> = [
 
 function bindDiagnostics(p: MusicEngineLike): void {
 	for (const [event, code] of DIAGNOSTIC_PLAYBACK_EVENTS) {
-		const handler = (): void => recordDiagnostic(DiagnosticsCategory.Playback, code);
+		const handler = (): void =>
+			recordDiagnostic(DiagnosticsCategory.Playback, code, 0, 0, 0, trackLabel(p));
 		p.on(event, handler);
 		unsubs.push(() => p.off(event, handler));
 	}
@@ -178,12 +196,20 @@ function bindInbound(p: MusicEngineLike): void {
 	if (!hub)
 		return;
 
-	const onPlay = (): void => p.play();
+	const onPlay = (): void => {
+		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.PlayPressed, 0, 0, 0, trackLabel(p));
+		p.play();
+	};
 	const onPause = (): void => p.pause();
 	const onNext = (): void => p.next();
 	const onPrev = (): void => p.previous();
 	const onSeek = (...args: unknown[]): void => p.seek((args[0] as number) / 1000);
-	const onLoad = (...args: unknown[]): void => p.loadTrack?.(args[0]);
+	const onLoad = (...args: unknown[]): void => {
+		const track = args[0] as { id?: unknown } | null;
+		const label = track?.id === undefined ? 'track' : `track-${String(track.id)}`;
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, label);
+		p.loadTrack?.(args[0]);
+	};
 	const onState = (...args: unknown[]): void => p.applyServerState?.(args[0]);
 	const onConnectedDevices = (...args: unknown[]): void => {
 		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];

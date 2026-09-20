@@ -61,9 +61,20 @@ interface VideoEngineLike {
 let engine: VideoEngineLike | null = null;
 const unsubs: Array<() => void> = [];
 
+// "PlaybackStalled 12" says nothing; "PlaybackStalled tv-1399 s3e9" names the
+// episode whose report this is.
+function mediaLabel(p: VideoEngineLike): string | undefined {
+	const item = p.playlistItem?.();
+	if (!item)
+		return undefined;
+
+	const kind = item.type ?? 'video';
+	return `${kind}-${item.tmdbId ?? item.id}`;
+}
+
 function bindOutbound(p: VideoEngineLike): void {
 	const onPlay = (): void => {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted);
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, mediaLabel(p));
 		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'play');
 		playbackStore.video.applyPlayState(true);
 	};
@@ -119,7 +130,8 @@ const DIAGNOSTIC_PLAYBACK_EVENTS: Array<[string, DiagnosticsCodeValue]> = [
 
 function bindDiagnostics(p: VideoEngineLike): void {
 	for (const [event, code] of DIAGNOSTIC_PLAYBACK_EVENTS) {
-		const handler = (): void => recordDiagnostic(DiagnosticsCategory.Playback, code);
+		const handler = (): void =>
+			recordDiagnostic(DiagnosticsCategory.Playback, code, 0, 0, 0, mediaLabel(p));
 		p.on(event, handler);
 		unsubs.push(() => p.off(event, handler));
 	}
@@ -130,7 +142,10 @@ function bindInbound(p: VideoEngineLike): void {
 	if (!hub)
 		return;
 
-	const onPlay = (): void => p.play();
+	const onPlay = (): void => {
+		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.PlayPressed, 0, 0, 0, mediaLabel(p));
+		p.play();
+	};
 	const onPause = (): void => p.pause();
 	const onSeek = (...args: unknown[]): void => {
 		const data = args[0] as { time: number };
@@ -141,6 +156,9 @@ function bindInbound(p: VideoEngineLike): void {
 	const onPrev = (): void => p.previous?.();
 	const onLoad = (...args: unknown[]): void => {
 		const data = args[0] as { playlist: unknown; item?: unknown };
+		const item = data.item as { id?: unknown; type?: unknown } | undefined;
+		const label = item?.id === undefined ? 'video playlist' : `${item.type ?? 'video'}-${String(item.id)}`;
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, label);
 		p.loadPlaylist?.(data.playlist, data.item);
 	};
 	const onVol = (...args: unknown[]): void => {

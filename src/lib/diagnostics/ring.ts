@@ -7,6 +7,9 @@ import { DIAGNOSTICS_CATEGORIES, DIAGNOSTICS_CODES } from './events';
 
 export const DEFAULT_DIAGNOSTICS_CAPACITY = 2000;
 
+const NO_LABEL = -1;
+const MAX_LABELS = 256;
+
 /**
  * A fixed ring of the most recent events, so a fault on a television nobody is
  * sitting in front of can still be read hours later. Recording is six typed
@@ -19,6 +22,13 @@ export class DiagnosticsRing {
 	private readonly fieldA: Int32Array;
 	private readonly fieldB: Int32Array;
 	private readonly fieldC: Int32Array;
+	private readonly labelIds: Int32Array;
+
+	// A report of bare numbers cannot say what the user was doing. Names are
+	// interned once and stored as an index, so a repeated screen or item id
+	// still costs one array store and the table stays bounded.
+	private readonly labels: string[] = [];
+	private readonly labelIndex = new Map<string, number>();
 
 	// Total ever recorded, not the index. It says whether the ring has wrapped
 	// and where the oldest surviving event is.
@@ -34,6 +44,7 @@ export class DiagnosticsRing {
 		this.fieldA = new Int32Array(capacity);
 		this.fieldB = new Int32Array(capacity);
 		this.fieldC = new Int32Array(capacity);
+		this.labelIds = new Int32Array(capacity).fill(NO_LABEL);
 	}
 
 	record(
@@ -42,6 +53,7 @@ export class DiagnosticsRing {
 		a = 0,
 		b = 0,
 		c = 0,
+		label?: string,
 	): void {
 		const slot = this.written % this.capacity;
 
@@ -51,7 +63,32 @@ export class DiagnosticsRing {
 		this.fieldA[slot] = a;
 		this.fieldB[slot] = b;
 		this.fieldC[slot] = c;
+		this.labelIds[slot] = this.intern(label);
 		this.written += 1;
+	}
+
+	/** Beyond the cap a new name is dropped rather than growing the table forever. */
+	private intern(label: string | undefined): number {
+		if (!label)
+			return NO_LABEL;
+
+		const existing = this.labelIndex.get(label);
+		if (existing !== undefined)
+			return existing;
+
+		if (this.labels.length >= MAX_LABELS)
+			return NO_LABEL;
+
+		this.labels.push(label);
+		const index = this.labels.length - 1;
+		this.labelIndex.set(label, index);
+
+		return index;
+	}
+
+	/** Distinct names held. A name seen twice must not take a second slot. */
+	labelCount(): number {
+		return this.labels.length;
 	}
 
 	/** Oldest surviving event first. */
@@ -62,6 +99,7 @@ export class DiagnosticsRing {
 
 		for (let offset = 0; offset < held; offset += 1) {
 			const slot = (oldest + offset) % this.capacity;
+			const labelId = this.labelIds[slot];
 			entries.push({
 				atMs: this.atMs[slot],
 				category: DIAGNOSTICS_CATEGORIES[this.categories[slot]],
@@ -69,6 +107,7 @@ export class DiagnosticsRing {
 				a: this.fieldA[slot],
 				b: this.fieldB[slot],
 				c: this.fieldC[slot],
+				label: labelId === NO_LABEL ? undefined : this.labels[labelId],
 			});
 		}
 

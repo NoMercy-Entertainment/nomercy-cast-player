@@ -12,7 +12,9 @@ function heapLine(facts: DeviceFacts): string {
 function line(entry: DiagnosticsEntry, startMs: number): string {
 	const offset = Math.round(entry.atMs - startMs);
 	const fields = [entry.a, entry.b, entry.c].filter(value => value !== 0).join(' ');
-	return `+${offset}ms ${entry.category} ${entry.code} ${fields}`.trimEnd();
+	const name = entry.label ? ` ${entry.label}` : '';
+
+	return `+${offset}ms ${entry.category} ${entry.code}${name} ${fields}`.trimEnd();
 }
 
 /** What the user sees before it is sent, and what we read when it arrives. */

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { videoSyncBridge } from './syncBridge';
 import { TVOverlayPlugin } from './TVOverlayPlugin';
 import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipPlugin';
@@ -16,6 +16,10 @@ const props = defineProps<{
 	playlist?: PlaylistItem[];
 	initialItem?: PlaylistItem;
 }>();
+
+// The report must name the title a viewer tried to watch, not just say that
+// some source failed.
+const mediaLabel = computed(() => `${props.type}-${props.id}`);
 
 const containerEl = ref<HTMLElement | null>(null);
 let engine: { dispose?: () => void } | null = null;
@@ -38,7 +42,7 @@ onMounted(async () => {
 		});
 	}
 
-	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested);
+	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, mediaLabel.value);
 
 	try {
 		// Tag the container element so the package's factory can target it
@@ -54,7 +58,7 @@ onMounted(async () => {
 		// instead — handle both shapes.
 		const exported = (mod.default ?? mod.NoMercyPlayer) as unknown;
 		if (typeof exported !== 'function') {
-			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
+			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, 'video-player package');
 			console.warn('[video-player] no factory exported from package');
 			return;
 		}
@@ -74,7 +78,7 @@ onMounted(async () => {
 			});
 		}
 		engine = created as { dispose?: () => void };
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved);
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, mediaLabel.value);
 
 		const playerLike = engine as unknown as Parameters<typeof videoSyncBridge.attach>[0];
 		videoSyncBridge.attach(playerLike);
@@ -114,7 +118,7 @@ onMounted(async () => {
 		}
 	}
 	catch (err) {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, mediaLabel.value);
 		console.error('[video-player] init failed', err);
 	}
 });

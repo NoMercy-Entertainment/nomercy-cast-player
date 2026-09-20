@@ -41,12 +41,15 @@ bootCastReceiver(router);
 // invalidateAllLibrary so we catch missed RefreshLibrary events while
 // cast_shell had us suspended.
 document.addEventListener('visibilitychange', () => {
+	// Which screen was on when the receiver went away is half the story of
+	// every "it just stopped" report.
+	const screen = String(router.currentRoute.value.name ?? router.currentRoute.value.path);
 	if (document.visibilityState === 'visible') {
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppForegrounded);
+		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppForegrounded, 0, 0, 0, screen);
 		socketStore.onForegroundResume();
 		return;
 	}
-	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppBackgrounded);
+	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppBackgrounded, 0, 0, 0, screen);
 });
 
 // Stale sweep timer per spec §6.5. Every 30 minutes, idle-fenced, walk

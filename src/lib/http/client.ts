@@ -1,4 +1,6 @@
 import { authStore } from '@/stores/authStore';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 /**
  * Shared fetch wrapper for receiver HTTP calls.
@@ -67,6 +69,14 @@ export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
 
 	const text = await response.text();
 	if (!response.ok) {
+		recordDiagnostic(
+			DiagnosticsCategory.Network,
+			DiagnosticsCode.RequestFailed,
+			response.status,
+			0,
+			0,
+			opts.path,
+		);
 		throw new HttpError(`HTTP ${response.status} on ${opts.path}`, response.status, text);
 	}
 	if (!text)

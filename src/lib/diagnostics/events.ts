@@ -87,4 +87,5 @@ export interface DiagnosticsEntry {
 	a: number;
 	b: number;
 	c: number;
+	label?: string;
 }

@@ -3,6 +3,8 @@ import { ALL_CUSTOM_NAMESPACES } from './namespaces';
 import { attachMessageBus, onSenderNavigate, resolveServerFromAppConfig } from './messageBus';
 import { authStore } from '@/stores/authStore';
 import { socketStore } from '@/stores/socketStore';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 /**
  * Cast receiver bootstrap. Called once from main.ts after the Vue app
@@ -106,14 +108,38 @@ export function bootCastReceiver(router: Router): void {
 			console.warn('[cast] navigate message carried no token');
 			return;
 		}
+		recordDiagnostic(
+			DiagnosticsCategory.Lifecycle,
+			DiagnosticsCode.AppForegrounded,
+			0,
+			0,
+			0,
+			`cast-session ${payload.route}`,
+		);
 		void (async () => {
 			const server = await resolveServerFromAppConfig(payload.token!);
 			if (!server) {
+				recordDiagnostic(
+					DiagnosticsCategory.Network,
+					DiagnosticsCode.RequestFailed,
+					0,
+					0,
+					0,
+					'app_config',
+				);
 				console.warn('[cast] app_config resolution failed');
 				authStore.receiverState.value = 'DEGRADED';
 				return;
 			}
 			if (!authStore.consumeRealHandshake(payload.token!, server)) {
+				recordDiagnostic(
+					DiagnosticsCategory.Network,
+					DiagnosticsCode.RequestFailed,
+					0,
+					0,
+					0,
+					'cast-handshake token',
+				);
 				console.warn('[cast] token expired or malformed at handshake time');
 				authStore.receiverState.value = 'DEGRADED';
 				return;
@@ -123,6 +149,14 @@ export function bootCastReceiver(router: Router): void {
 	});
 
 	context.addEventListener('SHUTDOWN', () => {
+		recordDiagnostic(
+			DiagnosticsCategory.Lifecycle,
+			DiagnosticsCode.AppBackgrounded,
+			0,
+			0,
+			0,
+			'cast-session shutdown',
+		);
 		void socketStore.disconnectAll();
 		authStore.clear();
 	});

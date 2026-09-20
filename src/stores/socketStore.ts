@@ -54,12 +54,12 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 	while (!stopRequested) {
 		try {
 			await hub.start();
-			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name]);
+			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
 			console.debug(`[socket] ${name} started`);
 			return;
 		}
 		catch (err) {
-			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name]);
+			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name], 0, 0, name);
 			console.warn(`[socket] ${name} start failed, retrying in 5s`, err);
 			connectionState.value = 'reconnecting';
 			await new Promise(r => window.setTimeout(r, 5_000));
@@ -177,19 +177,19 @@ function bindConnectedDevices(hub: TypedHub): void {
 function bindLifecycle(hub: TypedHub, name: HubName): void {
 	const conn = hub.raw();
 	conn.onreconnecting(() => {
-		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name]);
+		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name], 0, 0, name);
 		connectionState.value = 'reconnecting';
 		console.debug(`[socket] ${name} reconnecting`);
 	});
 	conn.onreconnected(() => {
-		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name]);
+		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
 		connectionState.value = 'connected';
 		console.debug(`[socket] ${name} reconnected — invalidating library cache`);
 		invalidateAllLibrary();
 	});
 	conn.onclose((err) => {
 		// With forever-retry, onclose only fires after explicit stop().
-		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketClosed, HUB_ORDINAL[name]);
+		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketClosed, HUB_ORDINAL[name], 0, 0, name);
 		console.debug(`[socket] ${name} closed`, err);
 		if (stopRequested)
 			connectionState.value = 'idle';

@@ -16,6 +16,15 @@ function describe(reason: unknown): string {
 	return String(reason);
 }
 
+// The error class, never its message. A message carries a fresh id on every
+// fault and would exhaust the ring's 256-name table by itself.
+function faultName(reason: unknown): string {
+	if (reason instanceof Error)
+		return reason.name;
+
+	return 'unhandled';
+}
+
 async function upload(reason: unknown): Promise<void> {
 	if (uploaded)
 		return;
@@ -49,12 +58,20 @@ async function upload(reason: unknown): Promise<void> {
  */
 export function installCrashHandlers(): void {
 	window.addEventListener('error', (event: ErrorEvent) => {
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CrashReportPending);
-		void upload(event.error ?? event.message);
+		const reason = event.error ?? event.message;
+		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CrashReportPending, 0, 0, 0, faultName(reason));
+		void upload(reason);
 	});
 
 	window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CrashReportPending);
+		recordDiagnostic(
+			DiagnosticsCategory.Lifecycle,
+			DiagnosticsCode.CrashReportPending,
+			0,
+			0,
+			0,
+			faultName(event.reason),
+		);
 		void upload(event.reason);
 	});
 }

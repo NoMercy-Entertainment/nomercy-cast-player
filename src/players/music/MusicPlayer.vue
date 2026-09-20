@@ -18,6 +18,10 @@ import { recordDiagnostic } from '@/lib/diagnostics/sink';
  * the LAUNCH customData pins one server per cast session).
  */
 
+// These three events are about loading the engine itself, not a track, so the
+// name has to say so or a reader blames the song that was queued.
+const ENGINE_LABEL = 'music-player engine';
+
 let engine: { dispose?: () => void } | null = null;
 let stoppedByUnmount = false;
 
@@ -27,14 +31,14 @@ async function initEngine(): Promise<void> {
 	const serverUrl = authStore.serverUrl.value;
 	if (!serverUrl)
 		return;
-	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested);
+	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, ENGINE_LABEL);
 	try {
 		const mod = await import('@nomercy-entertainment/nomercy-music-player');
 		const Ctor
 			= (mod as { default?: new (opts: unknown) => unknown }).default
 				?? (mod as { MusicPlayer?: new (opts: unknown) => unknown }).MusicPlayer;
 		if (typeof Ctor !== 'function') {
-			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
+			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
 			console.warn('[music-player] no constructor exported from package');
 			return;
 		}
@@ -46,11 +50,11 @@ async function initEngine(): Promise<void> {
 		}) as { dispose?: () => void; setAccessToken?: (t: string | (() => string)) => void };
 		created.setAccessToken?.(() => authStore.accessToken.value ?? '');
 		engine = created;
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved);
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, ENGINE_LABEL);
 		musicSyncBridge.attach(engine as never);
 	}
 	catch (err) {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
 		console.error('[music-player] init failed', err);
 	}
 }
