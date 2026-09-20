@@ -11,9 +11,11 @@ export default defineConfig({
 		__APP_VERSION__: JSON.stringify(pkg.version),
 	},
 	test: {
-		environment: 'node',
+		// jsdom rather than node: a template condition is only wrong once it
+		// renders, and nothing below rendering can see it.
+		environment: 'jsdom',
 		globals: true,
-		include: ['src/**/*.{test,spec}.ts'],
+		include: ['src/**/*.{test,spec}.{ts,vue}'],
 		exclude: ['**/node_modules/**', '**/docs/**'],
 	},
 	resolve: {
