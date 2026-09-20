@@ -1,2 +1,0 @@
-import{c as e}from"./_plugin-vue_export-helper-CxfpWNZ2.js";import{t}from"./useQuery-LJ5WYHe8.js";import{t as n}from"./authStore-Cvb9gGVH.js";import{o as r}from"./index-t2qctnFK.js";function i(){return t({queryKey:[`me`],queryFn:()=>r(n.accessToken.value??``),enabled:e(()=>!!n.accessToken.value),staleTime:5*6e4,refetchOnWindowFocus:!1})}export{i as t};
-//# sourceMappingURL=useMeQuery-CTMjiv6R.js.map

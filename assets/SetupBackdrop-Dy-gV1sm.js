@@ -1,2 +1,0 @@
-import{J as e,f as t,k as n,l as r,t as i,v as a}from"./_plugin-vue_export-helper-CxfpWNZ2.js";import{p as o}from"./index-t2qctnFK.js";var s={class:`setup-backdrop`,"aria-hidden":`true`},c=[`src`],l=i(a({__name:`SetupBackdrop`,setup(i){return(i,a)=>(n(),t(`div`,s,[r(`img`,{src:e(o),alt:``,class:`setup-image`},null,8,c),a[0]||=r(`div`,{class:`setup-scrim`},null,-1)]))}}),[[`__scopeId`,`data-v-5a682569`]]);export{l as t};
-//# sourceMappingURL=SetupBackdrop-Dy-gV1sm.js.map
