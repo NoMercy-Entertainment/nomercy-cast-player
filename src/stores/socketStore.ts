@@ -6,6 +6,7 @@ import type { MusicPlayerStateMsg, RefreshLibraryPayload, VideoPlayerStateMsg } 
 import { invalidateAllLibrary, invalidateFromServer } from '@/lib/queryShim';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
+import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 import { playbackStore } from './playbackStore';
 import type { ConnectedDeviceSnapshot } from './playbackStore';
 import { authStore } from './authStore';
@@ -239,7 +240,7 @@ export async function disconnectAll(): Promise<void> {
 	stopRequested = true;
 	await Promise.all(
 		[videoHub.value, musicHub.value, deviceHub.value].map(h =>
-			h ? h.stop().catch(() => {}) : Promise.resolve(),
+			h ? h.stop().catch((error: unknown) => recordSwallowed('disconnectAll', error)) : Promise.resolve(),
 		),
 	);
 	videoHub.value = null;

@@ -2,6 +2,7 @@ import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
+import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 import type { DiagnosticsEngine } from '@/lib/diagnostics/playerEvents';
 import { attachEngineDiagnostics } from '@/lib/diagnostics/playerEvents';
 
@@ -190,8 +191,9 @@ export const videoSyncBridge = {
 			try {
 				fn?.();
 			}
-			catch {
+			catch (error) {
 				// best-effort cleanup
+				recordSwallowed('videoSyncBridgeDetach', error);
 			}
 		}
 		engine = null;

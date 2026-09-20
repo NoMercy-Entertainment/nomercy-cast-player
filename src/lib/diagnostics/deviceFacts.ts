@@ -1,3 +1,5 @@
+import { recordSwallowed } from './swallowed';
+
 export interface DeviceFacts {
 	appVersion: string;
 	model: string;
@@ -39,8 +41,9 @@ function readCastModel(): string {
 		if (typeof model === 'string' && model.length > 0)
 			return model;
 	}
-	catch {
+	catch (error) {
 		// A partially loaded SDK must not cost us the rest of the report.
+		recordSwallowed('readCastModel', error);
 	}
 
 	const build = CAST_BUILD.exec(userAgent());

@@ -12,6 +12,8 @@
  * expectations.
  */
 
+import { recordSwallowed } from '@/lib/diagnostics/swallowed';
+
 interface PlayerLike {
 	on: (event: string, handler: (data: unknown) => void) => void;
 	off: (event: string, handler?: (data: unknown) => void) => void;
@@ -69,8 +71,9 @@ export function detachChapterAutoSkip(): void {
 		try {
 			unsubs.pop()?.();
 		}
-		catch {
+		catch (error) {
 			// best-effort
+			recordSwallowed('detachChapterAutoSkip', error);
 		}
 	}
 	lastChapterId = null;

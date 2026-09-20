@@ -1,5 +1,6 @@
 import { ref, watch } from 'vue';
 import { setAutoSkipEnabled } from '@/players/video/ChapterAutoSkipPlugin';
+import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 
 /**
  * App settings persisted to localStorage. Mirrors APK
@@ -53,8 +54,9 @@ function persist(): void {
 		};
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 	}
-	catch {
+	catch (error) {
 		// Quota / serialization errors are non-fatal.
+		recordSwallowed('settingsPersist', error);
 	}
 }
 

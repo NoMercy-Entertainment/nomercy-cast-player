@@ -9,6 +9,7 @@ import type { PlaybackOSDHandle } from './pluginPanels/PlaybackOSD';
 import { mountSkipChapterPrompt } from './pluginPanels/SkipChapterPrompt';
 import type { SkipChapterPromptHandle } from './pluginPanels/SkipChapterPrompt';
 import { settingsStore } from '@/stores/settingsStore';
+import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 
 /**
  * TV overlay orchestrator per spec §12.3. Owns the pre-screen / episode
@@ -389,8 +390,9 @@ export class TVOverlayPlugin {
 		try {
 			this.unmount?.();
 		}
-		catch {
+		catch (error) {
 			// best-effort
+			recordSwallowed('tvOverlayCloseAllPanels', error);
 		}
 		this.unmount = null;
 		this.currentPanel = null;
