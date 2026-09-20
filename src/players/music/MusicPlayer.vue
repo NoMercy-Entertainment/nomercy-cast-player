@@ -2,6 +2,8 @@
 import { onBeforeUnmount, watch } from 'vue';
 import { musicSyncBridge } from './syncBridge';
 import { authStore } from '@/stores/authStore';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 /**
  * Headless music engine wrapper. The
@@ -25,12 +27,14 @@ async function initEngine(): Promise<void> {
 	const serverUrl = authStore.serverUrl.value;
 	if (!serverUrl)
 		return;
+	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested);
 	try {
 		const mod = await import('@nomercy-entertainment/nomercy-music-player');
 		const Ctor
 			= (mod as { default?: new (opts: unknown) => unknown }).default
 				?? (mod as { MusicPlayer?: new (opts: unknown) => unknown }).MusicPlayer;
 		if (typeof Ctor !== 'function') {
+			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
 			console.warn('[music-player] no constructor exported from package');
 			return;
 		}
@@ -42,9 +46,11 @@ async function initEngine(): Promise<void> {
 		}) as { dispose?: () => void; setAccessToken?: (t: string | (() => string)) => void };
 		created.setAccessToken?.(() => authStore.accessToken.value ?? '');
 		engine = created;
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved);
 		musicSyncBridge.attach(engine as never);
 	}
 	catch (err) {
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
 		console.error('[music-player] init failed', err);
 	}
 }

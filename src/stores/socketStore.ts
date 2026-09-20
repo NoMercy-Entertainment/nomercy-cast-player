@@ -4,6 +4,8 @@ import { buildHub } from '@/lib/signalr/connection';
 import type { HubName } from '@/lib/signalr/connection';
 import type { MusicPlayerStateMsg, RefreshLibraryPayload, VideoPlayerStateMsg } from '@/lib/signalr/events';
 import { invalidateAllLibrary, invalidateFromServer } from '@/lib/queryShim';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 import { playbackStore } from './playbackStore';
 import type { ConnectedDeviceSnapshot } from './playbackStore';
 import { authStore } from './authStore';
@@ -37,6 +39,14 @@ const deviceHub = shallowRef<TypedHub | null>(null);
 
 let stopRequested = false;
 
+// The `a` field on a socket event, so a report says which hub without the
+// reader having to parse text.
+const HUB_ORDINAL: Record<HubName, number> = {
+	videoHub: 1,
+	musicHub: 2,
+	deviceHub: 3,
+};
+
 async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 	// stopRequested is mutated by disconnectAll() outside this loop —
 	// ESLint's static analysis can't follow async cross-call mutation.
@@ -44,10 +54,12 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 	while (!stopRequested) {
 		try {
 			await hub.start();
+			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name]);
 			console.debug(`[socket] ${name} started`);
 			return;
 		}
 		catch (err) {
+			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name]);
 			console.warn(`[socket] ${name} start failed, retrying in 5s`, err);
 			connectionState.value = 'reconnecting';
 			await new Promise(r => window.setTimeout(r, 5_000));
@@ -165,16 +177,19 @@ function bindConnectedDevices(hub: TypedHub): void {
 function bindLifecycle(hub: TypedHub, name: HubName): void {
 	const conn = hub.raw();
 	conn.onreconnecting(() => {
+		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name]);
 		connectionState.value = 'reconnecting';
 		console.debug(`[socket] ${name} reconnecting`);
 	});
 	conn.onreconnected(() => {
+		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name]);
 		connectionState.value = 'connected';
 		console.debug(`[socket] ${name} reconnected — invalidating library cache`);
 		invalidateAllLibrary();
 	});
 	conn.onclose((err) => {
 		// With forever-retry, onclose only fires after explicit stop().
+		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketClosed, HUB_ORDINAL[name]);
 		console.debug(`[socket] ${name} closed`, err);
 		if (stopRequested)
 			connectionState.value = 'idle';

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, nextTick, ref } from 'vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { settingsStore } from '@/stores/settingsStore';
 import SetupBackdrop from '@/components/SetupBackdrop.vue';
+import { diagnosticsSender } from '@/lib/diagnostics/sender';
 
 /*
  * App settings — mirrors APK preferences/display/tv/AppSettingsScreen.kt:
@@ -51,6 +52,69 @@ useFocusEntry({
 	onAction: () => {
 		settingsStore.subtitleHints.value = !settingsStore.subtitleHints.value;
 	},
+});
+
+const diagnosticsEl = ref<HTMLElement | null>(null);
+const previewEl = ref<HTMLElement | null>(null);
+const sendEl = ref<HTMLElement | null>(null);
+const cancelEl = ref<HTMLElement | null>(null);
+
+const pendingReport = diagnosticsSender.pending;
+const sendState = diagnosticsSender.state;
+const hasPending = computed(() => pendingReport.value !== null);
+const previewText = computed(() =>
+	pendingReport.value ? JSON.stringify(pendingReport.value, null, 2) : '',
+);
+const diagnosticsStatus = computed(() => {
+	if (sendState.value === 'sending')
+		return 'Sending…';
+	if (sendState.value === 'sent')
+		return `Sent. Report ${diagnosticsSender.lastReportId.value}`;
+	if (sendState.value === 'failed')
+		return `Not sent. ${diagnosticsSender.lastError.value}`;
+	return 'Show what a report would contain, then decide whether to send it';
+});
+
+useFocusEntry({
+	key: 'settings-diagnostics',
+	order: 1,
+	el: diagnosticsEl,
+	onAction: () => {
+		diagnosticsSender.prepare('manual');
+		void nextTick(() => settingsGroup.focusByKey('settings-diagnostics-preview'));
+	},
+});
+
+// Enter pages the payload so a long report stays readable on a remote, and
+// Down still walks on to the two decision rows.
+useFocusEntry({
+	key: 'settings-diagnostics-preview',
+	order: 2,
+	enabled: hasPending,
+	el: previewEl,
+	onAction: () => {
+		const el = previewEl.value;
+		if (!el)
+			return;
+		const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
+		el.scrollTop = atEnd ? 0 : el.scrollTop + Math.round(el.clientHeight * 0.9);
+	},
+});
+
+useFocusEntry({
+	key: 'settings-diagnostics-send',
+	order: 3,
+	enabled: hasPending,
+	el: sendEl,
+	onAction: () => void diagnosticsSender.confirmSend(),
+});
+
+useFocusEntry({
+	key: 'settings-diagnostics-cancel',
+	order: 4,
+	enabled: hasPending,
+	el: cancelEl,
+	onAction: () => diagnosticsSender.discard(),
 });
 </script>
 
@@ -120,6 +184,65 @@ useFocusEntry({
 					<span class="thumb" />
 				</span>
 			</button>
+
+			<button
+				ref="diagnosticsEl"
+				class="nm-list-row"
+				data-focusable
+				tabindex="0"
+				@click.prevent="diagnosticsSender.prepare('manual')"
+			>
+				<div class="row-text">
+					<p class="row-primary">
+						Send diagnostics
+					</p>
+					<p class="row-secondary">
+						{{ diagnosticsStatus }}
+					</p>
+				</div>
+			</button>
+
+			<template v-if="hasPending">
+				<pre
+					ref="previewEl"
+					class="diagnostics-preview"
+					data-focusable
+					tabindex="0"
+					aria-label="Diagnostics payload preview. Press OK to scroll."
+				>{{ previewText }}</pre>
+
+				<button
+					ref="sendEl"
+					class="nm-list-row diagnostics-confirm"
+					data-focusable
+					tabindex="0"
+					:disabled="sendState === 'sending'"
+					@click.prevent="diagnosticsSender.confirmSend()"
+				>
+					<div class="row-text">
+						<p class="row-primary">
+							Send this report now
+						</p>
+						<p class="row-secondary">
+							Nothing leaves this device until you choose this
+						</p>
+					</div>
+				</button>
+
+				<button
+					ref="cancelEl"
+					class="nm-list-row"
+					data-focusable
+					tabindex="0"
+					@click.prevent="diagnosticsSender.discard()"
+				>
+					<div class="row-text">
+						<p class="row-primary">
+							Cancel
+						</p>
+					</div>
+				</button>
+			</template>
 		</div>
 	</div>
 </template>
@@ -170,5 +293,25 @@ useFocusEntry({
 }
 .toggle.on .thumb {
 	transform: translateX(20px);
+}
+.diagnostics-preview {
+	margin: 12px 0;
+	padding: 20px 24px;
+	max-height: 40vh;
+	overflow-y: auto;
+	border-radius: 12px;
+	background: oklch(0.18 0.01 250);
+	color: oklch(0.96 0.005 250);
+	font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+	font-size: 20px;
+	line-height: 1.5;
+	white-space: pre-wrap;
+	word-break: break-word;
+	text-align: left;
+}
+.diagnostics-preview:focus-visible,
+.diagnostics-confirm:focus-visible {
+	outline: 3px solid var(--color-primary, oklch(0.7 0.2 285));
+	outline-offset: 2px;
 }
 </style>

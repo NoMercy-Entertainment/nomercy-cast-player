@@ -18,3 +18,13 @@ interface ImportMetaEnv {
 interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }
+
+declare const __APP_VERSION__: string;
+
+interface Performance {
+	readonly memory?: {
+		readonly jsHeapSizeLimit: number;
+		readonly totalJSHeapSize: number;
+		readonly usedJSHeapSize: number;
+	};
+}

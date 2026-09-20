@@ -6,6 +6,8 @@ import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipP
 import { authStore } from '@/stores/authStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { PlaylistItem } from '@/queries/usePlaylistQuery';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 const props = defineProps<{
 	type: 'movie' | 'tv';
@@ -36,6 +38,8 @@ onMounted(async () => {
 		});
 	}
 
+	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested);
+
 	try {
 		// Tag the container element so the package's factory can target it
 		// by ID — its public surface uses string IDs, not direct DOM refs.
@@ -50,6 +54,7 @@ onMounted(async () => {
 		// instead — handle both shapes.
 		const exported = (mod.default ?? mod.NoMercyPlayer) as unknown;
 		if (typeof exported !== 'function') {
+			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
 			console.warn('[video-player] no factory exported from package');
 			return;
 		}
@@ -69,6 +74,7 @@ onMounted(async () => {
 			});
 		}
 		engine = created as { dispose?: () => void };
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved);
 
 		const playerLike = engine as unknown as Parameters<typeof videoSyncBridge.attach>[0];
 		videoSyncBridge.attach(playerLike);
@@ -108,6 +114,7 @@ onMounted(async () => {
 		}
 	}
 	catch (err) {
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed);
 		console.error('[video-player] init failed', err);
 	}
 });

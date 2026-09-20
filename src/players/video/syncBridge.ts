@@ -1,5 +1,8 @@
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 type Throttled<T extends (...args: never[]) => void> = T;
 
@@ -60,6 +63,7 @@ const unsubs: Array<() => void> = [];
 
 function bindOutbound(p: VideoEngineLike): void {
 	const onPlay = (): void => {
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted);
 		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'play');
 		playbackStore.video.applyPlayState(true);
 	};
@@ -101,6 +105,24 @@ function bindOutbound(p: VideoEngineLike): void {
 		() => p.off('seek', onSeek),
 		() => p.off('time', onTime),
 	);
+}
+
+// The events that explain a playback fault nobody watched. `time` is left
+// alone deliberately — it is the hot path.
+const DIAGNOSTIC_PLAYBACK_EVENTS: Array<[string, DiagnosticsCodeValue]> = [
+	['ready', DiagnosticsCode.Prepared],
+	['waiting', DiagnosticsCode.Buffering],
+	['stalled', DiagnosticsCode.PlaybackStalled],
+	['ended', DiagnosticsCode.PlaybackEnded],
+	['error', DiagnosticsCode.PlayerError],
+];
+
+function bindDiagnostics(p: VideoEngineLike): void {
+	for (const [event, code] of DIAGNOSTIC_PLAYBACK_EVENTS) {
+		const handler = (): void => recordDiagnostic(DiagnosticsCategory.Playback, code);
+		p.on(event, handler);
+		unsubs.push(() => p.off(event, handler));
+	}
 }
 
 function bindInbound(p: VideoEngineLike): void {
@@ -153,6 +175,7 @@ export const videoSyncBridge = {
 	attach(e: VideoEngineLike): void {
 		engine = e;
 		bindOutbound(e);
+		bindDiagnostics(e);
 		bindInbound(e);
 	},
 	detach(): void {

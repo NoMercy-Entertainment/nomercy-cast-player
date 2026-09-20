@@ -1,6 +1,9 @@
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { ConnectedDeviceSnapshot, CurrentTrackSnapshot } from '@/stores/playbackStore';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 type Throttled<T extends (...args: never[]) => void> = T;
 
@@ -81,6 +84,7 @@ const unsubs: Array<() => void> = [];
 function bindOutbound(p: MusicEngineLike): void {
 	// Player events → SignalR. Server tracks state, propagates to other senders.
 	const onPlay = (): void => {
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted);
 		void socketStore.musicHub.value?.invoke('PlayCommand');
 		playbackStore.music.applyPlayState(true);
 	};
@@ -108,6 +112,7 @@ function bindOutbound(p: MusicEngineLike): void {
 		});
 	}, 5000);
 	const onSong = (...args: unknown[]): void => {
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.Prepared);
 		const raw = args[0] as RawTrack | null;
 		const snap = toSnapshot(raw);
 		const queue = playbackStore.music.queue.value;
@@ -149,6 +154,23 @@ function bindOutbound(p: MusicEngineLike): void {
 		() => p.off('shuffle', onShuffle),
 		() => p.off('repeat', onRepeat),
 	);
+}
+
+// The events that explain a music fault nobody watched. `time` is left alone
+// deliberately — it is the hot path.
+const DIAGNOSTIC_PLAYBACK_EVENTS: Array<[string, DiagnosticsCodeValue]> = [
+	['waiting', DiagnosticsCode.Buffering],
+	['stalled', DiagnosticsCode.PlaybackStalled],
+	['ended', DiagnosticsCode.PlaybackEnded],
+	['error', DiagnosticsCode.PlayerError],
+];
+
+function bindDiagnostics(p: MusicEngineLike): void {
+	for (const [event, code] of DIAGNOSTIC_PLAYBACK_EVENTS) {
+		const handler = (): void => recordDiagnostic(DiagnosticsCategory.Playback, code);
+		p.on(event, handler);
+		unsubs.push(() => p.off(event, handler));
+	}
 }
 
 function bindInbound(p: MusicEngineLike): void {
@@ -193,6 +215,7 @@ export const musicSyncBridge = {
 	attach(e: MusicEngineLike): void {
 		engine = e;
 		bindOutbound(e);
+		bindDiagnostics(e);
 		bindInbound(e);
 	},
 	detach(): void {

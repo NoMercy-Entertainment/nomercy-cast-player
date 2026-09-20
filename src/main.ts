@@ -6,6 +6,9 @@ import { bootCastReceiver } from './cast/receiver';
 import { defaultQueryClientOptions, setQueryClient, staleSweep } from './queries/client';
 import { socketStore } from './stores/socketStore';
 import { scheduleIdle } from './composables/useIdleCallback';
+import { installCrashHandlers } from './lib/diagnostics/crashHandler';
+import { DiagnosticsCategory, DiagnosticsCode } from './lib/diagnostics/events';
+import { recordDiagnostic } from './lib/diagnostics/sink';
 import './styles/tailwind.css';
 
 /**
@@ -20,6 +23,8 @@ import './styles/tailwind.css';
  * The CAF SDK is loaded synchronously in index.html before main.ts runs,
  * so cast.framework is available by the time bootCastReceiver fires.
  */
+
+installCrashHandlers();
 
 const queryClient = new QueryClient(defaultQueryClientOptions);
 setQueryClient(queryClient);
@@ -37,8 +42,11 @@ bootCastReceiver(router);
 // cast_shell had us suspended.
 document.addEventListener('visibilitychange', () => {
 	if (document.visibilityState === 'visible') {
+		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppForegrounded);
 		socketStore.onForegroundResume();
+		return;
 	}
+	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppBackgrounded);
 });
 
 // Stale sweep timer per spec §6.5. Every 30 minutes, idle-fenced, walk

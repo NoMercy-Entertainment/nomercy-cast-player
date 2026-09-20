@@ -1,4 +1,8 @@
 import { decodeJwt } from '@/lib/jwt';
+import type {
+	DiagnosticsReportRequest,
+	DiagnosticsReportResponse,
+} from '@/lib/diagnostics/payload';
 
 /**
  * NoMercy SaaS API base URL helper. The cast receiver hits two
@@ -87,4 +91,23 @@ export async function fetchSaasUser(accessToken: string): Promise<SaasUser | nul
 		return env.data;
 	}
 	return body as SaasUser;
+}
+
+export async function postDiagnosticsReport(
+	accessToken: string,
+	payload: DiagnosticsReportRequest,
+): Promise<DiagnosticsReportResponse> {
+	const base = nomercyApiBase(accessToken);
+	const res = await fetch(`${base}/v1/diagnostics/reports`, {
+		method: 'POST',
+		headers: {
+			'Authorization': `Bearer ${accessToken}`,
+			'Accept': 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+	if (!res.ok)
+		throw new Error(`diagnostics upload failed with ${res.status}`);
+	return (await res.json()) as DiagnosticsReportResponse;
 }
