@@ -18,7 +18,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const HEX_ID = /^[0-9a-f]{12,64}$/i;
 const LOWER_IDENT = /^[a-z][A-Za-z0-9]*$/;
 const KEBAB_IDENT = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)+$/;
-const ERROR_CLASS = /^[A-Z][A-Za-z0-9]*(?:Error|Exception)$/;
+// `Error` itself has no suffix to match, and it is the class most often thrown.
+const ERROR_CLASS = /^(?:Error|[A-Z][A-Za-z0-9]*(?:Error|Exception))$/;
 const HTTP_METHOD = /^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/;
 const KEY_CODE = /^(?:Key[A-Z]|Digit\d|Numpad|F\d{1,2}$|Arrow(?:Up|Down|Left|Right)$|Space$|Enter$|Escape$|Tab$|Backspace$|Delete$|Insert$|Home$|End$|Page(?:Up|Down)$|Shift|Control|Alt|Meta|Caps|Media|Audio|Browser|Launch|Context|Print|Scroll|Pause$|Minus$|Equal$|Bracket|Semicolon$|Quote$|Backquote$|Backslash$|Comma$|Period$|Slash$|Unidentified$)/;
 const WHITESPACE = /\s+/;

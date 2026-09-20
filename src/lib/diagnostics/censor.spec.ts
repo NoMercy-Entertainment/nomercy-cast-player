@@ -84,6 +84,12 @@ describe('censorLabel', () => {
 		expect(censorLabel('HttpError')).toBe('HttpError');
 	});
 
+	// The base class is the most common one thrown, and the suffix rule that
+	// passes HttpError rejects it.
+	it('keeps the plain Error class name', () => {
+		expect(censorLabel('Error')).toBe('Error');
+	});
+
 	it('keeps a keyboard code', () => {
 		expect(censorLabel('ArrowLeft')).toBe('ArrowLeft');
 	});
