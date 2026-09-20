@@ -212,6 +212,7 @@ useFocusEntry({
 				>{{ previewText }}</pre>
 
 				<button
+					v-if="sendState !== 'sent'"
 					ref="sendEl"
 					class="nm-list-row diagnostics-confirm"
 					data-focusable
@@ -238,7 +239,7 @@ useFocusEntry({
 				>
 					<div class="row-text">
 						<p class="row-primary">
-							Cancel
+							{{ sendState === 'sent' ? 'Close' : 'Cancel' }}
 						</p>
 					</div>
 				</button>
