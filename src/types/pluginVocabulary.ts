@@ -116,6 +116,21 @@ export const PluginBasePathPage = {
 export type PluginBasePathPageValue = typeof PluginBasePathPage[keyof typeof PluginBasePathPage];
 
 /**
+ * Which kind of screen is asking.
+ * The same three names the components already use, so a plugin branching on the
+ * surface and a component hiding itself on one are talking about the same
+ * thing. A fourth vocabulary here would mean a plugin could target a surface
+ * that no component could hide from.
+ */
+export const PluginSurface = {
+	Web: 'web',
+	Mobile: 'mobile',
+	Tv: 'tv',
+} as const;
+
+export type PluginSurfaceValue = typeof PluginSurface[keyof typeof PluginSurface];
+
+/**
  * How the caller is driving this surface.
  * A form that works with a mouse is unusable with a remote, so the view
  * declares what it needs and the client says what it has. Neither guesses
