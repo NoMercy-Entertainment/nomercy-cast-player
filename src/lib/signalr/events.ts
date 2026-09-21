@@ -34,7 +34,16 @@ export interface VideoPlayerStateSnapshot {
 export interface MusicPlayerStateSnapshot {
 	device_id?: string;
 	is_playing?: boolean;
-	item?: { id: string; name: string; artist_track?: Array<{ name?: string }>; cover?: string } | null;
+	item?: {
+		id: string;
+		name: string;
+		artist_track?: Array<{ name?: string }>;
+		cover?: string;
+		/** Set for a plugin's media, absent for server media and on an older server. */
+		plugin_id?: string | null;
+		proxy_url?: string | null;
+		live?: boolean;
+	} | null;
 	progress_ms?: number;
 	duration_ms?: number;
 	volume_percentage?: number;

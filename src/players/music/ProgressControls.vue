@@ -4,6 +4,7 @@ import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { playbackStore } from '@/stores/playbackStore';
 import { musicSyncBridge } from './syncBridge';
+import { formatTime, progressPercent, totalLabel } from './transport';
 
 /*
  * APK FullPlayerScreenTV controls row (mirrored): shuffle | prev | play | next | repeat
@@ -70,29 +71,18 @@ const time = playbackStore.music.timeMs;
 const track = playbackStore.music.track;
 const shuffle = playbackStore.music.shuffle;
 const repeat = playbackStore.music.repeat;
-const totalMs = computed(() => track.value?.duration_ms ?? 0);
-const pct = computed(() => {
-	if (!totalMs.value)
-		return 0;
-	return Math.min(100, (time.value / totalMs.value) * 100);
-});
-
-function fmt(ms: number): string {
-	const total = Math.max(0, Math.round(ms / 1000));
-	const m = Math.floor(total / 60);
-	const s = total % 60;
-	return `${m}:${s.toString().padStart(2, '0')}`;
-}
+const totalText = computed(() => totalLabel(track.value));
+const pct = computed(() => progressPercent(track.value, time.value));
 </script>
 
 <template>
 	<div class="controls">
 		<div class="progress-row">
-			<span class="time">{{ fmt(time) }}</span>
+			<span class="time">{{ formatTime(time) }}</span>
 			<div class="bar">
 				<div class="fill" :style="{ width: `${pct}%` }" />
 			</div>
-			<span class="time">{{ fmt(totalMs) }}</span>
+			<span class="time">{{ totalText }}</span>
 		</div>
 		<div ref="containerEl" class="buttons">
 			<button

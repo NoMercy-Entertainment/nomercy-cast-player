@@ -38,6 +38,10 @@ export interface CurrentTrackSnapshot {
 	duration_ms?: number;
 	color_palette?: ColorPaletteSnapshot | null;
 	favorite?: boolean;
+	/** Set for a plugin's media, absent for server media. */
+	plugin_id?: string | null;
+	/** A stream with no end, which is what stops a progress bar being drawn. */
+	live?: boolean;
 }
 
 export type RepeatMode = 'off' | 'all' | 'one';

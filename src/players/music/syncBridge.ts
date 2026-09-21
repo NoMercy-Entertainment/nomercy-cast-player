@@ -53,6 +53,8 @@ interface RawTrack {
 	duration?: number | string;
 	color_palette?: unknown;
 	favorite?: boolean;
+	plugin_id?: string | null;
+	live?: boolean;
 	[k: string]: unknown;
 }
 
@@ -77,6 +79,8 @@ function toSnapshot(raw: RawTrack | null | undefined): CurrentTrackSnapshot | nu
 		duration_ms: Number.isFinite(durationSec) ? Math.round(durationSec * 1000) : undefined,
 		color_palette: palette,
 		favorite: raw.favorite ?? false,
+		plugin_id: (raw.plugin_id as string | null | undefined) ?? null,
+		live: (raw.live as boolean | undefined) ?? false,
 	};
 }
 

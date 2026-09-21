@@ -123,6 +123,8 @@ function bindMusicPlayerState(hub: TypedHub): void {
 						artist: state.item.artist_track?.map(a => a.name).filter(Boolean).join(', '),
 						cover: state.item.cover,
 						favorite: false,
+						plugin_id: state.item.plugin_id ?? null,
+						live: state.item.live ?? false,
 					},
 					playbackStore.music.queue.value,
 				);
