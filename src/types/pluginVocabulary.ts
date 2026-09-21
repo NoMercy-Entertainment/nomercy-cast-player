@@ -36,6 +36,9 @@ export const PluginActionType = {
 	CallPlugin: 'callPlugin',
 	OpenWebView: 'openWebView',
 	RefreshView: 'refreshView',
+	SubmitForm: 'submitForm',
+	PickFile: 'pickFile',
+	PickFolder: 'pickFolder',
 } as const;
 
 export type PluginActionTypeValue = typeof PluginActionType[keyof typeof PluginActionType];
