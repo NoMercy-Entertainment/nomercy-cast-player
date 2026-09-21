@@ -146,3 +146,17 @@ export const PluginLiveAction = {
 } as const;
 
 export type PluginLiveActionValue = typeof PluginLiveAction[keyof typeof PluginLiveAction];
+/**
+ * Which slots each kind offers.
+ * A screen reserves the space before any plugin is seen, so the grouping has
+ * to be known in advance. One source, because four hand-written copies is how
+ * a placement lands somewhere its author never asked for.
+ */
+export const PluginSlotsByKind = {
+	'music': ['nav', 'home-row', 'artist-tab', 'album-tab', 'player-panel'],
+	'video': ['nav', 'home-row', 'detail-tab', 'player-panel', 'live', 'guide', 'channel-strip'],
+	'library': ['nav', 'home-row', 'library-card'],
+	'dashboard': ['nav', 'card'],
+	'settings': ['section'],
+	'addon': ['nav', 'home'],
+} as const;
