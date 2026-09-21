@@ -55,6 +55,20 @@ export const PluginAccess = {
 export type PluginAccessValue = typeof PluginAccess[keyof typeof PluginAccess];
 
 /**
+ * What a caller needs to open one route of a plugin.
+ * Coarser than PluginAccess on purpose: a plugin is owned, shared or out of
+ * reach, and within a plugin somebody can see a route only the owner may use.
+ * The server hides an owner route from a member before the client sees it,
+ * because offering a page that answers 403 is worse than not offering it.
+ */
+export const PluginRouteAccess = {
+	Shared: 'shared',
+	Owner: 'owner',
+} as const;
+
+export type PluginRouteAccessValue = typeof PluginRouteAccess[keyof typeof PluginRouteAccess];
+
+/**
  * Where inside a kind a placement lands.
  * A plugin says which kind it is and which slot it wants; the client owns the
  * drawing. Without slots every placement was a navigation entry, so a plugin
