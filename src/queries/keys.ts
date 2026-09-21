@@ -22,6 +22,8 @@ export const QueryKeys = {
 	component: (link: string) => ['component', link] as const,
 	playlist: (type: string, id: string) => ['playlist', type, id] as const,
 	trailer: (candidates: readonly string[]) => ['trailer', ...candidates] as readonly string[],
+	pluginUi: () => ['plugins', 'ui'] as const,
+	pluginSlot: (kind: string, slot: string) => ['plugins', 'slot', kind, slot] as const,
 } as const;
 
 export type QueryKey = readonly unknown[];

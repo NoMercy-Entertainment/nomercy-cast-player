@@ -3,7 +3,7 @@ import { TypedHub } from '@/lib/signalr/hubs';
 import { buildHub } from '@/lib/signalr/connection';
 import type { HubName } from '@/lib/signalr/connection';
 import type { MusicPlayerStateMsg, RefreshLibraryPayload, VideoPlayerStateMsg } from '@/lib/signalr/events';
-import { invalidateAllLibrary, invalidateFromServer } from '@/lib/queryShim';
+import { invalidateAllLibrary, invalidateFromServer, invalidatePlugins } from '@/lib/queryShim';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
@@ -14,7 +14,7 @@ import { authStore } from './authStore';
 /**
  * SignalR lifecycle store per spec §9.5.
  *
- * - Three hubs: video / music / device
+ * - Four hubs: video / music / device / plugin
  * - Bootstrap retry: each hub's initial start() loops every 5s until success
  *   (server may still be rebooting after a deploy)
  * - Forever-retry policy on the connection itself handles mid-session
@@ -37,6 +37,7 @@ const connectionState = ref<ConnectionState>('idle');
 const videoHub = shallowRef<TypedHub | null>(null);
 const musicHub = shallowRef<TypedHub | null>(null);
 const deviceHub = shallowRef<TypedHub | null>(null);
+const pluginHub = shallowRef<TypedHub | null>(null);
 
 let stopRequested = false;
 
@@ -46,6 +47,7 @@ const HUB_ORDINAL: Record<HubName, number> = {
 	videoHub: 1,
 	musicHub: 2,
 	deviceHub: 3,
+	pluginHub: 4,
 };
 
 async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
@@ -178,6 +180,22 @@ function bindConnectedDevices(hub: TypedHub): void {
 	});
 }
 
+/**
+ * A plugin saying its data, or the account's access to it, changed.
+ *
+ * The message itself is not drawn. The receiver re-reads the placements and
+ * every view drawn from them, because a plugin that pushed a row this build
+ * has never met would otherwise have to be understood here as well as on the
+ * server, and the two would drift.
+ */
+function bindPluginMessage(hub: TypedHub): void {
+	hub.on('PluginMessage', (...args: unknown[]) => {
+		const message = args[0] as { pluginId?: string; type?: string } | undefined;
+		console.debug(`[socket] pluginHub PluginMessage`, message?.pluginId, message?.type);
+		invalidatePlugins();
+	});
+}
+
 function bindLifecycle(hub: TypedHub, name: HubName): void {
 	const conn = hub.raw();
 	conn.onreconnecting(() => {
@@ -192,6 +210,11 @@ function bindLifecycle(hub: TypedHub, name: HubName): void {
 		connectionState.value = 'connected';
 		console.debug(`[socket] ${name} reconnected — invalidating library cache`);
 		invalidateAllLibrary();
+		// Every PluginMessage sent while the socket was down is gone. The wall
+		// re-reads rather than waiting for the next push, which for a plugin
+		// that pushes once an hour is an hour of a row nobody may see any more.
+		if (name === 'pluginHub')
+			invalidatePlugins();
 	});
 	conn.onclose((err) => {
 		// With forever-retry, onclose only fires after explicit stop().
@@ -213,6 +236,7 @@ export async function connectAll(): Promise<void> {
 	videoHub.value = new TypedHub(buildHub('videoHub'));
 	musicHub.value = new TypedHub(buildHub('musicHub'));
 	deviceHub.value = new TypedHub(buildHub('deviceHub'));
+	pluginHub.value = new TypedHub(buildHub('pluginHub'));
 
 	// RefreshLibrary handlers wire on every hub since each hub's queue
 	// emits its own invalidations.
@@ -228,11 +252,14 @@ export async function connectAll(): Promise<void> {
 	bindLifecycle(videoHub.value, 'videoHub');
 	bindLifecycle(musicHub.value, 'musicHub');
 	bindLifecycle(deviceHub.value, 'deviceHub');
+	bindPluginMessage(pluginHub.value);
+	bindLifecycle(pluginHub.value, 'pluginHub');
 
 	await Promise.all([
 		startWithRetry(videoHub.value, 'videoHub'),
 		startWithRetry(musicHub.value, 'musicHub'),
 		startWithRetry(deviceHub.value, 'deviceHub'),
+		startWithRetry(pluginHub.value, 'pluginHub'),
 	]);
 
 	connectionState.value = 'connected';
@@ -241,13 +268,14 @@ export async function connectAll(): Promise<void> {
 export async function disconnectAll(): Promise<void> {
 	stopRequested = true;
 	await Promise.all(
-		[videoHub.value, musicHub.value, deviceHub.value].map(h =>
+		[videoHub.value, musicHub.value, deviceHub.value, pluginHub.value].map(h =>
 			h ? h.stop().catch((error: unknown) => recordSwallowed('disconnectAll', error)) : Promise.resolve(),
 		),
 	);
 	videoHub.value = null;
 	musicHub.value = null;
 	deviceHub.value = null;
+	pluginHub.value = null;
 	connectionState.value = 'idle';
 }
 
@@ -263,6 +291,7 @@ export const socketStore = {
 	videoHub,
 	musicHub,
 	deviceHub,
+	pluginHub,
 	connectAll,
 	disconnectAll,
 	onForegroundResume,

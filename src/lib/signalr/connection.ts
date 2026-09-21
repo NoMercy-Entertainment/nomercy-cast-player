@@ -11,7 +11,7 @@ import {
 } from '@microsoft/signalr';
 import { authStore } from '@/stores/authStore';
 
-export type HubName = 'videoHub' | 'musicHub' | 'deviceHub';
+export type HubName = 'videoHub' | 'musicHub' | 'deviceHub' | 'pluginHub';
 
 /**
  * Forever-retry policy per spec §9.1. Receiver never gives up — server may

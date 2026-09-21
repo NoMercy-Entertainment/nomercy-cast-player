@@ -171,10 +171,10 @@ export type PluginLiveActionValue = typeof PluginLiveAction[keyof typeof PluginL
  * a placement lands somewhere its author never asked for.
  */
 export const PluginSlotsByKind = {
-	'music': ['nav', 'home-row', 'artist-tab', 'album-tab', 'player-panel'],
-	'video': ['nav', 'home-row', 'detail-tab', 'player-panel', 'live', 'guide', 'channel-strip'],
-	'library': ['nav', 'home-row', 'library-card'],
-	'dashboard': ['nav', 'card'],
-	'settings': ['section'],
-	'addon': ['nav', 'home'],
+	music: ['nav', 'home-row', 'artist-tab', 'album-tab', 'player-panel'],
+	video: ['nav', 'home-row', 'detail-tab', 'player-panel', 'live', 'guide', 'channel-strip'],
+	library: ['nav', 'home-row', 'library-card'],
+	dashboard: ['nav', 'card'],
+	settings: ['section'],
+	addon: ['nav', 'home'],
 } as const;

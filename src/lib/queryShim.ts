@@ -70,6 +70,21 @@ export function invalidateAllLibrary(): void {
 	}
 }
 
+/**
+ * Drops every plugin answer this screen is holding.
+ *
+ * A plugin pushes when its own data changed, and it also pushes when what the
+ * account may see changed. Both end the same way: the wall re-reads the
+ * placements and every view drawn from them, rather than keeping a row for a
+ * plugin the account no longer has.
+ */
+export function invalidatePlugins(): void {
+	const client = getClient?.();
+	if (!client)
+		return;
+	void client.invalidateQueries({ queryKey: ['plugins'], exact: false });
+}
+
 export function staleSweep(maxAgeMs = 3 * 60 * 60_000): void {
 	const client = getClient?.();
 	if (!client)

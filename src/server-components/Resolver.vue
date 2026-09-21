@@ -47,6 +47,10 @@ const registry = {
 	NMTrackRow: defineAsyncComponent(() => import('./NMTrackRow.vue')),
 	NMHero: defineAsyncComponent(() => import('./NMHero.vue')),
 	NMHeroCard: defineAsyncComponent(() => import('./NMHeroCard.vue')),
+	// Host plumbing, not a component a plugin may ask for: it marks the place
+	// where whatever plugins were placed in this area draws, and what draws
+	// there is the server's own vocabulary all the way down.
+	PluginSlot: defineAsyncComponent(() => import('./PluginSlot.vue')),
 } as const;
 
 type RegistryKey = keyof typeof registry;

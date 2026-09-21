@@ -6,17 +6,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { diagnosticsRing } from '@/lib/diagnostics/sink';
 
-const { reconnecting, reconnected, closed } = vi.hoisted(() => ({
+const { reconnecting, reconnected, closed, handlers, invalidatePlugins } = vi.hoisted(() => ({
 	reconnecting: [] as Array<() => void>,
 	reconnected: [] as Array<() => void>,
 	closed: [] as Array<(error?: Error) => void>,
+	handlers: new Map<string, (...args: unknown[]) => void>(),
+	invalidatePlugins: vi.fn(),
 }));
 
 vi.mock('@/lib/signalr/connection', () => ({
 	buildHub: () => ({
 		start: vi.fn().mockResolvedValue(undefined),
 		stop: vi.fn().mockResolvedValue(undefined),
-		on: vi.fn(),
+		on: (event: string, handler: (...args: unknown[]) => void) => handlers.set(event, handler),
 		off: vi.fn(),
 		onreconnecting: (callback: () => void) => reconnecting.push(callback),
 		onreconnected: (callback: () => void) => reconnected.push(callback),
@@ -27,6 +29,7 @@ vi.mock('@/lib/signalr/connection', () => ({
 vi.mock('@/lib/queryShim', () => ({
 	invalidateAllLibrary: vi.fn(),
 	invalidateFromServer: vi.fn(),
+	invalidatePlugins,
 }));
 
 const { socketStore } = await import('./socketStore');
@@ -63,8 +66,9 @@ describe('socket transitions are recorded per hub', () => {
 			'SocketReconnecting',
 			'SocketReconnecting',
 			'SocketReconnecting',
+			'SocketReconnecting',
 		]);
-		expect(entries.map(entry => entry.label)).toEqual(['videoHub', 'musicHub', 'deviceHub']);
+		expect(entries.map(entry => entry.label)).toEqual(['videoHub', 'musicHub', 'deviceHub', 'pluginHub']);
 	});
 
 	it('records the recovery that follows a reconnect', async () => {
@@ -74,6 +78,7 @@ describe('socket transitions are recorded per hub', () => {
 		reconnected.forEach(callback => callback());
 
 		expect(diagnosticsRing.snapshot().map(entry => entry.code)).toEqual([
+			'SocketOpened',
 			'SocketOpened',
 			'SocketOpened',
 			'SocketOpened',
@@ -90,6 +95,27 @@ describe('socket transitions are recorded per hub', () => {
 			'videoHub',
 			'musicHub',
 			'deviceHub',
+			'pluginHub',
 		]);
+	});
+
+	it('re-reads every plugin answer when a plugin pushes', async () => {
+		await socketStore.connectAll();
+		invalidatePlugins.mockClear();
+
+		handlers.get('PluginMessage')?.({ pluginId: 'radio', type: 'stations-changed' });
+
+		expect(invalidatePlugins).toHaveBeenCalledTimes(1);
+	});
+
+	it('re-reads the plugin answers after the plugin socket comes back', async () => {
+		await socketStore.connectAll();
+		invalidatePlugins.mockClear();
+
+		reconnected.forEach(callback => callback());
+
+		// Once, for the plugin hub. Every push sent while the socket was down is
+		// gone, and the other three hubs have nothing to say about plugins.
+		expect(invalidatePlugins).toHaveBeenCalledTimes(1);
 	});
 });

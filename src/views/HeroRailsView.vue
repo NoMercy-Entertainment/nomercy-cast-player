@@ -91,6 +91,12 @@ useHeroSeed(componentsRef);
 					:key="component.id"
 					:component="component"
 				/>
+				<!--
+					Inside the rails, so whatever a screen puts here is one more
+					row the remote reaches by pressing down, not a region the
+					focus group cannot see.
+				-->
+				<slot name="rails-end" />
 			</div>
 			<p v-if="isFetching" class="nm-refresh-hint">
 				Refreshing…

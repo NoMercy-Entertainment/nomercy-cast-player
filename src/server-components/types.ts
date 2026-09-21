@@ -17,7 +17,8 @@ export type ComponentType
 		| 'NMGenreCard'
 		| 'NMTrackRow'
 		| 'NMHero'
-		| 'NMHeroCard';
+		| 'NMHeroCard'
+		| 'PluginSlot';
 
 export interface Update {
 	/** "pageLoad" triggers refetch on revisit; other values are forward-compat. */
@@ -113,6 +114,21 @@ export interface NMTopResultCardWrapper {
 	link?: string;
 }
 
+/**
+ * A place on this screen where whatever a plugin put there draws.
+ *
+ * Carried in the same payload as everything else, so the server decides a
+ * plugin row belongs between two of its own rails rather than every client
+ * hard-coding where plugins are allowed to appear.
+ */
+export interface PluginSlotWrapper {
+	id: string;
+	/** One of PluginKind. */
+	kind: string;
+	/** One of PluginSlot. */
+	slot: string;
+}
+
 export type ComponentData
 	= | NMGridWrapper
 		| NMListWrapper
@@ -123,7 +139,8 @@ export type ComponentData
 		| NMMusicCardWrapper
 		| NMMusicHomeCardWrapper
 		| NMTopResultCardWrapper
-		| NMTrackRowWrapper;
+		| NMTrackRowWrapper
+		| PluginSlotWrapper;
 
 export interface Component {
 	id: string;
