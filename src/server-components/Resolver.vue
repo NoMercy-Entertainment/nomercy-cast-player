@@ -48,6 +48,7 @@ const registry = {
 	NMHero: defineAsyncComponent(() => import('./NMHero.vue')),
 	NMHeroCard: defineAsyncComponent(() => import('./NMHeroCard.vue')),
 	PluginMediaCard: defineAsyncComponent(() => import('./PluginMediaCard.vue')),
+	PluginEpgGrid: defineAsyncComponent(() => import('./PluginEpgGrid.vue')),
 } as const;
 
 type RegistryKey = keyof typeof registry;
