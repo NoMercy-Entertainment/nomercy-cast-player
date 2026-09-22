@@ -1,0 +1,2 @@
+import{f as e,k as t,l as n,t as r,v as i}from"./_plugin-vue_export-helper-DgwHyncz.js";var a={class:`loader`,role:`progressbar`,"aria-label":`Loading`},o=r(i({__name:`LoadingIndicator`,setup(r){return(r,i)=>(t(),e(`div`,a,[...i[0]||=[n(`div`,{class:`ring`},null,-1)]]))}}),[[`__scopeId`,`data-v-d7848d36`]]);export{o as t};
+//# sourceMappingURL=LoadingIndicator-Ckay47JW.js.map

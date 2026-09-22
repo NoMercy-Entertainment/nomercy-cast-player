@@ -1,0 +1,2 @@
+import{d as e,dt as t,f as n,k as r,lt as i,t as a,v as o}from"./_plugin-vue_export-helper-DgwHyncz.js";var s=[`data-text-id`],c=a(o({__name:`NMText`,props:{id:{},data:{},update:{}},setup(a){return(o,c)=>a.data.text?(r(),n(`span`,{key:0,class:i([`text`,a.data.variant]),"data-text-id":a.id},t(a.data.text),11,s)):e(``,!0)}}),[[`__scopeId`,`data-v-a5da8473`]]);export{c as default};
+//# sourceMappingURL=NMText-y0Tu5fQA.js.map
