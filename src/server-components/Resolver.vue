@@ -38,6 +38,7 @@ const registry = {
 		delay: 0,
 		timeout: 8000,
 	}),
+	NMText: defineAsyncComponent(() => import('./NMText.vue')),
 	NMCard: defineAsyncComponent(() => import('./NMCard.vue')),
 	NMHomeCard: defineAsyncComponent(() => import('./NMHomeCard.vue')),
 	NMMusicCard: defineAsyncComponent(() => import('./NMMusicCard.vue')),
