@@ -15,7 +15,7 @@ import { recordSwallowed } from '@/lib/diagnostics/swallowed';
  * TV overlay orchestrator per spec §12.3. Owns the pre-screen / episode
  * / language / seek panel lifecycle and routes player events to the
  * right panel. Ports the responsibility surface of
- * apps/nomercy-cast-player/.archive-v0/lib/VideoPlayer/plugins/UIPlugin/
+ * clients/nomercy-cast-player/.archive-v0/lib/VideoPlayer/plugins/UIPlugin/
  * tvUIPlugin.ts into a Vue-free, DOM-driven module.
  *
  * The npm @nomercy-entertainment/nomercy-video-player package's Plugin
