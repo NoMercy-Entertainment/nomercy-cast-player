@@ -25,6 +25,11 @@ jobs:
       - name: Enable corepack
         run: corepack enable
 
+      # This repo is public. The dev proxy target comes from CAST_DEV_SERVER_URL;
+      # a server address must never be written into the config again.
+      - name: No nomercy.tv host literal in vite.config.ts
+        run: "! grep -nE 'nomercy\\.tv' vite.config.ts"
+
       - name: Install dependencies
         run: yarn install --immutable
 
