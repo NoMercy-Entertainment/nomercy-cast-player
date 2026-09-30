@@ -99,6 +99,14 @@ The player listens to the following events from the `videoHub`/`musicHub`/`devic
 | `SetVolume`        | `number`  | Adjusts the player's volume, from `0` to `100`      |
 | `SetSeek`          | `number`  | Seeks to a specific time in the media, in `seconds` |
 
+## Development
+
+`yarn dev` serves the receiver on port 5501. To talk to a NoMercy server from there, copy `.env.example` to `.env` and set `CAST_DEV_SERVER_URL` to your server URL. The dev server then proxies `/api`, `/videoHub` and `/musicHub` to it. Without it the dev server starts without the proxy and prints a warning.
+
+The proxy verifies the server's TLS certificate. For a server with a self-signed certificate, point `NODE_EXTRA_CA_CERTS` at its CA file.
+
+`CAST_DEV_ALLOWED_HOSTS` adds hostnames (comma separated) that may reach the dev server, for example a dev tunnel. `.env` is git-ignored: never put a server address in `vite.config.ts`; CI fails on one.
+
 ## Contributions
 
 Contributions are welcome! If you encounter issues or have suggestions for improvement, feel free to open an issue or submit a pull request.
