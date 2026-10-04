@@ -44,5 +44,8 @@ jobs:
       - name: Lint
         run: node node_modules/eslint/bin/eslint.js . --ext .ts,.vue --report-unused-disable-directives --max-warnings 0
 
+      - name: Test
+        run: node node_modules/vitest/vitest.mjs run
+
       - name: Build
         run: node node_modules/vite/bin/vite.js build
