@@ -1,6 +1,7 @@
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { ConnectedDeviceSnapshot, CurrentTrackSnapshot } from '@/stores/playbackStore';
+import { castDeviceId } from '@/lib/diagnostics/deviceId';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
@@ -97,9 +98,17 @@ function trackLabel(p: MusicEngineLike): string | undefined {
 	return `track-${track.id}`;
 }
 
+// The device the server last named active in a MusicPlayerState push.
+let activeDeviceId: string | null = null;
+
 // MusicHub takes one PlaybackCommand(command, data) for every transport action
 // (MusicPlaybackCommandHandler: play, pause, seek in seconds, next, previous).
+// It applies the command to the user's one music session whoever sends it, so
+// a receiver that is not the active device would start or stop another
+// device's audio. Send only while the server names this receiver.
 function sendCommand(command: string, data: unknown = null): void {
+	if (activeDeviceId === null || activeDeviceId !== castDeviceId())
+		return;
 	void socketStore.musicHub.value?.invoke('PlaybackCommand', command, data);
 }
 
@@ -110,8 +119,11 @@ function bindOutbound(p: MusicEngineLike): void {
 		sendCommand('play');
 		playbackStore.music.applyPlayState(true);
 	};
-	const onPause = (): void => {
-		sendCommand('pause');
+	const onPause = (...args: unknown[]): void => {
+		// The audio element also pauses when a track runs out; that is not a user pause.
+		const audio = args[0] as { ended?: boolean } | undefined;
+		if (!audio?.ended)
+			sendCommand('pause');
 		playbackStore.music.applyPlayState(false);
 	};
 	const onNext = (): void => {
@@ -208,7 +220,11 @@ function bindInbound(p: MusicEngineLike): void {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, label);
 		p.loadTrack?.(args[0]);
 	};
-	const onState = (...args: unknown[]): void => p.applyServerState?.(args[0]);
+	const onState = (...args: unknown[]): void => {
+		const state = args[0] as { device_id?: string | null } | null | undefined;
+		activeDeviceId = state?.device_id ?? null;
+		p.applyServerState?.(args[0]);
+	};
 	const onConnectedDevices = (...args: unknown[]): void => {
 		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];
 		playbackStore.music.applyConnectedDevices(devices);
@@ -254,6 +270,7 @@ export const musicSyncBridge = {
 			}
 		}
 		engine = null;
+		activeDeviceId = null;
 	},
 	current(): MusicEngineLike | null {
 		return engine;
