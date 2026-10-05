@@ -118,35 +118,5 @@
 		"kind": "event",
 		"item": "VideoHub.VideoPlayerState",
 		"reason": "Receiver listens for VideoPlayerState on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
-	},
-	{
-		"kind": "hub",
-		"item": "MusicHub.NextCommand",
-		"reason": "Receiver invokes NextCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
-	},
-	{
-		"kind": "hub",
-		"item": "MusicHub.PauseCommand",
-		"reason": "Receiver invokes PauseCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
-	},
-	{
-		"kind": "hub",
-		"item": "MusicHub.PlayCommand",
-		"reason": "Receiver invokes PlayCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
-	},
-	{
-		"kind": "hub",
-		"item": "MusicHub.PreviousCommand",
-		"reason": "Receiver invokes PreviousCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
-	},
-	{
-		"kind": "hub",
-		"item": "MusicHub.SeekCommand",
-		"reason": "Receiver invokes SeekCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
-	},
-	{
-		"kind": "hub",
-		"item": "MusicHub.SetTimeCommand",
-		"reason": "Receiver invokes SetTimeCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
 	}
 ]

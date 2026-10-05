@@ -21,12 +21,8 @@
 		},
 		"MusicHub": {
 			"invokes": [
-				"NextCommand",
-				"PauseCommand",
-				"PlayCommand",
-				"PreviousCommand",
-				"SeekCommand",
-				"SetTimeCommand",
+				"CurrentTimeForItemCommand",
+				"PlaybackCommand",
 				"StartPlaybackCommand"
 			],
 			"listens": [
