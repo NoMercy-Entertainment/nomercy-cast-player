@@ -1,0 +1,152 @@
+[
+	{
+		"kind": "event",
+		"item": "DeviceHub.ConnectedDevicesState",
+		"reason": "Receiver listens for ConnectedDevicesState on DeviceHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "DeviceHub.DeviceListChanged",
+		"reason": "Receiver listens for DeviceListChanged on DeviceHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "DeviceHub.RefreshLibrary",
+		"reason": "Receiver listens for RefreshLibrary on DeviceHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.ConnectedDevicesState",
+		"reason": "Receiver listens for ConnectedDevicesState on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.LoadTrack",
+		"reason": "Receiver listens for LoadTrack on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.MusicPlayerState",
+		"reason": "Receiver listens for MusicPlayerState on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.Next",
+		"reason": "Receiver listens for Next on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.Pause",
+		"reason": "Receiver listens for Pause on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.Play",
+		"reason": "Receiver listens for Play on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.Previous",
+		"reason": "Receiver listens for Previous on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.RefreshLibrary",
+		"reason": "Receiver listens for RefreshLibrary on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "MusicHub.Seek",
+		"reason": "Receiver listens for Seek on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "PluginHub.PluginMessage",
+		"reason": "Receiver listens for PluginMessage on PluginHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.ConnectedDevicesState",
+		"reason": "Receiver listens for ConnectedDevicesState on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.LoadMedia",
+		"reason": "Receiver listens for LoadMedia on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.Next",
+		"reason": "Receiver listens for Next on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.Pause",
+		"reason": "Receiver listens for Pause on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.Play",
+		"reason": "Receiver listens for Play on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.Previous",
+		"reason": "Receiver listens for Previous on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.RefreshLibrary",
+		"reason": "Receiver listens for RefreshLibrary on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.Seek",
+		"reason": "Receiver listens for Seek on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.SetVolume",
+		"reason": "Receiver listens for SetVolume on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.Stop",
+		"reason": "Receiver listens for Stop on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "event",
+		"item": "VideoHub.VideoPlayerState",
+		"reason": "Receiver listens for VideoPlayerState on VideoHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
+	},
+	{
+		"kind": "hub",
+		"item": "MusicHub.NextCommand",
+		"reason": "Receiver invokes NextCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
+	},
+	{
+		"kind": "hub",
+		"item": "MusicHub.PauseCommand",
+		"reason": "Receiver invokes PauseCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
+	},
+	{
+		"kind": "hub",
+		"item": "MusicHub.PlayCommand",
+		"reason": "Receiver invokes PlayCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
+	},
+	{
+		"kind": "hub",
+		"item": "MusicHub.PreviousCommand",
+		"reason": "Receiver invokes PreviousCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
+	},
+	{
+		"kind": "hub",
+		"item": "MusicHub.SeekCommand",
+		"reason": "Receiver invokes SeekCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
+	},
+	{
+		"kind": "hub",
+		"item": "MusicHub.SetTimeCommand",
+		"reason": "Receiver invokes SetTimeCommand on MusicHub; pinned MusicHub exposes PlaybackCommand and position reports, not this command"
+	}
+]

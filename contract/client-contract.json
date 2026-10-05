@@ -1,0 +1,105 @@
+{
+	"hubs": {
+		"VideoHub": {
+			"invokes": [
+				"PlaybackCommand",
+				"SetTime"
+			],
+			"listens": [
+				"ConnectedDevicesState",
+				"LoadMedia",
+				"Next",
+				"Pause",
+				"Play",
+				"Previous",
+				"RefreshLibrary",
+				"Seek",
+				"SetVolume",
+				"Stop",
+				"VideoPlayerState"
+			]
+		},
+		"MusicHub": {
+			"invokes": [
+				"NextCommand",
+				"PauseCommand",
+				"PlayCommand",
+				"PreviousCommand",
+				"SeekCommand",
+				"SetTimeCommand",
+				"StartPlaybackCommand"
+			],
+			"listens": [
+				"ConnectedDevicesState",
+				"LoadTrack",
+				"MusicPlayerState",
+				"Next",
+				"Pause",
+				"Play",
+				"Previous",
+				"RefreshLibrary",
+				"Seek"
+			]
+		},
+		"DeviceHub": {
+			"invokes": [],
+			"listens": [
+				"ConnectedDevicesState",
+				"DeviceListChanged",
+				"RefreshLibrary"
+			]
+		},
+		"PluginHub": {
+			"invokes": [],
+			"listens": [
+				"PluginMessage"
+			]
+		}
+	},
+	"http": [
+		"GET /api/v1/{x}/{x}",
+		"GET /api/v1/{x}/{x}/watch",
+		"GET /api/v1/home/tv",
+		"GET /api/v1/libraries/tv",
+		"GET /api/v1/music/{x}/{x}",
+		"GET /api/v1/music/start",
+		"GET /api/v1/person/{x}",
+		"GET /api/v1/plugins/{x}/view",
+		"GET /api/v1/plugins/ui",
+		"GET /api/v1/search/music/tv",
+		"GET /api/v1/search/video/tv",
+		"GET /api/v1/setup/server-info"
+	],
+	"skips": [
+		{
+			"file": "src/queries/useCardItemsQuery.ts",
+			"line": 10,
+			"reason": "Server-provided link has no static route shape",
+			"expression": "link.startsWith('/') ? link : `/${link}`"
+		},
+		{
+			"file": "src/queries/useLibraryQuery.ts",
+			"line": 22,
+			"reason": "Server-provided path can contain multiple segments",
+			"expression": "/api/v1/${cleanPath}?version=lolomo"
+		},
+		{
+			"file": "src/queries/useMusicCardQuery.ts",
+			"line": 13,
+			"reason": "Server-provided path can contain multiple segments",
+			"expression": "/api/v1/music/${path.replace(LEADING_SLASH, '')}"
+		},
+		{
+			"file": "src/queries/usePageLoadMutationEffect.ts",
+			"line": 80,
+			"reason": "Server-provided link has no static route shape",
+			"expression": "link.startsWith('/') ? link : `/${link}`"
+		},
+		{
+			"file": "src/views/info/InfoScreen.vue",
+			"line": 162,
+			"reason": "Server-provided path can contain multiple segments",
+			"expression": "/api/v1/${cleanLink}/watch-list"
+		}
+	]
+}
