@@ -97,35 +97,39 @@ function trackLabel(p: MusicEngineLike): string | undefined {
 	return `track-${track.id}`;
 }
 
+// MusicHub takes one PlaybackCommand(command, data) for every transport action
+// (MusicPlaybackCommandHandler: play, pause, seek in seconds, next, previous).
+function sendCommand(command: string, data: unknown = null): void {
+	void socketStore.musicHub.value?.invoke('PlaybackCommand', command, data);
+}
+
 function bindOutbound(p: MusicEngineLike): void {
 	// Player events → SignalR. Server tracks state, propagates to other senders.
 	const onPlay = (): void => {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, trackLabel(p));
-		void socketStore.musicHub.value?.invoke('PlayCommand');
+		sendCommand('play');
 		playbackStore.music.applyPlayState(true);
 	};
 	const onPause = (): void => {
-		void socketStore.musicHub.value?.invoke('PauseCommand');
+		sendCommand('pause');
 		playbackStore.music.applyPlayState(false);
 	};
 	const onNext = (): void => {
-		void socketStore.musicHub.value?.invoke('NextCommand');
+		sendCommand('next');
 	};
 	const onPrev = (): void => {
-		void socketStore.musicHub.value?.invoke('PreviousCommand');
+		sendCommand('previous');
 	};
 	const onSeek = (...args: unknown[]): void => {
 		const t = args[0] as number;
-		void socketStore.musicHub.value?.invoke('SeekCommand', Math.round(t * 1000));
+		sendCommand('seek', Math.round(t));
 	};
 	const onTime = throttle((...args: unknown[]) => {
 		const data = args[0] as { currentTime?: number; position?: number } | number;
 		const seconds = typeof data === 'number' ? data : (data.position ?? data.currentTime ?? 0);
 		playbackStore.music.applyTime(Math.round(seconds * 1000));
-		void socketStore.musicHub.value?.invoke('SetTimeCommand', {
-			Time: Math.round(seconds * 1000),
-			TrackId: p.currentTrack?.()?.id,
-		});
+		const trackId = p.currentTrack?.()?.id;
+		void socketStore.musicHub.value?.invoke('CurrentTimeForItemCommand', seconds, trackId === undefined ? null : String(trackId));
 	}, 5000);
 	const onSong = (...args: unknown[]): void => {
 		const raw = args[0] as RawTrack | null;
