@@ -17,6 +17,7 @@ on:
 
 jobs:
   deploy:
+    timeout-minutes: 7200
     runs-on: [self-hosted, Linux, X64, beast-unit]
 
     steps:
