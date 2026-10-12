@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to Cloudflare Pages
 
 on:
   workflow_dispatch:
@@ -12,6 +12,7 @@ on:
       - vite.config.ts
       - tsconfig.json
       - tailwind.config.cjs
+      - .github/workflows/pages.yml
     branches:
       - master
 
@@ -56,9 +57,18 @@ jobs:
       - name: Build
         run: node node_modules/vite/bin/vite.js build
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          cname: cast.nomercy.tv
+      # cast.nomercy.tv is the Cloudflare Pages project cast-nomercy-tv. This step
+      # used to publish to GitHub Pages, which only redirects to that domain, so
+      # from 2026-09-11 the domain kept serving the deleted Kotlin/Wasm receiver
+      # and no Vue build reached a Chromecast. The master branch is production;
+      # a manual run from any other branch makes a preview deployment.
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_KEY: ${{ secrets.CLOUDFLARE_API_KEY }}
+          CLOUDFLARE_EMAIL: ${{ secrets.CLOUDFLARE_EMAIL }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: >-
+          npx --yes wrangler@4 pages deploy docs
+          --project-name=cast-nomercy-tv
+          --branch=${{ github.ref_name }}
+          --commit-hash=${{ github.sha }}
