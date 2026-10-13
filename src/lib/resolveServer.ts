@@ -28,19 +28,35 @@ export interface ResolvedServer {
 	serverUrl: string;
 }
 
+/**
+ * A request that never answers must end in a failure the caller can show, not
+ * leave the TV on the splash. Long enough for a slow network, short enough that
+ * the user can recast.
+ */
+const AppConfigTimeoutMs = 10_000;
+
 export async function resolveServerFromAppConfig(accessToken: string): Promise<ResolvedServer | null> {
 	const base = nomercyApiBase(accessToken);
-	const res = await fetch(`${base}/v1/app_config`, {
-		headers: {
-			Authorization: `Bearer ${accessToken}`,
-			Accept: 'application/json',
-		},
-	});
-	if (!res.ok) {
-		console.warn('[app_config] non-OK response', res.status, base);
-		return null;
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), AppConfigTimeoutMs);
+	let body: AppConfigResponse;
+	try {
+		const res = await fetch(`${base}/v1/app_config`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				Accept: 'application/json',
+			},
+			signal: controller.signal,
+		});
+		if (!res.ok) {
+			console.warn('[app_config] non-OK response', res.status, base);
+			return null;
+		}
+		body = (await res.json()) as AppConfigResponse;
 	}
-	const body = (await res.json()) as AppConfigResponse;
+	finally {
+		clearTimeout(timer);
+	}
 	const server = body.data?.servers?.[0];
 	if (!server)
 		return null;

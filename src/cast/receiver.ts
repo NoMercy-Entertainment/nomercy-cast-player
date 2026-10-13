@@ -48,9 +48,17 @@ export function bootCastReceiver(router: Router): void {
 			const mock = JSON.parse(raw) as { token: string; route: string; serverUrl?: string };
 			document.body.dataset.mockParsed = 'yes';
 			void (async () => {
-				const server = mock.serverUrl
-					? { serverId: 'mock', serverUrl: mock.serverUrl }
-					: await resolveServerFromAppConfig(mock.token);
+				let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
+				try {
+					server = mock.serverUrl
+						? { serverId: 'mock', serverUrl: mock.serverUrl }
+						: await resolveServerFromAppConfig(mock.token);
+				}
+				catch (err) {
+					console.warn('[cast] mock app_config request failed', err);
+					authStore.receiverState.value = 'DEGRADED';
+					return;
+				}
 				document.body.dataset.mockHasServer = String(Boolean(server));
 				if (!server)
 					return;
@@ -119,7 +127,14 @@ export function bootCastReceiver(router: Router): void {
 			`cast-session ${payload.route}`,
 		);
 		void (async () => {
-			const server = await resolveServerFromAppConfig(payload.token!);
+			let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
+			try {
+				server = await resolveServerFromAppConfig(payload.token!);
+			}
+			catch (err) {
+				console.warn('[cast] app_config request failed', err);
+				server = null;
+			}
 			if (!server) {
 				recordDiagnostic(
 					DiagnosticsCategory.Network,
