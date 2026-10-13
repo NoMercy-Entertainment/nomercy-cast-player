@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { bootCastReceiver } from './receiver';
+import { bootCastReceiver, closeCastSession } from './receiver';
 import { NAMESPACE_GENERAL } from './namespaces';
 import { authStore } from '@/stores/authStore';
 
@@ -67,5 +67,24 @@ describe('the cast handshake never leaves the TV on the splash', () => {
 		await vi.advanceTimersByTimeAsync(30_000);
 
 		expect(authStore.receiverState.value).toBe('DEGRADED');
+	});
+});
+
+describe('closing the receiver from the splash screen', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('shuts the cast application down instead of leaving the TV stuck on the page', () => {
+		const stop = vi.fn();
+		vi.stubGlobal('cast', {
+			framework: {
+				CastReceiverContext: { getInstance: () => ({ stop }) },
+			},
+		});
+
+		closeCastSession();
+
+		expect(stop).toHaveBeenCalled();
 	});
 });

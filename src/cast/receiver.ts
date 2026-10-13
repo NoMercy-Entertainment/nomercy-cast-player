@@ -194,6 +194,25 @@ export function bootCastReceiver(router: Router): void {
  * "/movie/533535/watch?cast=true&position=0") - router.push parses it
  * directly, no CastIntent reconstruction needed.
  */
+/**
+ * Shuts the cast application down. The TV's cast_shell unloads this page in
+ * response — the only way off a receiver that's stuck with nowhere to go
+ * (e.g. the native app launch was refused and this is the fallback page).
+ * Falls back to closing the window for the non-cast dev preview, where
+ * there's no CastReceiverContext to stop.
+ */
+export function closeCastSession(): void {
+	const castGlobal = (globalThis as { cast?: unknown }).cast as
+		| { framework?: { CastReceiverContext: { getInstance: () => { stop: () => void } } } }
+		| undefined;
+	const context = castGlobal?.framework?.CastReceiverContext.getInstance();
+	if (context) {
+		context.stop();
+		return;
+	}
+	window.close();
+}
+
 async function bootSocketsAndDispatch(
 	route: string,
 	router: Router,

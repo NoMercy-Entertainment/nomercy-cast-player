@@ -2,6 +2,9 @@
 import { computed } from 'vue';
 import { authStore } from '@/stores/authStore';
 import { socketStore } from '@/stores/socketStore';
+import { closeCastSession } from '@/cast/receiver';
+import { useFocusGroup } from '@/composables/useFocusGroup';
+import FocusableButton from '@/components/buttons/FocusableButton.vue';
 import logoWide from '@/assets/logo-wide.svg';
 import mobile from '@/assets/mobile.svg';
 import splash from '@/assets/splash.png';
@@ -10,7 +13,19 @@ import splash from '@/assets/splash.png';
  * Splash screen styled to match the original cast-player aesthetic so
  * the receiver shares visual language with sender apps. Wired to
  * authStore + socketStore reactive state.
+ *
+ * Also the page a TV lands on when the native app launch was refused and
+ * cast_shell fell back to this web receiver with no sender attached —
+ * that case needs a focused control and a way back, not just a message.
  */
+
+useFocusGroup({
+	type: 'modal',
+	onEscape: () => {
+		closeCastSession();
+		return true;
+	},
+});
 
 const status = computed(() => {
 	switch (authStore.receiverState.value) {
@@ -70,6 +85,14 @@ const isPulsing = computed(() => !isConnected.value);
 					<span> button in the MediaPlayer or App.</span>
 				</template>
 			</p>
+
+			<FocusableButton
+				focus-key="splash-close"
+				variant="ghost"
+				@action="closeCastSession"
+			>
+				Close
+			</FocusableButton>
 		</section>
 
 		<img class="phone" :src="mobile" alt="" aria-hidden="true">
