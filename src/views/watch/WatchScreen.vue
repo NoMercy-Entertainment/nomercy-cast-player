@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from 'vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePlaylistQuery } from '@/queries/usePlaylistQuery';
@@ -32,6 +32,8 @@ const { data, isLoading, error, refetch } = usePlaylistQuery(type, id);
 const playlist = computed(() => data.value?.playlist ?? []);
 const initialItem = computed(() => data.value?.item);
 
+const playerError = ref<string | null>(null);
+
 // On exit, invalidate Home + Libraries so Continue Watching reflects the
 // updated playback position the server recorded while we were on this
 // screen — mirrors APK WatchScreen.kt onDispose's cache invalidation.
@@ -51,6 +53,12 @@ onBeforeUnmount(() => {
 			context="Couldn't load video"
 		/>
 		<Skeleton v-else-if="isLoading" type="hero" :count="1" />
+		<ErrorPanel
+			v-else-if="playerError"
+			:error="{ message: playerError }"
+			:retry="() => { playerError = null; refetch(); }"
+			context="Couldn't play video"
+		/>
 		<VideoPlayer
 			v-else-if="initialItem"
 			:id="id"
@@ -58,6 +66,13 @@ onBeforeUnmount(() => {
 			:resume-at="resumeAt"
 			:playlist="playlist"
 			:initial-item="initialItem"
+			@error="(message) => { playerError = message; }"
+		/>
+		<ErrorPanel
+			v-else
+			:error="{ message: 'Nothing to play' }"
+			:retry="() => refetch()"
+			context="Nothing to play"
 		/>
 	</div>
 </template>
