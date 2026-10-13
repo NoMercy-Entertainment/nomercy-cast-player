@@ -1,5 +1,5 @@
-import { onActivated, onMounted, ref, watch } from 'vue';
-import type { Ref } from 'vue';
+import { onActivated, onMounted, ref, toValue, watch } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import { getQueryClient } from './client';
 import { apiFetch } from '@/lib/http/client';
 import {
@@ -104,7 +104,7 @@ async function fetchSingleByLink(link: string, replaceId: string): Promise<Compo
 
 export async function handleComponentMutationBatch(
 	candidates: PageLoadCandidate[],
-	queryKey: QueryKey,
+	queryKey: MaybeRefOrGetter<QueryKey>,
 ): Promise<void> {
 	if (candidates.length === 0)
 		return;
@@ -126,7 +126,7 @@ export async function handleComponentMutationBatch(
 	);
 
 	const queryClient = getQueryClient();
-	queryClient.setQueryData<Component[]>([...queryKey], (current) => {
+	queryClient.setQueryData<Component[]>([...toValue(queryKey)], (current) => {
 		if (!current)
 			return current;
 		let next = current;
@@ -145,7 +145,7 @@ export async function handleComponentMutationBatch(
  * counter + isLoading watcher; only fires the batch on revisit.
  */
 export function usePageLoadMutationEffect(
-	queryKey: QueryKey,
+	queryKey: MaybeRefOrGetter<QueryKey>,
 	data: Ref<Component[] | undefined>,
 	isLoading: Ref<boolean>,
 	isFetching: Ref<boolean>,

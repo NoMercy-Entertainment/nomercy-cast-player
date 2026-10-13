@@ -26,7 +26,7 @@ export function usePersonQuery(id: Ref<string>) {
 		...queryConfigs.static,
 	});
 
-	usePageLoadMutationEffect(queryKey.value, query.data, query.isLoading, query.isFetching);
+	usePageLoadMutationEffect(queryKey, query.data, query.isLoading, query.isFetching);
 
 	return query;
 }

@@ -37,7 +37,7 @@ export function useMusicCardQuery(path: Ref<string>) {
 		...queryConfigs.standard,
 	});
 
-	usePageLoadMutationEffect(queryKey.value, query.data, query.isLoading, query.isFetching);
+	usePageLoadMutationEffect(queryKey, query.data, query.isLoading, query.isFetching);
 
 	return query;
 }
