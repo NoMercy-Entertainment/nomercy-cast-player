@@ -67,8 +67,11 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 	// See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
 	const startedAt = performance.now();
 
+	const timeoutSignal = AbortSignal.timeout(15_000);
+	const signal = opts.signal ? AbortSignal.any([opts.signal, timeoutSignal]) : timeoutSignal;
+
 	try {
-		const response = await fetch(buildUrl(opts.path), { ...opts, headers });
+		const response = await fetch(buildUrl(opts.path), { ...opts, headers, signal });
 		recordCompleted(opts, response.status, startedAt);
 		return response;
 	}
