@@ -118,6 +118,7 @@ describe('what the receiver draws', () => {
 			'NMHero',
 			'NMHeroCard',
 			'NMHomeCard',
+			'NMLolomo',
 			'NMMusicCard',
 			'NMMusicHomeCard',
 			'NMTopResultCard',

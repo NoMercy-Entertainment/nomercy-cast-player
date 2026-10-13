@@ -32,6 +32,12 @@ const registry = {
 		delay: 0,
 		timeout: 8000,
 	}),
+	NMLolomo: defineAsyncComponent({
+		loader: () => import('./NMLolomo.vue'),
+		loadingComponent: Skeleton,
+		delay: 0,
+		timeout: 8000,
+	}),
 	NMCarousel: defineAsyncComponent({
 		loader: () => import('./NMCarousel.vue'),
 		loadingComponent: Skeleton,
