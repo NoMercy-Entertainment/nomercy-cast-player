@@ -58,6 +58,9 @@ export function attachChapterAutoSkip(player: PlayerLike): void {
 				player.emit?.('chapter-skip-available', chapter);
 			}
 		}
+		else {
+			player.emit?.('chapter-skip-clear');
+		}
 
 		lastChapterId = chapter.id;
 	};
