@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { videoSyncBridge } from './syncBridge';
 import { TVOverlayPlugin } from './TVOverlayPlugin';
 import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipPlugin';
@@ -21,6 +22,7 @@ const props = defineProps<{
 // some source failed.
 const mediaLabel = computed(() => `${props.type}-${props.id}`);
 
+const router = useRouter();
 const containerEl = ref<HTMLElement | null>(null);
 let engine: { dispose?: () => void } | null = null;
 let overlay: TVOverlayPlugin | null = null;
@@ -62,19 +64,23 @@ onMounted(async () => {
 			console.warn('[video-player] no factory exported from package');
 			return;
 		}
-		const factoryOrCtor = exported as (id?: string) => unknown;
+		const factoryOrCtor = exported as (id?: string) => { setup: (options: unknown) => unknown };
+		const setupOptions = {
+			playlist: props.playlist,
+			accessToken: () => authStore.accessToken.value ?? '',
+			autoPlay: true,
+			isTv: true,
+			locale: authStore.locale.value ?? 'en',
+		};
 		let created: unknown;
 		try {
-			created = factoryOrCtor(containerEl.value.id);
+			created = factoryOrCtor(containerEl.value.id).setup(setupOptions);
 		}
 		catch {
 			const Ctor = exported as new (opts: unknown) => unknown;
 			created = new Ctor({
 				container: containerEl.value,
-				accessToken: () => authStore.accessToken.value ?? '',
-				autoPlay: true,
-				isTv: true,
-				locale: authStore.locale.value ?? 'en',
+				...setupOptions,
 			});
 		}
 		engine = created as { dispose?: () => void };
@@ -87,13 +93,10 @@ onMounted(async () => {
 
 		overlay = new TVOverlayPlugin(playerLike as never, {
 			skipPreScreen: typeof props.resumeAt === 'number' && props.resumeAt > 0,
+			onExit: () => router.back(),
 		});
 		overlay.attach();
 
-		if (props.playlist && props.initialItem) {
-			const e = engine as { loadPlaylist?: (p: unknown, i?: unknown) => void };
-			e.loadPlaylist?.(props.playlist, props.initialItem);
-		}
 		if (typeof props.resumeAt === 'number' && props.resumeAt > 0) {
 			// Wait until the player reports it's ready and the duration is
 			// resolved before seeking — seeking before the manifest loads
