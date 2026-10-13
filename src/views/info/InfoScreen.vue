@@ -275,6 +275,7 @@ async function toggleWatchlist(): Promise<void> {
 				class="nm-pill nm-pill-secondary"
 				data-focusable
 				tabindex="0"
+				@click.prevent="toggleWatchlist"
 			>
 				<svg
 					width="18"
