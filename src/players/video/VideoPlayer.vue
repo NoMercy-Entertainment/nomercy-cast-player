@@ -18,6 +18,8 @@ const props = defineProps<{
 	initialItem?: PlaylistItem;
 }>();
 
+const emit = defineEmits<{ error: [message: string] }>();
+
 // The report must name the title a viewer tried to watch, not just say that
 // some source failed.
 const mediaLabel = computed(() => `${props.type}-${props.id}`);
@@ -62,6 +64,7 @@ onMounted(async () => {
 		if (typeof exported !== 'function') {
 			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, 'video-player package');
 			console.warn('[video-player] no factory exported from package');
+			emit('error', 'The video player could not start.');
 			return;
 		}
 		const factoryOrCtor = exported as (id?: string) => { setup: (options: unknown) => unknown };
@@ -123,6 +126,7 @@ onMounted(async () => {
 	catch (err) {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, mediaLabel.value);
 		console.error('[video-player] init failed', err);
+		emit('error', 'The video player could not start.');
 	}
 });
 
