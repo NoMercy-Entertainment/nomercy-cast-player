@@ -8,6 +8,7 @@ export type ComponentType
 	= | 'NMGrid'
 		| 'NMList'
 		| 'NMContainer'
+		| 'NMLolomo'
 		| 'NMCarousel'
 		| 'NMCard'
 		| 'NMHomeCard'
@@ -51,6 +52,7 @@ export interface ContainerWrapper {
 export type NMGridWrapper = ContainerWrapper;
 export type NMListWrapper = ContainerWrapper;
 export type NMContainerWrapper = ContainerWrapper;
+export type NMLolomoWrapper = ContainerWrapper;
 export type NMCarouselWrapper = ContainerWrapper;
 
 export interface NMCardWrapper {
@@ -133,6 +135,7 @@ export type ComponentData
 	= | NMGridWrapper
 		| NMListWrapper
 		| NMContainerWrapper
+		| NMLolomoWrapper
 		| NMCarouselWrapper
 		| NMCardWrapper
 		| NMHomeCardWrapper
@@ -157,5 +160,6 @@ export const CONTAINER_TYPES: ReadonlySet<ComponentType> = new Set([
 	'NMGrid',
 	'NMList',
 	'NMContainer',
+	'NMLolomo',
 	'NMCarousel',
 ]);
