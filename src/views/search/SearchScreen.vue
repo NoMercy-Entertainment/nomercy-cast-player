@@ -5,6 +5,7 @@ import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge'
 import { useSearchQuery } from '@/queries/useSearchQuery';
 import Resolver from '@/server-components/Resolver.vue';
 import Skeleton from '@/components/feedback/Skeleton.vue';
+import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import SearchKeyboard from './SearchKeyboard.vue';
 
 const containerEl = ref<HTMLElement | null>(null);
@@ -31,7 +32,7 @@ watch(queryStr, (val) => {
 });
 
 const queryType = computed(() => mode.value === 'music' ? 'music' : 'all');
-const { data, isLoading, isFetching } = useSearchQuery(queryType, debouncedQuery);
+const { data, isLoading, isFetching, error, refetch } = useSearchQuery(queryType, debouncedQuery);
 const components = computed(() => data.value ?? []);
 
 function appendLetter(l: string): void {
@@ -75,6 +76,13 @@ function setMode(next: 'video' | 'music'): void {
 				</template>
 				<template v-else-if="isLoading">
 					<Skeleton type="rail" :count="6" />
+				</template>
+				<template v-else-if="error">
+					<ErrorPanel
+						:error="error as Error"
+						:retry="() => refetch()"
+						context="Couldn't search"
+					/>
 				</template>
 				<template v-else-if="components.length === 0">
 					<p class="hint">
