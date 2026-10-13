@@ -34,8 +34,8 @@ const initials = computed(() => {
 
 const avatarUrl = computed(() => {
 	// Prefer the SaaS /v1/me avatarUrl (server-managed asset on R2);
-	// fall through to JWT picture/avatar_url claims and finally a
-	// gravatar derived from the email hash.
+	// fall through to JWT picture/avatar_url claims. No avatar claim means
+	// no avatar: the initials fallback below covers it.
 	if (me.value?.avatarUrl)
 		return me.value.avatarUrl;
 	const claims = authStore.userClaims.value;
@@ -45,13 +45,7 @@ const avatarUrl = computed(() => {
 			?? (claims?.avatarUrl as string | undefined);
 	if (claimAvatar && typeof claimAvatar === 'string' && claimAvatar.length > 0)
 		return claimAvatar;
-	const email = (me.value?.email ?? authStore.userClaims.value?.email) as string | undefined;
-	if (!email)
-		return null;
-	let h = 0;
-	for (let i = 0; i < email.length; i++)
-		h = ((h << 5) - h + email.charCodeAt(i)) | 0;
-	return `https://www.gravatar.com/avatar/${(h >>> 0).toString(16)}?d=retro&s=80`;
+	return null;
 });
 
 const el = ref<HTMLElement | null>(null);

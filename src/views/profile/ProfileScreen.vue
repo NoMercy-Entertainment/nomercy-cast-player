@@ -43,14 +43,8 @@ const userEmail = computed(
 const avatarUrl = computed(() => {
 	if (me.value?.avatarUrl)
 		return me.value.avatarUrl;
-	const email = userEmail.value;
-	if (!email)
-		return null;
-	// Gravatar fallback identical to APK's avatar resolution path.
-	let h = 0;
-	for (let i = 0; i < email.length; i++)
-		h = ((h << 5) - h + email.charCodeAt(i)) | 0;
-	return `https://www.gravatar.com/avatar/${(h >>> 0).toString(16)}?d=retro&s=120`;
+	// No avatar claim means no avatar: the initials fallback below covers it.
+	return null;
 });
 
 const headerEl = ref<HTMLElement | null>(null);
