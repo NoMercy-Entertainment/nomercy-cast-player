@@ -65,6 +65,7 @@ useFocusGroup({
 });
 
 const playEl = ref<HTMLElement | null>(null);
+const startError = ref<string | null>(null);
 
 const isCurrentList = computed(() => {
 	const current = playbackStore.music.track.value;
@@ -96,9 +97,12 @@ function onPlayClick(): void {
 		}
 	}
 	const first = list.value?.tracks?.[0];
-	if (first?.id)
-		startPlayback(first.id);
-	router.push('/now-playing');
+	if (!first?.id)
+		return;
+	void startPlayback(first.id).then((started) => {
+		if (started)
+			router.push('/now-playing');
+	});
 }
 
 useFocusEntry({
@@ -119,16 +123,30 @@ function onTrackClick(trackId: string): void {
 			else
 				engine.play();
 		}
+		router.push('/now-playing');
 		return;
 	}
-	startPlayback(trackId);
+	void startPlayback(trackId).then((started) => {
+		if (started)
+			router.push('/now-playing');
+	});
 }
 
-function startPlayback(trackId: string): void {
+async function startPlayback(trackId: string): Promise<boolean> {
 	const hub = socketStore.musicHub.value;
-	if (!hub || !id.value || !trackId)
-		return;
-	void hub.invoke('StartPlaybackCommand', type.value, id.value, trackId);
+	if (!hub || !id.value || !trackId) {
+		startError.value = 'Could not start playback. Music is not connected.';
+		return false;
+	}
+	try {
+		await hub.invoke('StartPlaybackCommand', type.value, id.value, trackId);
+		startError.value = null;
+		return true;
+	}
+	catch {
+		startError.value = 'Could not start playback.';
+		return false;
+	}
 }
 
 function formatDuration(d: number | string | undefined): string {
@@ -201,6 +219,9 @@ function trackArtistText(track: MusicTrack): string {
 				</svg>
 				{{ playButtonLabel }}
 			</button>
+			<p v-if="startError" class="start-error">
+				{{ startError }}
+			</p>
 		</div>
 
 		<div class="tracks-col nm-no-scrollbar">
@@ -218,8 +239,8 @@ function trackArtistText(track: MusicTrack): string {
 					data-focusable
 					tabindex="0"
 					role="button"
-					@click="track.id && (onTrackClick(track.id), router.push('/now-playing'))"
-					@keydown.enter.prevent="track.id && (onTrackClick(track.id), router.push('/now-playing'))"
+					@click="track.id && onTrackClick(track.id)"
+					@keydown.enter.prevent="track.id && onTrackClick(track.id)"
 				>
 					<span class="track-num">{{ index + 1 }}</span>
 					<div class="track-meta">
@@ -295,6 +316,11 @@ function trackArtistText(track: MusicTrack): string {
 .header-col :deep(.nm-pill-primary):hover {
 	background: var(--color-primary, oklch(0.7 0.2 285));
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+.start-error {
+	margin: 0;
+	font-size: 13px;
+	color: oklch(0.75 0.15 25);
 }
 .tracks-col {
 	overflow-y: auto;
