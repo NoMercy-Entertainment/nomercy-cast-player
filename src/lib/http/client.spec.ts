@@ -78,4 +78,14 @@ describe('the receiver http client records every request', () => {
 		expect(completed).toHaveLength(1);
 		expect(completed[0].a).toBe(0);
 	});
+
+	it('aborts a request the server never answers, instead of hanging forever', async () => {
+		vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
+			init?.signal?.addEventListener('abort', () => {
+				reject(new DOMException('The operation was aborted.', 'AbortError'));
+			});
+		})));
+
+		await expect(apiFetch({ path: '/api/v1/home' })).rejects.toBeTruthy();
+	}, 20_000);
 });
