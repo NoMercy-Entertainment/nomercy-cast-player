@@ -70,6 +70,11 @@ interface PlayerLike {
 
 export interface TVOverlayPluginOptions {
 	skipPreScreen?: boolean;
+	// Owns leaving the watch screen (e.g. router.back()). Pre-screen exit
+	// must not go through the player's own 'back' event: that event is
+	// what drives handleBack() in the first place, so re-emitting it here
+	// would re-enter handleBack() for the same 'pre' state and recurse.
+	onExit?: () => void;
 }
 
 export class TVOverlayPlugin {
@@ -292,7 +297,7 @@ export class TVOverlayPlugin {
 			},
 			onShowEpisodes: () => this.showEpisodeScreen(),
 			onShowLanguages: () => this.showLanguageScreen(),
-			onExit: () => this.player.emit?.('back'),
+			onExit: () => this.opts.onExit?.(),
 		});
 	}
 
@@ -378,7 +383,7 @@ export class TVOverlayPlugin {
 			this.closeAllPanels();
 		}
 		else if (this.currentPanel === 'pre') {
-			this.player.emit?.('back');
+			this.opts.onExit?.();
 		}
 		else {
 			this.player.pause();
