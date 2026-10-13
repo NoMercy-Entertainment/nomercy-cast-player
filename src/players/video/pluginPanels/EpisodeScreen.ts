@@ -75,6 +75,11 @@ export function mountEpisodeScreen(opts: EpisodeScreenOptions): () => void {
 			});
 			episodeCol.append(card);
 		}
+	};
+
+	// Rendering never moves focus: a season's focus handler renders, and the
+	// D-pad has to stay on that season to browse the next one.
+	const focusEpisodes = (): void => {
 		const focused = episodeCol.querySelector<HTMLElement>('.episode-card.is-playing')
 			?? episodeCol.querySelector<HTMLElement>('[data-focusable]');
 		focused?.focus();
@@ -110,6 +115,7 @@ export function mountEpisodeScreen(opts: EpisodeScreenOptions): () => void {
 					Number(el.dataset.seasonNumber) === selectedSeason,
 				));
 			renderEpisodes();
+			focusEpisodes();
 		});
 		seasonCol.append(btn);
 	}
@@ -119,6 +125,7 @@ export function mountEpisodeScreen(opts: EpisodeScreenOptions): () => void {
 	opts.parent.append(root);
 
 	renderEpisodes();
+	focusEpisodes();
 	requestAnimationFrame(() => {
 		const target = episodeCol.querySelector<HTMLElement>('.is-playing')
 			?? episodeCol.querySelector<HTMLElement>('[data-focusable]')
