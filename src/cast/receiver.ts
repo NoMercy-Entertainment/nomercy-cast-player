@@ -51,7 +51,7 @@ export function bootCastReceiver(router: Router): void {
 				let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
 				try {
 					server = mock.serverUrl
-						? { serverId: 'mock', serverUrl: mock.serverUrl }
+						? { serverId: 'mock', serverUrl: mock.serverUrl, defaultSubtitleLanguage: null, defaultAudioLanguage: null }
 						: await resolveServerFromAppConfig(mock.token);
 				}
 				catch (err) {

@@ -76,4 +76,32 @@ describe('videoPlayer starts the cast watch session', () => {
 
 		wrapper.unmount();
 	});
+
+	it('starts with the account\'s subtitle and audio language, the choice the phone synced', async () => {
+		setupMock.mockClear();
+		const { authStore } = await import('@/stores/authStore');
+		authStore.defaultSubtitleLanguage.value = 'eng';
+		authStore.defaultAudioLanguage.value = 'jpn';
+		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
+		const router = createRouter({
+			history: createWebHistory(),
+			routes: [{ path: '/', component: { template: '<div />' } }],
+		});
+
+		const item = { id: '1', title: 'One', duration: 100, file: 'https://example.invalid/one.m3u8' };
+		const wrapper = mount(VideoPlayer, {
+			props: { type: 'movie', id: '1', playlist: [item], initialItem: item },
+			global: { plugins: [router] },
+		});
+		await flushPromises();
+
+		expect(setupMock).toHaveBeenCalledWith(expect.objectContaining({
+			defaultSubtitleLanguage: 'eng',
+			defaultAudioLanguage: 'jpn',
+		}));
+
+		authStore.defaultSubtitleLanguage.value = null;
+		authStore.defaultAudioLanguage.value = null;
+		wrapper.unmount();
+	});
 });

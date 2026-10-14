@@ -75,6 +75,9 @@ onMounted(async () => {
 			autoPlay: true,
 			isTv: true,
 			language: authStore.locale.value ?? 'en',
+			// The account's synced pick: this player has no stored choice of its own.
+			defaultSubtitleLanguage: authStore.defaultSubtitleLanguage.value ?? undefined,
+			defaultAudioLanguage: authStore.defaultAudioLanguage.value ?? undefined,
 		};
 		let created: unknown;
 		try {

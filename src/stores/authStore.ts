@@ -21,6 +21,8 @@ const userId = ref<string | null>(null);
 const serverId = ref<string | null>(null);
 const serverUrl = ref<string | null>(null);
 const locale = ref<string>('en-US');
+const defaultSubtitleLanguage = ref<string | null>(null);
+const defaultAudioLanguage = ref<string | null>(null);
 const receiverState = ref<ReceiverState>('LOADING');
 
 let refreshTimer: number | null = null;
@@ -97,6 +99,8 @@ function consumeRealHandshake(token: string, server: ResolvedServer): boolean {
 	serverId.value = server.serverId;
 	serverUrl.value = server.serverUrl;
 	locale.value = (claims?.locale as string | undefined) ?? 'en-US';
+	defaultSubtitleLanguage.value = server.defaultSubtitleLanguage;
+	defaultAudioLanguage.value = server.defaultAudioLanguage;
 	receiverState.value = 'AUTHED';
 	// No refresh grant on this path - scheduleRefresh() no-ops without a
 	// refreshToken, so a token nearing expiry surfaces as a 401 (DEGRADED),
@@ -124,6 +128,8 @@ export const authStore = {
 	serverId,
 	serverUrl,
 	locale,
+	defaultSubtitleLanguage,
+	defaultAudioLanguage,
 	receiverState,
 	ready,
 	expiresAtMs,

@@ -20,12 +20,27 @@ interface AppConfigServer {
 interface AppConfigResponse {
 	data?: {
 		servers?: AppConfigServer[];
+		settings?: Record<string, unknown>;
 	};
 }
 
 export interface ResolvedServer {
 	serverId: string;
 	serverUrl: string;
+	/**
+	 * The account's last picked languages. The phone and the web app write them
+	 * on every pick (settings sync); without them the TV starts every cast with
+	 * no subtitle, while the phone shows the one it remembered.
+	 */
+	defaultSubtitleLanguage: string | null;
+	defaultAudioLanguage: string | null;
+}
+
+// app_config sends each synced setting as { value, updatedAt }.
+function languageSetting(settings: Record<string, unknown> | undefined, key: string): string | null {
+	const entry = settings?.[key];
+	const value = typeof entry === 'object' && entry !== null ? (entry as { value?: unknown }).value : entry;
+	return typeof value === 'string' && value !== '' ? value : null;
 }
 
 /**
@@ -63,6 +78,8 @@ export async function resolveServerFromAppConfig(accessToken: string): Promise<R
 	return {
 		serverId: server.id,
 		serverUrl: await preferLocalRoute(server),
+		defaultSubtitleLanguage: languageSetting(body.data?.settings, 'defaultSubtitleLanguage'),
+		defaultAudioLanguage: languageSetting(body.data?.settings, 'defaultAudioLanguage'),
 	};
 }
 
