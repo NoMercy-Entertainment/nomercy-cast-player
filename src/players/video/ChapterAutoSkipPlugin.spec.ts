@@ -27,6 +27,10 @@ function fakePlayer(chapters: Chapter[]) {
 			for (const handler of [...(handlers.get('time') ?? [])])
 				handler(undefined);
 		},
+		seekTo(t: number) {
+			time = t;
+			this.emit('seek', t);
+		},
 	};
 }
 
@@ -47,6 +51,14 @@ describe('chapterAutoSkipPlugin clears the skip prompt once the chapter ends', (
 		expect(player.emit).toHaveBeenCalledWith('chapter-skip-available', expect.objectContaining({ id: 'intro' }));
 
 		player.setTime(15);
+		expect(player.emit).toHaveBeenCalledWith('chapter-skip-clear');
+	});
+
+	it('clears the prompt on seek, including when the destination has no chapter', () => {
+		const player = fakePlayer([{ id: 'intro', type: 'intro', startTime: 0, endTime: 10 }]);
+		attachChapterAutoSkip(player as never);
+		player.setTime(5);
+		player.seekTo(20);
 		expect(player.emit).toHaveBeenCalledWith('chapter-skip-clear');
 	});
 });

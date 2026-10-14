@@ -47,7 +47,13 @@ export function attachChapterAutoSkip(player: PlayerLike): void {
 	const onTime = (): void => {
 		const t = player.currentTime?.() ?? player.getCurrentTime?.() ?? 0;
 		const chapter = player.chapter?.(t) ?? player.getCurrentChapter?.(t) ?? null;
-		if (!chapter || chapter.id === lastChapterId)
+		if (!chapter) {
+			if (lastChapterId !== null)
+				player.emit?.('chapter-skip-clear');
+			lastChapterId = null;
+			return;
+		}
+		if (chapter.id === lastChapterId)
 			return;
 
 		if (chapter.type === 'credits' || chapter.type === 'intro') {
@@ -67,6 +73,12 @@ export function attachChapterAutoSkip(player: PlayerLike): void {
 
 	player.on('time', onTime);
 	unsubs.push(() => player.off('time', onTime));
+	const onSeek = (): void => {
+		player.emit?.('chapter-skip-clear');
+		lastChapterId = null;
+	};
+	player.on('seek', onSeek);
+	unsubs.push(() => player.off('seek', onSeek));
 }
 
 export function detachChapterAutoSkip(): void {
