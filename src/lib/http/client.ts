@@ -67,8 +67,7 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 	// See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
 	const startedAt = performance.now();
 
-	const timeoutSignal = AbortSignal.timeout(15_000);
-	const signal = opts.signal ? AbortSignal.any([opts.signal, timeoutSignal]) : timeoutSignal;
+	const { signal, clear } = withTimeout(opts.signal, 15_000);
 
 	try {
 		const response = await fetch(buildUrl(opts.path), { ...opts, headers, signal });
@@ -76,9 +75,29 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 		return response;
 	}
 	catch (error) {
+		clear();
 		recordCompleted(opts, 0, startedAt);
 		throw error;
 	}
+}
+
+// AbortSignal.any and AbortSignal.timeout are missing on older Cast firmware
+// browsers, so the timeout is a plain controller that also follows the caller.
+// On success the timer keeps running: it also ends a body that stalls mid-read.
+function withTimeout(callerSignal: AbortSignal | null | undefined, ms: number): { signal: AbortSignal; clear: () => void } {
+	const controller = new AbortController();
+	const abort = (): void => controller.abort();
+	const timer = setTimeout(abort, ms);
+	if (callerSignal?.aborted)
+		abort();
+	callerSignal?.addEventListener('abort', abort, { once: true });
+	return {
+		signal: controller.signal,
+		clear: () => {
+			clearTimeout(timer);
+			callerSignal?.removeEventListener('abort', abort);
+		},
+	};
 }
 
 function recordCompleted(opts: FetchOptions, status: number, startedAt: number): void {

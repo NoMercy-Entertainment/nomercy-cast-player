@@ -12,6 +12,7 @@ const setupMock = vi.fn((options: unknown) => ({
 	seek: vi.fn(),
 	dispose: vi.fn(),
 	once: vi.fn(),
+	playlistItem: vi.fn(),
 }));
 const factory = vi.fn(() => ({ setup: setupMock }));
 
@@ -46,6 +47,32 @@ describe('videoPlayer starts the cast watch session', () => {
 			isTv: true,
 		}));
 		expect(setupMock.mock.results[0].value.playlist()).toHaveLength(1);
+
+		wrapper.unmount();
+	});
+
+	it('starts on the cast item, not on the first playlist item, once the playlist loads', async () => {
+		setupMock.mockClear();
+		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
+		const router = createRouter({
+			history: createWebHistory(),
+			routes: [{ path: '/', component: { template: '<div />' } }],
+		});
+
+		const items = ['e1', 'e2', 'e3'].map(id => ({ id, title: id, duration: 100, file: `https://example.invalid/${id}.m3u8` }));
+		const wrapper = mount(VideoPlayer, {
+			props: { type: 'tv', id: '1', playlist: items, initialItem: items[2] },
+			global: { plugins: [router] },
+		});
+		await flushPromises();
+
+		expect(setupMock).toHaveBeenCalledWith(expect.objectContaining({ language: expect.any(String) }));
+		const player = setupMock.mock.results[0].value;
+		const onPlaylist = [...player.on.mock.calls, ...player.once.mock.calls]
+			.find(([event]) => event === 'playlist')?.[1] as (() => void) | undefined;
+		expect(onPlaylist).toBeTypeOf('function');
+		onPlaylist!();
+		expect(player.playlistItem).toHaveBeenCalledWith(2);
 
 		wrapper.unmount();
 	});

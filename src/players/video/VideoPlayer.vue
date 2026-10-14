@@ -68,12 +68,13 @@ onMounted(async () => {
 			return;
 		}
 		const factoryOrCtor = exported as (id?: string) => { setup: (options: unknown) => unknown };
+		// The package reads `language`; `isTv` is kept for the older class shape.
 		const setupOptions = {
 			playlist: props.playlist,
 			accessToken: () => authStore.accessToken.value ?? '',
 			autoPlay: true,
 			isTv: true,
-			locale: authStore.locale.value ?? 'en',
+			language: authStore.locale.value ?? 'en',
 		};
 		let created: unknown;
 		try {
@@ -87,6 +88,14 @@ onMounted(async () => {
 			});
 		}
 		engine = created as { dispose?: () => void };
+
+		// setup() plays the first playlist item. A cast names the item to watch
+		// (episode 5, not episode 1): switch to it once the playlist is loaded.
+		const startIndex = props.playlist?.findIndex(item => item.id === props.initialItem?.id) ?? -1;
+		if (startIndex > 0) {
+			const player = engine as { once?: (event: string, handler: () => void) => void; playlistItem?: (index: number) => void };
+			player.once?.('playlist', () => player.playlistItem?.(startIndex));
+		}
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, mediaLabel.value);
 
 		const playerLike = engine as unknown as Parameters<typeof videoSyncBridge.attach>[0];

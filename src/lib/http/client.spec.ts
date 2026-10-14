@@ -88,4 +88,24 @@ describe('the receiver http client records every request', () => {
 
 		await expect(apiFetch({ path: '/api/v1/home' })).rejects.toBeTruthy();
 	}, 20_000);
+
+	it('still sends and still obeys the caller abort on a TV browser without AbortSignal.any or AbortSignal.timeout', async () => {
+		const { any, timeout } = AbortSignal;
+		Object.assign(AbortSignal, { any: undefined, timeout: undefined });
+		try {
+			vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(200)));
+			await expect(apiFetch({ path: '/api/v1/home', signal: new AbortController().signal })).resolves.toBeTruthy();
+
+			vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
+				init?.signal?.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
+			})));
+			const caller = new AbortController();
+			const pending = apiFetch({ path: '/api/v1/home', signal: caller.signal });
+			caller.abort();
+			await expect(pending).rejects.toBeTruthy();
+		}
+		finally {
+			Object.assign(AbortSignal, { any, timeout });
+		}
+	});
 });
