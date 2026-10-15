@@ -104,4 +104,34 @@ describe('videoPlayer starts the cast watch session', () => {
 		authStore.defaultAudioLanguage.value = null;
 		wrapper.unmount();
 	});
+
+	it('starts with the subtitle and audio the phone showed, as the player\'s stored pick', async () => {
+		setupMock.mockClear();
+		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
+		const router = createRouter({
+			history: createWebHistory(),
+			routes: [{ path: '/', component: { template: '<div />' } }],
+		});
+
+		const item = { id: '1', title: 'One', duration: 100, file: 'https://example.invalid/one.m3u8' };
+		const wrapper = mount(VideoPlayer, {
+			props: {
+				type: 'tv',
+				id: '1',
+				playlist: [item],
+				initialItem: item,
+				castAudioLanguage: 'eng',
+				castSubtitle: { language: 'eng', type: 'full', format: 'ass' },
+			},
+			global: { plugins: [router] },
+		});
+		await flushPromises();
+
+		const options = setupMock.mock.calls[0][0] as { storage?: { get: (key: string) => unknown } };
+		expect(JSON.parse(String(options.storage?.get('nmplayer-language-subtitle'))))
+			.toEqual({ language: 'eng', type: 'full', format: 'ass', explicit: true });
+		expect(options.storage?.get('nmplayer-language-audio')).toBe('eng');
+
+		wrapper.unmount();
+	});
 });

@@ -16,9 +16,28 @@ const props = defineProps<{
 	resumeAt?: number;
 	playlist?: PlaylistItem[];
 	initialItem?: PlaylistItem;
+	/** The audio and subtitle the handing-off device showed, from the cast intent. */
+	castAudioLanguage?: string;
+	castSubtitle?: { language: string; type?: string; format?: string };
 }>();
 
 const emit = defineEmits<{ error: [message: string] }>();
+
+// The player reads its stored pick from `storage`, ahead of the account
+// default. A cast seeds that pick with what the phone showed.
+function castPickStorage(): { get: (key: string) => string | null; set: (key: string, value: string) => void } | undefined {
+	if (!props.castAudioLanguage && !props.castSubtitle)
+		return undefined;
+	const values = new Map<string, string>();
+	if (props.castAudioLanguage)
+		values.set('nmplayer-language-audio', props.castAudioLanguage);
+	if (props.castSubtitle)
+		values.set('nmplayer-language-subtitle', JSON.stringify({ ...props.castSubtitle, explicit: true }));
+	return {
+		get: key => values.get(key) ?? null,
+		set: (key, value) => { values.set(key, value); },
+	};
+}
 
 // The report must name the title a viewer tried to watch, not just say that
 // some source failed.
@@ -78,6 +97,7 @@ onMounted(async () => {
 			// The account's synced pick: this player has no stored choice of its own.
 			defaultSubtitleLanguage: authStore.defaultSubtitleLanguage.value ?? undefined,
 			defaultAudioLanguage: authStore.defaultAudioLanguage.value ?? undefined,
+			storage: castPickStorage(),
 		};
 		let created: unknown;
 		try {

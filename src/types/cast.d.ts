@@ -30,6 +30,11 @@ export type CastIntent
 			media_type: 'movie' | 'tv';
 			media_id: string;
 			resume_at?: number;
+			/** The audio and subtitle the handing-off device was playing. */
+			audio_language?: string;
+			subtitle_language?: string;
+			subtitle_type?: string;
+			subtitle_codec?: string;
 		}
 		| {
 			type: 'play_music';

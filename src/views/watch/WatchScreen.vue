@@ -27,6 +27,20 @@ const resumeAt = computed(() => {
 	return undefined;
 });
 
+function queryText(name: string): string | undefined {
+	const q = route.query[name];
+	const value = Array.isArray(q) ? q[0] : q;
+	return typeof value === 'string' && value !== '' ? value : undefined;
+}
+// The audio and subtitle the handing-off device showed, from the cast intent.
+const castAudioLanguage = computed(() => queryText('audio'));
+const castSubtitle = computed(() => {
+	const language = queryText('subtitle');
+	return language
+		? { language, type: queryText('subtitleType'), format: queryText('subtitleFormat') }
+		: undefined;
+});
+
 const { data, isLoading, error, refetch } = usePlaylistQuery(type, id);
 
 const playlist = computed(() => data.value?.playlist ?? []);
@@ -64,6 +78,8 @@ onBeforeUnmount(() => {
 			:id="id"
 			:type="type"
 			:resume-at="resumeAt"
+			:cast-audio-language="castAudioLanguage"
+			:cast-subtitle="castSubtitle"
 			:playlist="playlist"
 			:initial-item="initialItem"
 			@error="(message) => { playerError = message; }"

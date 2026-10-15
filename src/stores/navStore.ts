@@ -24,9 +24,23 @@ export function dispatchInitialIntent(intent: CastIntent, router: Router): void 
 				const path = supported
 					? `/${intent.media_type}/${intent.media_id}/watch`
 					: `/watch/${intent.media_type}/${intent.media_id}`;
+				// The audio and subtitle the phone showed travel with the position,
+				// with the same query names the TV app's watch route uses.
+				const query: Record<string, string> = {};
+				if (intent.resume_at)
+					query.resume_at = String(intent.resume_at);
+				if (intent.audio_language)
+					query.audio = intent.audio_language;
+				if (intent.subtitle_language) {
+					query.subtitle = intent.subtitle_language;
+					if (intent.subtitle_type)
+						query.subtitleType = intent.subtitle_type;
+					if (intent.subtitle_codec)
+						query.subtitleFormat = intent.subtitle_codec;
+				}
 				void router.push({
 					path,
-					query: intent.resume_at ? { resume_at: String(intent.resume_at) } : undefined,
+					query: Object.keys(query).length > 0 ? query : undefined,
 				});
 			}
 			break;
