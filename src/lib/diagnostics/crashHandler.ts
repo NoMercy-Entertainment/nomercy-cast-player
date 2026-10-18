@@ -28,11 +28,11 @@ function faultName(reason: unknown): string {
 async function upload(reason: unknown): Promise<void> {
 	if (uploaded)
 		return;
-	uploaded = true;
 
 	const token = authStore.accessToken.value;
 	if (!token)
 		return;
+	uploaded = true;
 
 	const payload = buildDiagnosticsReport({
 		deviceId: castDeviceId(),
