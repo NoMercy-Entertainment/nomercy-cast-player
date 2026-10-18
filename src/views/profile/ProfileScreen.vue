@@ -6,6 +6,7 @@ import { useFocusEntry } from '@/composables/useFocusEntry';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { useMeQuery } from '@/queries/useMeQuery';
 import { authStore } from '@/stores/authStore';
+import { socketStore } from '@/stores/socketStore';
 import SetupBackdrop from '@/components/SetupBackdrop.vue';
 
 /*
@@ -115,8 +116,9 @@ useFocusEntry({
 	},
 });
 
-function confirmSignOut(): void {
+async function confirmSignOut(): Promise<void> {
 	showSignOutConfirm.value = false;
+	await socketStore.disconnectAll();
 	authStore.clear();
 	router.push('/splash');
 }
