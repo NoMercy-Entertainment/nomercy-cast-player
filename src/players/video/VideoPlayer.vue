@@ -47,6 +47,7 @@ const router = useRouter();
 const containerEl = ref<HTMLElement | null>(null);
 let engine: { dispose?: () => void } | null = null;
 let overlay: TVOverlayPlugin | null = null;
+let unmounted = false;
 
 onMounted(async () => {
 	if (!containerEl.value)
@@ -76,6 +77,8 @@ onMounted(async () => {
 		const mod = (await import(
 			'@nomercy-entertainment/nomercy-video-player',
 		)) as unknown as Record<string, unknown>;
+		if (unmounted)
+			return;
 		// Package's default export is a factory: `(id?: string) => NMPlayer`.
 		// Older receiver builds may have shipped a class named NoMercyPlayer
 		// instead — handle both shapes.
@@ -163,6 +166,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+	unmounted = true;
 	overlay?.detach();
 	videoSyncBridge.detach();
 	detachChapterAutoSkip();
