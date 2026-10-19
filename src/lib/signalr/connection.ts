@@ -9,6 +9,7 @@ import {
 	LogLevel,
 
 } from '@microsoft/signalr';
+import { castDeviceId } from '@/lib/diagnostics/deviceId';
 import { authStore } from '@/stores/authStore';
 
 export type HubName = 'videoHub' | 'musicHub' | 'deviceHub' | 'pluginHub';
@@ -45,13 +46,20 @@ const foreverRetry: IRetryPolicy = {
  * latency.
  */
 const TRAILING_SLASH = /\/$/;
+const CLIENT_NAME = 'NoMercy Cast';
+const CLIENT_TYPE = 'tv';
 
 export function buildHub(name: HubName): HubConnection {
 	const baseUrl = authStore.serverUrl.value;
 	if (!baseUrl) {
 		throw new Error(`buildHub("${name}") called before authStore.serverUrl is populated`);
 	}
-	const url = `${baseUrl.replace(TRAILING_SLASH, '')}/${name}`;
+	const identity = new URLSearchParams({
+		client_id: castDeviceId(),
+		client_name: CLIENT_NAME,
+		client_type: CLIENT_TYPE,
+	});
+	const url = `${baseUrl.replace(TRAILING_SLASH, '')}/${name}?${identity}`;
 
 	return new HubConnectionBuilder()
 		.withUrl(url, {

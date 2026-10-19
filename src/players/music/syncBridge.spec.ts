@@ -28,6 +28,7 @@ function fakeEngine() {
 		previous: () => {},
 		seek: () => {},
 		currentTrack: () => ({ id: 4821 }),
+		volume: vi.fn(),
 	};
 }
 
@@ -95,6 +96,21 @@ describe('musicSyncBridge outbound calls', () => {
 		engine.emit('pause', { ended: true });
 
 		expect(invoke).not.toHaveBeenCalled();
+	});
+
+	// The server stamps every device's level into device_volumes; the receiver
+	// plays at its own entry, not at a sibling device's.
+	it('applies its own device_volumes entry from the state envelope', () => {
+		const state = { device_volumes: { [castDeviceId()]: 35, 'phone-1': 80 } };
+		hubHandlers.get('MusicPlayerState')?.({ events: [{ type: 'PlayerStateChanged', event: { state } }] });
+
+		expect(engine.volume).toHaveBeenCalledExactlyOnceWith(35);
+	});
+
+	it('leaves the volume alone when the state has no entry for this receiver', () => {
+		hubHandlers.get('MusicPlayerState')?.({ events: [{ event: { state: { device_volumes: { 'phone-1': 80 } } } }] });
+
+		expect(engine.volume).not.toHaveBeenCalled();
 	});
 
 	it('reports the position in seconds for the current track', () => {

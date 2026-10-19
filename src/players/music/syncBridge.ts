@@ -42,6 +42,7 @@ interface MusicEngineLike {
 	seek: (seconds: number) => void;
 	loadTrack?: (data: unknown) => void;
 	applyServerState?: (state: unknown) => void;
+	volume?: (percent: number) => void;
 	currentTrack?: () => CurrentTrackSnapshot;
 }
 
@@ -201,6 +202,17 @@ function bindDiagnostics(p: MusicEngineLike): number {
 	return attachEngineDiagnostics(p as DiagnosticsEngine, () => trackLabel(p), unsubs);
 }
 
+interface VolumeState { device_volumes?: Record<string, number> }
+
+// The wire is an { events: [{ event: { state } }] } envelope.
+function applyOwnVolume(p: MusicEngineLike, payload: unknown): void {
+	const envelope = payload as { events?: Array<{ event?: { state?: VolumeState | null } }> } | null;
+	const state = envelope?.events?.at(-1)?.event?.state ?? (payload as VolumeState | null);
+	const own = state?.device_volumes?.[castDeviceId()];
+	if (typeof own === 'number')
+		p.volume?.(Math.max(0, Math.min(100, own)));
+}
+
 function bindInbound(p: MusicEngineLike): void {
 	const hub = socketStore.musicHub.value;
 	if (!hub)
@@ -224,6 +236,7 @@ function bindInbound(p: MusicEngineLike): void {
 		const state = args[0] as { device_id?: string | null } | null | undefined;
 		activeDeviceId = state?.device_id ?? null;
 		p.applyServerState?.(args[0]);
+		applyOwnVolume(p, args[0]);
 	};
 	const onConnectedDevices = (...args: unknown[]): void => {
 		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];
