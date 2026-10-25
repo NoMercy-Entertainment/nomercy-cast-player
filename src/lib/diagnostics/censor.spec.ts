@@ -20,7 +20,7 @@ describe('censorLabel', () => {
 	});
 
 	it('removes an email address', () => {
-		expect(censorLabel('Watch stoney@nomercy.tv')).toBeUndefined();
+		expect(censorLabel('Watch example-user@example.com')).toBeUndefined();
 	});
 
 	it('removes an absolute file path', () => {
@@ -28,7 +28,7 @@ describe('censorLabel', () => {
 	});
 
 	it('removes a home directory path', () => {
-		expect(censorLabel('/home/stoney/library/movie.mkv')).toBeUndefined();
+		expect(censorLabel('/home/example-user/library/movie.mkv')).toBeUndefined();
 	});
 
 	it('keeps a numeric id', () => {
