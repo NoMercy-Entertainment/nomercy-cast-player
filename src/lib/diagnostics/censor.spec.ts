@@ -24,7 +24,7 @@ describe('censorLabel', () => {
 	});
 
 	it('removes an absolute file path', () => {
-		expect(censorLabel('mediaReady C:\\Users\\patri\\video.mkv')).toBe('mediaReady');
+		expect(censorLabel('mediaReady C:\\Users\\example-user\\video.mkv')).toBe('mediaReady');
 	});
 
 	it('removes a home directory path', () => {
