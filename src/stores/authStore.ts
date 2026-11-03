@@ -24,6 +24,7 @@ const locale = ref<string>('en-US');
 const defaultSubtitleLanguage = ref<string | null>(null);
 const defaultAudioLanguage = ref<string | null>(null);
 const receiverState = ref<ReceiverState>('LOADING');
+const renewalRequired = ref(false);
 
 let refreshTimer: number | null = null;
 
@@ -59,7 +60,12 @@ function scheduleRefresh(): void {
 	// Fire 30s before expiry. Floor at 5s to avoid tight loops if a token
 	// arrives already near-expired.
 	const msUntilRefresh = Math.max(exp - Date.now() - 30_000, 5_000);
-	refreshTimer = window.setTimeout(() => void runRefresh(), msUntilRefresh);
+	refreshTimer = window.setTimeout(() => {
+		if (refreshToken.value)
+			void runRefresh();
+		else
+			renewalRequired.value = true;
+	}, msUntilRefresh);
 }
 
 async function runRefresh(): Promise<void> {
@@ -95,6 +101,7 @@ function consumeRealHandshake(token: string, server: ResolvedServer): boolean {
 	const claims = decodeJwt(token);
 	accessToken.value = token;
 	refreshToken.value = null;
+	renewalRequired.value = false;
 	userId.value = (claims?.sub as string | undefined) ?? null;
 	serverId.value = server.serverId;
 	serverUrl.value = server.serverUrl;
@@ -102,9 +109,8 @@ function consumeRealHandshake(token: string, server: ResolvedServer): boolean {
 	defaultSubtitleLanguage.value = server.defaultSubtitleLanguage;
 	defaultAudioLanguage.value = server.defaultAudioLanguage;
 	receiverState.value = 'AUTHED';
-	// No refresh grant on this path - scheduleRefresh() no-ops without a
-	// refreshToken, so a token nearing expiry surfaces as a 401 (DEGRADED),
-	// same as CastApiTokenProvider.refresh() on the KMP receiver.
+	// The sender must supply a new token after renewalRequired becomes true.
+	scheduleRefresh();
 	return true;
 }
 
@@ -115,6 +121,7 @@ function clear(): void {
 	}
 	accessToken.value = null;
 	refreshToken.value = null;
+	renewalRequired.value = false;
 	userId.value = null;
 	serverId.value = null;
 	serverUrl.value = null;
@@ -131,6 +138,7 @@ export const authStore = {
 	defaultSubtitleLanguage,
 	defaultAudioLanguage,
 	receiverState,
+	renewalRequired,
 	ready,
 	expiresAtMs,
 	userClaims,
