@@ -89,6 +89,12 @@ describe('musicSyncBridge outbound calls', () => {
 		expect(invoke).not.toHaveBeenCalled();
 	});
 
+	it('reads the active device from a MusicPlayerState envelope', () => {
+		hubHandlers.get('MusicPlayerState')?.({ events: [{ type: 'PlayerStateChanged', event: { state: { device_id: castDeviceId() } } }] });
+		engine.emit('play');
+		expect(invoke).toHaveBeenCalledExactlyOnceWith('PlaybackCommand', 'play', null);
+	});
+
 	// The audio element fires pause when a track runs out, before the next one
 	// starts; that is not the user pausing.
 	it('sends no pause when the track has ended', () => {

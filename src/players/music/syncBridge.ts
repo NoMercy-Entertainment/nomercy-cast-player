@@ -233,7 +233,10 @@ function bindInbound(p: MusicEngineLike): void {
 		p.loadTrack?.(args[0]);
 	};
 	const onState = (...args: unknown[]): void => {
-		const state = args[0] as { device_id?: string | null } | null | undefined;
+		const payload = args[0] as { events?: Array<{ type?: string; event?: { state?: { device_id?: string | null } | null } }> } | null;
+		const state = payload?.events
+			? [...payload.events].reverse().find(entry => entry.type === 'PlayerStateChanged')?.event?.state
+			: args[0] as { device_id?: string | null } | null | undefined;
 		activeDeviceId = state?.device_id ?? null;
 		p.applyServerState?.(args[0]);
 		applyOwnVolume(p, args[0]);
