@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { videoSyncBridge } from './syncBridge';
 import { TVOverlayPlugin } from './TVOverlayPlugin';
@@ -48,6 +48,45 @@ const containerEl = ref<HTMLElement | null>(null);
 let engine: { dispose?: () => void } | null = null;
 let overlay: TVOverlayPlugin | null = null;
 let unmounted = false;
+
+function mergeLivePlaylist(current: PlaylistItem[], incoming: PlaylistItem[], playingId: string | number): PlaylistItem[] {
+	const merged = [...current];
+	const playingIndex = merged.findIndex(item => String(item.id) === String(playingId));
+	if (playingIndex < 0)
+		return current;
+	const knownIds = new Set(merged.map(item => String(item.id)));
+	for (let i = 1; i < incoming.length; i++) {
+		const item = incoming[i]!;
+		if (knownIds.has(String(item.id)) || !item.file)
+			continue;
+		const previousId = String(incoming[i - 1]!.id);
+		const previousIndex = merged.findIndex(entry => String(entry.id) === previousId);
+		if (previousIndex < playingIndex)
+			continue;
+		merged.splice(previousIndex + 1, 0, item);
+		knownIds.add(String(item.id));
+	}
+	return merged;
+}
+
+watch(() => props.playlist, (incoming) => {
+	if (props.type !== 'tv' || !incoming || !engine)
+		return;
+	const player = engine as {
+		playlist?: () => PlaylistItem[];
+		playlistItem?: () => PlaylistItem;
+		load?: (items: PlaylistItem[]) => void;
+	};
+	const current = player.playlist?.();
+	const playingId = player.playlistItem?.()?.id;
+	if (!current || playingId === undefined)
+		return;
+	const merged = mergeLivePlaylist(current, incoming, playingId);
+	if (merged.length > current.length) {
+		// 1.x load() swaps the queue without loading a source.
+		player.load?.(merged);
+	}
+});
 
 onMounted(async () => {
 	if (!containerEl.value)
