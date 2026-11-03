@@ -95,6 +95,10 @@ describe('musicSyncBridge outbound calls', () => {
 		expect(invoke).toHaveBeenCalledExactlyOnceWith('PlaybackCommand', 'play', null);
 	});
 
+	it('subscribes only to server events that MusicHub actually pushes', () => {
+		expect([...hubHandlers.keys()]).toEqual(['MusicPlayerState', 'ConnectedDevicesState']);
+	});
+
 	// The audio element fires pause when a track runs out, before the next one
 	// starts; that is not the user pausing.
 	it('sends no pause when the track has ended', () => {

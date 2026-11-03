@@ -218,27 +218,12 @@ function bindInbound(p: MusicEngineLike): void {
 	if (!hub)
 		return;
 
-	const onPlay = (): void => {
-		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.PlayPressed, 0, 0, 0, trackLabel(p));
-		p.play();
-	};
-	const onPause = (): void => p.pause();
-	const onNext = (): void => p.next();
-	const onPrev = (): void => p.previous();
-	const onSeek = (...args: unknown[]): void => p.seek((args[0] as number) / 1000);
-	const onLoad = (...args: unknown[]): void => {
-		const track = args[0] as { id?: unknown } | null;
-		const label = track?.id === undefined ? 'track' : `track-${String(track.id)}`;
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, label);
-		p.loadTrack?.(args[0]);
-	};
 	const onState = (...args: unknown[]): void => {
 		const payload = args[0] as { events?: Array<{ type?: string; event?: { state?: { device_id?: string | null } | null } }> } | null;
 		const state = payload?.events
 			? [...payload.events].reverse().find(entry => entry.type === 'PlayerStateChanged')?.event?.state
 			: args[0] as { device_id?: string | null } | null | undefined;
 		activeDeviceId = state?.device_id ?? null;
-		p.applyServerState?.(args[0]);
 		applyOwnVolume(p, args[0]);
 	};
 	const onConnectedDevices = (...args: unknown[]): void => {
@@ -246,22 +231,10 @@ function bindInbound(p: MusicEngineLike): void {
 		playbackStore.music.applyConnectedDevices(devices);
 	};
 
-	hub.on('Play', onPlay);
-	hub.on('Pause', onPause);
-	hub.on('Next', onNext);
-	hub.on('Previous', onPrev);
-	hub.on('Seek', onSeek);
-	hub.on('LoadTrack', onLoad);
 	hub.on('MusicPlayerState', onState);
 	hub.on('ConnectedDevicesState', onConnectedDevices);
 
 	unsubs.push(
-		() => hub.off('Play', onPlay),
-		() => hub.off('Pause', onPause),
-		() => hub.off('Next', onNext),
-		() => hub.off('Previous', onPrev),
-		() => hub.off('Seek', onSeek),
-		() => hub.off('LoadTrack', onLoad),
 		() => hub.off('MusicPlayerState', onState),
 		() => hub.off('ConnectedDevicesState', onConnectedDevices),
 	);
