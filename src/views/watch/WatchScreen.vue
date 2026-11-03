@@ -44,7 +44,15 @@ const castSubtitle = computed(() => {
 const { data, isLoading, error, refetch } = usePlaylistQuery(type, id);
 
 const playlist = computed(() => data.value?.playlist ?? []);
-const initialItem = computed(() => data.value?.item);
+const initialItem = computed(() => {
+	const season = Number(queryText('season'));
+	const episode = Number(queryText('episode'));
+	if (type.value === 'tv' && Number.isInteger(season) && Number.isInteger(episode) && season >= 0 && episode > 0) {
+		return playlist.value.find(item => Number(item.season) === season && Number(item.episode) === episode)
+			?? data.value?.item;
+	}
+	return data.value?.item;
+});
 
 const playerError = ref<string | null>(null);
 

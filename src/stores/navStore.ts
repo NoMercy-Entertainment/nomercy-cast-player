@@ -27,6 +27,10 @@ export function dispatchInitialIntent(intent: CastIntent, router: Router): void 
 				// The audio and subtitle the phone showed travel with the position,
 				// with the same query names the TV app's watch route uses.
 				const query: Record<string, string> = {};
+				if (intent.season !== undefined)
+					query.season = String(intent.season);
+				if (intent.episode !== undefined)
+					query.episode = String(intent.episode);
 				if (intent.resume_at)
 					query.resume_at = String(intent.resume_at);
 				if (intent.audio_language)

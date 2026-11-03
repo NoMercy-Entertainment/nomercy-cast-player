@@ -7,6 +7,7 @@ import WatchScreen from './WatchScreen.vue';
 const data = ref<{ playlist: unknown[]; item?: unknown } | undefined>(undefined);
 const isLoading = ref(false);
 const error = ref<Error | null>(null);
+const routeQuery = vi.hoisted(() => ({ value: {} as Record<string, string> }));
 
 vi.mock('@/queries/usePlaylistQuery', () => ({
 	usePlaylistQuery: () => ({
@@ -18,7 +19,7 @@ vi.mock('@/queries/usePlaylistQuery', () => ({
 }));
 
 vi.mock('vue-router', () => ({
-	useRoute: () => ({ params: {}, query: {} }),
+	useRoute: () => ({ params: {}, query: routeQuery.value }),
 }));
 
 vi.mock('@tanstack/vue-query', () => ({
@@ -28,6 +29,7 @@ vi.mock('@tanstack/vue-query', () => ({
 vi.mock('@/players/video/VideoPlayer.vue', () => ({
 	default: {
 		name: 'VideoPlayer',
+		props: ['initialItem', 'resumeAt'],
 		template: '<div />',
 		emits: ['error'],
 		mounted(this: { $emit: (event: string, message: string) => void }) {
@@ -37,6 +39,13 @@ vi.mock('@/players/video/VideoPlayer.vue', () => ({
 }));
 
 describe('the watch screen does not go black when there is nothing to play', () => {
+	it('starts the requested episode before applying the resume position', () => {
+		routeQuery.value = { season: '1', episode: '3', resume_at: '90' };
+		data.value = { playlist: [{ id: 1, season: 1, episode: 1 }, { id: 3, season: 1, episode: 3 }], item: { id: 1, season: 1, episode: 1 } };
+		const wrapper = mount(WatchScreen, { props: { type: 'tv', id: '42' } });
+		expect(wrapper.findComponent({ name: 'VideoPlayer' }).props()).toMatchObject({ initialItem: { id: 3, season: 1, episode: 3 }, resumeAt: 90 });
+		routeQuery.value = {};
+	});
 	it('shows an error panel instead of a blank screen when the playlist has no item', () => {
 		data.value = { playlist: [] };
 		isLoading.value = false;
