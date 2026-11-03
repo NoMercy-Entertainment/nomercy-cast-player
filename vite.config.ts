@@ -36,9 +36,22 @@ function devAllowedHosts(list: string | undefined, target: string | undefined): 
 	return hosts;
 }
 
+function devTarget(command: 'build' | 'serve', value: string | undefined): string | undefined {
+	if (command !== 'serve' || !value)
+		return undefined;
+	try {
+		const url = new URL(value);
+		if (url.protocol === 'http:' || url.protocol === 'https:')
+			return value;
+	}
+	catch {}
+	console.warn('[cast] CAST_DEV_SERVER_URL must be an http(s) URL; dev proxy disabled.');
+	return undefined;
+}
+
 export default defineConfig(({ command, mode }) => {
 	const env = loadEnv(mode, process.cwd(), '');
-	const target = env.CAST_DEV_SERVER_URL || undefined;
+	const target = devTarget(command, env.CAST_DEV_SERVER_URL || undefined);
 
 	return {
 		plugins: [vue(), tailwindcss()],
