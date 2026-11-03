@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { videoSyncBridge } from './syncBridge';
 import { TVOverlayPlugin } from './TVOverlayPlugin';
 import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipPlugin';
+import { prepareChapterPlaylist } from './chapterFile';
 import { authStore } from '@/stores/authStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { PlaylistItem } from '@/queries/usePlaylistQuery';
@@ -48,6 +49,7 @@ const containerEl = ref<HTMLElement | null>(null);
 let engine: { dispose?: () => void } | null = null;
 let overlay: TVOverlayPlugin | null = null;
 let unmounted = false;
+let disposeChapters: (() => void) | null = null;
 
 onMounted(async () => {
 	if (!containerEl.value)
@@ -69,6 +71,12 @@ onMounted(async () => {
 	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, mediaLabel.value);
 
 	try {
+		const prepared = await prepareChapterPlaylist(props.playlist ?? [], authStore.accessToken.value);
+		if (unmounted) {
+			prepared.dispose();
+			return;
+		}
+		disposeChapters = prepared.dispose;
 		// Tag the container element so the package's factory can target it
 		// by ID — its public surface uses string IDs, not direct DOM refs.
 		if (!containerEl.value.id)
@@ -92,7 +100,7 @@ onMounted(async () => {
 		const factoryOrCtor = exported as (id?: string) => { setup: (options: unknown) => unknown };
 		// The package reads `language`; `isTv` is kept for the older class shape.
 		const setupOptions = {
-			playlist: props.playlist,
+			playlist: prepared.playlist,
 			accessToken: () => authStore.accessToken.value ?? '',
 			autoPlay: true,
 			isTv: true,
@@ -171,6 +179,7 @@ onBeforeUnmount(() => {
 	videoSyncBridge.detach();
 	detachChapterAutoSkip();
 	engine?.dispose?.();
+	disposeChapters?.();
 	engine = null;
 	overlay = null;
 });
