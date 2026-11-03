@@ -46,3 +46,29 @@ describe('back on the pre-screen exits once, without recursing', () => {
 		expect(player.emit).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe('server credits on the overlay', () => {
+	it('offers the next episode before an epilogue and advances at content end', () => {
+		const player = fakePlayer();
+		const next = vi.fn();
+		const item = { id: 'a', title: 'A', skip_segments: [{ type: 'Credits', credits_start: 80, content_end: 110 }] };
+		let position = 79;
+		const castPlayer = { ...player, next, currentTime: () => position, playlist: () => [item, { id: 'b', title: 'B' }], playlistItem: () => item };
+		const plugin = new TVOverlayPlugin(castPlayer as never, { skipPreScreen: true });
+		plugin.attach();
+		player.emit('time');
+		expect(player.overlay.textContent).not.toContain('Next episode');
+		position = 80;
+		player.emit('time');
+		expect(player.overlay.textContent).toContain('Next episode');
+		position = 100;
+		player.emit('time');
+		expect(next).not.toHaveBeenCalled();
+		position = 110;
+		player.emit('time');
+		player.emit('time');
+		expect(next).toHaveBeenCalledTimes(1);
+		plugin.detach();
+		player.overlay.remove();
+	});
+});

@@ -13,6 +13,7 @@
  */
 
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
+import { segmentsForItem } from './skipSegments';
 
 interface PlayerLike {
 	on: (event: string, handler: (data: unknown) => void) => void;
@@ -33,6 +34,7 @@ interface PlayerLike {
 	// 0.x deprecated shim
 	getCurrentTime?: () => number;
 	seek: (seconds: number) => void;
+	playlistItem?: () => unknown;
 }
 
 let lastChapterId: string | null = null;
@@ -46,7 +48,14 @@ export function setAutoSkipEnabled(enabled: boolean): void {
 export function attachChapterAutoSkip(player: PlayerLike): void {
 	const onTime = (): void => {
 		const t = player.currentTime?.() ?? player.getCurrentTime?.() ?? 0;
-		const chapter = player.chapter?.(t) ?? player.getCurrentChapter?.(t) ?? null;
+		const item = player.playlistItem?.();
+		const segments = segmentsForItem(item);
+		const intro = segments.find(segment => segment.type.toLowerCase() === 'intro'
+			&& typeof segment.start === 'number' && typeof segment.end === 'number'
+			&& t >= segment.start && t < segment.end);
+		const chapter = segments.length
+			? intro ? { id: `intro-${intro.start}`, type: 'intro', startTime: intro.start, endTime: intro.end } : null
+			: player.chapter?.(t) ?? player.getCurrentChapter?.(t) ?? null;
 		if (!chapter) {
 			if (lastChapterId !== null)
 				player.emit?.('chapter-skip-clear');

@@ -10,6 +10,7 @@ import { mountSkipChapterPrompt } from './pluginPanels/SkipChapterPrompt';
 import type { SkipChapterPromptHandle } from './pluginPanels/SkipChapterPrompt';
 import { settingsStore } from '@/stores/settingsStore';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
+import { decideSkipAction, segmentsForItem } from './skipSegments';
 
 /**
  * TV overlay orchestrator per spec §12.3. Owns the pre-screen / episode
@@ -32,6 +33,7 @@ interface PlayerLike {
 	play: () => void;
 	pause: () => void;
 	seek: (seconds: number) => void;
+	next?: () => void;
 	restart?: () => void;
 
 	// 1.x unified getter/setter API
@@ -58,6 +60,7 @@ interface PlayerLike {
 	getChapters?: () => Array<{ start: number; end?: number }>;
 
 	playlist?: () => EpisodeItem[];
+	playlistIndex?: () => number;
 	playlistItem?: () => {
 		id: number | string;
 		title: string;
@@ -65,6 +68,8 @@ interface PlayerLike {
 		overview?: string;
 		backdrop?: string | null;
 		resumeFromMs?: number;
+		skip_segments?: unknown;
+		segments?: unknown;
 	};
 }
 
@@ -82,6 +87,8 @@ export class TVOverlayPlugin {
 	private unmount: (() => void) | null = null;
 	private osd: PlaybackOSDHandle | null = null;
 	private skipPrompt: SkipChapterPromptHandle | null = null;
+	private nextPrompt: SkipChapterPromptHandle | null = null;
+	private advancedItem: number | string | null = null;
 	private boundHandlers: Array<{ event: string; handler: (data?: unknown) => void }> = [];
 
 	constructor(
@@ -113,6 +120,11 @@ export class TVOverlayPlugin {
 			this.showSkipPrompt(chapter as { type?: string; endTime?: number; startTime?: number } | null);
 		});
 		this.bind('chapter-skip-clear', () => this.clearSkipPrompt());
+		this.bind('time', () => this.updateNextEpisode());
+		this.bind('item', () => {
+			this.advancedItem = null;
+			this.clearNextPrompt();
+		});
 
 		// CAF receiver remote shortcut keys — APK TvUiPlugin maps Channel
 		// Up / Down to language and episode pickers; we mirror that, plus
@@ -149,6 +161,7 @@ export class TVOverlayPlugin {
 		this.osd = null;
 		this.skipPrompt?.dispose();
 		this.skipPrompt = null;
+		this.clearNextPrompt();
 		document.removeEventListener('keydown', this.onShortcut, true);
 		for (const { event, handler } of this.boundHandlers) {
 			this.player.off(event, handler);
@@ -176,6 +189,41 @@ export class TVOverlayPlugin {
 	private clearSkipPrompt(): void {
 		this.skipPrompt?.dispose();
 		this.skipPrompt = null;
+	}
+
+	private updateNextEpisode(): void {
+		const item = this.player.playlistItem?.();
+		const items = this.player.playlist?.() ?? [];
+		const index = this.player.playlistIndex?.() ?? items.findIndex(entry => entry.id === item?.id);
+		const hasNext = Boolean(item && index >= 0 && index < items.length - 1 && this.player.next);
+		const action = decideSkipAction(this.playerCurrentTime(), segmentsForItem(item), hasNext);
+		if (action === 'advance') {
+			this.clearNextPrompt();
+			if (item && this.advancedItem !== item.id) {
+				this.advancedItem = item.id;
+				this.player.next?.();
+			}
+			return;
+		}
+		if (action !== 'next-button') {
+			this.clearNextPrompt();
+			return;
+		}
+		if (!this.nextPrompt && this.overlayHost()) {
+			this.nextPrompt = mountSkipChapterPrompt({
+				parent: this.overlayHost()!,
+				label: 'Next episode',
+				onSkip: () => {
+					this.clearNextPrompt();
+					this.player.next?.();
+				},
+			});
+		}
+	}
+
+	private clearNextPrompt(): void {
+		this.nextPrompt?.dispose();
+		this.nextPrompt = null;
 	}
 
 	private playerCurrentTime(): number {
