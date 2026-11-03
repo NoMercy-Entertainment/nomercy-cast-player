@@ -136,7 +136,7 @@ const routes: RouteRecordRaw[] = [
 			{
 				path: 'person/:id',
 				name: 'person',
-				component: () => import('@/views/person/PersonScreen.vue'),
+				redirect: { name: 'home' },
 			},
 			{
 				path: 'music',
@@ -146,7 +146,7 @@ const routes: RouteRecordRaw[] = [
 			{
 				path: 'music/genres',
 				name: 'music-genres',
-				component: () => import('@/views/music/MusicGenresScreen.vue'),
+				redirect: { name: 'home' },
 			},
 			{
 				path: 'music/cards/:pathMatch(.*)*',
