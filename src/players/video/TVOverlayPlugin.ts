@@ -124,6 +124,11 @@ export class TVOverlayPlugin {
 		if (this.currentPanel !== null)
 			return;
 		switch (e.key) {
+			case 'ArrowLeft':
+			case 'ArrowRight':
+				e.preventDefault();
+				this.showSeekContainer();
+				break;
 			case 'ChannelUp':
 			case 'MediaTrackNext':
 			case 'l':
