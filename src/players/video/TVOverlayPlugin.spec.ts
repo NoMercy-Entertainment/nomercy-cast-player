@@ -72,3 +72,32 @@ describe('server credits on the overlay', () => {
 		player.overlay.remove();
 	});
 });
+
+describe('d-pad seek during playback', () => {
+	let plugin: TVOverlayPlugin | null = null;
+
+	afterEach(() => {
+		plugin?.detach();
+		plugin = null;
+		document.body.innerHTML = '';
+	});
+
+	it.each(['ArrowLeft', 'ArrowRight'])('opens the seek panel on %s', (key) => {
+		plugin = new TVOverlayPlugin(fakePlayer() as never, { skipPreScreen: true });
+		plugin.attach();
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
+
+		expect(document.querySelector('.seek-container')).not.toBeNull();
+	});
+
+	it('keeps the pre-screen open when an arrow is pressed', () => {
+		plugin = new TVOverlayPlugin(fakePlayer() as never);
+		plugin.attach();
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+
+		expect(document.querySelector('.pre-screen')).not.toBeNull();
+		expect(document.querySelector('.seek-container')).toBeNull();
+	});
+});

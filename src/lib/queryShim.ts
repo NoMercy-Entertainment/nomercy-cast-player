@@ -38,7 +38,7 @@ export function mapServerKey(serverKey: readonly string[]): readonly (readonly s
 	if (head === 'movie' && id !== undefined)
 		return [['info', 'movie', id]];
 	if (head === 'tv' && id !== undefined)
-		return [['info', 'tv', id]];
+		return [['info', 'tv', id], ['playlist', 'tv', id]];
 	return [serverKey];
 }
 
@@ -60,6 +60,7 @@ export function invalidateAllLibrary(): void {
 		'libraries',
 		'library',
 		'info',
+		'playlist',
 		'card-items',
 		'music',
 		'search',
