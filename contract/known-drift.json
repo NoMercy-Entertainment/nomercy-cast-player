@@ -21,43 +21,13 @@
 	},
 	{
 		"kind": "event",
-		"item": "MusicHub.LoadTrack",
-		"reason": "Receiver listens for LoadTrack on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
-	},
-	{
-		"kind": "event",
 		"item": "MusicHub.MusicPlayerState",
 		"reason": "Receiver listens for MusicPlayerState on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
 	},
 	{
 		"kind": "event",
-		"item": "MusicHub.Next",
-		"reason": "Receiver listens for Next on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
-	},
-	{
-		"kind": "event",
-		"item": "MusicHub.Pause",
-		"reason": "Receiver listens for Pause on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
-	},
-	{
-		"kind": "event",
-		"item": "MusicHub.Play",
-		"reason": "Receiver listens for Play on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
-	},
-	{
-		"kind": "event",
-		"item": "MusicHub.Previous",
-		"reason": "Receiver listens for Previous on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
-	},
-	{
-		"kind": "event",
 		"item": "MusicHub.RefreshLibrary",
 		"reason": "Receiver listens for RefreshLibrary on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
-	},
-	{
-		"kind": "event",
-		"item": "MusicHub.Seek",
-		"reason": "Receiver listens for Seek on MusicHub; pinned signalr-contracts.json publishes inbound methods but no outbound event inventory"
 	},
 	{
 		"kind": "event",

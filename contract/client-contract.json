@@ -27,14 +27,8 @@
 			],
 			"listens": [
 				"ConnectedDevicesState",
-				"LoadTrack",
 				"MusicPlayerState",
-				"Next",
-				"Pause",
-				"Play",
-				"Previous",
-				"RefreshLibrary",
-				"Seek"
+				"RefreshLibrary"
 			]
 		},
 		"DeviceHub": {
