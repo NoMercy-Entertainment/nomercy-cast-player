@@ -3,16 +3,22 @@ import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadConfigFromFile } from 'vite';
 import type { Plugin } from 'vite';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { OCTOPUS_FILES } from '../../../scripts/copyOctopusWorker.mjs';
 
 const root = process.cwd();
 const published = join(root, 'public', 'js', 'octopus');
 
-async function octopusPlugin(): Promise<Plugin | undefined> {
+// Bundling vite.config.ts costs seconds on a loaded runner, so it happens once.
+let cached: Plugin | undefined;
+beforeAll(async () => {
 	const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, join(root, 'vite.config.ts'), root);
-	return flatten(loaded?.config.plugins ?? []).find(plugin => plugin.name === 'octopus-worker-copy');
+	cached = flatten(loaded?.config.plugins ?? []).find(plugin => plugin.name === 'octopus-worker-copy');
+}, 60_000);
+
+async function octopusPlugin(): Promise<Plugin | undefined> {
+	return cached;
 }
 
 function flatten(list: readonly unknown[]): Plugin[] {
