@@ -12,7 +12,8 @@ on:
 jobs:
   validate:
     timeout-minutes: 7200
-    runs-on: [self-hosted, Linux, X64, beast-unit]
+    # A pull request from a fork runs on a GitHub-hosted runner, never on the self-hosted one (AUD-4701).
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","Linux","X64","beast-unit"]') || 'ubuntu-latest' }}
 
     steps:
       - name: Checkout repository
