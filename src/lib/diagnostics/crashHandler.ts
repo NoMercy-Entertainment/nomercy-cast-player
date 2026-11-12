@@ -10,12 +10,6 @@ import { postDiagnosticsReport } from '@/lib/nomercyApi';
 // server's rate limit is not the place to discover that.
 let uploaded = false;
 
-function describe(reason: unknown): string {
-	if (reason instanceof Error)
-		return `${reason.name}: ${reason.message}\n${reason.stack ?? ''}`;
-	return String(reason);
-}
-
 // The error class, never its message. A message carries a fresh id on every
 // fault and would exhaust the ring's 256-name table by itself.
 function faultName(reason: unknown): string {
@@ -41,7 +35,8 @@ async function upload(reason: unknown): Promise<void> {
 		entries: diagnosticsRing.snapshot(),
 		recorded: diagnosticsRing.recorded(),
 	});
-	payload.body = `${payload.body}\n\ncrash\n${describe(reason)}`;
+	// A message or stack can hold a title, a URL or a token: the upload is automatic, so only the class leaves.
+	payload.body = `${payload.body}\n\ncrash\n${faultName(reason)}`;
 
 	try {
 		await postDiagnosticsReport(token, payload);

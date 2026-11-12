@@ -27,3 +27,23 @@ it('uploads once after a crash before authentication', async () => {
 	window.dispatchEvent(new ErrorEvent('error', { error: new Error('another crash') }));
 	expect(fetch).toHaveBeenCalledTimes(1);
 });
+
+it('sends the error class only, never its message or stack', async () => {
+	vi.resetModules();
+	const { installCrashHandlers: install } = await import('./crashHandler');
+	const { authStore: store } = await import('@/stores/authStore');
+	const fetch = vi.fn(async (_url: string, _init?: RequestInit) => new Response('{}', { status: 200 }));
+	vi.stubGlobal('fetch', fetch);
+	store.accessToken.value = 'token-for-tests';
+	install();
+
+	window.dispatchEvent(new ErrorEvent('error', { error: new TypeError('Example Title eyJplaceholder') }));
+	await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
+	const sent = String(fetch.mock.calls[0][1]?.body);
+	expect(sent).toContain('TypeError');
+	expect(sent).not.toContain('Example Title');
+	expect(sent).not.toContain('eyJ');
+	expect(sent).not.toContain('crashHandler.spec');
+	store.accessToken.value = null;
+});
