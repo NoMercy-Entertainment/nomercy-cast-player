@@ -26,6 +26,8 @@ const router = useRouter();
 useDPad(router);
 
 const inDegraded = computed(() => authStore.receiverState.value === 'DEGRADED');
+// Preempts every route, video and music alike, like DEGRADED above.
+const castAgain = computed(() => authStore.castAgainRequired.value);
 
 onMounted(() => {
 	// Kick off the idle timer so the screensaver can fire the first time
@@ -45,6 +47,12 @@ onMounted(() => {
 
 <template>
 	<SenderRequiredScreen v-if="inDegraded" />
+	<SenderRequiredScreen
+		v-else-if="castAgain"
+		title="Cast again to keep watching"
+		message="Your sign-in on this TV is ending. Cast again from your phone to keep watching."
+		:retry="authStore.requestRenewal"
+	/>
 	<MusicPlayer v-else>
 		<RouterView />
 	</MusicPlayer>

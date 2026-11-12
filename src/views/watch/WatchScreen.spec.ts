@@ -3,7 +3,9 @@ import { mount } from '@vue/test-utils';
 import { nextTick, ref } from 'vue';
 
 import WatchScreen from './WatchScreen.vue';
-import { authStore } from '@/stores/authStore';
+
+// jsdom has no layout, so it has no scrollIntoView.
+Element.prototype.scrollIntoView = vi.fn();
 
 const data = ref<{ playlist: unknown[]; item?: unknown } | undefined>(undefined);
 const isLoading = ref(false);
@@ -69,38 +71,30 @@ describe('the watch screen does not go black when there is nothing to play', () 
 	});
 });
 
-describe('the watch screen says to cast again when the sender sends no fresh token', () => {
+describe('every error panel on the watch screen is reachable with the D-pad', () => {
 	afterEach(() => {
-		authStore.clear();
-		vi.useRealTimers();
+		vi.restoreAllMocks();
+		document.body.innerHTML = '';
 	});
 
-	it('shows the cast-again panel 10 seconds after the renewal request, not before', async () => {
-		vi.useFakeTimers();
-		vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
-		const exp = Math.floor(Date.now() / 1000) + 60;
-		const token = `header.${btoa(JSON.stringify({ sub: 'made-up-user', exp }))}.signature`;
-		authStore.consumeRealHandshake(token, {
-			serverId: 'made-up-server',
-			serverUrl: 'https://example.test',
-			defaultSubtitleLanguage: null,
-			defaultAudioLanguage: null,
-		});
-		data.value = { playlist: [{ id: 1 }], item: { id: 1, title: 'Test' } };
+	const panels = [
+		{ name: 'load error', playlist: undefined, failure: new Error('made-up failure') },
+		{ name: 'player error', playlist: { playlist: [{ id: 1 }], item: { id: 1, title: 'Test' } }, failure: null },
+		{ name: 'nothing to play', playlist: { playlist: [] }, failure: null },
+	];
+
+	it.each(panels)('focuses "Try again" on the $name panel without a focus warning', async ({ playlist, failure }) => {
+		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+		data.value = playlist;
+		error.value = failure;
 		isLoading.value = false;
-		error.value = null;
-		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
 
-		vi.advanceTimersByTime(30_000);
-		expect(authStore.renewalRequired.value).toBe(true);
-
-		vi.advanceTimersByTime(9_900);
+		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' }, attachTo: document.body });
 		await nextTick();
-		expect(wrapper.text()).not.toContain('Cast again from your phone');
-
-		vi.advanceTimersByTime(100);
 		await nextTick();
-		expect(wrapper.text()).toContain('Your sign-in on this TV is ending. Cast again from your phone to keep watching.');
-		expect(wrapper.find('button').text()).toContain('Try again');
+
+		expect(warn.mock.calls.flat().join(' ')).not.toContain('used outside FocusGroup');
+		expect(document.activeElement).toBe(wrapper.find('button').element);
+		wrapper.unmount();
 	});
 });

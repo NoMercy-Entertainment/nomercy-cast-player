@@ -42,6 +42,11 @@ app.mount('#app');
 
 bootCastReceiver(router);
 
+// Device-proof builds only: the variable is unset in production, so the
+// bundler drops this branch and the module behind it.
+if (import.meta.env.VITE_CAST_AGAIN_PROOF === '1')
+	void import('./cast/castAgainProof').then(proof => proof.forceCastAgain());
+
 // Foreground resume sweep — visibilitychange hidden→visible triggers
 // invalidateAllLibrary so we catch missed RefreshLibrary events while
 // cast_shell had us suspended.

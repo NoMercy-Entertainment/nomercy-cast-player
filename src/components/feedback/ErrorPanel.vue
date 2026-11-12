@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import FocusableButton from '@/components/buttons/FocusableButton.vue';
+import { useFocusGroup } from '@/composables/useFocusGroup';
 
 defineProps<{
 	error: Error | { message: string };
 	retry?: () => void;
 	context?: string;
 }>();
+
+// The panel owns its focus group, so its action takes D-pad focus on every screen.
+useFocusGroup({ type: 'vertical', initialFocusKey: 'error-retry' });
 </script>
 
 <template>

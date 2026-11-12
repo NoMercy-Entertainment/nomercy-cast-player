@@ -2,6 +2,8 @@
 import logoWide from '@/assets/logo-wide.svg';
 import mobile from '@/assets/mobile.svg';
 import splash from '@/assets/splash.png';
+import FocusableButton from '@/components/buttons/FocusableButton.vue';
+import { useFocusGroup } from '@/composables/useFocusGroup';
 
 /**
  * DEGRADED-state splash per spec §3.2 + §8.5. Same composition as
@@ -9,7 +11,18 @@ import splash from '@/assets/splash.png';
  * states — only the messaging changes. Refresh failure → "Re-cast
  * from your phone to continue." Receiver doesn't auto-end the
  * session; cast_shell decides when to unload.
+ *
+ * With `title`, `message` and `retry` it is the cast-again screen: the same
+ * composition with one D-pad action.
  */
+
+defineProps<{
+	title?: string;
+	message?: string;
+	retry?: () => void;
+}>();
+
+useFocusGroup({ type: 'modal', initialFocusKey: 'cast-again-retry' });
 </script>
 
 <template>
@@ -19,16 +32,25 @@ import splash from '@/assets/splash.png';
 		<section class="content">
 			<div class="status-row">
 				<h1 class="status-text pulse">
-					Re-cast from your phone
+					{{ title ?? 'Re-cast from your phone' }}
 				</h1>
 			</div>
 
-			<p class="instructions">
+			<p v-if="message" class="instructions">
+				{{ message }}
+			</p>
+			<p v-else class="instructions">
 				<span>Your cast session expired. Open NoMercy on your phone or desktop and tap the</span>
 				<br>
 				<span class="emphasis">Chromecast</span>
 				<span> button to continue.</span>
 			</p>
+
+			<div v-if="retry" class="actions">
+				<FocusableButton focus-key="cast-again-retry" @action="retry">
+					Try again
+				</FocusableButton>
+			</div>
 		</section>
 
 		<img class="phone" :src="mobile" alt="" aria-hidden="true">
@@ -97,6 +119,12 @@ import splash from '@/assets/splash.png';
 
 .emphasis {
 	font-weight: 700;
+}
+
+.actions {
+	display: flex;
+	margin-top: 16px;
+	font-size: 20px;
 }
 
 .phone {

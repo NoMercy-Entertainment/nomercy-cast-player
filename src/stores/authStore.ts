@@ -80,18 +80,22 @@ function clearRenewalReplyTimer(): void {
 	}
 }
 
-// A sender that predates renewal never answers, so silence ends in the
-// cast-again message rather than in a stream that stops without a word.
+// A sender that predates renewal never answers. Playback runs on while the
+// token is valid; the cast-again screen shows only once it has expired.
 function requestRenewal(): void {
 	clearRenewalReplyTimer();
-	castAgainRequired.value = false;
 	renewalRequired.value = true;
 	renewalRequester?.();
+	const msLeft = (expiresAtMs.value ?? 0) - Date.now();
+	if (msLeft <= 0) {
+		castAgainRequired.value = true;
+		return;
+	}
 	renewalReplyTimer = window.setTimeout(() => {
 		renewalReplyTimer = null;
 		if (renewalRequired.value)
-			castAgainRequired.value = true;
-	}, RENEWAL_REPLY_TIMEOUT_MS);
+			requestRenewal();
+	}, Math.min(RENEWAL_REPLY_TIMEOUT_MS, msLeft));
 }
 
 function setRenewalRequester(requester: () => void): void {
@@ -116,6 +120,12 @@ function acceptRenewedToken(token: string): boolean {
 
 async function runRefresh(): Promise<void> {
 	if (!refreshToken.value) {
+		// A sender session has no refresh grant: a 401 asks the phone instead.
+		if (accessToken.value !== null) {
+			castAgainRequired.value = true;
+			requestRenewal();
+			return;
+		}
 		receiverState.value = 'DEGRADED';
 		return;
 	}

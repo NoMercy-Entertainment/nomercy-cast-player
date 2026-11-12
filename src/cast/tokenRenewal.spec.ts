@@ -136,15 +136,50 @@ describe('the receiver asks the sender for a fresh token before it expires', () 
 		expect(authStore.renewalRequired.value).toBe(true);
 	});
 
-	it('asks for a cast again when no valid reply arrives within 10 seconds', () => {
+	it('keeps asking every 10 seconds and asks for a cast again only when the token expires', () => {
 		castUntilRenewalIsDue();
 		fromSender({ token: token('another-made-up-user', nowSeconds() + 600) });
+
+		vi.advanceTimersByTime(10_000);
+		expect(sendCustomMessage).toHaveBeenCalledTimes(2);
+		expect(authStore.castAgainRequired.value).toBe(false);
+
+		vi.advanceTimersByTime(10_000);
+		expect(sendCustomMessage).toHaveBeenCalledTimes(3);
+		expect(sendCustomMessage).toHaveBeenLastCalledWith(NAMESPACE_GENERAL, 'sender-1', { renew: true });
 
 		vi.advanceTimersByTime(9_900);
 		expect(authStore.castAgainRequired.value).toBe(false);
 
 		vi.advanceTimersByTime(100);
 		expect(authStore.castAgainRequired.value).toBe(true);
+	});
+
+	it('asks for a cast again when a request fails with 401 while the token is still valid', async () => {
+		expect(authStore.consumeRealHandshake(token('made-up-user', nowSeconds() + 600), server)).toBe(true);
+		fromSender({});
+
+		await authStore.forceRefresh();
+
+		expect(authStore.castAgainRequired.value).toBe(true);
+		expect(authStore.receiverState.value).not.toBe('DEGRADED');
+		expect(sendCustomMessage).toHaveBeenCalledWith(NAMESPACE_GENERAL, 'sender-1', { renew: true });
+	});
+
+	it('sends a new request on "Try again" and keeps the cast-again state until a token arrives', () => {
+		castUntilRenewalIsDue();
+		vi.advanceTimersByTime(30_000);
+		expect(authStore.castAgainRequired.value).toBe(true);
+		sendCustomMessage.mockClear();
+
+		authStore.requestRenewal();
+
+		expect(sendCustomMessage).toHaveBeenCalledTimes(1);
+		expect(sendCustomMessage).toHaveBeenCalledWith(NAMESPACE_GENERAL, 'sender-1', { renew: true });
+		expect(authStore.castAgainRequired.value).toBe(true);
+
+		fromSender({ token: token('made-up-user', nowSeconds() + 600) });
+		expect(authStore.castAgainRequired.value).toBe(false);
 	});
 
 	it('still acks and navigates for a payload with a route', () => {
