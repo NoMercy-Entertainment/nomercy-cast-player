@@ -3,6 +3,8 @@
  * this file owns motion + sizing tokens that don't fit @theme. */
 
 :root {
+	/* The receiver is dark by design; a WebView must not darken its light ink again. */
+	color-scheme: dark;
 	/* APK uses 36dp horizontal padding for rails / topnav. Scales with
 		viewport so 4K TVs still get breathing room. */
 	--tv-safe-padding: clamp(36px, 4vw, 80px);

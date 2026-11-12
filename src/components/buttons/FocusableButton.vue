@@ -59,6 +59,8 @@ useFocusEntry({
 }
 .fb:focus-visible,
 .fb:focus {
+	/* tv-safe.css gives every focused [data-focusable] border-radius: inherit; a pill stays a pill. */
+	border-radius: 999px;
 	transform: scale(1.05);
 	outline: var(--focus-ring-width) solid var(--focus-ring-color);
 	outline-offset: var(--focus-ring-offset);
