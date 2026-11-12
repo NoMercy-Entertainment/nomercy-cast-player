@@ -25,8 +25,13 @@ const defaultSubtitleLanguage = ref<string | null>(null);
 const defaultAudioLanguage = ref<string | null>(null);
 const receiverState = ref<ReceiverState>('LOADING');
 const renewalRequired = ref(false);
+const castAgainRequired = ref(false);
+
+const RENEWAL_REPLY_TIMEOUT_MS = 10_000;
 
 let refreshTimer: number | null = null;
+let renewalReplyTimer: number | null = null;
+let renewalRequester: (() => void) | null = null;
 
 // refreshToken is null on the real path (the phone's own live access token
 // has no accompanying refresh grant this receiver can call - see
@@ -64,8 +69,49 @@ function scheduleRefresh(): void {
 		if (refreshToken.value)
 			void runRefresh();
 		else
-			renewalRequired.value = true;
+			requestRenewal();
 	}, msUntilRefresh);
+}
+
+function clearRenewalReplyTimer(): void {
+	if (renewalReplyTimer !== null) {
+		window.clearTimeout(renewalReplyTimer);
+		renewalReplyTimer = null;
+	}
+}
+
+// A sender that predates renewal never answers, so silence ends in the
+// cast-again message rather than in a stream that stops without a word.
+function requestRenewal(): void {
+	clearRenewalReplyTimer();
+	castAgainRequired.value = false;
+	renewalRequired.value = true;
+	renewalRequester?.();
+	renewalReplyTimer = window.setTimeout(() => {
+		renewalReplyTimer = null;
+		if (renewalRequired.value)
+			castAgainRequired.value = true;
+	}, RENEWAL_REPLY_TIMEOUT_MS);
+}
+
+function setRenewalRequester(requester: () => void): void {
+	renewalRequester = requester;
+}
+
+// Only a live token for the user already signed in replaces the current one.
+function acceptRenewedToken(token: string): boolean {
+	if (accessToken.value === null || userId.value === null)
+		return false;
+	if (isJwtExpired(token))
+		return false;
+	if (decodeJwt(token)?.sub !== userId.value)
+		return false;
+	clearRenewalReplyTimer();
+	accessToken.value = token;
+	renewalRequired.value = false;
+	castAgainRequired.value = false;
+	scheduleRefresh();
+	return true;
 }
 
 async function runRefresh(): Promise<void> {
@@ -99,9 +145,11 @@ function consumeRealHandshake(token: string, server: ResolvedServer): boolean {
 	if (isJwtExpired(token))
 		return false;
 	const claims = decodeJwt(token);
+	clearRenewalReplyTimer();
 	accessToken.value = token;
 	refreshToken.value = null;
 	renewalRequired.value = false;
+	castAgainRequired.value = false;
 	userId.value = (claims?.sub as string | undefined) ?? null;
 	serverId.value = server.serverId;
 	serverUrl.value = server.serverUrl;
@@ -109,7 +157,6 @@ function consumeRealHandshake(token: string, server: ResolvedServer): boolean {
 	defaultSubtitleLanguage.value = server.defaultSubtitleLanguage;
 	defaultAudioLanguage.value = server.defaultAudioLanguage;
 	receiverState.value = 'AUTHED';
-	// The sender must supply a new token after renewalRequired becomes true.
 	scheduleRefresh();
 	return true;
 }
@@ -119,9 +166,11 @@ function clear(): void {
 		window.clearTimeout(refreshTimer);
 		refreshTimer = null;
 	}
+	clearRenewalReplyTimer();
 	accessToken.value = null;
 	refreshToken.value = null;
 	renewalRequired.value = false;
+	castAgainRequired.value = false;
 	userId.value = null;
 	serverId.value = null;
 	serverUrl.value = null;
@@ -139,10 +188,14 @@ export const authStore = {
 	defaultAudioLanguage,
 	receiverState,
 	renewalRequired,
+	castAgainRequired,
 	ready,
 	expiresAtMs,
 	userClaims,
 	consumeRealHandshake,
+	acceptRenewedToken,
+	requestRenewal,
+	setRenewalRequester,
 	clear,
 	scheduleRefresh,
 	forceRefresh: runRefresh,

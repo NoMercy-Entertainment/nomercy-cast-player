@@ -1,6 +1,6 @@
 import type { Router } from 'vue-router';
 import { ALL_CUSTOM_NAMESPACES } from './namespaces';
-import { attachMessageBus, onSenderNavigate, resolveServerFromAppConfig } from './messageBus';
+import { attachMessageBus, onSenderNavigate, onSenderToken, requestTokenRenewal, resolveServerFromAppConfig } from './messageBus';
 import { authStore } from '@/stores/authStore';
 import { socketStore } from '@/stores/socketStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
@@ -163,6 +163,12 @@ export function bootCastReceiver(router: Router): void {
 			}
 			await bootSocketsAndDispatch(payload.route, router);
 		})();
+	});
+
+	authStore.setRenewalRequester(requestTokenRenewal);
+	onSenderToken((token) => {
+		if (!authStore.acceptRenewedToken(token))
+			console.warn('[cast] renewed token refused');
 	});
 
 	context.addEventListener('SHUTDOWN', () => {

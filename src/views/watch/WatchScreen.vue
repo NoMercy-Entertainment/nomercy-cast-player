@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { useQueryClient } from '@tanstack/vue-query';
 import { usePlaylistQuery } from '@/queries/usePlaylistQuery';
 import { QueryKeys } from '@/queries/keys';
+import { authStore } from '@/stores/authStore';
 import VideoPlayer from '@/players/video/VideoPlayer.vue';
 import Skeleton from '@/components/feedback/Skeleton.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
@@ -69,7 +70,12 @@ onBeforeUnmount(() => {
 <template>
 	<div class="watch">
 		<ErrorPanel
-			v-if="error"
+			v-if="authStore.castAgainRequired.value"
+			:error="{ message: 'Your sign-in on this TV is ending. Cast again from your phone to keep watching.' }"
+			:retry="authStore.requestRenewal"
+		/>
+		<ErrorPanel
+			v-else-if="error"
 			:error="error as Error"
 			:retry="() => refetch()"
 			context="Couldn't load video"

@@ -21,6 +21,7 @@ export interface NavigatePayload {
 }
 
 type NavigateHandler = (payload: NavigatePayload) => void;
+type TokenHandler = (token: string) => void;
 
 interface ReceiverContextLike {
 	addCustomMessageListener: (
@@ -37,9 +38,18 @@ interface ReceiverContextLike {
 let context: ReceiverContextLike | null = null;
 let lastSenderId: string | undefined;
 let navigateHandlers: NavigateHandler[] = [];
+let tokenHandlers: TokenHandler[] = [];
 
 function isNavigatePayload(data: unknown): data is NavigatePayload {
 	return typeof data === 'object' && data !== null && typeof (data as { route?: unknown }).route === 'string';
+}
+
+// A token with no route is the sender's answer to {renew: true}: it swaps
+// the token and must never navigate.
+function isTokenUpdate(data: unknown): data is { token: string } {
+	return typeof data === 'object' && data !== null
+		&& typeof (data as { token?: unknown }).token === 'string'
+		&& (data as { route?: unknown }).route === undefined;
 }
 
 export function attachMessageBus(ctx: ReceiverContextLike): void {
@@ -47,6 +57,10 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 
 	ctx.addCustomMessageListener(NAMESPACE_GENERAL, (event) => {
 		lastSenderId = event.senderId;
+		if (isTokenUpdate(event.data)) {
+			for (const fn of tokenHandlers) fn(event.data.token);
+			return;
+		}
 		if (!isNavigatePayload(event.data)) {
 			console.debug('[cast] message on NAMESPACE_GENERAL did not parse as {route, token}', event.data);
 			return;
@@ -67,6 +81,24 @@ export function onSenderNavigate(handler: NavigateHandler): () => void {
 	return () => {
 		navigateHandlers = navigateHandlers.filter(h => h !== handler);
 	};
+}
+
+export function onSenderToken(handler: TokenHandler): () => void {
+	tokenHandlers.push(handler);
+	return () => {
+		tokenHandlers = tokenHandlers.filter(h => h !== handler);
+	};
+}
+
+export function requestTokenRenewal(): void {
+	if (!context || !lastSenderId)
+		return;
+	try {
+		context.sendCustomMessage(NAMESPACE_GENERAL, lastSenderId, { renew: true });
+	}
+	catch (err) {
+		console.warn('[cast] token renewal request failed', err);
+	}
 }
 
 export function broadcastStatus(payload: Record<string, unknown>): void {
