@@ -108,6 +108,7 @@ const isPulsing = computed(() => !isConnected.value);
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+	gap: 24px;
 	position: relative;
 	overflow: hidden;
 	background: linear-gradient(180deg, #232323, #161616);
@@ -172,9 +173,19 @@ const isPulsing = computed(() => !isConnected.value);
 
 .phone {
 	position: relative;
-	width: 240px;
-	height: 268px;
+	flex: 0 1 268px;
+	min-height: 0;
+	width: auto;
+	aspect-ratio: 240 / 268;
+	align-self: flex-start;
 	z-index: 1;
+}
+
+/* A short screen has no room for the drawing next to the text and the logo. */
+@media (max-height: 600px) {
+	.phone {
+		display: none;
+	}
 }
 
 .brand {
