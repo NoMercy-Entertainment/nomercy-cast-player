@@ -1,10 +1,11 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 
-// The cold import pulls the whole player tree; on a CI runner that alone can
-// pass the 5 s test budget, so it loads once here with its own limit.
+// The first Intl.DisplayNames took 12.4 s on the CI runner (28 ms locally), so
+// it is built here with its own limit instead of inside the 5 s test.
 let TrailerOverlay: typeof import('./TrailerOverlay.vue').default;
 beforeAll(async () => {
+	new Intl.DisplayNames(['en'], { type: 'language', fallback: 'code' }).of('en');
 	TrailerOverlay = (await import('./TrailerOverlay.vue')).default;
 }, 30_000);
 
