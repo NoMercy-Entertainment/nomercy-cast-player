@@ -4,11 +4,44 @@ import { nextTick } from 'vue';
 
 import ReadyToCastScreen from './ReadyToCastScreen.vue';
 import { connectedSenders } from '@/cast/receiver';
+import { authStore } from '@/stores/authStore';
 
 const { closeCastSession } = vi.hoisted(() => ({ closeCastSession: vi.fn() }));
 vi.mock('@/cast/receiver', async () => {
 	const { ref } = await import('vue');
 	return { closeCastSession, connectedSenders: ref(0) };
+});
+
+describe('the title tells the truth about the sender', () => {
+	Element.prototype.scrollIntoView = vi.fn();
+
+	afterEach(() => {
+		document.body.innerHTML = '';
+		connectedSenders.value = 0;
+		authStore.receiverState.value = 'LOADING';
+	});
+
+	it('says Ready to cast, without the pulse, while no sender is attached', async () => {
+		authStore.receiverState.value = 'LOADING';
+		connectedSenders.value = 0;
+		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
+		await nextTick();
+
+		const title = wrapper.get('h1');
+		expect(title.text()).toBe('Ready to cast');
+		expect(title.classes()).not.toContain('pulse');
+	});
+
+	it('says Connecting and pulses once a sender is attached', async () => {
+		authStore.receiverState.value = 'LOADING';
+		connectedSenders.value = 1;
+		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
+		await nextTick();
+
+		const title = wrapper.get('h1');
+		expect(title.text()).toBe('Connecting…');
+		expect(title.classes()).toContain('pulse');
+	});
 });
 
 describe('the Close button is only for a TV with no sender', () => {

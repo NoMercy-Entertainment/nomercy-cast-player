@@ -30,7 +30,8 @@ useFocusGroup({
 const status = computed(() => {
 	switch (authStore.receiverState.value) {
 		case 'LOADING':
-			return 'Connecting…';
+			// With no sender there is nothing to connect to yet.
+			return connectedSenders.value === 0 ? 'Ready to cast' : 'Connecting…';
 		case 'AUTHED':
 			return 'Connecting to your server…';
 		case 'CONNECTING':
@@ -52,7 +53,7 @@ const userName = computed(() => {
 });
 
 const isConnected = computed(() => socketStore.connectionState.value === 'connected');
-const isPulsing = computed(() => !isConnected.value);
+const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 0);
 </script>
 
 <template>
@@ -88,6 +89,7 @@ const isPulsing = computed(() => !isConnected.value);
 
 			<FocusableButton
 				v-if="connectedSenders === 0"
+				class="close"
 				focus-key="splash-close"
 				variant="ghost"
 				@action="closeCastSession"
@@ -170,6 +172,12 @@ const isPulsing = computed(() => !isConnected.value);
 
 .emphasis {
 	font-weight: 700;
+}
+
+/* Sized to its label, not stretched across the column. */
+.close {
+	align-self: flex-start;
+	min-width: 160px;
 }
 
 .phone {

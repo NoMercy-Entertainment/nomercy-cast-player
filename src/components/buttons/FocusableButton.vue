@@ -57,7 +57,10 @@ useFocusEntry({
 	opacity: 0.4;
 	cursor: not-allowed;
 }
-.fb:focus-visible {
+.fb:focus-visible,
+.fb:focus {
 	transform: scale(1.05);
+	outline: var(--focus-ring-width) solid var(--focus-ring-color);
+	outline-offset: var(--focus-ring-offset);
 }
 </style>
