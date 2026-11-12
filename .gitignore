@@ -33,6 +33,8 @@ coverage
 .yarn/install-state.gz
 
 docs/
+# Copied from the subtitle-octopus package by vite.config.ts
+public/js/octopus/
 # Environment
 .env
 .env.*

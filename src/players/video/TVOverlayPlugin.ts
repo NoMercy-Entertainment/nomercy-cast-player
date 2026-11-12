@@ -1,3 +1,4 @@
+import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
 import { mountPreScreen } from './pluginPanels/PreScreen';
 import { mountEpisodeScreen } from './pluginPanels/EpisodeScreen';
 import type { EpisodeItem } from './pluginPanels/EpisodeScreen';
@@ -8,6 +9,7 @@ import { mountPlaybackOSD } from './pluginPanels/PlaybackOSD';
 import type { PlaybackOSDHandle } from './pluginPanels/PlaybackOSD';
 import { mountSkipChapterPrompt } from './pluginPanels/SkipChapterPrompt';
 import type { SkipChapterPromptHandle } from './pluginPanels/SkipChapterPrompt';
+import { mountOverlayHost } from './overlayHost';
 import { settingsStore } from '@/stores/settingsStore';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 import { decideSkipAction, segmentsForItem } from './skipSegments';
@@ -19,59 +21,25 @@ import { decideSkipAction, segmentsForItem } from './skipSegments';
  * clients/nomercy-cast-player/.archive-v0/lib/VideoPlayer/plugins/UIPlugin/
  * tvUIPlugin.ts into a Vue-free, DOM-driven module.
  *
- * The npm @nomercy-entertainment/nomercy-video-player package's Plugin
- * base class shape varies across versions; this file does not extend it
- * directly. Instead we attach via the player's public on/off + overlay
- * surface so the receiver isn't pinned to a specific plugin contract.
+ * It does not extend the package's Plugin base class. It attaches through
+ * the player's public on/off surface and mounts its panels in a host
+ * element of its own inside the player container.
  */
 
-interface PlayerLike {
-	overlay?: HTMLElement;
+type OverlayItem = EpisodeItem & {
+	subtitle?: string;
+	overview?: string;
+	backdrop?: string | null;
+	resumeFromMs?: number;
+	skip_segments?: unknown;
+	segments?: unknown;
+};
+
+// The overlay and the chapter plugin exchange events the player's typed map does not list.
+interface LooseBus {
 	on: (event: string, handler: (data?: unknown) => void) => void;
 	off: (event: string, handler?: (data?: unknown) => void) => void;
-	emit?: (event: string, data?: unknown) => void;
-	play: () => void;
-	pause: () => void;
-	seek: (seconds: number) => void;
-	next?: () => void;
-	restart?: () => void;
-
-	// 1.x unified getter/setter API
-	currentTime?: () => number;
-	duration?: () => number;
-	audioTrackIndex?: () => number;
-	subtitleIndex?: () => number;
-	audioTracks?: () => TrackItem[];
-	subtitles?: () => TrackItem[];
-	qualityLevels?: () => TrackItem[];
-	quality?: (index?: number) => number | void;
-	audioTrack?: (index?: number) => unknown;
-	subtitle?: (index?: number) => unknown;
-	chapters?: () => Array<{ start: number; end?: number }>;
-	chapter?: (currentTime: number) => { id: string; type?: string; startTime?: number; endTime?: number } | null | undefined;
-
-	// 0.x deprecated shims still present in 1.x
-	getCurrentTime?: () => number;
-	getDuration?: () => number;
-	getAudioTracks?: () => TrackItem[];
-	getSubtitleTracks?: () => TrackItem[];
-	getQualityLevels?: () => TrackItem[];
-	getCurrentQuality?: () => string | number | null;
-	getChapters?: () => Array<{ start: number; end?: number }>;
-
-	playlist?: () => EpisodeItem[];
-	playlistIndex?: () => number;
-	playlistItem?: () => {
-		id: number | string;
-		title: string;
-		subtitle?: string;
-		overview?: string;
-		backdrop?: string | null;
-		resumeFromMs?: number;
-		skip_segments?: unknown;
-		segments?: unknown;
-	};
-}
+};
 
 export interface TVOverlayPluginOptions {
 	skipPreScreen?: boolean;
@@ -89,19 +57,19 @@ export class TVOverlayPlugin {
 	private skipPrompt: SkipChapterPromptHandle | null = null;
 	private nextPrompt: SkipChapterPromptHandle | null = null;
 	private advancedItem: number | string | null = null;
+	private host: HTMLElement | null = null;
 	private boundHandlers: Array<{ event: string; handler: (data?: unknown) => void }> = [];
 
 	constructor(
-		private readonly player: PlayerLike,
+		private readonly player: NMVideoPlayer,
 		private readonly opts: TVOverlayPluginOptions = {},
 	) {}
 
 	attach(): void {
+		this.host = mountOverlayHost(this.player.container);
 		if (!this.opts.skipPreScreen)
 			this.showPreScreen();
 
-		// 1.x removed 'back-button'; wire keydown instead (already done below
-		// via onShortcut). Also listen to the CAF receiver's own back event.
 		this.bind('back', () => this.handleBack());
 		this.bind('show-language-screen', () => this.showLanguageScreen());
 		this.bind('show-episode-screen', () => this.showEpisodeScreen());
@@ -111,11 +79,7 @@ export class TVOverlayPlugin {
 			this.ensureOSD();
 		});
 		this.bind('item', () => this.refreshOSD());
-		// 1.x: 'active' replaces showControls/hideControls (deprecated forwarders
-		// still re-emit showControls/hideControls, but bind to active directly).
 		this.bind('active', showing => this.osd?.setVisible(Boolean(showing)));
-		this.bind('showControls', () => this.osd?.setVisible(true));
-		this.bind('hideControls', () => this.osd?.setVisible(false));
 		this.bind('chapter-skip-available', (chapter) => {
 			this.showSkipPrompt(chapter as { type?: string; endTime?: number; startTime?: number } | null);
 		});
@@ -169,9 +133,11 @@ export class TVOverlayPlugin {
 		this.clearNextPrompt();
 		document.removeEventListener('keydown', this.onShortcut, true);
 		for (const { event, handler } of this.boundHandlers) {
-			this.player.off(event, handler);
+			(this.player as unknown as LooseBus).off(event, handler);
 		}
 		this.boundHandlers = [];
+		this.host?.remove();
+		this.host = null;
 	}
 
 	private showSkipPrompt(chapter: { type?: string; endTime?: number; startTime?: number } | null): void {
@@ -186,7 +152,7 @@ export class TVOverlayPlugin {
 			onSkip: () => {
 				this.clearSkipPrompt();
 				if (typeof chapter.endTime === 'number')
-					this.player.seek(chapter.endTime);
+					void this.player.time(chapter.endTime);
 			},
 		});
 	}
@@ -196,17 +162,25 @@ export class TVOverlayPlugin {
 		this.skipPrompt = null;
 	}
 
+	private currentItem(): OverlayItem | undefined {
+		return this.player.item?.() as OverlayItem | undefined;
+	}
+
+	private queueItems(): OverlayItem[] {
+		return (this.player.queue?.() ?? []) as OverlayItem[];
+	}
+
 	private updateNextEpisode(): void {
-		const item = this.player.playlistItem?.();
-		const items = this.player.playlist?.() ?? [];
-		const index = this.player.playlistIndex?.() ?? items.findIndex(entry => entry.id === item?.id);
+		const item = this.currentItem();
+		const items = this.queueItems();
+		const index = this.player.index?.() ?? items.findIndex(entry => entry.id === item?.id);
 		const hasNext = Boolean(item && index >= 0 && index < items.length - 1 && this.player.next);
 		const action = decideSkipAction(this.playerCurrentTime(), segmentsForItem(item), hasNext);
 		if (action === 'advance') {
 			this.clearNextPrompt();
 			if (item && this.advancedItem !== item.id) {
 				this.advancedItem = item.id;
-				this.player.next?.();
+				void this.player.next?.();
 			}
 			return;
 		}
@@ -220,7 +194,7 @@ export class TVOverlayPlugin {
 				label: 'Next episode',
 				onSkip: () => {
 					this.clearNextPrompt();
-					this.player.next?.();
+					void this.player.next?.();
 				},
 			});
 		}
@@ -232,65 +206,60 @@ export class TVOverlayPlugin {
 	}
 
 	private playerCurrentTime(): number {
-		return this.player.currentTime?.() ?? this.player.getCurrentTime?.() ?? 0;
+		return this.player.time?.() ?? 0;
 	}
 
 	private playerDuration(): number {
-		return this.player.duration?.() ?? this.player.getDuration?.() ?? 0;
+		return this.player.duration?.() ?? 0;
 	}
 
 	private playerChapters(): Array<{ start: number; end?: number }> {
-		return this.player.chapters?.() ?? this.player.getChapters?.() ?? [];
+		return this.player.chapters?.() ?? [];
 	}
 
+	// 2.x track ids are strings and the setters take a list position, so the panel gets the position as id.
 	private playerAudioTracks(): TrackItem[] {
-		return this.player.audioTracks?.() ?? this.player.getAudioTracks?.() ?? [];
+		return (this.player.audioTracks?.() ?? []).map((track, index) => ({ id: index, label: track.label }));
 	}
 
 	private playerSubtitleTracks(): TrackItem[] {
-		return this.player.subtitles?.() ?? this.player.getSubtitleTracks?.() ?? [];
+		return (this.player.subtitles?.() ?? []).map((track, index) => ({ id: index, label: track.label }));
 	}
 
 	private playerQualityLevels(): TrackItem[] {
-		return this.player.qualityLevels?.() ?? this.player.getQualityLevels?.() ?? [];
+		return (this.player.qualityLevels?.() ?? []).map(level => ({ id: level.index, label: level.label }));
 	}
 
 	private playerCurrentAudioId(): string | number | null {
-		return this.player.audioTrackIndex?.() ?? null;
+		return this.player.audioTrack?.()?.index ?? null;
 	}
 
 	private playerCurrentSubtitleId(): string | number | null {
-		return this.player.subtitleIndex?.() ?? null;
+		return this.player.subtitle?.()?.index ?? 'off';
 	}
 
 	private playerCurrentQualityId(): string | number {
-		if (this.player.quality) {
-			const q = this.player.quality();
-			return typeof q === 'number' ? q : -1;
-		}
-		return this.player.getCurrentQuality?.() ?? -1;
+		const current = this.player.quality?.();
+		return typeof current === 'object' && current !== null ? current.index : -1;
 	}
 
 	private playerSetAudioTrack(id: string | number): void {
-		if (this.player.audioTrack)
-			this.player.audioTrack(Number(id));
+		void this.player.audioTrack?.(Number(id));
 	}
 
 	private playerSetSubtitleTrack(id: string | number): void {
-		if (this.player.subtitle)
-			this.player.subtitle(id === 'off' ? -1 : Number(id));
+		void this.player.subtitle?.(id === 'off' ? null : Number(id));
 	}
 
 	private playerSetQuality(id: string | number): void {
-		if (this.player.quality)
-			this.player.quality(Number(id));
+		this.player.quality?.(Number(id) < 0 ? 'auto' : Number(id));
 	}
 
 	private ensureOSD(): void {
 		const host = this.overlayHost();
 		if (!host || this.osd)
 			return;
-		const item = this.player.playlistItem?.();
+		const item = this.currentItem();
 		this.osd = mountPlaybackOSD({
 			parent: host,
 			title: item?.title ?? '',
@@ -304,7 +273,7 @@ export class TVOverlayPlugin {
 	private refreshOSD(): void {
 		if (!this.osd)
 			return;
-		const item = this.player.playlistItem?.();
+		const item = this.currentItem();
 		this.osd.setTitle({
 			title: item?.title ?? '',
 			subtitle: item?.subtitle ?? null,
@@ -313,12 +282,12 @@ export class TVOverlayPlugin {
 	}
 
 	private bind(event: string, handler: (data?: unknown) => void): void {
-		this.player.on(event, handler);
+		(this.player as unknown as LooseBus).on(event, handler);
 		this.boundHandlers.push({ event, handler });
 	}
 
 	private overlayHost(): HTMLElement | null {
-		return this.player.overlay ?? null;
+		return this.host;
 	}
 
 	private showPreScreen(): void {
@@ -326,7 +295,7 @@ export class TVOverlayPlugin {
 		if (!host)
 			return;
 		this.closeAllPanels();
-		const item = this.player.playlistItem?.();
+		const item = this.currentItem();
 		this.currentPanel = 'pre';
 		this.unmount = mountPreScreen({
 			parent: host,
@@ -335,18 +304,16 @@ export class TVOverlayPlugin {
 			overview: item?.overview,
 			backdropUrl: item?.backdrop ?? null,
 			resumeFromMs: item?.resumeFromMs ?? 0,
-			showEpisodes: (this.player.playlist?.()?.length ?? 0) > 1,
+			showEpisodes: this.queueItems().length > 1,
 			showLanguages: this.playerAudioTracks().length > 0 || this.playerSubtitleTracks().length > 0,
 			onPlay: () => {
 				this.closeAllPanels();
-				this.player.play();
+				void this.player.play();
 			},
 			onRestart: () => {
 				this.closeAllPanels();
-				if (this.player.restart)
-					this.player.restart();
-				else this.player.seek(0);
-				this.player.play();
+				void this.player.restart();
+				void this.player.play();
 			},
 			onShowEpisodes: () => this.showEpisodeScreen(),
 			onShowLanguages: () => this.showLanguageScreen(),
@@ -360,8 +327,8 @@ export class TVOverlayPlugin {
 			return;
 		this.closeAllPanels();
 		this.currentPanel = 'episode';
-		const episodes = this.player.playlist?.() ?? [];
-		const current = this.player.playlistItem?.();
+		const episodes = this.queueItems();
+		const current = this.currentItem();
 		const currentTimeSec = this.playerCurrentTime();
 		this.unmount = mountEpisodeScreen({
 			parent: host,
@@ -370,7 +337,7 @@ export class TVOverlayPlugin {
 			currentTimeMs: Math.round(currentTimeSec * 1000),
 			onPick: (item) => {
 				this.closeAllPanels();
-				this.player.emit?.('load-item', item);
+				this.player.item(item.id);
 			},
 			onExit: () => this.showPreScreen(),
 		});
@@ -416,7 +383,7 @@ export class TVOverlayPlugin {
 			getCurrentTime: () => this.playerCurrentTime(),
 			getDuration: () => this.playerDuration(),
 			onCommit: (seconds) => {
-				this.player.seek(seconds);
+				void this.player.time(seconds);
 				this.closeAllPanels();
 			},
 			onCancel: () => this.closeAllPanels(),
@@ -439,7 +406,7 @@ export class TVOverlayPlugin {
 			this.opts.onExit?.();
 		}
 		else {
-			this.player.pause();
+			void this.player.pause();
 			this.showPreScreen();
 		}
 	}

@@ -9,6 +9,7 @@
 		"dev": "vite --host --force",
 		"build": "vue-tsc --noEmit && vite build",
 		"preview": "vite preview",
+		"copy:octopus": "node scripts/copyOctopusWorker.mjs",
 		"typecheck": "vue-tsc --noEmit",
 		"lint": "eslint . --ext .ts,.vue --report-unused-disable-directives --max-warnings 0",
 		"lint:fix": "eslint --fix ./src --ext .ts,.vue --report-unused-disable-directives --max-warnings 0",
@@ -19,7 +20,7 @@
 	"dependencies": {
 		"@microsoft/signalr": "^10.0.0",
 		"@nomercy-entertainment/nomercy-music-player": "0.2.15",
-		"@nomercy-entertainment/nomercy-video-player": "^1.2.7",
+		"@nomercy-entertainment/nomercy-video-player": "^2.8.3",
 		"@tanstack/vue-query": "^5.62.0",
 		"hls.js": "^1.6.15",
 		"vue": "^3.5.43",

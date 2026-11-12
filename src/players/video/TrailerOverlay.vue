@@ -8,6 +8,8 @@ import type { TrackItem } from './pluginPanels/LanguageScreen';
 import { mountPlaybackOSD } from './pluginPanels/PlaybackOSD';
 import type { PlaybackOSDHandle } from './pluginPanels/PlaybackOSD';
 import { mountSeekContainer } from './pluginPanels/SeekContainer';
+import { mountOverlayHost } from './overlayHost';
+import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
 import { authStore } from '@/stores/authStore';
 import { screensaverStore } from '@/stores/screensaverStore';
 
@@ -32,22 +34,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>();
 
-interface TrailerPlayer {
-	overlay: HTMLDivElement;
-	videoElement: HTMLVideoElement;
-	on: (event: string, handler: (data?: unknown) => void) => void;
-	play: () => Promise<void>;
-	pause: () => void;
-	togglePlayback: () => void;
-	seek: (seconds: number) => number;
-	currentTime: () => number;
-	duration: () => number;
-	subtitles: () => Array<{ label: string; language: string }>;
-	subtitleIndex: () => number;
-	subtitle: (index?: number) => unknown;
-	dispose: () => void;
-}
-
 const CONTROLS_TIMEOUT_MS = 4000;
 const LANGUAGE_KEYS = new Set(['ChannelUp', 'MediaTrackNext', 'l', 'L']);
 const TOGGLE_KEYS = new Set(['MediaPlayPause', 'MediaPlay', 'MediaPause']);
@@ -56,7 +42,8 @@ const rootEl = ref<HTMLElement | null>(null);
 const focusSinkEl = ref<HTMLElement | null>(null);
 const mountId = `nm-trailer-${Math.random().toString(36).slice(2, 10)}`;
 
-let player: TrailerPlayer | null = null;
+let player: NMVideoPlayer | null = null;
+let host: HTMLElement | null = null;
 let osd: PlaybackOSDHandle | null = null;
 let closePanel: (() => void) | null = null;
 let hideTimer: number | null = null;
@@ -100,7 +87,7 @@ function showControls(): void {
 }
 
 function isPaused(): boolean {
-	return player?.videoElement.paused ?? true;
+	return player?.videoElement?.paused ?? true;
 }
 
 function openPanel(unmount: () => void): void {
@@ -120,12 +107,14 @@ function openSeek(): void {
 	player.pause();
 	osd?.setVisible(false);
 	const target = player;
+	if (!host)
+		return;
 	openPanel(mountSeekContainer({
-		parent: target.overlay,
-		getCurrentTime: () => target.currentTime(),
+		parent: host,
+		getCurrentTime: () => target.time(),
 		getDuration: () => target.duration(),
 		onCommit: (seconds) => {
-			target.seek(seconds);
+			void target.time(seconds);
 			closePanel?.();
 			void target.play();
 		},
@@ -140,18 +129,19 @@ function openLanguage(): void {
 	if (!player)
 		return;
 	const target = player;
+	if (!host)
+		return;
 	const subtitleTracks: TrackItem[] = target.subtitles().map((track, index) => ({
 		id: index,
 		label: track.label,
 	}));
-	const current = target.subtitleIndex();
 	openPanel(mountLanguageScreen({
-		parent: target.overlay,
+		parent: host,
 		audioTracks: [],
 		subtitleTracks,
-		currentSubtitleId: current >= 0 ? current : 'off',
+		currentSubtitleId: target.subtitle()?.index ?? 'off',
 		onPickAudio: () => {},
-		onPickSubtitle: id => target.subtitle(id === 'off' ? -1 : Number(id)),
+		onPickSubtitle: id => void target.subtitle(id === 'off' ? null : Number(id)),
 		onExit: () => closePanel?.(),
 	}));
 }
@@ -236,45 +226,47 @@ onMounted(async () => {
 
 	try {
 		const mod = await import('@nomercy-entertainment/nomercy-video-player');
-		const factory = mod.default as unknown as (id: string) => { setup: (config: unknown) => TrailerPlayer };
-
-		player = factory(mountId).setup({
+		const { SubtitleOverlayPlugin } = await import('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay');
+		const created: NMVideoPlayer = mod.default(mountId);
+		created.addPlugin(SubtitleOverlayPlugin);
+		created.addPlugin(mod.OctopusPlugin, {
+			workerUrl: '/js/octopus/nomercy-libass-worker.js',
+			fallbackFont: '/js/octopus/default.ttf',
+		});
+		// No auth: on a progressive source the player appends a token to the
+		// URL as ?token=, which would hand the bearer token to the media host
+		// and sits on top of a query the host signs.
+		created.setup({
 			playlist: [{
 				id: props.trailer.videoId,
-				file: props.trailer.url,
+				url: props.trailer.url,
+				poster: '',
 				title: title(),
-				description: '',
-				image: '',
-				duration: '',
-				tracks: props.trailer.subtitles.map((track, index) => ({
-					id: index,
-					kind: 'subtitles',
-					file: track.url,
+				subtitles: props.trailer.subtitles.map((track, index) => ({
+					id: String(index),
 					language: track.language,
 					label: languageLabel(track.language),
+					url: track.url,
 				})),
-			}],
+			}] as never,
 			autoPlay: true,
-			controls: false,
 			muted: false,
 			preload: 'auto',
-			// No accessToken. On a progressive source this player appends it
-			// to the URL as ?token=, which would hand the bearer token to the
-			// media host and sits on top of a query the host signs.
-			displayLanguage: authStore.locale.value,
 		});
+		player = created;
 
 		if (closed) {
-			player.dispose();
+			void created.dispose();
 			player = null;
 			return;
 		}
 
-		const target = player;
+		const target = created;
+		host = mountOverlayHost(target.container);
 		osd = mountPlaybackOSD({
-			parent: target.overlay,
+			parent: host,
 			title: title(),
-			getCurrentTime: () => target.currentTime(),
+			getCurrentTime: () => target.time(),
 			getDuration: () => target.duration(),
 		});
 		showControls();
@@ -306,7 +298,9 @@ onBeforeUnmount(() => {
 	closePanel?.();
 	osd?.dispose();
 	osd = null;
-	player?.dispose();
+	host?.remove();
+	host = null;
+	void player?.dispose();
 	player = null;
 	screensaverStore.resetIdle();
 });

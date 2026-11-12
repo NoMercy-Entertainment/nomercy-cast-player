@@ -2,7 +2,8 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { defineConfig } from 'vitest/config';
 import { loadEnv } from 'vite';
-import type { ProxyOptions } from 'vite';
+import type { Plugin, ProxyOptions } from 'vite';
+import { copyOctopusWorker } from './scripts/copyOctopusWorker.mjs';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 import pkg from './package.json' with { type: 'json' };
@@ -49,12 +50,24 @@ function devTarget(command: 'build' | 'serve', value: string | undefined): strin
 	return undefined;
 }
 
+// Runs before publicDir is read, so a dev server and a build both serve the
+// worker from the receiver's own origin. CI calls vite directly, not yarn.
+function octopusWorker(): Plugin {
+	return {
+		name: 'octopus-worker-copy',
+		config(_config, { mode }) {
+			if (mode !== 'test')
+				copyOctopusWorker();
+		},
+	};
+}
+
 export default defineConfig(({ command, mode }) => {
 	const env = loadEnv(mode, process.cwd(), '');
 	const target = devTarget(command, env.CAST_DEV_SERVER_URL || undefined);
 
 	return {
-		plugins: [vue(), tailwindcss()],
+		plugins: [octopusWorker(), vue(), tailwindcss()],
 		define: {
 			__APP_VERSION__: JSON.stringify(pkg.version),
 		},

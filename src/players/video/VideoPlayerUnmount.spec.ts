@@ -2,7 +2,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { videoSyncBridge } from './syncBridge';
 
-const { finishImport, importPending, importStarted, startImport, setup, overlayAttach }
+const { finishImport, importPending, importStarted, startImport, setup, addPlugin, overlayAttach }
 	= vi.hoisted(() => {
 		let finishImport!: () => void;
 		let startImport!: () => void;
@@ -18,6 +18,7 @@ const { finishImport, importPending, importStarted, startImport, setup, overlayA
 			importStarted,
 			startImport,
 			setup: vi.fn(() => ({})),
+			addPlugin: vi.fn(),
 			overlayAttach: vi.fn(),
 		};
 	});
@@ -25,8 +26,11 @@ const { finishImport, importPending, importStarted, startImport, setup, overlayA
 vi.mock('@nomercy-entertainment/nomercy-video-player', async () => {
 	startImport();
 	await importPending;
-	return { default: () => ({ setup }) };
+	return { default: () => ({ setup, addPlugin }), OctopusPlugin: class {} };
 });
+vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', () => ({
+	SubtitleOverlayPlugin: class {},
+}));
 
 vi.mock('./TVOverlayPlugin', () => ({
 	TVOverlayPlugin: class {
@@ -50,6 +54,7 @@ describe('videoPlayer unmount during import', () => {
 		await flushPromises();
 
 		expect(setup).not.toHaveBeenCalled();
+		expect(addPlugin).not.toHaveBeenCalled();
 		expect(videoSyncBridge.current()).toBeNull();
 		expect(overlayAttach).not.toHaveBeenCalled();
 		expect(initError).not.toHaveBeenCalled();

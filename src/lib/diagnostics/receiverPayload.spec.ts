@@ -27,6 +27,7 @@ interface FakeEngine {
 	pause: () => void;
 	seek: (seconds: number) => void;
 	playlistItem: () => { id: number; type: string; tmdbId: number };
+	item: () => { id: number; type: string; tmdbId: number };
 	currentTrack: () => { id: number };
 }
 
@@ -54,6 +55,7 @@ function fakeEngine(): FakeEngine {
 		pause: () => {},
 		seek: () => {},
 		playlistItem: () => ({ id: 1399, type: 'tv', tmdbId: 1399 }),
+		item: () => ({ id: 1399, type: 'tv', tmdbId: 1399 }),
 		currentTrack: () => ({ id: 4821 }),
 	};
 }

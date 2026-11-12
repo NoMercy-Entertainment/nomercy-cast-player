@@ -12,29 +12,34 @@
  * expectations.
  */
 
+import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 import { segmentsForItem } from './skipSegments';
 
-interface PlayerLike {
+// The events this plugin exchanges with the overlay are not in the player's typed map.
+type PlayerLike = Pick<NMVideoPlayer, 'time' | 'item' | 'chapters'> & {
 	on: (event: string, handler: (data: unknown) => void) => void;
 	off: (event: string, handler?: (data: unknown) => void) => void;
 	emit?: (event: string, data?: unknown) => void;
-	// 1.x: chapter(currentTime) — requires current time arg
-	chapter?: (currentTime: number) =>
-		| { id: string; type?: string; endTime?: number; startTime?: number }
-		| null
-		| undefined;
-	// 0.x deprecated shim (still present in 1.x but requires arg too)
-	getCurrentChapter?: (currentTime: number) =>
-		| { id: string; type?: string; endTime?: number; startTime?: number }
-		| null
-		| undefined;
-	// 1.x: currentTime() getter
-	currentTime?: () => number;
-	// 0.x deprecated shim
-	getCurrentTime?: () => number;
-	seek: (seconds: number) => void;
-	playlistItem?: () => unknown;
+};
+
+interface SkipChapter { id: string; type?: string; endTime?: number; startTime?: number }
+
+// Server chapter files name the intro and credits by title.
+function chapterType(title: string): string | undefined {
+	const lower = title.toLowerCase();
+	if (lower.includes('intro') || lower.includes('opening'))
+		return 'intro';
+	if (lower.includes('credit') || lower.includes('ending') || lower.includes('outro'))
+		return 'credits';
+	return undefined;
+}
+
+function chapterAt(player: PlayerLike, t: number): SkipChapter | null {
+	const found = player.chapters().find(chapter => t >= chapter.start && t < chapter.end);
+	if (!found)
+		return null;
+	return { id: `chapter-${found.index}`, type: chapterType(found.title), startTime: found.start, endTime: found.end };
 }
 
 let lastChapterId: string | null = null;
@@ -47,15 +52,15 @@ export function setAutoSkipEnabled(enabled: boolean): void {
 
 export function attachChapterAutoSkip(player: PlayerLike): void {
 	const onTime = (): void => {
-		const t = player.currentTime?.() ?? player.getCurrentTime?.() ?? 0;
-		const item = player.playlistItem?.();
+		const t = player.time();
+		const item = player.item();
 		const segments = segmentsForItem(item);
 		const intro = segments.find(segment => segment.type.toLowerCase() === 'intro'
 			&& typeof segment.start === 'number' && typeof segment.end === 'number'
 			&& t >= segment.start && t < segment.end);
 		const chapter = segments.length
 			? intro ? { id: `intro-${intro.start}`, type: 'intro', startTime: intro.start, endTime: intro.end } : null
-			: player.chapter?.(t) ?? player.getCurrentChapter?.(t) ?? null;
+			: chapterAt(player, t);
 		if (!chapter) {
 			if (lastChapterId !== null)
 				player.emit?.('chapter-skip-clear');
@@ -67,7 +72,7 @@ export function attachChapterAutoSkip(player: PlayerLike): void {
 
 		if (chapter.type === 'credits' || chapter.type === 'intro') {
 			if (userPrefAutoSkip && typeof chapter.endTime === 'number') {
-				player.seek(chapter.endTime);
+				void player.time(chapter.endTime);
 			}
 			else {
 				player.emit?.('chapter-skip-available', chapter);

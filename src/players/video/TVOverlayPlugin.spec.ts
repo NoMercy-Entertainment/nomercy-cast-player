@@ -2,13 +2,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { TVOverlayPlugin } from './TVOverlayPlugin';
 
+// The 2.x player has no overlay element, only the container it mounts into.
 function fakePlayer() {
 	const handlers = new Map<string, Array<(data?: unknown) => void>>();
-	const overlay = document.createElement('div');
-	document.body.append(overlay);
+	const container = document.createElement('div');
+	document.body.append(container);
 
 	return {
-		overlay,
+		container,
 		on(event: string, handler: (data?: unknown) => void) {
 			handlers.set(event, [...(handlers.get(event) ?? []), handler]);
 		},
@@ -22,7 +23,13 @@ function fakePlayer() {
 		}),
 		play: vi.fn(),
 		pause: vi.fn(),
-		seek: vi.fn(),
+		time: vi.fn(() => 0),
+		duration: vi.fn(() => 0),
+		subtitles: vi.fn(() => []),
+		audioTracks: vi.fn(() => []),
+		qualityLevels: vi.fn(() => []),
+		subtitle: vi.fn(),
+		chapters: vi.fn(() => []),
 	};
 }
 
@@ -47,20 +54,36 @@ describe('back on the pre-screen exits once, without recursing', () => {
 	});
 });
 
+describe('the overlay host', () => {
+	it('mounts the panels in a host inside the player container and removes it on detach', () => {
+		const player = fakePlayer();
+		const plugin = new TVOverlayPlugin(player as never, {});
+		plugin.attach();
+
+		const host = player.container.querySelector('.tv-overlay-host');
+		expect(host).not.toBeNull();
+		expect(host!.querySelector('.pre-screen')).not.toBeNull();
+
+		plugin.detach();
+		expect(player.container.querySelector('.tv-overlay-host')).toBeNull();
+		document.body.innerHTML = '';
+	});
+});
+
 describe('server credits on the overlay', () => {
 	it('offers the next episode before an epilogue and advances at content end', () => {
 		const player = fakePlayer();
 		const next = vi.fn();
 		const item = { id: 'a', title: 'A', skip_segments: [{ type: 'Credits', credits_start: 80, content_end: 110 }] };
 		let position = 79;
-		const castPlayer = { ...player, next, currentTime: () => position, playlist: () => [item, { id: 'b', title: 'B' }], playlistItem: () => item };
+		const castPlayer = { ...player, next, time: () => position, queue: () => [item, { id: 'b', title: 'B' }], item: () => item, index: () => 0 };
 		const plugin = new TVOverlayPlugin(castPlayer as never, { skipPreScreen: true });
 		plugin.attach();
 		player.emit('time');
-		expect(player.overlay.textContent).not.toContain('Next episode');
+		expect(player.container.textContent).not.toContain('Next episode');
 		position = 80;
 		player.emit('time');
-		expect(player.overlay.textContent).toContain('Next episode');
+		expect(player.container.textContent).toContain('Next episode');
 		position = 100;
 		player.emit('time');
 		expect(next).not.toHaveBeenCalled();
@@ -69,7 +92,7 @@ describe('server credits on the overlay', () => {
 		player.emit('time');
 		expect(next).toHaveBeenCalledTimes(1);
 		plugin.detach();
-		player.overlay.remove();
+		player.container.remove();
 	});
 });
 
@@ -99,5 +122,42 @@ describe('d-pad seek during playback', () => {
 
 		expect(document.querySelector('.pre-screen')).not.toBeNull();
 		expect(document.querySelector('.seek-container')).toBeNull();
+	});
+});
+
+describe('picking subtitles in the language panel', () => {
+	let plugin: TVOverlayPlugin | null = null;
+
+	afterEach(() => {
+		plugin?.detach();
+		plugin = null;
+		document.body.innerHTML = '';
+	});
+
+	it('turns subtitles off with null, which the 2.x player takes instead of -1', () => {
+		const player = fakePlayer();
+		player.subtitles.mockReturnValue([{ id: 'sub-a', label: 'English' }] as never);
+		plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true });
+		plugin.attach();
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
+		const off = [...document.querySelectorAll<HTMLElement>('.language-screen button')].find(button => button.textContent === 'Off');
+		expect(off).toBeDefined();
+		off!.click();
+
+		expect(player.subtitle).toHaveBeenCalledWith(null);
+	});
+
+	it('picks a subtitle by its list position, because 2.x track ids are strings', () => {
+		const player = fakePlayer();
+		player.subtitles.mockReturnValue([{ id: 'sub-a', label: 'English' }, { id: 'sub-b', label: 'Dutch' }] as never);
+		plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true });
+		plugin.attach();
+
+		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
+		const dutch = [...document.querySelectorAll<HTMLElement>('.language-screen button')].find(button => button.textContent === 'Dutch');
+		dutch!.click();
+
+		expect(player.subtitle).toHaveBeenCalledWith(1);
 	});
 });

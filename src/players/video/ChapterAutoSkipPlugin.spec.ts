@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { attachChapterAutoSkip, detachChapterAutoSkip, setAutoSkipEnabled } from './ChapterAutoSkipPlugin';
 
-interface Chapter { id: string; type?: string; startTime?: number; endTime?: number }
+interface Chapter { index: number; title: string; start: number; end: number }
 
 function fakePlayer(chapters: Chapter[]) {
 	const handlers = new Map<string, Array<(data: unknown) => void>>();
@@ -19,9 +19,9 @@ function fakePlayer(chapters: Chapter[]) {
 			for (const handler of [...(handlers.get(event) ?? [])])
 				handler(payload);
 		}),
-		currentTime: () => time,
-		chapter: (t: number) => chapters.find(c => (c.startTime ?? 0) <= t && t < (c.endTime ?? Number.POSITIVE_INFINITY)) ?? null,
-		seek: vi.fn(),
+		time: vi.fn((to?: number) => to === undefined ? time : undefined),
+		item: () => undefined,
+		chapters: () => chapters,
 		setTime(t: number) {
 			time = t;
 			for (const handler of [...(handlers.get('time') ?? [])])
@@ -42,20 +42,20 @@ describe('chapterAutoSkipPlugin clears the skip prompt once the chapter ends', (
 
 	it('emits chapter-skip-clear when the playhead leaves the intro chapter', () => {
 		const player = fakePlayer([
-			{ id: 'intro', type: 'intro', startTime: 0, endTime: 10 },
-			{ id: 'main', type: undefined, startTime: 10, endTime: 100 },
+			{ index: 0, title: 'Intro', start: 0, end: 10 },
+			{ index: 1, title: 'Chapter 2', start: 10, end: 100 },
 		]);
 		attachChapterAutoSkip(player as never);
 
 		player.setTime(5);
-		expect(player.emit).toHaveBeenCalledWith('chapter-skip-available', expect.objectContaining({ id: 'intro' }));
+		expect(player.emit).toHaveBeenCalledWith('chapter-skip-available', expect.objectContaining({ id: 'chapter-0', type: 'intro', endTime: 10 }));
 
 		player.setTime(15);
 		expect(player.emit).toHaveBeenCalledWith('chapter-skip-clear');
 	});
 
 	it('clears the prompt on seek, including when the destination has no chapter', () => {
-		const player = fakePlayer([{ id: 'intro', type: 'intro', startTime: 0, endTime: 10 }]);
+		const player = fakePlayer([{ index: 0, title: 'Intro', start: 0, end: 10 }]);
 		attachChapterAutoSkip(player as never);
 		player.setTime(5);
 		player.seekTo(20);

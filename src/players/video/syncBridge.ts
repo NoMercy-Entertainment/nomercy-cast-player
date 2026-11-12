@@ -1,3 +1,4 @@
+import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
@@ -30,34 +31,15 @@ function throttle<T extends (...args: never[]) => void>(fn: T, ms: number): Thro
 	}) as Throttled<T>;
 }
 
-interface VideoEngineLike {
-	on: (event: string, handler: (...args: unknown[]) => void) => void;
-	off: (event: string, handler?: (...args: unknown[]) => void) => void;
-	play: () => void;
-	pause: () => void;
-	seek: (seconds: number) => void;
-	stop?: () => void;
-	next?: () => void;
-	previous?: () => void;
-	loadPlaylist?: (playlist: unknown, item?: unknown) => void;
-	// 1.x: volume(value) setter
-	volume?: (v: number) => void;
-	// 0.x deprecated shim
-	setVolume?: (v: number) => void;
-	playlistItem?: () => {
-		id: number | string;
-		videoId?: string;
-		type?: string;
-		listId?: string | number;
-		tmdbId?: string | number;
-	};
-	// 1.x
-	audioTrackIndex?: () => number | null;
-	subtitleIndex?: () => number | null;
-	// 0.x deprecated shims still present in 1.x
-	getAudioTrack?: () => string | number | null;
-	getSubtitleTrack?: () => string | number | null;
-	getSubtitleType?: () => string | null;
+type VideoEngineLike = NMVideoPlayer;
+
+// The server's wire item carries ids the player's item type does not name.
+interface WireItem {
+	id: number | string;
+	videoId?: string;
+	type?: string;
+	listId?: string | number;
+	tmdbId?: string | number;
 }
 
 let engine: VideoEngineLike | null = null;
@@ -66,7 +48,7 @@ const unsubs: Array<() => void> = [];
 // "PlaybackStalled 12" says nothing; "PlaybackStalled tv-1399 s3e9" names the
 // episode whose report this is.
 function mediaLabel(p: VideoEngineLike): string | undefined {
-	const item = p.playlistItem?.();
+	const item = p.item() as WireItem | undefined;
 	if (!item)
 		return undefined;
 
@@ -85,14 +67,13 @@ function bindOutbound(p: VideoEngineLike): void {
 		playbackStore.video.applyPlayState(false);
 	};
 	const onSeek = (...args: unknown[]): void => {
-		const t = args[0] as number;
-		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', { time: t });
+		const data = args[0] as { time: number };
+		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', { time: data.time });
 	};
 	const onTime = throttle((...args: unknown[]) => {
-		const data = args[0] as { currentTime?: number } | number;
-		const seconds = typeof data === 'number' ? data : (data.currentTime ?? 0);
+		const seconds = (args[0] as { time?: number } | undefined)?.time ?? 0;
 		playbackStore.video.applyTime(Math.round(seconds * 1000));
-		const item = p.playlistItem?.();
+		const item = p.item() as WireItem | undefined;
 		if (!item)
 			return;
 		void socketStore.videoHub.value?.invoke('SetTime', {
@@ -101,9 +82,9 @@ function bindOutbound(p: VideoEngineLike): void {
 			PlaylistId: item.listId,
 			TmdbId: item.tmdbId,
 			Time: Math.round(seconds),
-			Audio: p.audioTrackIndex?.() ?? p.getAudioTrack?.(),
-			Subtitle: p.subtitleIndex?.() ?? p.getSubtitleTrack?.(),
-			SubtitleType: p.getSubtitleType?.(),
+			Audio: p.audioTrack()?.track.language ?? '',
+			Subtitle: p.subtitle()?.track.language ?? '',
+			SubtitleType: p.subtitle()?.track.type ?? '',
 		});
 	}, 5000);
 
@@ -133,28 +114,26 @@ function bindInbound(p: VideoEngineLike): void {
 
 	const onPlay = (): void => {
 		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.PlayPressed, 0, 0, 0, mediaLabel(p));
-		p.play();
+		void p.play();
 	};
-	const onPause = (): void => p.pause();
+	const onPause = (): void => void p.pause();
 	const onSeek = (...args: unknown[]): void => {
 		const data = args[0] as { time: number };
-		p.seek(data.time);
+		void p.time(data.time);
 	};
-	const onStop = (): void => p.stop?.();
-	const onNext = (): void => p.next?.();
-	const onPrev = (): void => p.previous?.();
+	const onStop = (): void => void p.stop();
+	const onNext = (): void => void p.next();
+	const onPrev = (): void => void p.previous();
 	const onLoad = (...args: unknown[]): void => {
-		const data = args[0] as { playlist: unknown; item?: unknown };
-		const item = data.item as { id?: unknown; type?: unknown } | undefined;
+		const data = args[0] as { playlist: unknown[]; item?: { id?: string | number; type?: unknown } };
+		const item = data.item;
 		const label = item?.id === undefined ? 'video playlist' : `${item.type ?? 'video'}-${String(item.id)}`;
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, label);
-		p.loadPlaylist?.(data.playlist, data.item);
+		p.playNow(data.playlist as never, item?.id);
 	};
 	const onVol = (...args: unknown[]): void => {
 		const data = args[0] as { volume: number };
-		// 1.x: volume(value); 0.x: setVolume(value)
-		p.volume?.(data.volume);
-		p.setVolume?.(data.volume);
+		void p.volume(data.volume);
 	};
 
 	hub.on('Play', onPlay);

@@ -5,6 +5,8 @@ import { videoSyncBridge } from './syncBridge';
 import { TVOverlayPlugin } from './TVOverlayPlugin';
 import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipPlugin';
 import { prepareChapterPlaylist } from './chapterFile';
+import { attachAssPlainTextFallback } from './assPlainTextFallback';
+import type { NMVideoPlayer, VideoPlayerConfig } from '@nomercy-entertainment/nomercy-video-player';
 import { authStore } from '@/stores/authStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { PlaylistItem } from '@/queries/usePlaylistQuery';
@@ -26,7 +28,7 @@ const emit = defineEmits<{ error: [message: string] }>();
 
 // The player reads its stored pick from `storage`, ahead of the account
 // default. A cast seeds that pick with what the phone showed.
-function castPickStorage(): { get: (key: string) => string | null; set: (key: string, value: string) => void } | undefined {
+function castPickStorage(): VideoPlayerConfig['storage'] {
 	if (!props.castAudioLanguage && !props.castSubtitle)
 		return undefined;
 	const values = new Map<string, string>();
@@ -37,6 +39,12 @@ function castPickStorage(): { get: (key: string) => string | null; set: (key: st
 	return {
 		get: key => values.get(key) ?? null,
 		set: (key, value) => { values.set(key, value); },
+		remove: (key) => { values.delete(key); },
+		getJSON<T>(key: string): T | null {
+			const raw = values.get(key);
+			return raw === undefined ? null : JSON.parse(raw) as T;
+		},
+		setJSON: (key, value) => { values.set(key, JSON.stringify(value)); },
 	};
 }
 
@@ -46,7 +54,8 @@ const mediaLabel = computed(() => `${props.type}-${props.id}`);
 
 const router = useRouter();
 const containerEl = ref<HTMLElement | null>(null);
-let engine: { dispose?: () => void } | null = null;
+let engine: NMVideoPlayer | null = null;
+let detachAssFallback: (() => void) | null = null;
 let overlay: TVOverlayPlugin | null = null;
 let unmounted = false;
 let disposeChapters: (() => void) | null = null;
@@ -74,20 +83,13 @@ function mergeLivePlaylist(current: PlaylistItem[], incoming: PlaylistItem[], pl
 watch(() => props.playlist, (incoming) => {
 	if (props.type !== 'tv' || !incoming || !engine)
 		return;
-	const player = engine as {
-		playlist?: () => PlaylistItem[];
-		playlistItem?: () => PlaylistItem;
-		load?: (items: PlaylistItem[]) => void;
-	};
-	const current = player.playlist?.();
-	const playingId = player.playlistItem?.()?.id;
-	if (!current || playingId === undefined)
+	const current = engine.queue() as unknown as PlaylistItem[];
+	const playingId = (engine.item() as unknown as PlaylistItem | undefined)?.id;
+	if (playingId === undefined)
 		return;
 	const merged = mergeLivePlaylist(current, incoming, playingId);
-	if (merged.length > current.length) {
-		// 1.x load() swaps the queue without loading a source.
-		player.load?.(merged);
-	}
+	if (merged.length > current.length)
+		engine.queue(merged as never);
 });
 
 onMounted(async () => {
@@ -121,88 +123,64 @@ onMounted(async () => {
 		if (!containerEl.value.id)
 			containerEl.value.id = `nm-video-${Math.random().toString(36).slice(2, 10)}`;
 
-		const mod = (await import(
-			'@nomercy-entertainment/nomercy-video-player',
-		)) as unknown as Record<string, unknown>;
+		const mod = await import('@nomercy-entertainment/nomercy-video-player');
+		const { SubtitleOverlayPlugin } = await import('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay');
 		if (unmounted)
 			return;
-		// Package's default export is a factory: `(id?: string) => NMPlayer`.
-		// Older receiver builds may have shipped a class named NoMercyPlayer
-		// instead — handle both shapes.
-		const exported = (mod.default ?? mod.NoMercyPlayer) as unknown;
-		if (typeof exported !== 'function') {
+		const factory = mod.default;
+		if (typeof factory !== 'function') {
 			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, 'video-player package');
 			console.warn('[video-player] no factory exported from package');
 			emit('error', 'The video player could not start.');
 			return;
 		}
-		const factoryOrCtor = exported as (id?: string) => { setup: (options: unknown) => unknown };
-		// The package reads `language`; `isTv` is kept for the older class shape.
-		const setupOptions = {
-			playlist: prepared.playlist,
-			accessToken: () => authStore.accessToken.value ?? '',
+		const player: NMVideoPlayer = factory(containerEl.value.id);
+		// The video-player package bundles the retired 4.1.0 worker; this one is copied from 0.2.x into the receiver origin.
+		player.addPlugin(SubtitleOverlayPlugin);
+		player.addPlugin(mod.OctopusPlugin, {
+			workerUrl: '/js/octopus/nomercy-libass-worker.js',
+			fallbackFont: '/js/octopus/default.ttf',
+		});
+		player.setup({
+			playlist: prepared.playlist as never,
+			auth: { bearerToken: () => authStore.accessToken.value ?? '' },
 			autoPlay: true,
-			isTv: true,
 			language: authStore.locale.value ?? 'en',
 			// The account's synced pick: this player has no stored choice of its own.
 			defaultSubtitleLanguage: authStore.defaultSubtitleLanguage.value ?? undefined,
 			defaultAudioLanguage: authStore.defaultAudioLanguage.value ?? undefined,
 			storage: castPickStorage(),
-		};
-		let created: unknown;
-		try {
-			created = factoryOrCtor(containerEl.value.id).setup(setupOptions);
-		}
-		catch {
-			const Ctor = exported as new (opts: unknown) => unknown;
-			created = new Ctor({
-				container: containerEl.value,
-				...setupOptions,
-			});
-		}
-		engine = created as { dispose?: () => void };
+		});
+		engine = player;
+		detachAssFallback = attachAssPlainTextFallback(player);
 
-		// setup() plays the first playlist item. A cast names the item to watch
-		// (episode 5, not episode 1): switch to it once the playlist is loaded.
+		// setup() plays the first queue item. A cast names the item to watch
+		// (episode 5, not episode 1): switch to it once the queue is loaded.
 		const startIndex = props.playlist?.findIndex(item => item.id === props.initialItem?.id) ?? -1;
-		if (startIndex > 0) {
-			const player = engine as { once?: (event: string, handler: () => void) => void; playlistItem?: (index: number) => void };
-			player.once?.('playlist', () => player.playlistItem?.(startIndex));
-		}
+		if (startIndex > 0)
+			player.once('queue', () => player.seekToIndex(startIndex));
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, mediaLabel.value);
 
-		const playerLike = engine as unknown as Parameters<typeof videoSyncBridge.attach>[0];
-		videoSyncBridge.attach(playerLike);
+		videoSyncBridge.attach(player);
 
-		attachChapterAutoSkip(playerLike as never);
+		attachChapterAutoSkip(player);
 
-		overlay = new TVOverlayPlugin(playerLike as never, {
+		overlay = new TVOverlayPlugin(player, {
 			skipPreScreen: typeof props.resumeAt === 'number' && props.resumeAt > 0,
 			onExit: () => router.back(),
 		});
 		overlay.attach();
 
 		if (typeof props.resumeAt === 'number' && props.resumeAt > 0) {
-			// Wait until the player reports it's ready and the duration is
-			// resolved before seeking — seeking before the manifest loads
-			// is silently ignored by the npm player. Mirrors APK
-			// WatchScreen.kt's `videoPlayerStore.timeState.first { duration > 0 }`.
-			const player = engine as {
-				on?: (event: string, handler: () => void) => void;
-				once?: (event: string, handler: () => void) => void;
-				seek?: (s: number) => void;
-				getDuration?: () => number;
-			};
+			// Seeking before the duration is known is ignored: wait for it.
 			const seekToResume = (): void => {
-				const dur = player.getDuration?.() ?? 0;
-				if (dur > 0) {
-					player.seek?.(props.resumeAt!);
+				if (player.duration() > 0) {
+					player.time(props.resumeAt!);
 					return;
 				}
-				// duration not ready yet — wait one more 'time' tick
-				player.once?.('time', seekToResume);
+				player.once('time', seekToResume);
 			};
-			player.once?.('ready', seekToResume);
+			player.once('ready', seekToResume);
 		}
 	}
 	catch (err) {
@@ -217,7 +195,9 @@ onBeforeUnmount(() => {
 	overlay?.detach();
 	videoSyncBridge.detach();
 	detachChapterAutoSkip();
-	engine?.dispose?.();
+	detachAssFallback?.();
+	detachAssFallback = null;
+	void engine?.dispose();
 	disposeChapters?.();
 	engine = null;
 	overlay = null;
@@ -236,6 +216,25 @@ onBeforeUnmount(() => {
 	position: relative;
 }
 
+:global(.tv-overlay-host) {
+	position: absolute;
+	inset: 0;
+	z-index: 10;
+}
+:global(.ass-plain-text) {
+	position: absolute;
+	left: 10%;
+	right: 10%;
+	bottom: 8%;
+	text-align: center;
+	color: oklch(1 0 0);
+	font-size: 32px;
+	line-height: 1.3;
+	text-shadow: 0 2px 4px oklch(0 0 0 / 0.9);
+	white-space: pre-line;
+	pointer-events: none;
+	z-index: 5;
+}
 :global(.panel) {
 	position: absolute;
 	inset: 0;

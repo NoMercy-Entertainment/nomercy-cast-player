@@ -676,7 +676,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nomercy-entertainment/media-session@npm:^1.1.1, @nomercy-entertainment/media-session@npm:^1.1.2":
+"@nomercy-entertainment/media-session@npm:^1.1.1":
   version: 1.1.3
   resolution: "@nomercy-entertainment/media-session@npm:1.1.3"
   checksum: 10c0/b8d06f0d340ab9d4b049bd2bea23455bbdaf6d8ea0be5ae2074209b3f92e95ab48cd88ab97057aff9a1b1c6db3a2e367e12e1685626579b2f669928d9483d19f
@@ -698,14 +698,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nomercy-entertainment/nomercy-video-player@npm:^1.2.7":
-  version: 1.2.7
-  resolution: "@nomercy-entertainment/nomercy-video-player@npm:1.2.7"
+"@nomercy-entertainment/nomercy-player-core@npm:2.6.1":
+  version: 2.6.1
+  resolution: "@nomercy-entertainment/nomercy-player-core@npm:2.6.1"
   dependencies:
-    "@nomercy-entertainment/media-session": "npm:^1.1.2"
-    hls.js: "npm:1.6.15"
-    webvtt-parser: "npm:2.2.0"
-  checksum: 10c0/24652265c52c8e2543317132f217457f388c3a587c92513f760b803f4d59f7c0bd8171f57b42ddbb38e75a79f73368f9e98bf050f7690c2d4d5400c17de9f17f
+    hls.js: "npm:^1.6.0"
+  checksum: 10c0/74e01281f1e3c49d731d8a920b643efb09c4a1e09387187949dbfef8ecd09522d4de219a2cac286abc33f0cf5466a384e4ec65ef779c84638f147aee76bfcd20
+  languageName: node
+  linkType: hard
+
+"@nomercy-entertainment/nomercy-subtitle-octopus@npm:^0.2.0":
+  version: 0.2.3
+  resolution: "@nomercy-entertainment/nomercy-subtitle-octopus@npm:0.2.3"
+  checksum: 10c0/35603d922771e9dec832f484918c5dd8150882b0c2994000cfcffa14f5f6e5b71f3229f6f80b30ce07999f2183a442d776ecba2e9ac2e04dcca622f9bb1b5ba7
+  languageName: node
+  linkType: hard
+
+"@nomercy-entertainment/nomercy-video-player@npm:^2.8.3":
+  version: 2.8.3
+  resolution: "@nomercy-entertainment/nomercy-video-player@npm:2.8.3"
+  dependencies:
+    "@nomercy-entertainment/nomercy-player-core": "npm:2.6.1"
+    "@nomercy-entertainment/nomercy-subtitle-octopus": "npm:^0.2.0"
+  checksum: 10c0/c7944a5b059af4dca668882b9835e0a2fb8c63dc0ad6c2e7fa8c595ff29a674421d98bb240cb064f1b6914d728ce191d60f45adeee579c6ed150cc12079c861d
   languageName: node
   linkType: hard
 
@@ -3195,6 +3210,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hls.js@npm:^1.6.0":
+  version: 1.7.4
+  resolution: "hls.js@npm:1.7.4"
+  checksum: 10c0/7c7534bddb262ad4067661f1db9120d7fb76626fd7f9de12d8cb1f5dddf5792a5fe9e7b1031351711d2657456a3e2b687ce3f95e332a24ebdbb56465a942f28a
+  languageName: node
+  linkType: hard
+
 "html-encoding-sniffer@npm:^6.0.0":
   version: 6.0.0
   resolution: "html-encoding-sniffer@npm:6.0.0"
@@ -4479,7 +4501,7 @@ __metadata:
     "@antfu/eslint-config": "npm:8.1.1"
     "@microsoft/signalr": "npm:^10.0.0"
     "@nomercy-entertainment/nomercy-music-player": "npm:0.2.15"
-    "@nomercy-entertainment/nomercy-video-player": "npm:^1.2.7"
+    "@nomercy-entertainment/nomercy-video-player": "npm:^2.8.3"
     "@tailwindcss/vite": "npm:^4.0.0"
     "@tanstack/vue-query": "npm:^5.62.0"
     "@types/chromecast-caf-receiver": "npm:^6.0.25"
@@ -5790,13 +5812,6 @@ __metadata:
   version: 8.0.1
   resolution: "webidl-conversions@npm:8.0.1"
   checksum: 10c0/3f6f327ca5fa0c065ed8ed0ef3b72f33623376e68f958e9b7bd0df49fdb0b908139ac2338d19fb45bd0e05595bda96cb6d1622222a8b413daa38a17aacc4dd46
-  languageName: node
-  linkType: hard
-
-"webvtt-parser@npm:2.2.0":
-  version: 2.2.0
-  resolution: "webvtt-parser@npm:2.2.0"
-  checksum: 10c0/cb517e6aed0e93bc237bf97ba874d7d9c0f9ce19c7b663b2da4a6b4543dead44e81fe23347077e5b18352655b9aac78d2208fba607d4f3fb4fbd9e419db7f633
   languageName: node
   linkType: hard
 
