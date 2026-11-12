@@ -51,9 +51,14 @@ describe('the octopus worker copy step', () => {
 	});
 
 	it('leaves public alone in the test mode, so a spec run copies nothing', async () => {
+		let t = performance.now();
+		const lap = (label: string) => { console.log(`PROBE ${label} ${Math.round(performance.now() - t)}ms`); t = performance.now(); };
 		rmSync(published, { recursive: true, force: true });
-
-		runConfigHook((await octopusPlugin())!, 'test');
+		lap('rm');
+		const plugin = await octopusPlugin();
+		lap('loadConfig');
+		runConfigHook(plugin!, 'test');
+		lap('hook');
 
 		expect(existsSync(published)).toBe(false);
 	});
