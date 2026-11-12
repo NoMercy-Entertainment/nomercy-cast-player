@@ -119,7 +119,28 @@ describe('the receiver tracks attached senders through the CAF system events', (
 	it('listens by the event values CAF fires, not the enum names', () => {
 		const events = bootWithSenders([]);
 
-		expect([...events.keys()].sort()).toEqual(['senderconnected', 'senderdisconnected', 'shutdown']);
+		expect([...events.keys()].sort()).toEqual(['ready', 'senderconnected', 'senderdisconnected', 'shutdown']);
+	});
+
+	// In a plain browser CAF never reaches the platform: it fires error + shutdown on
+	// every reconnect attempt and never 'ready' (measured 2026-11-12, caf-browser-events.mjs).
+	it('ignores a shutdown in a plain browser, where ready never fired', () => {
+		authStore.receiverState.value = 'LOADING';
+		const events = bootWithSenders([]);
+
+		events.get('shutdown')!({});
+
+		expect(authStore.receiverState.value).toBe('LOADING');
+	});
+
+	it('tears down on a shutdown after the Cast platform said ready', () => {
+		authStore.receiverState.value = 'LOADING';
+		const events = bootWithSenders([]);
+
+		events.get('ready')!({});
+		events.get('shutdown')!({});
+
+		expect(authStore.receiverState.value).toBe('TEARDOWN');
 	});
 
 	it('counts the senders on connect and on disconnect', () => {

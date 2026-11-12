@@ -183,7 +183,16 @@ export function bootCastReceiver(router: Router): void {
 	context.addEventListener('senderconnected', countSenders);
 	context.addEventListener('senderdisconnected', countSenders);
 
+	// 'ready' fires only when the Cast platform answers. A plain browser never gets it and
+	// fires 'shutdown' on every failed reconnect, which must not end the screen there.
+	let platformReady = false;
+	context.addEventListener('ready', () => {
+		platformReady = true;
+	});
+
 	context.addEventListener('shutdown', () => {
+		if (!platformReady)
+			return;
 		recordDiagnostic(
 			DiagnosticsCategory.Lifecycle,
 			DiagnosticsCode.CastSessionEnded,
