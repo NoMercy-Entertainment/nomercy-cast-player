@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { bootCastReceiver, closeCastSession } from './receiver';
+import { bootCastReceiver, closeCastSession, connectedSenders } from './receiver';
 import { NAMESPACE_GENERAL } from './namespaces';
 import { authStore } from '@/stores/authStore';
 
@@ -86,5 +86,52 @@ describe('closing the receiver from the splash screen', () => {
 		closeCastSession();
 
 		expect(stop).toHaveBeenCalled();
+	});
+});
+
+describe('the receiver tracks attached senders through the CAF system events', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		connectedSenders.value = 0;
+	});
+
+	function bootWithSenders(senders: string[]): Map<string, (event: unknown) => void> {
+		const events = new Map<string, (event: unknown) => void>();
+		const context = {
+			addEventListener: (type: string, fn: (event: unknown) => void) => events.set(type, fn),
+			addCustomMessageListener: vi.fn(),
+			sendCustomMessage: vi.fn(),
+			getApplicationData: vi.fn(),
+			getSenders: () => senders.map(id => ({ id })),
+			start: vi.fn(),
+		};
+		vi.stubGlobal('cast', {
+			framework: {
+				CastReceiverContext: { getInstance: () => context },
+				CastReceiverOptions: class {},
+				system: { MessageType: { JSON: 'JSON' } },
+			},
+		});
+		bootCastReceiver({} as never);
+		return events;
+	}
+
+	it('listens by the event values CAF fires, not the enum names', () => {
+		const events = bootWithSenders([]);
+
+		expect([...events.keys()].sort()).toEqual(['senderconnected', 'senderdisconnected', 'shutdown']);
+	});
+
+	it('counts the senders on connect and on disconnect', () => {
+		const senders: string[] = [];
+		const events = bootWithSenders(senders);
+
+		senders.push('phone');
+		events.get('senderconnected')!({ senderId: 'phone' });
+		expect(connectedSenders.value).toBe(1);
+
+		senders.pop();
+		events.get('senderdisconnected')!({ senderId: 'phone' });
+		expect(connectedSenders.value).toBe(0);
 	});
 });

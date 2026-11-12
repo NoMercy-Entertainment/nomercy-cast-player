@@ -1,10 +1,14 @@
 import type { Router } from 'vue-router';
+import { ref } from 'vue';
 import { ALL_CUSTOM_NAMESPACES } from './namespaces';
 import { attachMessageBus, onSenderNavigate, onSenderToken, requestTokenRenewal, resolveServerFromAppConfig } from './messageBus';
 import { authStore } from '@/stores/authStore';
 import { socketStore } from '@/stores/socketStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
+
+/** Senders attached to this receiver; 0 on a TV that fell back here with no phone. */
+export const connectedSenders = ref(0);
 
 /**
  * Cast receiver bootstrap. Called once from main.ts after the Vue app
@@ -94,6 +98,7 @@ export function bootCastReceiver(router: Router): void {
 			data: unknown,
 		) => void;
 		getApplicationData: () => unknown;
+		getSenders: () => unknown[];
 		start: (options: Record<string, unknown>) => void;
 	};
 
@@ -171,7 +176,14 @@ export function bootCastReceiver(router: Router): void {
 			console.warn('[cast] renewed token refused');
 	});
 
-	context.addEventListener('SHUTDOWN', () => {
+	// CAF fires the enum values (cast.framework.system.EventType), never the enum names.
+	const countSenders = (): void => {
+		connectedSenders.value = context.getSenders().length;
+	};
+	context.addEventListener('senderconnected', countSenders);
+	context.addEventListener('senderdisconnected', countSenders);
+
+	context.addEventListener('shutdown', () => {
 		recordDiagnostic(
 			DiagnosticsCategory.Lifecycle,
 			DiagnosticsCode.CastSessionEnded,

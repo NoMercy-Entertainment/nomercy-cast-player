@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { authStore } from '@/stores/authStore';
 import { socketStore } from '@/stores/socketStore';
-import { closeCastSession } from '@/cast/receiver';
+import { closeCastSession, connectedSenders } from '@/cast/receiver';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import FocusableButton from '@/components/buttons/FocusableButton.vue';
 import logoWide from '@/assets/logo-wide.svg';
@@ -15,8 +15,8 @@ import splash from '@/assets/splash.png';
  * authStore + socketStore reactive state.
  *
  * Also the page a TV lands on when the native app launch was refused and
- * cast_shell fell back to this web receiver with no sender attached —
- * that case needs a focused control and a way back, not just a message.
+ * cast_shell fell back here with no sender attached: only then is Close shown.
+ * Back closes the session in every state.
  */
 
 useFocusGroup({
@@ -87,6 +87,7 @@ const isPulsing = computed(() => !isConnected.value);
 			</p>
 
 			<FocusableButton
+				v-if="connectedSenders === 0"
 				focus-key="splash-close"
 				variant="ghost"
 				@action="closeCastSession"

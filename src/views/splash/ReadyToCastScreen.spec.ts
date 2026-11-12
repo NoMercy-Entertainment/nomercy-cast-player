@@ -3,9 +3,50 @@ import { mount } from '@vue/test-utils';
 import { nextTick } from 'vue';
 
 import ReadyToCastScreen from './ReadyToCastScreen.vue';
+import { connectedSenders } from '@/cast/receiver';
 
 const { closeCastSession } = vi.hoisted(() => ({ closeCastSession: vi.fn() }));
-vi.mock('@/cast/receiver', () => ({ closeCastSession }));
+vi.mock('@/cast/receiver', async () => {
+	const { ref } = await import('vue');
+	return { closeCastSession, connectedSenders: ref(0) };
+});
+
+describe('the Close button is only for a TV with no sender', () => {
+	Element.prototype.scrollIntoView = vi.fn();
+
+	afterEach(() => {
+		document.body.innerHTML = '';
+		connectedSenders.value = 0;
+	});
+
+	it('shows no Close while a sender is attached', async () => {
+		connectedSenders.value = 1;
+		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
+		await nextTick();
+
+		expect(wrapper.text()).not.toContain('Close');
+		expect(wrapper.find('[data-focusable]').exists()).toBe(false);
+	});
+
+	it('shows Close, focused, when no sender is attached', async () => {
+		connectedSenders.value = 0;
+		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
+		await nextTick();
+
+		const close = wrapper.get('[data-focusable]');
+		expect(close.text()).toBe('Close');
+		expect(document.activeElement).toBe(close.element);
+	});
+
+	it('hides Close when a sender connects after the screen opened', async () => {
+		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
+		await nextTick();
+		connectedSenders.value = 1;
+		await nextTick();
+
+		expect(wrapper.text()).not.toContain('Close');
+	});
+});
 
 describe('the fallback splash screen is usable when no sender has shown up', () => {
 	// jsdom has no layout, so it has no scrollIntoView.
