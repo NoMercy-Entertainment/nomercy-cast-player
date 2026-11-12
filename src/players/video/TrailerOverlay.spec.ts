@@ -40,11 +40,6 @@ vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', 
 
 describe('the trailer on the receiver', () => {
 	it('hands the 2.x player a url and a poster, with the subtitle urls under subtitles', async () => {
-		const marks: string[] = [];
-		const t0 = performance.now();
-		new Intl.DisplayNames(['en', 'en'], { type: 'language', fallback: 'code' }).of('en');
-		marks.push(`intl ${Math.round(performance.now() - t0)}`);
-		const t1 = performance.now();
 		const wrapper = mount(TrailerOverlay, {
 			props: {
 				trailer: {
@@ -57,11 +52,7 @@ describe('the trailer on the receiver', () => {
 			},
 			global: { stubs: { Teleport: true } },
 		});
-		marks.push(`mount ${Math.round(performance.now() - t1)}`);
-		const t2 = performance.now();
 		await flushPromises();
-		marks.push(`flush ${Math.round(performance.now() - t2)}`);
-		throw new Error(`PROBE ${marks.join(' | ')}`);
 
 		const config = setup.mock.calls[0]![0] as { playlist: Array<Record<string, unknown>> };
 		const item = config.playlist[0]!;
