@@ -1,5 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+
+// The cold import pulls the whole player tree; on a CI runner that alone can
+// pass the 5 s test budget, so it loads once here with its own limit.
+let TrailerOverlay: typeof import('./TrailerOverlay.vue').default;
+beforeAll(async () => {
+	TrailerOverlay = (await import('./TrailerOverlay.vue')).default;
+}, 30_000);
 
 const setup = vi.fn();
 const addPlugin = vi.fn();
@@ -33,7 +40,6 @@ vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', 
 
 describe('the trailer on the receiver', () => {
 	it('hands the 2.x player a url and a poster, with the subtitle urls under subtitles', async () => {
-		const TrailerOverlay = (await import('./TrailerOverlay.vue')).default;
 		const wrapper = mount(TrailerOverlay, {
 			props: {
 				trailer: {
@@ -61,7 +67,6 @@ describe('the trailer on the receiver', () => {
 	});
 
 	it('mounts the controls in a host inside the player container, which has no overlay element in 2.x', async () => {
-		const TrailerOverlay = (await import('./TrailerOverlay.vue')).default;
 		const wrapper = mount(TrailerOverlay, {
 			props: {
 				trailer: { videoId: 'placeholder-video', title: 'Trailer', url: 'https://example.invalid/trailer.mp4', subtitles: [] },
