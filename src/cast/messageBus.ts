@@ -1,3 +1,4 @@
+import { buildDiagnosticsAnswer } from './diagnosticsAnswer';
 import { NAMESPACE_GENERAL, NAMESPACE_STATUS } from './namespaces';
 import { resolveServerFromAppConfig } from '@/lib/resolveServer';
 
@@ -63,6 +64,15 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 	context = ctx;
 
 	ctx.addCustomMessageListener(NAMESPACE_GENERAL, (event) => {
+		if ((event.data as { diagnostics?: unknown } | null)?.diagnostics === true) {
+			try {
+				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { diagnostics: buildDiagnosticsAnswer() });
+			}
+			catch (err) {
+				console.warn('[cast] diagnostics answer failed', err);
+			}
+			return;
+		}
 		lastSenderId = event.senderId;
 		if (isLaunchMessage(event.data)) {
 			try {
