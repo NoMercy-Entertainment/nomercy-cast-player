@@ -16,15 +16,23 @@ export interface PlaylistItem {
 }
 
 export interface PlaylistResponse {
-	item: PlaylistItem;
+	item: PlaylistItem | undefined;
 	playlist: PlaylistItem[];
 }
 
+// The media server answers /watch with a bare array of playable items (TvShowsController.Watch).
+export function toPlaylistResponse(body: PlaylistItem[] | PlaylistResponse): PlaylistResponse {
+	if (Array.isArray(body))
+		return { item: body[0], playlist: body };
+	return body;
+}
+
 async function fetchPlaylist(type: string, id: string): Promise<PlaylistResponse> {
-	return apiFetch<PlaylistResponse>({
+	const body = await apiFetch<PlaylistItem[] | PlaylistResponse>({
 		path: `/api/v1/${type}/${id}/watch`,
 		method: 'GET',
 	});
+	return toPlaylistResponse(body);
 }
 
 export function usePlaylistQuery(type: Ref<string>, id: Ref<string>) {

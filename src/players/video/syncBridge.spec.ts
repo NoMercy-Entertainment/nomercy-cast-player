@@ -74,6 +74,18 @@ describe('the sync bridge reads the 2.x payloads', () => {
 		expect(invoke).toHaveBeenCalledWith('PlaybackCommand', 'seek', { time: 33 });
 	});
 
+	// SignalR binds by argument count: VideoHub.PlaybackCommand(command, data) refuses one argument.
+	it.each(['play', 'pause'])('sends %s with both hub arguments', (event) => {
+		const invoke = vi.fn();
+		socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
+		const engine = fakeEngine();
+		videoSyncBridge.attach(engine as never);
+
+		engine.fire(event);
+
+		expect(invoke).toHaveBeenCalledWith('PlaybackCommand', event, null);
+	});
+
 	it('applies an inbound Seek with time() and not the removed seek()', () => {
 		const handlers = new Map<string, Handler>();
 		socketStore.videoHub.value = { invoke: vi.fn(), on: (event: string, handler: Handler) => handlers.set(event, handler), off: vi.fn() } as never;

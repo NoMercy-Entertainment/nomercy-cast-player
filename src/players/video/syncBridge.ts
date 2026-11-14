@@ -59,11 +59,11 @@ function mediaLabel(p: VideoEngineLike): string | undefined {
 function bindOutbound(p: VideoEngineLike): void {
 	const onPlay = (): void => {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, mediaLabel(p));
-		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'play');
+		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'play', null);
 		playbackStore.video.applyPlayState(true);
 	};
 	const onPause = (): void => {
-		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'pause');
+		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'pause', null);
 		playbackStore.video.applyPlayState(false);
 	};
 	const onSeek = (...args: unknown[]): void => {

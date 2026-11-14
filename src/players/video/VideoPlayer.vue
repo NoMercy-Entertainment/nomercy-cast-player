@@ -8,6 +8,7 @@ import { prepareChapterPlaylist } from './chapterFile';
 import { attachAssPlainTextFallback } from './assPlainTextFallback';
 import type { NMVideoPlayer, VideoPlayerConfig } from '@nomercy-entertainment/nomercy-video-player';
 import { authStore } from '@/stores/authStore';
+import { TMDB_BASE } from '@/lib/images/urls';
 import { playbackStore } from '@/stores/playbackStore';
 import type { PlaylistItem } from '@/queries/usePlaylistQuery';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
@@ -112,7 +113,7 @@ onMounted(async () => {
 	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, mediaLabel.value);
 
 	try {
-		const prepared = await prepareChapterPlaylist(props.playlist ?? [], authStore.accessToken.value);
+		const prepared = await prepareChapterPlaylist(props.playlist ?? [], authStore.accessToken.value, authStore.serverUrl.value);
 		if (unmounted) {
 			prepared.dispose();
 			return;
@@ -143,7 +144,13 @@ onMounted(async () => {
 		});
 		player.setup({
 			playlist: prepared.playlist as never,
-			auth: { bearerToken: () => authStore.accessToken.value ?? '' },
+			auth: {
+				bearerToken: () => authStore.accessToken.value ?? '',
+				mediaOrigins: () => authStore.serverUrl.value ?? undefined,
+			},
+			// The server sends media paths relative to itself; posters are TMDB paths.
+			baseUrl: authStore.serverUrl.value ?? undefined,
+			baseImageUrl: `${TMDB_BASE}/original`,
 			autoPlay: true,
 			language: authStore.locale.value ?? 'en',
 			// The account's synced pick: this player has no stored choice of its own.

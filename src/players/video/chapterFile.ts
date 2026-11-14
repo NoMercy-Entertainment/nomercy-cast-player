@@ -32,7 +32,7 @@ export function serializeChapters(cues: ChapterCue[]): string {
 	return `WEBVTT\n\n${cues.map((cue, index) => `Chapter ${index + 1}\n${timestamp(cue.start)} --> ${timestamp(cue.end)}\n${cue.title}`).join('\n\n')}\n`;
 }
 
-export async function prepareChapterPlaylist(items: PlaylistItem[], token: string | null): Promise<{ playlist: PlaylistItem[]; dispose: () => void }> {
+export async function prepareChapterPlaylist(items: PlaylistItem[], token: string | null, baseUrl?: string | null): Promise<{ playlist: PlaylistItem[]; dispose: () => void }> {
 	const urls: string[] = [];
 	const playlist = await Promise.all(items.map(async (item) => {
 		const tracks = Array.isArray(item.tracks) ? item.tracks as Array<{ kind?: string; file?: string }> : [];
@@ -40,7 +40,9 @@ export async function prepareChapterPlaylist(items: PlaylistItem[], token: strin
 		if (!chapter?.file)
 			return item;
 		try {
-			const response = await fetch(chapter.file, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+			// The server names its files relative to itself, not to this receiver's origin.
+			const source = baseUrl ? new URL(chapter.file, baseUrl).href : chapter.file;
+			const response = await fetch(source, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
 			if (!response.ok)
 				return item;
 			const cues = parseChapterFile(await response.text());

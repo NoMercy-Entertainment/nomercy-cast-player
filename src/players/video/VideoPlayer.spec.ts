@@ -149,6 +149,32 @@ describe('videoPlayer starts the cast watch session', () => {
 		wrapper.unmount();
 	});
 
+	it('resolves the server\'s relative media paths against the signed-in server, not the receiver origin', async () => {
+		players.length = 0;
+		const { authStore } = await import('@/stores/authStore');
+		authStore.serverUrl.value = 'https://192-0-2-10.example.invalid:7626';
+		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
+
+		// The media server sends file paths relative to itself (TvShowsController.Watch).
+		const item = { id: '1', title: 'One', duration: 100, file: '/library/one/one.m3u8' };
+		const wrapper = mount(VideoPlayer, {
+			props: { type: 'tv', id: '1', playlist: [item], initialItem: item },
+			global: { plugins: [router()] },
+		});
+		await flushPromises();
+
+		expect(players[0]!.setup).toHaveBeenCalledWith(expect.objectContaining({
+			baseUrl: 'https://192-0-2-10.example.invalid:7626',
+			baseImageUrl: 'https://image.tmdb.org/t/p/original',
+		}));
+		// The player attaches the bearer token only to these origins; without it the server answers 401.
+		const options = players[0]!.setup.mock.calls[0]![0] as { auth?: { mediaOrigins?: () => unknown } };
+		expect(options.auth?.mediaOrigins?.()).toBe('https://192-0-2-10.example.invalid:7626');
+
+		authStore.serverUrl.value = null;
+		wrapper.unmount();
+	});
+
 	it('starts with the subtitle and audio the phone showed, as the player\'s stored pick', async () => {
 		players.length = 0;
 		const VideoPlayer = (await import('./VideoPlayer.vue')).default;

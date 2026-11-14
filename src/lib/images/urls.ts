@@ -4,7 +4,7 @@ const ABSOLUTE_URL = /^https?:\/\//i;
 const TRAILING_SLASH = /\/$/;
 const TMDB_IMAGE_EXT = /\.(?:jpg|jpeg|png|webp)$/i;
 
-const TMDB_BASE = 'https://image.tmdb.org/t/p';
+export const TMDB_BASE = 'https://image.tmdb.org/t/p';
 
 function pickTmdbSize(width: number | undefined): string {
 	if (!width)
