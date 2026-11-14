@@ -3,7 +3,9 @@ import { ref } from 'vue';
 import { ALL_CUSTOM_NAMESPACES } from './namespaces';
 import { attachMessageBus, onSenderNavigate, onSenderToken, requestTokenRenewal, resolveServerFromAppConfig } from './messageBus';
 import { authStore } from '@/stores/authStore';
+import { dispatchInitialIntent } from '@/stores/navStore';
 import { socketStore } from '@/stores/socketStore';
+import type { LaunchCustomData } from '@/types/cast';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
@@ -188,6 +190,9 @@ export function bootCastReceiver(router: Router): void {
 	let platformReady = false;
 	context.addEventListener('ready', () => {
 		platformReady = true;
+		const launch = readLaunchCustomData(context.getApplicationData());
+		if (launch)
+			void startFromLaunch(launch, router);
 	});
 
 	context.addEventListener('shutdown', () => {
@@ -238,6 +243,45 @@ export function closeCastSession(): void {
 		return;
 	}
 	window.close();
+}
+
+// A server waking a TV with no phone sends NoMercy.Setup.Cast.LaunchCustomData: under
+// launchOptions.customData for a server LAUNCH, on customData for a sender SDK, maybe as JSON text.
+export function readLaunchCustomData(appData: unknown): LaunchCustomData | null {
+	const data = appData as { customData?: unknown; launchOptions?: { customData?: unknown } } | null;
+	let raw = data?.launchOptions?.customData ?? data?.customData;
+	if (typeof raw === 'string') {
+		try {
+			raw = JSON.parse(raw);
+		}
+		catch {
+			return null;
+		}
+	}
+	const launch = raw as Partial<LaunchCustomData> | null | undefined;
+	if (!launch?.access_token || !launch.server_url || !launch.intent)
+		return null;
+	return launch as LaunchCustomData;
+}
+
+async function startFromLaunch(launch: LaunchCustomData, router: Router): Promise<void> {
+	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CastSessionStarted, 0, 0, 0, `cast-launch ${launch.intent.type}`);
+	const server = {
+		serverId: launch.server_id,
+		serverUrl: launch.server_url,
+		defaultSubtitleLanguage: null,
+		defaultAudioLanguage: null,
+	};
+	if (!authStore.consumeRealHandshake(launch.access_token, server)) {
+		console.warn('[cast] launch token expired or malformed');
+		authStore.receiverState.value = 'DEGRADED';
+		return;
+	}
+	authStore.receiverState.value = 'CONNECTING';
+	void socketStore.connectAll().then(() => {
+		authStore.receiverState.value = 'READY';
+	});
+	dispatchInitialIntent(launch.intent, router);
 }
 
 async function bootSocketsAndDispatch(
