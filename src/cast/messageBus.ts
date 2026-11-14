@@ -22,6 +22,7 @@ export interface NavigatePayload {
 
 type NavigateHandler = (payload: NavigatePayload) => void;
 type TokenHandler = (token: string) => void;
+type LaunchHandler = (launch: unknown) => void;
 
 interface ReceiverContextLike {
 	addCustomMessageListener: (
@@ -39,6 +40,12 @@ let context: ReceiverContextLike | null = null;
 let lastSenderId: string | undefined;
 let navigateHandlers: NavigateHandler[] = [];
 let tokenHandlers: TokenHandler[] = [];
+let launchHandlers: LaunchHandler[] = [];
+
+// A media server that woke this TV sends its LaunchCustomData here: CAF hides the LAUNCH customData.
+function isLaunchMessage(data: unknown): data is { launch: unknown } {
+	return typeof data === 'object' && data !== null && (data as { launch?: unknown }).launch !== undefined;
+}
 
 function isNavigatePayload(data: unknown): data is NavigatePayload {
 	return typeof data === 'object' && data !== null && typeof (data as { route?: unknown }).route === 'string';
@@ -57,6 +64,16 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 
 	ctx.addCustomMessageListener(NAMESPACE_GENERAL, (event) => {
 		lastSenderId = event.senderId;
+		if (isLaunchMessage(event.data)) {
+			try {
+				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { ack: true, launch: true });
+			}
+			catch (err) {
+				console.warn('[cast] launch ack send failed', err);
+			}
+			for (const fn of launchHandlers) fn(event.data.launch);
+			return;
+		}
 		if (isTokenUpdate(event.data)) {
 			for (const fn of tokenHandlers) fn(event.data.token);
 			return;
@@ -80,6 +97,13 @@ export function onSenderNavigate(handler: NavigateHandler): () => void {
 	navigateHandlers.push(handler);
 	return () => {
 		navigateHandlers = navigateHandlers.filter(h => h !== handler);
+	};
+}
+
+export function onServerLaunch(handler: LaunchHandler): () => void {
+	launchHandlers.push(handler);
+	return () => {
+		launchHandlers = launchHandlers.filter(h => h !== handler);
 	};
 }
 

@@ -1,7 +1,7 @@
 import type { Router } from 'vue-router';
 import { ref } from 'vue';
 import { ALL_CUSTOM_NAMESPACES } from './namespaces';
-import { attachMessageBus, onSenderNavigate, onSenderToken, requestTokenRenewal, resolveServerFromAppConfig } from './messageBus';
+import { attachMessageBus, onSenderNavigate, onSenderToken, onServerLaunch, requestTokenRenewal, resolveServerFromAppConfig } from './messageBus';
 import { authStore } from '@/stores/authStore';
 import { dispatchInitialIntent } from '@/stores/navStore';
 import { socketStore } from '@/stores/socketStore';
@@ -190,7 +190,9 @@ export function bootCastReceiver(router: Router): void {
 	let platformReady = false;
 	context.addEventListener('ready', () => {
 		platformReady = true;
-		const launch = readLaunchCustomData(context.getApplicationData());
+	});
+	onServerLaunch((data) => {
+		const launch = readLaunchCustomData(data);
 		if (launch)
 			void startFromLaunch(launch, router);
 	});
@@ -245,11 +247,9 @@ export function closeCastSession(): void {
 	window.close();
 }
 
-// A server waking a TV with no phone sends NoMercy.Setup.Cast.LaunchCustomData: under
-// launchOptions.customData for a server LAUNCH, on customData for a sender SDK, maybe as JSON text.
-export function readLaunchCustomData(appData: unknown): LaunchCustomData | null {
-	const data = appData as { customData?: unknown; launchOptions?: { customData?: unknown } } | null;
-	let raw = data?.launchOptions?.customData ?? data?.customData;
+// A server waking a TV with no phone sends NoMercy.Setup.Cast.LaunchCustomData, maybe as JSON text.
+export function readLaunchCustomData(data: unknown): LaunchCustomData | null {
+	let raw = data;
 	if (typeof raw === 'string') {
 		try {
 			raw = JSON.parse(raw);
