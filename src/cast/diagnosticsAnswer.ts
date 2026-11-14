@@ -17,6 +17,17 @@ function ranges(range: TimeRanges): Array<[number, number]> {
 	return out;
 }
 
+function osdText(): { visible: boolean; elapsed: string | null; remaining: string | null } | null {
+	const osd = document.querySelector('.playback-osd');
+	if (!osd)
+		return null;
+	return {
+		visible: osd.classList.contains('is-visible'),
+		elapsed: osd.querySelector('.osd-elapsed')?.textContent ?? null,
+		remaining: osd.querySelector('.osd-remaining')?.textContent ?? null,
+	};
+}
+
 /** Only what a sender needs to see why playback stalls: no tokens, no server address. */
 export function buildDiagnosticsAnswer(): Record<string, unknown> {
 	const mse = (globalThis as { MediaSource?: { isTypeSupported: (type: string) => boolean } }).MediaSource;
@@ -34,6 +45,7 @@ export function buildDiagnosticsAnswer(): Record<string, unknown> {
 		route: window.location.pathname,
 		userAgent: navigator.userAgent,
 		videos,
+		osd: osdText(),
 		codecs: Object.fromEntries(CODECS.map(type => [type, mse?.isTypeSupported(type) ?? null])),
 		events: diagnosticsRing.snapshot().slice(-LAST_EVENTS),
 	};

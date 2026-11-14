@@ -39,6 +39,23 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 		expect(answer.diagnostics.events.at(-1)).toEqual(expect.objectContaining({ code: 'SourceRequested' }));
 	});
 
+	it('reports the overlay time text the viewer sees (a screencap misses it on a TV)', () => {
+		document.body.innerHTML = '<div class="panel playback-osd is-visible"><span class="osd-time osd-elapsed">2:04</span><span class="osd-time osd-remaining">-21:58</span></div>';
+		const { ask, sendCustomMessage } = fakeContext();
+
+		ask({ diagnostics: true });
+
+		expect(sendCustomMessage.mock.calls[0]![2].diagnostics.osd).toEqual({ visible: true, elapsed: '2:04', remaining: '-21:58' });
+	});
+
+	it('reports no overlay when the player has none mounted', () => {
+		const { ask, sendCustomMessage } = fakeContext();
+
+		ask({ diagnostics: true });
+
+		expect(sendCustomMessage.mock.calls[0]![2].diagnostics.osd).toBeNull();
+	});
+
 	it('never puts the access token in the answer', () => {
 		authStore.accessToken.value = 'secret-placeholder-token';
 		const { ask, sendCustomMessage } = fakeContext();
