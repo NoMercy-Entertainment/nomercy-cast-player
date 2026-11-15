@@ -3,6 +3,8 @@ import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
 
 import AppSettingsScreen from '@/views/profile/AppSettingsScreen.vue';
+import { settingsStore } from '@/stores/settingsStore';
+import { FocusGroupInjectionKey } from '@/composables/useFocusEntry';
 
 const { state, hasPending, lastError, pending } = await vi.hoisted(async () => {
 	// vi.mock is hoisted above the file, so the refs it closes over have to be
@@ -33,6 +35,59 @@ vi.mock('@/lib/diagnostics/sender', () => ({
 function screen(): string {
 	return mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }).text();
 }
+
+describe('the crash-report row on the settings screen', () => {
+	beforeEach(() => {
+		settingsStore.crashReports.value = false;
+	});
+
+	function row(wrapper: ReturnType<typeof mount>) {
+		return wrapper.findAll('button').find(b => b.text().includes('Send crash reports'));
+	}
+
+	it('exists and shows off by default', () => {
+		const r = row(mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }));
+
+		expect(r).toBeDefined();
+		expect(r!.find('.toggle').classes()).not.toContain('on');
+	});
+
+	it('says what a report holds and where it goes', () => {
+		const text = row(mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }))!.text();
+
+		for (const item of ['device id', 'device model', 'CPU type', 'memory and thread facts', 'app version', 'stack trace', 'nomercy.tv'])
+			expect(text).toContain(item);
+	});
+
+	it('flips the setting on a click and shows it on', async () => {
+		const wrapper = mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } });
+		await row(wrapper)!.trigger('click');
+
+		expect(settingsStore.crashReports.value).toBe(true);
+		expect(row(wrapper)!.find('.toggle').classes()).toContain('on');
+	});
+
+	it('flips the setting on OK or Enter (the focus entry action)', () => {
+		const entries: Array<{ key: string; action: () => void }> = [];
+		const register = (e: { key: string; action: () => void }) => {
+			entries.push(e);
+			return () => {};
+		};
+		mount(AppSettingsScreen, {
+			global: {
+				stubs: { RouterLink: true, teleport: true },
+				provide: { [FocusGroupInjectionKey as symbol]: { containsFocused: () => false, register } },
+			},
+		});
+		const entry = entries.find(e => e.key === 'settings-crash-reports');
+
+		expect(entry).toBeDefined();
+		entry!.action();
+		expect(settingsStore.crashReports.value).toBe(true);
+		entry!.action();
+		expect(settingsStore.crashReports.value).toBe(false);
+	});
+});
 
 /**
  * The real screen, rendered. A hand-written copy of its conditions would pass

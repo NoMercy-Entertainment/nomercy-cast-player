@@ -54,6 +54,16 @@ useFocusEntry({
 	},
 });
 
+const crashEl = ref<HTMLElement | null>(null);
+
+useFocusEntry({
+	key: 'settings-crash-reports',
+	el: crashEl,
+	onAction: () => {
+		settingsStore.crashReports.value = !settingsStore.crashReports.value;
+	},
+});
+
 const diagnosticsEl = ref<HTMLElement | null>(null);
 const previewEl = ref<HTMLElement | null>(null);
 const sendEl = ref<HTMLElement | null>(null);
@@ -181,6 +191,28 @@ useFocusEntry({
 					</p>
 				</div>
 				<span class="toggle" :class="[{ on: settingsStore.subtitleHints.value }]">
+					<span class="thumb" />
+				</span>
+			</button>
+
+			<button
+				ref="crashEl"
+				class="nm-list-row"
+				data-focusable
+				tabindex="0"
+				role="switch"
+				:aria-checked="settingsStore.crashReports.value"
+				@click.prevent="settingsStore.crashReports.value = !settingsStore.crashReports.value"
+			>
+				<div class="row-text">
+					<p class="row-primary">
+						Send crash reports
+					</p>
+					<p class="row-secondary">
+						Off by default. A report holds: device id, device model, CPU type, memory and thread facts, app version and the error's stack trace. Sent only to nomercy.tv.
+					</p>
+				</div>
+				<span class="toggle" :class="[{ on: settingsStore.crashReports.value }]">
 					<span class="thumb" />
 				</span>
 			</button>
