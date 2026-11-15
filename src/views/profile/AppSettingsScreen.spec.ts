@@ -4,7 +4,6 @@ import { ref } from 'vue';
 
 import AppSettingsScreen from '@/views/profile/AppSettingsScreen.vue';
 import { settingsStore } from '@/stores/settingsStore';
-import { FocusGroupInjectionKey } from '@/composables/useFocusEntry';
 
 const { state, hasPending, lastError, pending } = await vi.hoisted(async () => {
 	// vi.mock is hoisted above the file, so the refs it closes over have to be
@@ -31,6 +30,9 @@ vi.mock('@/lib/diagnostics/sender', () => ({
 		confirmSend: vi.fn(),
 	},
 }));
+
+// jsdom has no layout, so it has no scrollIntoView; focusing a row calls it.
+Element.prototype.scrollIntoView = vi.fn();
 
 function screen(): string {
 	return mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }).text();
@@ -67,24 +69,13 @@ describe('the crash-report row on the settings screen', () => {
 		expect(row(wrapper)!.find('.toggle').classes()).toContain('on');
 	});
 
-	it('flips the setting on OK or Enter (the focus entry action)', () => {
-		const entries: Array<{ key: string; action: () => void }> = [];
-		const register = (e: { key: string; action: () => void }) => {
-			entries.push(e);
-			return () => {};
-		};
-		mount(AppSettingsScreen, {
-			global: {
-				stubs: { RouterLink: true, teleport: true },
-				provide: { [FocusGroupInjectionKey as symbol]: { containsFocused: () => false, register } },
-			},
-		});
-		const entry = entries.find(e => e.key === 'settings-crash-reports');
+	it('flips the setting on OK or Enter (the focus entry action)', async () => {
+		const wrapper = mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } });
+		const r = row(wrapper)!;
 
-		expect(entry).toBeDefined();
-		entry!.action();
+		await r.trigger('keydown', { key: 'Enter' });
 		expect(settingsStore.crashReports.value).toBe(true);
-		entry!.action();
+		await r.trigger('keydown', { key: 'Enter' });
 		expect(settingsStore.crashReports.value).toBe(false);
 	});
 });

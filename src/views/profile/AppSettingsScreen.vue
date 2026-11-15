@@ -32,6 +32,7 @@ const subtitleEl = ref<HTMLElement | null>(null);
 
 useFocusEntry({
 	key: 'settings-auto-skip',
+	group: settingsGroup,
 	el: autoSkipEl,
 	onAction: () => {
 		settingsStore.autoSkipChapters.value = !settingsStore.autoSkipChapters.value;
@@ -40,6 +41,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'settings-theme',
+	group: settingsGroup,
 	el: themeEl,
 	onAction: () => {
 		settingsStore.useAutoThemeColors.value = !settingsStore.useAutoThemeColors.value;
@@ -48,6 +50,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'settings-subs',
+	group: settingsGroup,
 	el: subtitleEl,
 	onAction: () => {
 		settingsStore.subtitleHints.value = !settingsStore.subtitleHints.value;
@@ -58,6 +61,7 @@ const crashEl = ref<HTMLElement | null>(null);
 
 useFocusEntry({
 	key: 'settings-crash-reports',
+	group: settingsGroup,
 	el: crashEl,
 	onAction: () => {
 		settingsStore.crashReports.value = !settingsStore.crashReports.value;
@@ -87,6 +91,7 @@ const diagnosticsStatus = computed(() => {
 
 useFocusEntry({
 	key: 'settings-diagnostics',
+	group: settingsGroup,
 	order: 1,
 	el: diagnosticsEl,
 	onAction: () => {
@@ -99,6 +104,7 @@ useFocusEntry({
 // Down still walks on to the two decision rows.
 useFocusEntry({
 	key: 'settings-diagnostics-preview',
+	group: settingsGroup,
 	order: 2,
 	enabled: hasPending,
 	el: previewEl,
@@ -113,6 +119,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'settings-diagnostics-send',
+	group: settingsGroup,
 	order: 3,
 	enabled: hasPending,
 	el: sendEl,
@@ -121,6 +128,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'settings-diagnostics-cancel',
+	group: settingsGroup,
 	order: 4,
 	enabled: hasPending,
 	el: cancelEl,

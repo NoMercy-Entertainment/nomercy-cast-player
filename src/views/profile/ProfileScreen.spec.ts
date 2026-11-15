@@ -24,6 +24,9 @@ vi.mock('@/queries/useMeQuery', () => ({
 	}),
 }));
 
+// jsdom has no layout, so it has no scrollIntoView; focusing a row calls it.
+Element.prototype.scrollIntoView = vi.fn();
+
 describe('the profile screen avatar for a user known only by email', () => {
 	it('falls back to initials instead of asking a third party for an avatar', () => {
 		const wrapper = mount(ProfileScreen, {

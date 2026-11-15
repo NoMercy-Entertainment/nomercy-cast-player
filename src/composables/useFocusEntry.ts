@@ -15,6 +15,8 @@ export interface FocusEntry {
 
 export interface FocusEntryOptions {
 	key: string;
+	/** Group to register in. Needed when the component creates its own group, because inject only sees a parent's. */
+	group?: FocusGroupRegistry;
 	order?: number;
 	enabled?: Ref<boolean>;
 	el: Ref<HTMLElement | null>;
@@ -40,7 +42,7 @@ export const FocusGroupInjectionKey: InjectionKey<FocusGroupHandle & FocusGroupR
  * outline drive the visible ring; our store only orchestrates traversal.
  */
 export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
-	const group = inject(FocusGroupInjectionKey, null);
+	const group = opts.group ?? inject(FocusGroupInjectionKey, null);
 
 	const entry: FocusEntry = {
 		key: opts.key,

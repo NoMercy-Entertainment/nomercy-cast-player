@@ -29,6 +29,9 @@ vi.mock('@/queries/useMusicListQuery', () => ({
 	}),
 }));
 
+// jsdom has no layout, so it has no scrollIntoView; focusing a row calls it.
+Element.prototype.scrollIntoView = vi.fn();
+
 function screen(): ReturnType<typeof mount> {
 	return mount(MusicListScreen);
 }

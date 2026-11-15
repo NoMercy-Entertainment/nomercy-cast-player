@@ -13,7 +13,7 @@ import { formatTime, progressPercent, totalLabel } from './transport';
  */
 
 const containerEl = ref<HTMLElement | null>(null);
-useFocusGroup({
+const controlsGroup = useFocusGroup({
 	type: 'horizontal',
 	restorationKey: 'now-playing-controls',
 	initialFocusKey: 'np-play',
@@ -28,6 +28,7 @@ const repeatEl = ref<HTMLElement | null>(null);
 
 useFocusEntry({
 	key: 'np-shuffle',
+	group: controlsGroup,
 	el: shuffleEl,
 	onAction: () => {
 		const next = !playbackStore.music.shuffle.value;
@@ -36,11 +37,13 @@ useFocusEntry({
 });
 useFocusEntry({
 	key: 'np-prev',
+	group: controlsGroup,
 	el: prevEl,
 	onAction: () => musicSyncBridge.current()?.previous(),
 });
 useFocusEntry({
 	key: 'np-play',
+	group: controlsGroup,
 	el: playEl,
 	onAction: () => {
 		const e = musicSyncBridge.current();
@@ -53,11 +56,13 @@ useFocusEntry({
 });
 useFocusEntry({
 	key: 'np-next',
+	group: controlsGroup,
 	el: nextEl,
 	onAction: () => musicSyncBridge.current()?.next(),
 });
 useFocusEntry({
 	key: 'np-repeat',
+	group: controlsGroup,
 	el: repeatEl,
 	onAction: () => {
 		const cur = playbackStore.music.repeat.value;

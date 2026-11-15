@@ -45,7 +45,7 @@ const watchPath = computed(() => {
 const detailsPath = computed(() => props.data.link ?? null);
 
 const actionsEl = ref<HTMLElement | null>(null);
-useFocusGroup({
+const actionsGroup = useFocusGroup({
 	type: 'horizontal',
 	restorationKey: `home-card-${props.id}`,
 	containerEl: actionsEl,
@@ -56,6 +56,7 @@ const detailsEl = ref<HTMLElement | null>(null);
 
 useFocusEntry({
 	key: `${props.id}-watch`,
+	group: actionsGroup,
 	el: watchEl,
 	onAction: () => {
 		if (watchPath.value)
@@ -65,6 +66,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: `${props.id}-details`,
+	group: actionsGroup,
 	el: detailsEl,
 	onAction: () => {
 		if (detailsPath.value)

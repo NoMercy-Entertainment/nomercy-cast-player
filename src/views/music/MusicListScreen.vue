@@ -58,7 +58,7 @@ const totalDurationText = computed(() => {
 });
 
 const containerEl = ref<HTMLElement | null>(null);
-useFocusGroup({
+const listGroup = useFocusGroup({
 	type: 'vertical',
 	restorationKey: 'music-list-tracks',
 	containerEl,
@@ -107,6 +107,7 @@ function onPlayClick(): void {
 
 useFocusEntry({
 	key: 'music-list-play',
+	group: listGroup,
 	el: playEl,
 	onAction: onPlayClick,
 });

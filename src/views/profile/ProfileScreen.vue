@@ -86,6 +86,7 @@ watch(showSignOutConfirm, async (open) => {
 
 useFocusEntry({
 	key: 'profile-header',
+	group: profileGroup,
 	el: headerEl,
 	onAction: () => {
 		showSignOutConfirm.value = true;
@@ -94,6 +95,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'profile-server',
+	group: profileGroup,
 	el: serverEl,
 	onAction: () => {
 		router.push('/profile/server-info');
@@ -102,6 +104,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'profile-settings',
+	group: profileGroup,
 	el: settingsEl,
 	onAction: () => {
 		router.push('/profile/settings');
@@ -110,6 +113,7 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'profile-about',
+	group: profileGroup,
 	el: aboutEl,
 	onAction: () => {
 		router.push('/profile/about');

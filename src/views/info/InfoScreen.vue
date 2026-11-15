@@ -106,6 +106,8 @@ const watchlistEl = ref<HTMLElement | null>(null);
 
 useFocusEntry({
 	key: 'info-watch',
+	group: actionsGroup,
+	enabled: computed(() => watchPath.value !== null),
 	el: watchEl,
 	onAction: () => {
 		if (watchPath.value)
@@ -115,6 +117,8 @@ useFocusEntry({
 
 useFocusEntry({
 	key: 'info-trailer',
+	group: actionsGroup,
+	enabled: computed(() => readyTrailer.value !== null),
 	el: trailerEl,
 	onAction: () => openTrailer(),
 });
@@ -137,6 +141,7 @@ const isPostingWatchlist = ref(false);
 
 useFocusEntry({
 	key: 'info-watchlist',
+	group: actionsGroup,
 	el: watchlistEl,
 	onAction: () => {
 		void toggleWatchlist();

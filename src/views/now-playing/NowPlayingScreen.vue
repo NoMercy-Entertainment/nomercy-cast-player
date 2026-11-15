@@ -28,7 +28,7 @@ useFocusGroup({
 });
 
 const utilityRowEl = ref<HTMLElement | null>(null);
-useFocusGroup({
+const utilityGroup = useFocusGroup({
 	type: 'horizontal',
 	restorationKey: 'now-playing-utility',
 	containerEl: utilityRowEl,
@@ -58,6 +58,7 @@ watch(track, (next) => {
 
 useFocusEntry({
 	key: 'np-close',
+	group: utilityGroup,
 	el: closeEl,
 	onAction: () => {
 		router.back();
@@ -65,6 +66,7 @@ useFocusEntry({
 });
 useFocusEntry({
 	key: 'np-like',
+	group: utilityGroup,
 	el: likeEl,
 	onAction: () => {
 		const next = !track.value?.favorite;
@@ -73,6 +75,7 @@ useFocusEntry({
 });
 useFocusEntry({
 	key: 'np-lyrics',
+	group: utilityGroup,
 	el: lyricsEl,
 	onAction: () => {
 		playbackStore.music.applyLyricsOpen(!lyricsOpen.value);
