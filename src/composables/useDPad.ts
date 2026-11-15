@@ -25,6 +25,8 @@ const DPAD_KEYS = new Set([
 	'BrowserBack',
 ]);
 
+const PLAYER_PANEL_SELECTOR = '.language-screen, .episode-screen, .pre-screen, .seek-container';
+
 function isInputFocused(): boolean {
 	const el = document.activeElement;
 	if (!el)
@@ -102,6 +104,9 @@ function handleBack(router: Router): boolean {
 	if (top?.type === 'modal') {
 		return focusStore.dispatchEscape();
 	}
+	// A player panel owns its own back key; let its listener close it.
+	if (document.querySelector(PLAYER_PANEL_SELECTOR))
+		return false;
 	// Otherwise router back. At root we let cast_shell decide (which
 	// typically does nothing).
 	if (router.currentRoute.value.path !== '/') {
