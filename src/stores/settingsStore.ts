@@ -18,12 +18,14 @@ interface SettingsShape {
 	autoSkipChapters: boolean;
 	useAutoThemeColors: boolean;
 	subtitleHints: boolean;
+	crashReports: boolean;
 }
 
 const DEFAULTS: SettingsShape = {
 	autoSkipChapters: false,
 	useAutoThemeColors: true,
 	subtitleHints: true,
+	crashReports: false,
 };
 
 function load(): SettingsShape {
@@ -44,6 +46,8 @@ const stored = load();
 const autoSkipChapters = ref(stored.autoSkipChapters);
 const useAutoThemeColors = ref(stored.useAutoThemeColors);
 const subtitleHints = ref(stored.subtitleHints);
+// Opt-in: only an explicit true uploads a crash report.
+const crashReports = ref(stored.crashReports === true);
 
 function persist(): void {
 	try {
@@ -51,6 +55,7 @@ function persist(): void {
 			autoSkipChapters: autoSkipChapters.value,
 			useAutoThemeColors: useAutoThemeColors.value,
 			subtitleHints: subtitleHints.value,
+			crashReports: crashReports.value,
 		};
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 	}
@@ -66,9 +71,11 @@ watch(autoSkipChapters, (next) => {
 }, { immediate: true });
 watch(useAutoThemeColors, persist);
 watch(subtitleHints, persist);
+watch(crashReports, persist);
 
 export const settingsStore = {
 	autoSkipChapters,
 	useAutoThemeColors,
 	subtitleHints,
+	crashReports,
 };

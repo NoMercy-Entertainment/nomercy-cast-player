@@ -3,7 +3,9 @@ import { collectDeviceFacts } from './deviceFacts';
 import { castDeviceId } from './deviceId';
 import { diagnosticsRing, recordDiagnostic } from './sink';
 import { DiagnosticsCategory, DiagnosticsCode } from './events';
+import { diagnosticsSender } from './sender';
 import { authStore } from '@/stores/authStore';
+import { settingsStore } from '@/stores/settingsStore';
 import { postDiagnosticsReport } from '@/lib/nomercyApi';
 
 // One upload per session. A crash loop must not become a write loop, and the
@@ -19,7 +21,18 @@ function faultName(reason: unknown): string {
 	return 'unhandled';
 }
 
+// Off means a crash report prepared earlier is deleted, never sent later.
+function dropSavedCrashReport(): void {
+	if (diagnosticsSender.pending.value?.kind === 'crash')
+		diagnosticsSender.discard();
+}
+
 async function upload(reason: unknown): Promise<void> {
+	if (!settingsStore.crashReports.value) {
+		dropSavedCrashReport();
+		return;
+	}
+
 	if (uploaded)
 		return;
 
@@ -47,11 +60,14 @@ async function upload(reason: unknown): Promise<void> {
 }
 
 /**
- * Records and reports an uncaught fault. Neither handler calls
- * preventDefault(), so the error still reaches the console and any other
- * listener exactly as it did before.
+ * Records an uncaught fault and reports it only while the crash-report choice
+ * is on. Neither handler calls preventDefault(), so the error still reaches
+ * the console and any other listener exactly as it did before.
  */
 export function installCrashHandlers(): void {
+	if (!settingsStore.crashReports.value)
+		dropSavedCrashReport();
+
 	window.addEventListener('error', (event: ErrorEvent) => {
 		const reason = event.error ?? event.message;
 		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CrashReportPending, 0, 0, 0, faultName(reason));
