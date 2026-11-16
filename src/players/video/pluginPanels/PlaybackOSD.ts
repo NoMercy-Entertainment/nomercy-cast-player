@@ -21,6 +21,7 @@ export interface PlaybackOSDOptions {
 export interface PlaybackOSDHandle {
 	setTitle: (next: { title: string; subtitle?: string | null }) => void;
 	setChapters: (next: Array<{ start: number; end?: number }>) => void;
+	setMessage: (text: string) => void;
 	setVisible: (visible: boolean) => void;
 	dispose: () => void;
 }
@@ -59,6 +60,26 @@ export function mountPlaybackOSD(opts: PlaybackOSDOptions): PlaybackOSDHandle {
 
 	root.append(titleRow, progressRow);
 	opts.parent.append(root);
+
+	// TVTopBar.kt:67-180: a top band with the title over the episode line.
+	const topBar = document.createElement('div');
+	topBar.className = 'playback-osd-top is-visible';
+	topBar.setAttribute('role', 'presentation');
+	const topTitleEl = document.createElement('p');
+	topTitleEl.className = 'osd-top-title';
+	topTitleEl.textContent = opts.title;
+	const topSubtitleEl = document.createElement('p');
+	topSubtitleEl.className = 'osd-top-subtitle';
+	topSubtitleEl.textContent = opts.subtitle ?? '';
+	if (!opts.subtitle?.trim())
+		topSubtitleEl.style.display = 'none';
+	topBar.append(topTitleEl, topSubtitleEl);
+
+	// CenterMessage.kt:33-44: a short message under the top edge.
+	const messageEl = document.createElement('div');
+	messageEl.className = 'osd-center-message';
+	messageEl.setAttribute('role', 'status');
+	opts.parent.append(topBar, messageEl);
 
 	let chapters = opts.chapters ?? [];
 	let visible = true;
@@ -112,6 +133,13 @@ export function mountPlaybackOSD(opts: PlaybackOSDOptions): PlaybackOSDHandle {
 			titleEl.textContent = next.title;
 			subtitleEl.textContent = next.subtitle ?? '';
 			subtitleEl.style.display = next.subtitle?.trim() ? '' : 'none';
+			topTitleEl.textContent = next.title;
+			topSubtitleEl.textContent = next.subtitle ?? '';
+			topSubtitleEl.style.display = next.subtitle?.trim() ? '' : 'none';
+		},
+		setMessage: (text) => {
+			messageEl.textContent = text;
+			messageEl.classList.toggle('is-visible', text.length > 0);
 		},
 		setChapters: (next) => {
 			chapters = next;
@@ -122,6 +150,7 @@ export function mountPlaybackOSD(opts: PlaybackOSDOptions): PlaybackOSDHandle {
 				return;
 			visible = next;
 			root.classList.toggle('is-visible', next);
+			topBar.classList.toggle('is-visible', next);
 			if (next && raf === null)
 				tick();
 		},
@@ -129,6 +158,8 @@ export function mountPlaybackOSD(opts: PlaybackOSDOptions): PlaybackOSDHandle {
 			if (raf !== null)
 				cancelAnimationFrame(raf);
 			root.remove();
+			topBar.remove();
+			messageEl.remove();
 		},
 	};
 }
