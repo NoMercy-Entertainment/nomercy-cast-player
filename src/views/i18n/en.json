@@ -1,0 +1,22 @@
+{
+	"views": {
+		"empty_default": "Nothing here yet.",
+		"home": {
+			"load_error": "Couldn't load home",
+			"empty": "Your home is empty. Add a library on your phone or desktop to get started."
+		},
+		"libraries": {
+			"load_error": "Couldn't load libraries",
+			"empty": "No libraries yet. Add one from your phone or desktop."
+		},
+		"library": {
+			"load_error": "Couldn't load this library",
+			"empty": "This library is empty."
+		},
+		"watch": {
+			"load_error": "Couldn't load video",
+			"play_error": "Couldn't play video",
+			"nothing_to_play": "Nothing to play"
+		}
+	}
+}

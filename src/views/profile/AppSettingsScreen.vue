@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
@@ -19,6 +20,7 @@ import { diagnosticsSender } from '@/lib/diagnostics/sender';
 // A category narrows the rows to that pane; none shows every row, as before.
 const props = defineProps<{ category?: string }>();
 const emit = defineEmits<{ escapeLeft: [] }>();
+const { t } = useTranslation();
 
 const containerEl = ref<HTMLElement | null>(null);
 const settingsGroup = useFocusGroup({
@@ -103,12 +105,12 @@ const previewText = computed(() =>
 );
 const diagnosticsStatus = computed(() => {
 	if (sendState.value === 'sending')
-		return 'Sending…';
+		return t('views.profile.diag_sending');
 	if (sendState.value === 'sent')
-		return `Sent. Report ${diagnosticsSender.lastReportId.value}`;
+		return t('views.profile.diag_sent', { id: diagnosticsSender.lastReportId.value });
 	if (sendState.value === 'failed')
-		return `Not sent. ${diagnosticsSender.lastError.value}`;
-	return 'Show what a report would contain, then decide whether to send it';
+		return t('views.profile.diag_failed', { error: diagnosticsSender.lastError.value });
+	return t('views.profile.diag_idle');
 });
 
 useFocusEntry({
@@ -163,7 +165,7 @@ useFocusEntry({
 	<div class="settings-screen" :class="[{ 'nm-page-screen': props.category === undefined }]">
 		<SetupBackdrop v-if="props.category === undefined" />
 		<header v-if="props.category === undefined" class="nm-page-header settings-header">
-			<h1>Settings</h1>
+			<h1>{{ t('views.profile.settings') }}</h1>
 		</header>
 		<div ref="containerEl" class="settings-list nm-list">
 			<button
@@ -176,10 +178,10 @@ useFocusEntry({
 			>
 				<div class="row-text">
 					<p class="row-primary">
-						Auto-skip intros and credits
+						{{ t('views.profile.auto_skip') }}
 					</p>
 					<p class="row-secondary">
-						When a chapter is tagged as intro or credits, jump to the end automatically
+						{{ t('views.profile.auto_skip_hint') }}
 					</p>
 				</div>
 				<span class="toggle" :class="[{ on: settingsStore.autoSkipChapters.value }]">
@@ -197,10 +199,10 @@ useFocusEntry({
 			>
 				<div class="row-text">
 					<p class="row-primary">
-						Use auto theme colours
+						{{ t('views.profile.auto_theme') }}
 					</p>
 					<p class="row-secondary">
-						Pull accent from the focused poster's palette
+						{{ t('views.profile.auto_theme_hint') }}
 					</p>
 				</div>
 				<span class="toggle" :class="[{ on: settingsStore.useAutoThemeColors.value }]">
@@ -218,10 +220,10 @@ useFocusEntry({
 			>
 				<div class="row-text">
 					<p class="row-primary">
-						Subtitle hints
+						{{ t('views.profile.subtitle_hints') }}
 					</p>
 					<p class="row-secondary">
-						Show subtitle availability badge on cards
+						{{ t('views.profile.subtitle_hints_hint') }}
 					</p>
 				</div>
 				<span class="toggle" :class="[{ on: settingsStore.subtitleHints.value }]">
@@ -241,10 +243,10 @@ useFocusEntry({
 			>
 				<div class="row-text">
 					<p class="row-primary">
-						Send crash reports
+						{{ t('about.crash_setting_label') }}
 					</p>
 					<p class="row-secondary">
-						Off by default. A report holds: device id, device model, CPU type, memory and thread facts, app version and the error's stack trace. Sent only to nomercy.tv.
+						{{ t('views.profile.crash_reports_hint') }}
 					</p>
 				</div>
 				<span class="toggle" :class="[{ on: settingsStore.crashReports.value }]">
@@ -262,7 +264,7 @@ useFocusEntry({
 			>
 				<div class="row-text">
 					<p class="row-primary">
-						Send diagnostics
+						{{ t('about.send_diagnostics') }}
 					</p>
 					<p class="row-secondary">
 						{{ diagnosticsStatus }}
@@ -276,7 +278,7 @@ useFocusEntry({
 					class="diagnostics-preview"
 					data-focusable
 					tabindex="0"
-					aria-label="Diagnostics payload preview. Press OK to scroll."
+					:aria-label="t('views.profile.diag_preview')"
 				>{{ previewText }}</pre>
 
 				<button
@@ -290,10 +292,10 @@ useFocusEntry({
 				>
 					<div class="row-text">
 						<p class="row-primary">
-							Send this report now
+							{{ t('views.profile.diag_send_now') }}
 						</p>
 						<p class="row-secondary">
-							Nothing leaves this device until you choose this
+							{{ t('views.profile.diag_send_now_hint') }}
 						</p>
 					</div>
 				</button>
@@ -307,7 +309,7 @@ useFocusEntry({
 				>
 					<div class="row-text">
 						<p class="row-primary">
-							{{ sendState === 'sent' ? 'Close' : 'Cancel' }}
+							{{ sendState === 'sent' ? t('common.close') : t('common.cancel') }}
 						</p>
 					</div>
 				</button>

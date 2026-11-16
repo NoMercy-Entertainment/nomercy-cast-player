@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import SetupBackdrop from '@/components/SetupBackdrop.vue';
 import AppLogo from '@/layout/AppLogo.vue';
 
@@ -13,6 +14,7 @@ import AppLogo from '@/layout/AppLogo.vue';
 const APP_VERSION = '1.0.0-alpha';
 const FOUNDING_YEAR = 2024;
 const currentYear = new Date().getFullYear();
+const { t } = useTranslation();
 </script>
 
 <template>
@@ -22,22 +24,19 @@ const currentYear = new Date().getFullYear();
 			<AppLogo class="brand-logo" />
 
 			<p class="version">
-				Version {{ APP_VERSION }}
+				{{ t('about.version') }} {{ APP_VERSION }}
 			</p>
 
 			<p class="tagline">
-				Your media, on every screen. Self-hosted. No ads, no tracking,
-				no compromise.
+				{{ t('views.profile.tagline') }}
 			</p>
 
 			<div class="footer">
 				<p class="developed">
-					Developed by NoMercy Entertainment
+					{{ t('about.developed_by') }}
 				</p>
 				<p class="copyright">
-					© {{ FOUNDING_YEAR }}–{{ currentYear }} NoMercy Entertainment.
-					All product names, logos, and brands are property of their
-					respective owners.
+					{{ t('views.profile.copyright', { from: FOUNDING_YEAR, to: currentYear }) }}
 				</p>
 			</div>
 		</div>

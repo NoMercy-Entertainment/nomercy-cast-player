@@ -1,0 +1,9 @@
+{
+	"views": {
+		"search_videos": "Video's zoeken",
+		"search_music": "Muziek zoeken",
+		"search": {
+			"video": "Video"
+		}
+	}
+}

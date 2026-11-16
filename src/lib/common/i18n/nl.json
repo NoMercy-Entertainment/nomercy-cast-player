@@ -1,0 +1,48 @@
+{
+	"common": {
+		"app_name": "NoMercy",
+		"back": "Terug",
+		"cancel": "Annuleren",
+		"close": "Sluiten",
+		"details": "Details",
+		"duration": "Duur",
+		"loading": "Laden",
+		"pause": "Pauzeren",
+		"play": "Afspelen",
+		"profile": "Profiel",
+		"refresh": "Vernieuwen",
+		"something_went_wrong": "Er ging iets mis",
+		"title": "Titel"
+	},
+	"startup": {
+		"tryAgain": "Opnieuw proberen"
+	},
+	"nav": {
+		"home": "Home",
+		"libraries": "Bibliotheken",
+		"music": "Muziek",
+		"about": "Over",
+		"chromecast": "Chromecast"
+	},
+	"about": {
+		"version": "Versie"
+	},
+	"components": {
+		"cards": {
+			"watch": "Bekijken"
+		}
+	},
+	"info": {
+		"watch_trailer": "Trailer bekijken"
+	},
+	"music": {
+		"tracks": "nummers",
+		"player": {
+			"lyrics": "Songteksten",
+			"now_playing": "Wordt nu afgespeeld"
+		}
+	},
+	"views": {
+		"unknown": "Onbekend"
+	}
+}

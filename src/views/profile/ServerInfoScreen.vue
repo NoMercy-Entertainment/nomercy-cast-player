@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { useServerInfoQuery } from '@/queries/useServerInfoQuery';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
@@ -12,6 +13,7 @@ import SetupBackdrop from '@/components/SetupBackdrop.vue';
  * mobile dashboard only.
  */
 
+const { t } = useTranslation();
 const { data, isLoading, error, refetch } = useServerInfoQuery();
 const info = computed(() => data.value ?? null);
 
@@ -54,7 +56,7 @@ const uptime = computed(() => formatUptime(info.value?.bootTime, now.value));
 	<div class="server-info-screen nm-page-screen">
 		<SetupBackdrop />
 		<header class="nm-page-header server-content">
-			<h1>Server info</h1>
+			<h1>{{ t('views.profile.server_info') }}</h1>
 		</header>
 
 		<LoadingIndicator v-if="isLoading && !info" />
@@ -62,33 +64,33 @@ const uptime = computed(() => formatUptime(info.value?.bootTime, now.value));
 			v-else-if="error"
 			:error="error as Error"
 			:retry="() => refetch()"
-			context="Couldn't load server info"
+			:context="t('views.profile.server_info_error')"
 		/>
 		<div v-else-if="info" class="card server-content">
 			<h2 class="server-name">
 				{{ info.server }}
 			</h2>
 			<dl class="kv">
-				<dt>Status</dt>
+				<dt>{{ t('views.profile.status') }}</dt>
 				<dd class="status-online">
-					Online
+					{{ t('views.profile.online') }}
 				</dd>
-				<dt>Version</dt>
+				<dt>{{ t('about.version') }}</dt>
 				<dd>{{ info.version }}</dd>
-				<dt>Uptime</dt>
+				<dt>{{ t('about.uptime') }}</dt>
 				<dd>{{ uptime }}</dd>
-				<dt>OS</dt>
+				<dt>{{ t('dashboard.system_info.os') }}</dt>
 				<dd>{{ info.osVersion || info.os }}</dd>
-				<dt>Architecture</dt>
+				<dt>{{ t('dashboard.system_info.architecture') }}</dt>
 				<dd>{{ info.arch }}</dd>
 				<dt v-if="info.cpu.length">
-					CPU
+					{{ t('dashboard.system_info.cpu') }}
 				</dt>
 				<dd v-if="info.cpu.length">
 					{{ info.cpu.join(', ') }}
 				</dd>
 				<dt v-if="info.gpu.length">
-					GPU
+					{{ t('dashboard.system_info.gpu') }}
 				</dt>
 				<dd v-if="info.gpu.length">
 					{{ info.gpu.join(', ') }}
@@ -97,7 +99,7 @@ const uptime = computed(() => formatUptime(info.value?.bootTime, now.value));
 		</div>
 
 		<p class="hint server-content">
-			Switch servers from the NoMercy app on your phone or browser.
+			{{ t('views.profile.switch_servers_hint') }}
 		</p>
 	</div>
 </template>

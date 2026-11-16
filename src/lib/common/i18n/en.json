@@ -1,0 +1,49 @@
+{
+	"common": {
+		"app_name": "NoMercy",
+		"back": "Back",
+		"cancel": "Cancel",
+		"close": "Close",
+		"details": "Details",
+		"duration": "Duration",
+		"loading": "Loading",
+		"pause": "Pause",
+		"play": "Play",
+		"profile": "Profile",
+		"refresh": "Refresh",
+		"something_went_wrong": "Something went wrong",
+		"title": "Title"
+	},
+	"startup": {
+		"tryAgain": "Try again"
+	},
+	"nav": {
+		"home": "Home",
+		"libraries": "Libraries",
+		"music": "Music",
+		"about": "About",
+		"chromecast": "Chromecast"
+	},
+	"about": {
+		"version": "Version"
+	},
+	"components": {
+		"cards": {
+			"watch": "Watch"
+		}
+	},
+	"info": {
+		"watch_trailer": "Watch trailer"
+	},
+	"music": {
+		"tracks": "tracks",
+		"player": {
+			"lyrics": "Lyrics",
+			"now_playing": "Now playing"
+		}
+	},
+	"views": {
+		"refreshing": "Refreshing…",
+		"unknown": "Unknown"
+	}
+}

@@ -1,0 +1,50 @@
+{
+	"about": {
+		"developed_by": "Developed by NoMercy Entertainment",
+		"crash_setting_label": "Send crash reports",
+		"send_diagnostics": "Send diagnostics",
+		"uptime": "Uptime"
+	},
+	"dashboard": {
+		"system_info": {
+			"os": "OS",
+			"architecture": "Architecture",
+			"cpu": "CPU",
+			"gpu": "GPU"
+		}
+	},
+	"views": {
+		"profile": {
+			"sign_out": "Sign out",
+			"sign_out_confirm": "Sign out of {{name}}?",
+			"current_server": "Current server",
+			"switch": "Switch",
+			"settings": "Settings",
+			"user": "User",
+			"tagline": "Your media, on every screen. Self-hosted. No ads, no tracking, no compromise.",
+			"copyright": "© {{from}}–{{to}} NoMercy Entertainment. All product names, logos, and brands are property of their respective owners.",
+			"server_info": "Server info",
+			"server_info_error": "Couldn't load server info",
+			"status": "Status",
+			"online": "Online",
+			"switch_servers_hint": "Switch servers from the NoMercy app on your phone or browser.",
+			"category_display": "Display",
+			"category_playback": "Playback",
+			"category_privacy": "Privacy",
+			"auto_skip": "Auto-skip intros and credits",
+			"auto_skip_hint": "When a chapter is tagged as intro or credits, jump to the end automatically",
+			"auto_theme": "Use auto theme colors",
+			"auto_theme_hint": "Pull accent from the focused poster's palette",
+			"subtitle_hints": "Subtitle hints",
+			"subtitle_hints_hint": "Show subtitle availability badge on cards",
+			"crash_reports_hint": "Off by default. A report holds: device id, device model, CPU type, memory and thread facts, app version and the error's stack trace. Sent only to nomercy.tv.",
+			"diag_sending": "Sending…",
+			"diag_sent": "Sent. Report {{id}}",
+			"diag_failed": "Not sent. {{error}}",
+			"diag_idle": "Show what a report would contain, then decide whether to send it",
+			"diag_preview": "Diagnostics payload preview. Press OK to scroll.",
+			"diag_send_now": "Send this report now",
+			"diag_send_now_hint": "Nothing leaves this device until you choose this"
+		}
+	}
+}

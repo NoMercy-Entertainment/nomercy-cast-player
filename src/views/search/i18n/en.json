@@ -1,0 +1,15 @@
+{
+	"views": {
+		"search_videos": "Search videos",
+		"search_music": "Search music",
+		"search": {
+			"label": "Search:",
+			"video": "Video",
+			"space": "Space",
+			"backspace": "Backspace",
+			"start_typing": "Start typing to search.",
+			"no_results": "No results for \"{{query}}\".",
+			"error": "Couldn't search"
+		}
+	}
+}

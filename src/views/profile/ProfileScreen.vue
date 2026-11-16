@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
@@ -17,6 +18,7 @@ import SetupBackdrop from '@/components/SetupBackdrop.vue';
  */
 
 const router = useRouter();
+const { t } = useTranslation();
 
 const containerEl = ref<HTMLElement | null>(null);
 const profileGroup = useFocusGroup({
@@ -36,7 +38,7 @@ const userName = computed(
 		me.value?.name
 		?? (claims.value?.display_name as string)
 		?? (claims.value?.preferred_username as string)
-		?? 'User',
+		?? t('views.profile.user'),
 );
 const userEmail = computed(
 	() => me.value?.email ?? (claims.value?.email as string | undefined) ?? '',
@@ -156,7 +158,7 @@ async function confirmSignOut(): Promise<void> {
 						{{ userEmail }}
 					</p>
 				</div>
-				<span class="hint">Sign out</span>
+				<span class="hint">{{ t('views.profile.sign_out') }}</span>
 			</button>
 
 			<button
@@ -168,13 +170,13 @@ async function confirmSignOut(): Promise<void> {
 			>
 				<div class="row-meta">
 					<p class="row-label">
-						Current server
+						{{ t('views.profile.current_server') }}
 					</p>
 					<p class="row-primary">
-						{{ authStore.serverId.value ?? 'Unknown' }}
+						{{ authStore.serverId.value ?? t('views.unknown') }}
 					</p>
 				</div>
-				<span class="row-action">Switch</span>
+				<span class="row-action">{{ t('views.profile.switch') }}</span>
 			</button>
 
 			<button
@@ -185,7 +187,7 @@ async function confirmSignOut(): Promise<void> {
 				@click.prevent="router.push('/profile/settings')"
 			>
 				<p class="row-primary">
-					Settings
+					{{ t('views.profile.settings') }}
 				</p>
 			</button>
 
@@ -197,7 +199,7 @@ async function confirmSignOut(): Promise<void> {
 				@click.prevent="router.push('/profile/about')"
 			>
 				<p class="row-primary">
-					About
+					{{ t('nav.about') }}
 				</p>
 			</button>
 		</div>
@@ -211,10 +213,10 @@ async function confirmSignOut(): Promise<void> {
 		>
 			<div class="nm-dialog">
 				<h2 id="signout-dialog-title" class="nm-dialog-title">
-					Sign out
+					{{ t('views.profile.sign_out') }}
 				</h2>
 				<p class="nm-dialog-message">
-					Sign out of {{ userName }}?
+					{{ t('views.profile.sign_out_confirm', { name: userName }) }}
 				</p>
 				<div class="nm-dialog-actions">
 					<button
@@ -223,7 +225,7 @@ async function confirmSignOut(): Promise<void> {
 						class="nm-pill-sm nm-pill-sm-secondary"
 						@click="showSignOutConfirm = false"
 					>
-						Cancel
+						{{ t('common.cancel') }}
 					</button>
 					<button
 						ref="dialogConfirmEl"
@@ -231,7 +233,7 @@ async function confirmSignOut(): Promise<void> {
 						class="nm-pill-sm nm-pill-sm-primary"
 						@click="confirmSignOut"
 					>
-						Sign out
+						{{ t('views.profile.sign_out') }}
 					</button>
 				</div>
 			</div>

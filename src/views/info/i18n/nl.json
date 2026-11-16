@@ -1,0 +1,8 @@
+{
+	"components": {
+		"buttons": {
+			"add_to_watchlist": "Aan kijklijst toevoegen",
+			"remove_from_watchlist": "Van kijklijst verwijderen"
+		}
+	}
+}

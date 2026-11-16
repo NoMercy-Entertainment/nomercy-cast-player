@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { useSearchQuery } from '@/queries/useSearchQuery';
@@ -8,6 +9,7 @@ import Skeleton from '@/components/feedback/Skeleton.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import SearchKeyboard from './SearchKeyboard.vue';
 
+const { t } = useTranslation();
 const containerEl = ref<HTMLElement | null>(null);
 const screenGroup = useFocusGroup({
 	type: 'horizontal',
@@ -62,16 +64,16 @@ function setMode(next: 'video' | 'music'): void {
 		</aside>
 		<section class="right">
 			<header class="query-bar">
-				<span class="query-label">Search:</span>
+				<span class="query-label">{{ t('views.search.label') }}</span>
 				<span class="query-text">{{ queryStr || '_' }}</span>
-				<span v-if="mode === 'music'" class="mode-pill">Music</span>
-				<span v-else class="mode-pill">Video</span>
+				<span v-if="mode === 'music'" class="mode-pill">{{ t('nav.music') }}</span>
+				<span v-else class="mode-pill">{{ t('views.search.video') }}</span>
 			</header>
 
 			<div class="results nm-no-scrollbar">
 				<template v-if="!debouncedQuery">
 					<p class="hint">
-						Start typing to search.
+						{{ t('views.search.start_typing') }}
 					</p>
 				</template>
 				<template v-else-if="isLoading">
@@ -81,12 +83,12 @@ function setMode(next: 'video' | 'music'): void {
 					<ErrorPanel
 						:error="error as Error"
 						:retry="() => refetch()"
-						context="Couldn't search"
+						:context="t('views.search.error')"
 					/>
 				</template>
 				<template v-else-if="components.length === 0">
 					<p class="hint">
-						No results for "{{ debouncedQuery }}".
+						{{ t('views.search.no_results', { query: debouncedQuery }) }}
 					</p>
 				</template>
 				<template v-else>
@@ -96,7 +98,7 @@ function setMode(next: 'video' | 'music'): void {
 						:component="c"
 					/>
 					<p v-if="isFetching" class="refresh-hint">
-						Refreshing…
+						{{ t('views.refreshing') }}
 					</p>
 				</template>
 			</div>

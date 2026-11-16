@@ -1,0 +1,15 @@
+{
+	"components": {
+		"buttons": {
+			"add_to_watchlist": "Add to watchlist",
+			"remove_from_watchlist": "Remove from watchlist"
+		}
+	},
+	"views": {
+		"info": {
+			"load_error": "Couldn't load details",
+			"minutes": "{{count}} min",
+			"season": "Season"
+		}
+	}
+}

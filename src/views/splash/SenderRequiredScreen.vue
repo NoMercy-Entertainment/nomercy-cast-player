@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import logoWide from '@/assets/logo-wide.svg';
 import mobile from '@/assets/mobile.svg';
 import splash from '@/assets/splash.png';
@@ -22,6 +23,7 @@ defineProps<{
 	retry?: () => void;
 }>();
 
+const { t } = useTranslation();
 useFocusGroup({ type: 'modal', initialFocusKey: 'cast-again-retry' });
 </script>
 
@@ -32,7 +34,7 @@ useFocusGroup({ type: 'modal', initialFocusKey: 'cast-again-retry' });
 		<section class="content">
 			<div class="status-row">
 				<h1 class="status-text pulse">
-					{{ title ?? 'Re-cast from your phone' }}
+					{{ title ?? t('views.splash.recast') }}
 				</h1>
 			</div>
 
@@ -40,22 +42,22 @@ useFocusGroup({ type: 'modal', initialFocusKey: 'cast-again-retry' });
 				{{ message }}
 			</p>
 			<p v-else class="instructions">
-				<span>Your cast session expired. Open NoMercy on your phone or desktop and tap the</span>
+				<span>{{ t('views.splash.expired') }}</span>
 				<br>
-				<span class="emphasis">Chromecast</span>
-				<span> button to continue.</span>
+				<span class="emphasis">{{ t('nav.chromecast') }}</span>
+				<span> {{ t('views.splash.button_to_continue') }}</span>
 			</p>
 
 			<div v-if="retry" class="actions">
 				<FocusableButton focus-key="cast-again-retry" @action="retry">
-					Try again
+					{{ t('startup.tryAgain') }}
 				</FocusableButton>
 			</div>
 		</section>
 
 		<img class="phone" :src="mobile" alt="" aria-hidden="true">
 
-		<img class="brand" :src="logoWide" alt="NoMercy">
+		<img class="brand" :src="logoWide" :alt="t('common.app_name')">
 	</main>
 </template>
 

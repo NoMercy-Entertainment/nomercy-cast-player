@@ -1,0 +1,27 @@
+{
+	"about": {
+		"developed_by": "Ontwikkeld door NoMercy Entertainment",
+		"crash_setting_label": "Crashrapporten versturen",
+		"send_diagnostics": "Diagnostiek verzenden",
+		"uptime": "Uptime"
+	},
+	"dashboard": {
+		"system_info": {
+			"os": "OS",
+			"architecture": "Architectuur",
+			"cpu": "CPU",
+			"gpu": "GPU"
+		}
+	},
+	"views": {
+		"profile": {
+			"sign_out": "Uitloggen",
+			"sign_out_confirm": "Uitloggen bij {{name}}?",
+			"current_server": "Huidige server",
+			"switch": "Wijzigen",
+			"settings": "Instellingen",
+			"status": "Status",
+			"online": "Online"
+		}
+	}
+}

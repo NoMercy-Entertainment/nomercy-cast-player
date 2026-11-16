@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { authStore } from '@/stores/authStore';
 import { socketStore } from '@/stores/socketStore';
 import { closeCastSession, connectedSenders } from '@/cast/receiver';
@@ -27,21 +28,23 @@ useFocusGroup({
 	},
 });
 
+const { t } = useTranslation();
+
 const status = computed(() => {
 	switch (authStore.receiverState.value) {
 		case 'LOADING':
 			// With no sender there is nothing to connect to yet.
-			return connectedSenders.value === 0 ? 'Ready to cast' : 'Connecting…';
+			return connectedSenders.value === 0 ? t('views.splash.ready') : t('views.splash.connecting');
 		case 'AUTHED':
-			return 'Connecting to your server…';
+			return t('views.splash.connecting_server');
 		case 'CONNECTING':
-			return 'Connecting to your server…';
+			return t('views.splash.connecting_server');
 		case 'READY':
-			return 'Ready to cast';
+			return t('views.splash.ready');
 		case 'TEARDOWN':
-			return 'Closing';
+			return t('views.splash.closing');
 		default:
-			return 'Ready to cast';
+			return t('views.splash.ready');
 	}
 });
 
@@ -68,22 +71,22 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 				<div
 					v-if="isConnected"
 					class="dot"
-					title="Connected"
+					:title="t('views.splash.connected')"
 				/>
 			</div>
 
 			<p class="instructions">
 				<template v-if="userName">
-					<span>Hi <strong>{{ userName }}</strong>, to start casting tap the</span>
+					<span>{{ t('views.splash.hi') }} <strong>{{ userName }}</strong>{{ t('views.splash.hi_rest') }}</span>
 					<br>
-					<span class="emphasis">Chromecast</span>
-					<span> button in the NoMercy app.</span>
+					<span class="emphasis">{{ t('nav.chromecast') }}</span>
+					<span> {{ t('views.splash.button_in_app') }}</span>
 				</template>
 				<template v-else>
-					<span>To start casting audio or video tap the</span>
+					<span>{{ t('views.splash.no_user_start') }}</span>
 					<br>
-					<span class="emphasis">Chromecast</span>
-					<span> button in the MediaPlayer or App.</span>
+					<span class="emphasis">{{ t('nav.chromecast') }}</span>
+					<span> {{ t('views.splash.button_in_player') }}</span>
 				</template>
 			</p>
 
@@ -94,13 +97,13 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 				variant="ghost"
 				@action="closeCastSession"
 			>
-				Close
+				{{ t('common.close') }}
 			</FocusableButton>
 		</section>
 
 		<img class="phone" :src="mobile" alt="" aria-hidden="true">
 
-		<img class="brand" :src="logoWide" alt="NoMercy">
+		<img class="brand" :src="logoWide" :alt="t('common.app_name')">
 	</main>
 </template>
 

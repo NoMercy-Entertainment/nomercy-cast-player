@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import SearchKey from './SearchKey.vue';
 
@@ -25,6 +26,7 @@ const emit = defineEmits<{
 	mode: [next: 'video' | 'music'];
 }>();
 
+const { t } = useTranslation();
 const containerEl = ref<HTMLElement | null>(null);
 // 'free' spatial nav instead of 'grid' — the utility row has 4 keys
 // covering 6 logical columns (Space + Backspace each span 2 cells), so
@@ -48,7 +50,7 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 			<SearchKey
 				focus-key="kb-space"
 				label="⎵"
-				aria-label="Space"
+				:aria-label="t('views.search.space')"
 				variant="hot"
 				class="span-2"
 				@press="emit('space')"
@@ -56,7 +58,7 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 			<SearchKey
 				focus-key="kb-back"
 				label="⌫"
-				aria-label="Backspace"
+				:aria-label="t('views.search.backspace')"
 				variant="hot"
 				class="span-2"
 				@press="emit('backspace')"
@@ -64,14 +66,14 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 			<SearchKey
 				focus-key="kb-video"
 				label="🎬"
-				aria-label="Search videos"
+				:aria-label="t('views.search_videos')"
 				:variant="mode === 'video' ? 'mode-active' : 'mode'"
 				@press="emit('mode', 'video')"
 			/>
 			<SearchKey
 				focus-key="kb-music"
 				label="🎵"
-				aria-label="Search music"
+				:aria-label="t('views.search_music')"
 				:variant="mode === 'music' ? 'mode-active' : 'mode'"
 				@press="emit('mode', 'music')"
 			/>

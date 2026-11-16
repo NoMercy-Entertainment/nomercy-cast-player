@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import SetupBackdrop from '@/components/SetupBackdrop.vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useNavFocusBridge } from '@/composables/useNavFocusBridge';
@@ -10,11 +11,12 @@ import SettingsCategories from './SettingsCategories.vue';
  * AppSettingsScreen.kt:258-333: categories on the left, the open
  * category's rows on the right. The groups are Display, Playback and Privacy.
  */
-const CATEGORIES = [
-	{ key: 'display', label: 'Display' },
-	{ key: 'playback', label: 'Playback' },
-	{ key: 'privacy', label: 'Privacy' },
-];
+const { t } = useTranslation();
+const CATEGORIES = computed(() => [
+	{ key: 'display', label: t('views.profile.category_display') },
+	{ key: 'playback', label: t('views.profile.category_playback') },
+	{ key: 'privacy', label: t('views.profile.category_privacy') },
+]);
 
 const category = ref('display');
 const categories = ref<InstanceType<typeof SettingsCategories> | null>(null);
@@ -29,7 +31,7 @@ useNavFocusBridge(panesGroup);
 		<div class="settings-panes">
 			<div class="settings-left">
 				<header class="settings-header">
-					<h1>Settings</h1>
+					<h1>{{ t('views.profile.settings') }}</h1>
 				</header>
 				<SettingsCategories
 					ref="categories"

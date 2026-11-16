@@ -1,0 +1,19 @@
+{
+	"views": {
+		"splash": {
+			"ready": "Ready to cast",
+			"connecting": "Connecting…",
+			"connecting_server": "Connecting to your server…",
+			"closing": "Closing",
+			"connected": "Connected",
+			"hi": "Hi",
+			"hi_rest": ", to start casting tap the",
+			"button_in_app": "button in the NoMercy app.",
+			"no_user_start": "To start casting audio or video tap the",
+			"button_in_player": "button in the MediaPlayer or App.",
+			"recast": "Re-cast from your phone",
+			"expired": "Your cast session expired. Open NoMercy on your phone or desktop and tap the",
+			"button_to_continue": "button to continue."
+		}
+	}
+}

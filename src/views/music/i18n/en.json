@@ -1,0 +1,15 @@
+{
+	"views": {
+		"music": {
+			"resume": "Resume",
+			"like": "Like",
+			"start_error_offline": "Could not start playback. Music is not connected.",
+			"start_error": "Could not start playback.",
+			"list_error": "Couldn't load this list",
+			"cards_error": "Couldn't load music cards",
+			"cards_empty": "Nothing here.",
+			"start_error_load": "Couldn't load music",
+			"start_empty": "No music yet. Add a music library to get started."
+		}
+	}
+}
