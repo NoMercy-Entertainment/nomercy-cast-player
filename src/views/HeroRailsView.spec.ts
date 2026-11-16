@@ -118,6 +118,26 @@ describe('the music page never ends blank', () => {
 		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
 	});
 
+	it('draws the loading rails inside the rails box, each with a title bar and a row of cards', async () => {
+		const wrapper = await screen({ data: undefined, isLoading: true, skeletonCount: 2 });
+
+		const placeholders = wrapper.findAll('.skeleton');
+		expect(placeholders).toHaveLength(2);
+		expect(wrapper.findAll('.nm-hero-rails .skeleton')).toHaveLength(2);
+		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
+		for (const placeholder of placeholders) {
+			expect(placeholder.find('.skeleton-title').exists()).toBe(true);
+			expect(placeholder.findAll('.skeleton-item').length).toBeGreaterThan(1);
+		}
+	});
+
+	it('draws the real rails in the same box once the answer is there (positive control)', async () => {
+		const wrapper = await screen({ data: [carousel('albums', [album('00000000-0000-4000-8000-000000000001')])] });
+
+		expect(wrapper.findAll('.nm-hero-rails [data-rail-id="albums"]')).toHaveLength(1);
+		expect(wrapper.find('.skeleton').exists()).toBe(false);
+	});
+
 	it('shows the error and Try again when the request failed', async () => {
 		const wrapper = await screen({ data: undefined, error: new Error('timeout') });
 

@@ -71,14 +71,15 @@ useHeroSeed(componentsRef);
 			:retry="refetch"
 			:context="errorContext"
 		/>
-		<template v-else-if="isInitialLoad">
+		<div v-else-if="isInitialLoad" class="nm-hero-rails nm-hero-rails--no-hero">
 			<Skeleton
 				v-for="n in skeletonRailCount"
 				:key="n"
 				type="rail"
+				titled
 				:count="6"
 			/>
-		</template>
+		</div>
 		<EmptyState
 			v-else-if="!components.some(drawsContent)"
 			:message="emptyMessage"
