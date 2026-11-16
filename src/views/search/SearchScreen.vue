@@ -111,7 +111,7 @@ function setMode(next: 'video' | 'music'): void {
  */
 .search {
 	display: grid;
-	grid-template-columns: minmax(360px, 25%) 1fr;
+	grid-template-columns: 25% 1fr;
 	gap: 16px;
 	padding: 64px 36px 24px;
 	height: 100%;
@@ -130,12 +130,13 @@ function setMode(next: 'video' | 'music'): void {
 }
 .query-bar {
 	display: flex;
-	align-items: baseline;
+	align-items: center;
 	gap: 16px;
-	padding: 14px 22px;
+	height: 60px;
+	padding: 0 16px;
 	background: oklch(0.18 0.01 250 / 0.85);
 	border: 1px solid rgba(255, 255, 255, 0.18);
-	border-radius: 12px;
+	border-radius: 16px;
 }
 .query-label {
 	color: var(--color-text-secondary);

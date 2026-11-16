@@ -19,11 +19,11 @@
 	z-index: 1;
 }
 .ring {
-	width: 56px;
-	height: 56px;
+	width: 50px;
+	height: 50px;
 	border-radius: 50%;
-	border: 3px solid rgba(255, 255, 255, 0.18);
-	border-top-color: var(--color-primary, oklch(0.7 0.2 285));
+	border: 4px solid rgba(255, 255, 255, 0.18);
+	border-top-color: #fff;
 	animation: spin 1s linear infinite;
 }
 @keyframes spin {

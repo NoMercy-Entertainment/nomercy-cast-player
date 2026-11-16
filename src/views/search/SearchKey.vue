@@ -46,7 +46,7 @@ useFocusEntry({
 	background: oklch(0.22 0.01 250);
 	color: var(--color-text-primary);
 	font-weight: 600;
-	font-size: 22px;
+	font-size: 16px;
 	border-radius: 6px;
 	aspect-ratio: 1 / 1;
 	min-height: 0;

@@ -34,6 +34,8 @@ defineProps<{
 }
 .empty-message {
 	font-size: 20px;
+	line-height: 28px;
+	text-align: center;
 	color: var(--color-text-secondary);
 	margin: 0;
 }

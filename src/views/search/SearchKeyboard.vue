@@ -102,8 +102,8 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 .kb {
 	display: flex;
 	flex-direction: column;
-	gap: 8px;
-	padding: 8px;
+	gap: 4px;
+	padding: 4px;
 }
 .kb-row {
 	display: grid;

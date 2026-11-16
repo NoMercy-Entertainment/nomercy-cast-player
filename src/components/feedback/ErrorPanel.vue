@@ -30,21 +30,22 @@ useFocusGroup({ type: 'vertical', initialFocusKey: 'error-retry' });
 .error-panel {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: center;
 	gap: 16px;
-	padding: 48px;
-	text-align: center;
+	max-width: 440px;
+	padding: 96px 40px 0;
 }
 .error-title {
-	font-size: 24px;
-	font-weight: 600;
+	font-size: 34px;
+	line-height: 40px;
+	font-weight: 800;
 	color: var(--color-text-primary);
 	margin: 0;
 }
 .error-message {
-	font-size: 16px;
-	color: var(--color-text-secondary);
+	font-size: 14px;
+	color: var(--color-error);
 	margin: 0;
 	max-width: 60ch;
 }
