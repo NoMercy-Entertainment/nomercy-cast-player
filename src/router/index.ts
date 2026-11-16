@@ -171,7 +171,7 @@ const routes: RouteRecordRaw[] = [
 			{
 				path: 'profile/settings',
 				name: 'profile-settings',
-				component: () => import('@/views/profile/AppSettingsScreen.vue'),
+				component: () => import('@/views/profile/SettingsPanes.vue'),
 			},
 			{
 				path: 'profile/about',

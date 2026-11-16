@@ -16,15 +16,33 @@ import { diagnosticsSender } from '@/lib/diagnostics/sender';
  * Settings persist to localStorage via settingsStore. The auto-skip
  * pref drives ChapterAutoSkipPlugin's userPrefAutoSkip flag.
  */
+// A category narrows the rows to that pane; none shows every row, as before.
+const props = defineProps<{ category?: string }>();
+const emit = defineEmits<{ escapeLeft: [] }>();
+
 const containerEl = ref<HTMLElement | null>(null);
 const settingsGroup = useFocusGroup({
 	type: 'vertical',
 	restorationKey: 'settings-list',
 	containerEl,
-	onEscape: dir => (dir === 'up' ? focusTopnav() : false),
+	onEscape: (dir) => {
+		if (dir === 'up')
+			return focusTopnav();
+		if (dir === 'left' && props.category !== undefined) {
+			emit('escapeLeft');
+			return true;
+		}
+		return false;
+	},
 });
 
-useNavFocusBridge(settingsGroup);
+if (props.category === undefined)
+	useNavFocusBridge(settingsGroup);
+
+const shows = (key: string): boolean => props.category === undefined || props.category === key;
+const inDisplay = computed(() => shows('display'));
+const inPlayback = computed(() => shows('playback'));
+const inPrivacy = computed(() => shows('privacy'));
 
 const autoSkipEl = ref<HTMLElement | null>(null);
 const themeEl = ref<HTMLElement | null>(null);
@@ -33,6 +51,7 @@ const subtitleEl = ref<HTMLElement | null>(null);
 useFocusEntry({
 	key: 'settings-auto-skip',
 	group: settingsGroup,
+	enabled: inPlayback,
 	el: autoSkipEl,
 	onAction: () => {
 		settingsStore.autoSkipChapters.value = !settingsStore.autoSkipChapters.value;
@@ -42,6 +61,7 @@ useFocusEntry({
 useFocusEntry({
 	key: 'settings-theme',
 	group: settingsGroup,
+	enabled: inDisplay,
 	el: themeEl,
 	onAction: () => {
 		settingsStore.useAutoThemeColors.value = !settingsStore.useAutoThemeColors.value;
@@ -51,6 +71,7 @@ useFocusEntry({
 useFocusEntry({
 	key: 'settings-subs',
 	group: settingsGroup,
+	enabled: inDisplay,
 	el: subtitleEl,
 	onAction: () => {
 		settingsStore.subtitleHints.value = !settingsStore.subtitleHints.value;
@@ -62,6 +83,7 @@ const crashEl = ref<HTMLElement | null>(null);
 useFocusEntry({
 	key: 'settings-crash-reports',
 	group: settingsGroup,
+	enabled: inPrivacy,
 	el: crashEl,
 	onAction: () => {
 		settingsStore.crashReports.value = !settingsStore.crashReports.value;
@@ -93,6 +115,7 @@ useFocusEntry({
 	key: 'settings-diagnostics',
 	group: settingsGroup,
 	order: 1,
+	enabled: inPrivacy,
 	el: diagnosticsEl,
 	onAction: () => {
 		diagnosticsSender.prepare('manual');
@@ -106,7 +129,7 @@ useFocusEntry({
 	key: 'settings-diagnostics-preview',
 	group: settingsGroup,
 	order: 2,
-	enabled: hasPending,
+	enabled: computed(() => hasPending.value && inPrivacy.value),
 	el: previewEl,
 	onAction: () => {
 		const el = previewEl.value;
@@ -121,7 +144,7 @@ useFocusEntry({
 	key: 'settings-diagnostics-send',
 	group: settingsGroup,
 	order: 3,
-	enabled: hasPending,
+	enabled: computed(() => hasPending.value && inPrivacy.value),
 	el: sendEl,
 	onAction: () => void diagnosticsSender.confirmSend(),
 });
@@ -130,20 +153,21 @@ useFocusEntry({
 	key: 'settings-diagnostics-cancel',
 	group: settingsGroup,
 	order: 4,
-	enabled: hasPending,
+	enabled: computed(() => hasPending.value && inPrivacy.value),
 	el: cancelEl,
 	onAction: () => diagnosticsSender.discard(),
 });
 </script>
 
 <template>
-	<div class="settings-screen nm-page-screen">
-		<SetupBackdrop />
-		<header class="nm-page-header settings-header">
+	<div class="settings-screen" :class="[{ 'nm-page-screen': props.category === undefined }]">
+		<SetupBackdrop v-if="props.category === undefined" />
+		<header v-if="props.category === undefined" class="nm-page-header settings-header">
 			<h1>Settings</h1>
 		</header>
 		<div ref="containerEl" class="settings-list nm-list">
 			<button
+				v-show="inPlayback"
 				ref="autoSkipEl"
 				class="nm-list-row"
 				data-focusable
@@ -164,6 +188,7 @@ useFocusEntry({
 			</button>
 
 			<button
+				v-show="inDisplay"
 				ref="themeEl"
 				class="nm-list-row"
 				data-focusable
@@ -184,6 +209,7 @@ useFocusEntry({
 			</button>
 
 			<button
+				v-show="inDisplay"
 				ref="subtitleEl"
 				class="nm-list-row"
 				data-focusable
@@ -204,6 +230,7 @@ useFocusEntry({
 			</button>
 
 			<button
+				v-show="inPrivacy"
 				ref="crashEl"
 				class="nm-list-row"
 				data-focusable
@@ -226,6 +253,7 @@ useFocusEntry({
 			</button>
 
 			<button
+				v-show="inPrivacy"
 				ref="diagnosticsEl"
 				class="nm-list-row"
 				data-focusable
@@ -242,7 +270,7 @@ useFocusEntry({
 				</div>
 			</button>
 
-			<template v-if="hasPending">
+			<template v-if="hasPending && inPrivacy">
 				<pre
 					ref="previewEl"
 					class="diagnostics-preview"
@@ -296,6 +324,9 @@ useFocusEntry({
 .settings-list {
 	position: relative;
 	z-index: 1;
+}
+.settings-list {
+	gap: 16px;
 }
 .row-text {
 	flex: 1;
