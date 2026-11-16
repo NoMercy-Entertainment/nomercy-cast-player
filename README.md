@@ -2,7 +2,7 @@
 
 > **Parked, not dead.** This project is meant to become the web twin of the KMP 10-foot UI, authenticated by postMessage from the cast sender. The current codebase is not functional end to end (see `CLAUDE.md`) and is pinned to v1 player libraries rather than the shipped web trio. See `audit/ALIGNMENT.md` D3 for the decision and `audit/EXECUTION-PLAN.md` "Parked" for the backlog.
 
-**nomercy-cast-player** is a Chromecast Receiver app built to work with the [nomercy-video-player](https://github.com/NoMercy-Entertainment/nomercy-video-player) and [nomercy-music-player](https://github.com/NoMercy-Entertainment/nomercy-music-player). It serves as a lightweight, event-driven application designed to stream media content seamlessly from your NoMercy MediaServer.
+**nomercy-cast-player** is a Chromecast Receiver app built to work with the [nomercy-video-player](https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/video-player) and [nomercy-music-player](https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/music-player). It serves as a lightweight, event-driven application designed to stream media content seamlessly from your NoMercy MediaServer.
 
 ## Cast Application ID
 
@@ -40,7 +40,7 @@ The `playlist` property can accept:
 
 #### Type definitions
 
-Refer to the [nomercy-video-player README](https://github.com/NoMercy-Entertainment/nomercy-video-player?tab=readme-ov-file#playlistitem) for a detailed definition of the `PlaylistItem` format.
+Refer to the [nomercy-video-player README](https://github.com/NoMercy-Entertainment/nomercy-player-web/tree/master/packages/video-player#playlistitem) for a detailed definition of the `PlaylistItem` format.
 note: type definitions and api may not be 100% correct and are subject to change.
 
 ## SignalR Communication
