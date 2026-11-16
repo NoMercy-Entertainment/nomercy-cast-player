@@ -14,9 +14,22 @@ vi.mock('@/lib/http/client', () => ({
 
 const { apiFetch } = await import('@/lib/http/client');
 
-interface Item { id: number; title: string; image?: string; video_id?: string; video_type?: string; tmdb_id?: number; skip_segments?: unknown[]; season?: number; episode?: number }
+interface Item {
+	id: number;
+	title: string;
+	image?: string;
+	video_id?: string;
+	video_type?: string;
+	tmdb_id?: number;
+	skip_segments?: Array<{ type: string; credits_start: number; content_end: number }>;
+	season?: number;
+	episode?: number;
+}
+
+interface Level { index: number; label: string }
 
 class FakePlayer extends EventEmitter<Record<string, unknown>> {
+	levels: Level[] = [];
 	container = document.createElement('div');
 	options = {};
 	state = 'paused';
@@ -51,18 +64,18 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 	item = (): Item => this.items[0]!;
 	index = (): number => 0;
 	chapters = (): never[] => [];
-	play = vi.fn(async () => {
+	play = vi.fn<() => Promise<void>>(async () => {
 		this.calls.push('play');
 		this.state = 'playing';
 	});
 
-	pause = vi.fn(async () => {
+	pause = vi.fn<() => Promise<void>>(async () => {
 		this.calls.push('pause');
 		this.state = 'paused';
 	});
 
-	restart = vi.fn();
-	next = vi.fn();
+	restart = vi.fn<() => void>();
+	next = vi.fn<() => void>();
 	addSubtitleTrack = (track: unknown): unknown => {
 		this.added.push(track);
 
@@ -71,14 +84,14 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 
 	subtitles = (): never[] => [];
 	audioTracks = (): never[] => [];
-	qualityLevels = (): never[] => [];
+	qualityLevels = (): Level[] => this.levels;
 	subtitle = (): null => null;
 	audioTrack = (): null => null;
 	quality = (): string => 'auto';
-	subtitleStyle = vi.fn(() => ({}));
+	subtitleStyle = vi.fn<(patch?: Record<string, string>) => Record<string, never>>(() => ({}));
 	volume = (): number => 30;
 	volumeState = (): string => 'unmuted';
-	toggleMute = vi.fn();
+	toggleMute = vi.fn<() => void>();
 }
 
 // A plugin's window key listener outlives its test unless its lifecycle is disposed.
@@ -316,6 +329,158 @@ describe('subtitle search dialog (SubtitleSearchDialog.kt:60-300)', () => {
 		expect(root.textContent).toContain('rate-limited');
 		press('Escape');
 		expect(root.querySelector('.tvui-search')).toBeNull();
+	});
+});
+
+describe('subtitle search statuses (SubtitleSearchDialog.kt:133-208)', () => {
+	const candidate = {
+		id: 'a',
+		download_url: 'https://example.test/s.srt',
+		language: 'nl',
+		language_name: 'Dutch',
+		release_name: 'Rel',
+		downloads: 12,
+		rating: 8.25,
+		format: 'srt',
+		hearing_impaired: true,
+	};
+
+	async function openSearchWith(search: () => Promise<unknown>): Promise<HTMLElement> {
+		vi.mocked(apiFetch).mockImplementationOnce(search as never);
+		const { root } = setup({ skipPreScreen: false });
+
+		Array.from(root.querySelectorAll<HTMLElement>('.tvui-pre-buttons button'))
+			.find((button) => button.textContent?.includes('Audio'))!.click();
+
+		Array.from(root.querySelectorAll<HTMLElement>('.tvui-row'))
+			.find((row) => row.textContent?.includes('Search subtitles online'))!.click();
+
+		await vi.advanceTimersByTimeAsync(0);
+
+		return root;
+	}
+
+	it('k18a a result row shows the language, release, downloads, rating and hearing impaired', async () => {
+		const root = await openSearchWith(async () => ({ data: [candidate] }));
+		const text = root.querySelector('.tvui-result')?.textContent;
+
+		expect(text).toContain('Dutch');
+		expect(text).toContain('Rel');
+		expect(text).toContain('12 downloads');
+		expect(text).toContain('Rating 8.3');
+		expect(text).toContain('Hearing impaired');
+	});
+
+	it('k18b while the search runs only the loading line shows, with a spinner', async () => {
+		const root = await openSearchWith(() => new Promise(() => undefined));
+
+		expect(root.querySelector('.tvui-search')?.textContent).toContain('Searching for subtitles');
+		expect(root.querySelector('.tvui-search .tvui-spinner')).not.toBeNull();
+		expect(root.querySelector('.tvui-result')).toBeNull();
+	});
+
+	it('k18c an empty search says so with no spinner and no icon', async () => {
+		const root = await openSearchWith(async () => ({ data: [] }));
+
+		expect(root.querySelector('.tvui-search')?.textContent).toContain('No subtitles found');
+		expect(root.querySelector('.tvui-search .tvui-spinner')).toBeNull();
+		expect(root.querySelector('.tvui-search [data-icon]')).toBeNull();
+	});
+
+	it('k18d a failed search shows the error line with the alert icon', async () => {
+		const root = await openSearchWith(async () => Promise.reject(new Error('down')));
+
+		expect(root.querySelector('.tvui-search')?.textContent).toContain('Couldn\'t search');
+		expect(root.querySelector('.tvui-search [data-icon="alertTriangle"]')).not.toBeNull();
+	});
+
+	it('k18e a download in flight replaces the list with its status line', async () => {
+		const root = await openSearchWith(async () => ({ data: [candidate] }));
+
+		vi.mocked(apiFetch).mockImplementationOnce(() => new Promise(() => undefined));
+		root.querySelector<HTMLElement>('.tvui-result')!.click();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(root.querySelector('.tvui-search')?.textContent).toContain('Downloading subtitle');
+		expect(root.querySelector('.tvui-result')).toBeNull();
+	});
+
+	it('k18f a finished download replaces the list with the success line and a check', async () => {
+		const root = await openSearchWith(async () => ({ data: [candidate] }));
+
+		vi.mocked(apiFetch).mockResolvedValueOnce({ data: {
+			file: '/s/nl.srt',
+			kind: 'subtitles',
+			label: 'Dutch',
+			language: 'nl',
+		} });
+
+		root.querySelector<HTMLElement>('.tvui-result')!.click();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(root.querySelector('.tvui-search')?.textContent).toContain('Subtitle added');
+		expect(root.querySelector('.tvui-search [data-icon="check"]')).not.toBeNull();
+		expect(root.querySelector('.tvui-result')).toBeNull();
+	});
+
+	it('k18g a failed download replaces the list with the error line', async () => {
+		const root = await openSearchWith(async () => ({ data: [candidate] }));
+
+		vi.mocked(apiFetch).mockRejectedValueOnce(new Error('down'));
+		root.querySelector<HTMLElement>('.tvui-result')!.click();
+		await vi.advanceTimersByTimeAsync(0);
+		expect(root.querySelector('.tvui-search')?.textContent).toContain('Couldn\'t download');
+		expect(root.querySelector('.tvui-result')).toBeNull();
+	});
+
+	it('k18h the dialog has no close button, BACK is the only exit', async () => {
+		const root = await openSearchWith(async () => ({ data: [candidate] }));
+
+		expect(root.querySelector('.tvui-search .tvui-icon-button')).toBeNull();
+	});
+});
+
+describe('quality choice (PlayerSettingsScreen.kt mainRows, LanguageDialog.kt:83)', () => {
+	const only = [{ index: 0, label: '1080p' }];
+	const two = [...only, { index: 1, label: '720p' }];
+
+	function openSettings(levels: Level[]): HTMLElement {
+		const { player, root } = setup();
+
+		player.levels = levels;
+		player.emit('pause');
+		root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
+
+		return root;
+	}
+
+	function qualityRow(root: HTMLElement): HTMLElement {
+		return Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row'))
+			.find((row) => row.textContent?.startsWith('Quality'))!;
+	}
+
+	function columnTitles(levels: Level[]): string[] {
+		const { player, root } = setup({ skipPreScreen: false });
+
+		player.levels = levels;
+		Array.from(root.querySelectorAll<HTMLElement>('.tvui-pre-buttons button'))
+			.find((button) => button.textContent?.includes('Audio'))!.click();
+
+		return Array.from(root.querySelectorAll('.tvui-column-title')).map((title) => title.textContent ?? '');
+	}
+
+	it('p03a one real level leaves the settings quality row disabled', () => {
+		expect(qualityRow(openSettings(only)).hasAttribute('aria-disabled')).toBe(true);
+	});
+
+	it('p03b two real levels enable the settings quality row', () => {
+		expect(qualityRow(openSettings(two)).hasAttribute('aria-disabled')).toBe(false);
+	});
+
+	it('d13a one real level hides the quality column of the language dialog', () => {
+		expect(columnTitles(only)).not.toContain('Quality');
+	});
+
+	it('d13b two real levels show the quality column of the language dialog', () => {
+		expect(columnTitles(two)).toContain('Quality');
 	});
 });
 

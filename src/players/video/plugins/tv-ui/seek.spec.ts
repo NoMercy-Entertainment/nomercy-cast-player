@@ -17,8 +17,8 @@ describe('tvSeekActions (TvSeekActions.kt:11-35)', () => {
 	});
 
 	it('cancel clears the override time and plays', () => {
-		const clear = vi.fn();
-		const play = vi.fn();
+		const clear = vi.fn<() => void>();
+		const play = vi.fn<() => void>();
 
 		cancelSeek(clear, play);
 		expect(clear).toHaveBeenCalledOnce();
