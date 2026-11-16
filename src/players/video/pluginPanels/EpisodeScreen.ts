@@ -9,6 +9,7 @@
  * player overlay element.
  */
 
+import i18next from '@/i18n/i18next';
 import { dispatchOptionAction } from './shared';
 
 export interface EpisodeItem {
@@ -39,7 +40,7 @@ export function mountEpisodeScreen(opts: EpisodeScreenOptions): () => void {
 	const root = document.createElement('div');
 	root.className = 'panel episode-screen';
 	root.setAttribute('role', 'dialog');
-	root.setAttribute('aria-label', 'Episodes');
+	root.setAttribute('aria-label', i18next.t('cast_remote.episodes'));
 
 	const layout = document.createElement('div');
 	layout.className = 'episode-layout';
@@ -191,12 +192,12 @@ function labelForSeason(group: SeasonGroup, isNonSeasonal: boolean): string {
 	if (group.seasonName)
 		return group.seasonName;
 	if (isNonSeasonal && (group.playlistType === 'collection' || group.videoType === 'collection'))
-		return 'Collection';
+		return i18next.t('info.collection');
 	if (isNonSeasonal && (group.playlistType === 'special' || group.videoType === 'special'))
-		return 'Extras';
+		return i18next.t('player.extras');
 	if (group.season === 0)
-		return 'Extras';
-	return `Season ${group.season ?? 1}`;
+		return i18next.t('player.extras');
+	return i18next.t('player.season_number', { number: group.season ?? 1 });
 }
 
 function makeEpisodeCard(
@@ -285,7 +286,7 @@ function badgeForEpisode(ep: EpisodeItem): string {
 	if (isNonSeasonal)
 		return `A${ep.episode ?? 0}`;
 	if (ep.season === 0)
-		return `Extras E${ep.episode ?? 0}`;
+		return i18next.t('player.extras_episode', { episode: ep.episode ?? 0 });
 	if (ep.season != null && ep.episode != null)
 		return `S${ep.season}E${ep.episode}`;
 	return ep.title;

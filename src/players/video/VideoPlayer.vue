@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import i18next from '@/i18n/i18next';
 import { videoSyncBridge } from './syncBridge';
 import { TVOverlayPlugin } from './TVOverlayPlugin';
 import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipPlugin';
@@ -133,7 +134,7 @@ onMounted(async () => {
 		if (typeof factory !== 'function') {
 			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, 'video-player package');
 			console.warn('[video-player] no factory exported from package');
-			emit('error', 'The video player could not start.');
+			emit('error', i18next.t('player.start_error'));
 			return;
 		}
 		const player: NMVideoPlayer = factory(containerEl.value.id);
@@ -196,7 +197,7 @@ onMounted(async () => {
 	catch (err) {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, mediaLabel.value);
 		console.error('[video-player] init failed', err);
-		emit('error', 'The video player could not start.');
+		emit('error', i18next.t('player.start_error'));
 	}
 });
 

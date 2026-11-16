@@ -1,4 +1,5 @@
 import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
+import i18next from '@/i18n/i18next';
 import { mountPreScreen } from './pluginPanels/PreScreen';
 import { mountEpisodeScreen } from './pluginPanels/EpisodeScreen';
 import type { EpisodeItem } from './pluginPanels/EpisodeScreen';
@@ -157,7 +158,7 @@ export class TVOverlayPlugin {
 		if (!host || !chapter)
 			return;
 		this.clearSkipPrompt();
-		const label = chapter.type === 'credits' ? 'Skip credits' : 'Skip intro';
+		const label = chapter.type === 'credits' ? i18next.t('player.skip_credits') : i18next.t('player.skip_intro');
 		this.skipPrompt = mountSkipChapterPrompt({
 			parent: host,
 			label,
@@ -203,7 +204,7 @@ export class TVOverlayPlugin {
 		if (!this.nextPrompt && this.overlayHost()) {
 			this.nextPrompt = mountSkipChapterPrompt({
 				parent: this.overlayHost()!,
-				label: 'Next episode',
+				label: i18next.t('player.next_episode'),
 				onSkip: () => {
 					this.clearNextPrompt();
 					void this.player.next?.();
@@ -329,7 +330,7 @@ export class TVOverlayPlugin {
 		const item = this.currentItem();
 		return mountPreScreen({
 			parent: host,
-			title: item?.title ?? 'Now playing',
+			title: item?.title ?? i18next.t('music.player.now_playing'),
 			subtitle: item?.subtitle,
 			overview: item?.overview,
 			backdropUrl: item?.backdrop ?? null,

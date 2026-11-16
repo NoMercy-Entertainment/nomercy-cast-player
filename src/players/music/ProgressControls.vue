@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
@@ -13,6 +14,7 @@ import { formatTime, progressPercent, totalLabel } from './transport';
  * SVG icons rather than emoji for crisp rendering on TV displays.
  */
 
+const { t } = useTranslation();
 const containerEl = ref<HTMLElement | null>(null);
 const controlsGroup = useFocusGroup({
 	type: 'horizontal',
@@ -77,6 +79,11 @@ const time = playbackStore.music.timeMs;
 const track = playbackStore.music.track;
 const shuffle = playbackStore.music.shuffle;
 const repeat = playbackStore.music.repeat;
+const repeatLabel = computed(() => ({
+	off: t('music.player.repeat_off'),
+	all: t('music.player.repeat_all'),
+	one: t('music.player.repeat_one'),
+}));
 const repeatIcon = { off: 'nmRepeatHalftone', all: 'nmRepeat', one: 'nmRepeatone' } as const satisfies Record<'off' | 'all' | 'one', string>;
 const totalText = computed(() => totalLabel(track.value));
 const pct = computed(() => progressPercent(track.value, time.value));
@@ -98,7 +105,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				tabindex="0"
 				class="ctrl-btn ctrl-aux"
 				:class="{ active: shuffle }"
-				aria-label="Shuffle"
+				:aria-label="t('music.player.shuffle')"
 			>
 				<MoooomIcon icon="nmShuffle" width="22" height="22" />
 			</button>
@@ -107,7 +114,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				data-focusable
 				tabindex="0"
 				class="ctrl-btn"
-				aria-label="Previous track"
+				:aria-label="t('music.player.previous_track')"
 			>
 				<MoooomIcon icon="nmPrevious" width="26" height="26" />
 			</button>
@@ -116,7 +123,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				data-focusable
 				tabindex="0"
 				class="ctrl-btn ctrl-play"
-				:aria-label="playing ? 'Pause' : 'Play'"
+				:aria-label="playing ? t('common.pause') : t('common.play')"
 			>
 				<MoooomIcon :icon="playing ? 'nmPause' : 'nmPlay'" width="32" height="32" />
 			</button>
@@ -125,7 +132,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				data-focusable
 				tabindex="0"
 				class="ctrl-btn"
-				aria-label="Next track"
+				:aria-label="t('music.player.next_track')"
 			>
 				<MoooomIcon icon="nmNext" width="26" height="26" />
 			</button>
@@ -135,7 +142,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				tabindex="0"
 				class="ctrl-btn ctrl-aux"
 				:class="{ active: repeat !== 'off' }"
-				:aria-label="`Repeat ${repeat}`"
+				:aria-label="repeatLabel[repeat]"
 			>
 				<MoooomIcon :icon="repeatIcon[repeat]" width="22" height="22" />
 			</button>

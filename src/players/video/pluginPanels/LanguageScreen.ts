@@ -8,6 +8,7 @@
  * the npm video-player package, no Vue runtime needed inside the panel.
  */
 
+import i18next from '@/i18n/i18next';
 import { dispatchOptionAction } from './shared';
 
 export interface TrackItem {
@@ -36,7 +37,7 @@ export function mountLanguageScreen(opts: LanguageScreenOptions): () => void {
 	const root = document.createElement('div');
 	root.className = 'panel language-screen';
 	root.setAttribute('role', 'dialog');
-	root.setAttribute('aria-label', 'Audio and subtitles');
+	root.setAttribute('aria-label', i18next.t('player.audio_and_subtitles'));
 
 	const layout = document.createElement('div');
 	layout.className = 'language-layout';
@@ -44,11 +45,11 @@ export function mountLanguageScreen(opts: LanguageScreenOptions): () => void {
 	const showQuality = (opts.qualityLevels?.length ?? 0) > 1 && Boolean(opts.onPickQuality);
 	if (showQuality) {
 		const qualityCol = makeColumn(
-			'Quality',
+			i18next.t('cast_remote.quality'),
 			[
 				{
 					id: -1 as string | number,
-					label: opts.autoQualityLabel ? `Auto (${opts.autoQualityLabel})` : 'Auto',
+					label: opts.autoQualityLabel ? i18next.t('player.quality_auto_with', { label: opts.autoQualityLabel }) : i18next.t('cast_remote.quality_auto'),
 				},
 				...(opts.qualityLevels ?? []),
 			],
@@ -59,14 +60,14 @@ export function mountLanguageScreen(opts: LanguageScreenOptions): () => void {
 	}
 
 	const audioCol = makeColumn(
-		'Audio',
+		i18next.t('cast_remote.audio'),
 		opts.audioTracks,
 		opts.currentAudioId ?? null,
 		id => opts.onPickAudio(id),
 	);
 	const subsCol = makeColumn(
-		'Subtitles',
-		[{ id: 'off', label: 'Off' }, ...opts.subtitleTracks],
+		i18next.t('cast_remote.subtitles'),
+		[{ id: 'off', label: i18next.t('cast_remote.off') }, ...opts.subtitleTracks],
 		opts.currentSubtitleId ?? 'off',
 		id => opts.onPickSubtitle(id),
 	);
@@ -80,7 +81,7 @@ export function mountLanguageScreen(opts: LanguageScreenOptions): () => void {
 		const playbackCol = document.createElement('section');
 		playbackCol.className = 'lang-section';
 		const heading = document.createElement('h3');
-		heading.textContent = 'Playback';
+		heading.textContent = i18next.t('preferences.display.section_playback');
 		playbackCol.append(heading);
 
 		const toggle = document.createElement('button');
@@ -88,7 +89,7 @@ export function mountLanguageScreen(opts: LanguageScreenOptions): () => void {
 		toggle.className = `panel-button track-row${opts.autoSkipChapters ? ' current' : ''}`;
 		toggle.dataset.focusable = 'true';
 		toggle.tabIndex = 0;
-		toggle.textContent = 'Auto-skip intros and outros';
+		toggle.textContent = i18next.t('player.auto_skip_chapters');
 		toggle.addEventListener('click', () => {
 			const next = !toggle.classList.contains('current');
 			toggle.classList.toggle('current', next);

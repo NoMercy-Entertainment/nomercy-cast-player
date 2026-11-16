@@ -1,0 +1,33 @@
+{
+	"cast_remote": {
+		"episodes": "Episodes",
+		"quality": "Quality",
+		"quality_auto": "Auto",
+		"audio": "Audio",
+		"subtitles": "Subtitles",
+		"off": "Off"
+	},
+	"info": {
+		"collection": "Collection"
+	},
+	"preferences": {
+		"display": {
+			"section_playback": "Playback"
+		}
+	},
+	"player": {
+		"start_error": "The video player could not start.",
+		"skip_credits": "Skip credits",
+		"skip_intro": "Skip intro",
+		"next_episode": "Next episode",
+		"pre_screen_aria": "Pre-play menu",
+		"resume_from": "Resume from {{time}}",
+		"restart": "Restart",
+		"audio_and_subtitles": "Audio and subtitles",
+		"quality_auto_with": "Auto ({{label}})",
+		"auto_skip_chapters": "Auto-skip intros and outros",
+		"extras": "Extras",
+		"extras_episode": "Extras E{{episode}}",
+		"season_number": "Season {{number}}"
+	}
+}

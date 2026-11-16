@@ -1,0 +1,8 @@
+{
+	"music": {
+		"player": {
+			"live": "Live",
+			"shuffle": "Shuffle"
+		}
+	}
+}

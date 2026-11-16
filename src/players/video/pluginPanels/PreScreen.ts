@@ -13,6 +13,7 @@
  * directly into the player overlay element without a nested Vue app.
  */
 
+import i18next from '@/i18n/i18next';
 import { dispatchOptionAction } from './shared';
 
 export interface PreScreenOptions {
@@ -35,7 +36,7 @@ export function mountPreScreen(opts: PreScreenOptions): () => void {
 	const root = document.createElement('div');
 	root.className = 'panel pre-screen';
 	root.setAttribute('role', 'dialog');
-	root.setAttribute('aria-label', 'Pre-play menu');
+	root.setAttribute('aria-label', i18next.t('player.pre_screen_aria'));
 
 	if (opts.backdropUrl) {
 		const backdrop = document.createElement('img');
@@ -78,18 +79,18 @@ export function mountPreScreen(opts: PreScreenOptions): () => void {
 	buttonRow.className = 'pre-screen-buttons';
 
 	const resumeFrom = opts.resumeFromMs ?? 0;
-	const playLabel = resumeFrom > 0 ? `Resume from ${formatTime(resumeFrom)}` : 'Play';
+	const playLabel = resumeFrom > 0 ? i18next.t('player.resume_from', { time: formatTime(resumeFrom) }) : i18next.t('common.play');
 	const playBtn = makeButton(playLabel, 'primary', () => opts.onPlay());
 	buttonRow.append(playBtn);
 
 	if (resumeFrom > 0) {
-		const restartBtn = makeButton('Restart', 'secondary', () => opts.onRestart());
+		const restartBtn = makeButton(i18next.t('player.restart'), 'secondary', () => opts.onRestart());
 		buttonRow.append(restartBtn);
 	}
 	if (opts.showEpisodes)
-		buttonRow.append(makeButton('Episodes', 'secondary', () => opts.onShowEpisodes()));
+		buttonRow.append(makeButton(i18next.t('cast_remote.episodes'), 'secondary', () => opts.onShowEpisodes()));
 	if (opts.showLanguages)
-		buttonRow.append(makeButton('Audio and subtitles', 'secondary', () => opts.onShowLanguages()));
+		buttonRow.append(makeButton(i18next.t('player.audio_and_subtitles'), 'secondary', () => opts.onShowLanguages()));
 
 	content.append(buttonRow);
 	root.append(content);

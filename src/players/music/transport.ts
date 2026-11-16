@@ -1,3 +1,4 @@
+import i18next from '@/i18n/i18next';
 import type { CurrentTrackSnapshot } from '@/stores/playbackStore';
 
 export function formatTime(ms: number): string {
@@ -17,7 +18,7 @@ export function formatTime(ms: number): string {
  */
 export function totalLabel(track: CurrentTrackSnapshot | null): string {
 	if (track?.live)
-		return 'Live';
+		return i18next.t('music.player.live');
 
 	return formatTime(track?.duration_ms ?? 0);
 }

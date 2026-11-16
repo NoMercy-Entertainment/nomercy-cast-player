@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { playbackStore } from '@/stores/playbackStore';
+
+const { t } = useTranslation();
 
 const queue = playbackStore.music.queue;
 const upNext = computed(() => queue.value.slice(0, 3));
@@ -8,7 +11,7 @@ const upNext = computed(() => queue.value.slice(0, 3));
 
 <template>
 	<aside v-if="upNext.length" class="queue-peek">
-		<h3>Up next</h3>
+		<h3>{{ t('music.player.up_next') }}</h3>
 		<ol>
 			<li v-for="(track, i) in upNext" :key="track.id">
 				<span class="pos">{{ i + 1 }}</span>

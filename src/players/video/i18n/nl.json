@@ -1,0 +1,25 @@
+{
+	"cast_remote": {
+		"episodes": "Afleveringen",
+		"quality": "Kwaliteit",
+		"quality_auto": "Automatisch",
+		"audio": "Audio",
+		"subtitles": "Ondertiteling",
+		"off": "Uit"
+	},
+	"info": {
+		"collection": "Verzameling"
+	},
+	"preferences": {
+		"display": {
+			"section_playback": "Afspelen"
+		}
+	},
+	"player": {
+		"next_episode": "Volgende aflevering",
+		"restart": "Herstarten",
+		"audio_and_subtitles": "Audio en ondertiteling",
+		"auto_skip_chapters": "Intro's en outro's automatisch overslaan",
+		"extras": "Extra's"
+	}
+}

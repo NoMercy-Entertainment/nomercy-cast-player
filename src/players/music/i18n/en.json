@@ -1,0 +1,15 @@
+{
+	"music": {
+		"player": {
+			"live": "Live",
+			"lyrics_coming_soon": "Lyrics coming soon.",
+			"up_next": "Up next",
+			"shuffle": "Shuffle",
+			"previous_track": "Previous track",
+			"next_track": "Next track",
+			"repeat_off": "Repeat off",
+			"repeat_all": "Repeat all",
+			"repeat_one": "Repeat one"
+		}
+	}
+}
