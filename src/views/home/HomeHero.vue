@@ -32,7 +32,7 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 
 <template>
 	<section class="hero">
-		<Transition name="hero-fade" mode="out-in">
+		<Transition name="hero-fade">
 			<div :key="transitionKey" class="art">
 				<img
 					v-if="backdropUrl"
@@ -46,7 +46,7 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 			</div>
 		</Transition>
 
-		<Transition name="hero-fade" mode="out-in">
+		<Transition name="hero-fade">
 			<div :key="transitionKey" class="content">
 				<img
 					v-if="logoUrl"

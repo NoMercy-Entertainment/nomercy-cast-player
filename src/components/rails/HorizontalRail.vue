@@ -26,8 +26,9 @@ defineExpose({ trackEl });
 	gap: var(--rail-card-gap);
 	overflow-x: auto;
 	overflow-y: visible;
-	/* item_tv_row.xml: 40 dp each side; 2 px above and below keep the focus ring unclipped. */
+	/* item_tv_row.xml: 40 dp each side. 2 px of ring room sit outside the card box (negative margin). */
 	padding: 2px 40px;
+	margin: -2px 0;
 	scroll-padding-inline: 40px;
 	scroll-behavior: smooth;
 }

@@ -55,6 +55,7 @@ defineProps<{
 	gap: var(--rail-card-gap);
 	overflow: hidden;
 	padding: 2px 40px;
+	margin: -2px 0;
 }
 .skeleton-grid {
 	display: grid;

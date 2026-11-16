@@ -24,7 +24,7 @@ defineProps<{
 .container-section {
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 8px;
 }
 .container-header {
 	padding: 0 var(--tv-safe-padding);

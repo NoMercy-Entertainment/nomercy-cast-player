@@ -5,6 +5,7 @@ import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import HorizontalRail from '@/components/rails/HorizontalRail.vue';
 import Resolver from './Resolver.vue';
+import { showAllLabel } from './showAllLabel';
 import type { NMCarouselWrapper, Update } from './types';
 
 /*
@@ -67,7 +68,7 @@ useFocusEntry({
 				@click.prevent="props.data.more_link && router.push(props.data.more_link)"
 			>
 				<span class="show-all-text">
-					{{ props.data.more_link_text || `Show All ${props.data.title}` }}
+					{{ showAllLabel(props.data.title) }}
 				</span>
 			</a>
 		</HorizontalRail>
@@ -126,6 +127,7 @@ useFocusEntry({
 	outline: none;
 }
 .show-all-text {
+	white-space: pre-line;
 	display: -webkit-box;
 	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
