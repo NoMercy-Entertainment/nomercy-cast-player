@@ -6,8 +6,9 @@ import { nomercyApiBase } from '@/lib/nomercyApi';
  * its own module so it can be called from the custom-message handshake
  * before authStore has anything else populated.
  *
- * No server-selection UI exists on this receiver yet (matches the KMP
- * receiver's own documented gap) — always the account's first server.
+ * The phone names the server it plays from (`server_id`, else `server_url`),
+ * matched in the account's list. Without a match it is the first listed server that answers:
+ * an account can hold a server this TV cannot reach (cast-player#64).
  */
 
 interface AppConfigServer {
@@ -50,11 +51,53 @@ function languageSetting(settings: Record<string, unknown> | undefined, key: str
  */
 const AppConfigTimeoutMs = 10_000;
 
-export async function resolveServerFromAppConfig(accessToken: string): Promise<ResolvedServer | null> {
+// Picks only from the account's own list: the token goes to the server in use.
+export interface NamedServer {
+	server_id?: string;
+	server_url?: string;
+}
+
+function origin(url: string | undefined): string | null {
+	try {
+		return url ? new URL(url).origin : null;
+	}
+	catch {
+		return null;
+	}
+}
+
+function findNamed(servers: AppConfigServer[], named: NamedServer): AppConfigServer | undefined {
+	const byId = named.server_id ? servers.find(server => server.id === named.server_id) : undefined;
+	const namedOrigin = origin(named.server_url);
+	if (byId || !namedOrigin)
+		return byId;
+	return servers.find(server => origin(server.serverBaseUrl) === namedOrigin || origin(server.internal_server_url) === namedOrigin);
+}
+
+export async function resolveServerFromAppConfig(accessToken: string, named: NamedServer = {}): Promise<ResolvedServer | null> {
+	const config = await fetchAppConfig(accessToken);
+	const servers = config?.servers ?? [];
+	const languages = {
+		defaultSubtitleLanguage: languageSetting(config?.settings, 'defaultSubtitleLanguage'),
+		defaultAudioLanguage: languageSetting(config?.settings, 'defaultAudioLanguage'),
+	};
+
+	const listed = findNamed(servers, named);
+	if (listed)
+		return { serverId: listed.id, serverUrl: await preferLocalRoute(listed), ...languages };
+
+	// Probed together, picked in list order: a dead first server costs no extra wait.
+	const routes = await Promise.all(servers.map(reachableRoute));
+	const first = routes.findIndex(route => route !== null);
+	if (first === -1)
+		return null;
+	return { serverId: servers[first].id, serverUrl: routes[first]!, ...languages };
+}
+
+async function fetchAppConfig(accessToken: string): Promise<AppConfigResponse['data']> {
 	const base = nomercyApiBase(accessToken);
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), AppConfigTimeoutMs);
-	let body: AppConfigResponse;
 	try {
 		const res = await fetch(`${base}/v1/app_config`, {
 			headers: {
@@ -65,22 +108,13 @@ export async function resolveServerFromAppConfig(accessToken: string): Promise<R
 		});
 		if (!res.ok) {
 			console.warn('[app_config] non-OK response', res.status, base);
-			return null;
+			return undefined;
 		}
-		body = (await res.json()) as AppConfigResponse;
+		return ((await res.json()) as AppConfigResponse).data;
 	}
 	finally {
 		clearTimeout(timer);
 	}
-	const server = body.data?.servers?.[0];
-	if (!server)
-		return null;
-	return {
-		serverId: server.id,
-		serverUrl: await preferLocalRoute(server),
-		defaultSubtitleLanguage: languageSetting(body.data?.settings, 'defaultSubtitleLanguage'),
-		defaultAudioLanguage: languageSetting(body.data?.settings, 'defaultAudioLanguage'),
-	};
 }
 
 /**
@@ -110,20 +144,35 @@ async function preferLocalRoute(server: AppConfigServer): Promise<string> {
 	if (!internal || internal === server.serverBaseUrl.replace(TrailingSlash, ''))
 		return server.serverBaseUrl;
 
+	return (await answers(internal, LocalProbeTimeoutMs)) ? internal : server.serverBaseUrl;
+}
+
+/** Longer than the LAN probe: this route can cross the tunnel. */
+const RemoteProbeTimeoutMs = 4000;
+
+/** The route this receiver reaches the server on, or null when it reaches neither. */
+async function reachableRoute(server: AppConfigServer): Promise<string | null> {
+	const route = await preferLocalRoute(server);
+	if (route !== server.serverBaseUrl)
+		return route;
+	return (await answers(route.replace(TrailingSlash, ''), RemoteProbeTimeoutMs)) ? route : null;
+}
+
+async function answers(base: string, timeoutMs: number): Promise<boolean> {
 	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), LocalProbeTimeoutMs);
+	const timer = setTimeout(() => controller.abort(), timeoutMs);
 
 	try {
 		// Any answer proves the route reaches the server; a 401 is as good as a 200
-		// because the question is reachability, not authorisation.
-		await fetch(`${internal}/api/v1/setup/server-info`, {
+		// because the question is reachability, not authorization.
+		await fetch(`${base}/api/v1/setup/server-info`, {
 			signal: controller.signal,
 			credentials: 'omit',
 		});
-		return internal;
+		return true;
 	}
 	catch {
-		return server.serverBaseUrl;
+		return false;
 	}
 	finally {
 		clearTimeout(timer);

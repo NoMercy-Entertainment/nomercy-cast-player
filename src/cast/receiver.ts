@@ -136,7 +136,7 @@ export function bootCastReceiver(router: Router): void {
 		void (async () => {
 			let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
 			try {
-				server = await resolveServerFromAppConfig(payload.token!);
+				server = await resolveServerFromAppConfig(payload.token!, payload);
 			}
 			catch (err) {
 				console.warn('[cast] app_config request failed', err);

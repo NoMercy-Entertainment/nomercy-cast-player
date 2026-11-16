@@ -1,6 +1,7 @@
 import { buildDiagnosticsAnswer } from './diagnosticsAnswer';
 import { NAMESPACE_GENERAL, NAMESPACE_STATUS } from './namespaces';
 import { resolveServerFromAppConfig } from '@/lib/resolveServer';
+import type { NamedServer } from '@/lib/resolveServer';
 
 /**
  * Outbound + inbound custom-namespace message bus.
@@ -16,7 +17,7 @@ import { resolveServerFromAppConfig } from '@/lib/resolveServer';
  * exchange is unavailable to a public client).
  */
 
-export interface NavigatePayload {
+export interface NavigatePayload extends NamedServer {
 	route: string;
 	token?: string;
 }
