@@ -8,6 +8,7 @@ import { mountEpisodeScreen } from '@/players/video/pluginPanels/EpisodeScreen';
 import { mountLanguageScreen } from '@/players/video/pluginPanels/LanguageScreen';
 import { mountPreScreen } from '@/players/video/pluginPanels/PreScreen';
 import { mountSeekContainer } from '@/players/video/pluginPanels/SeekContainer';
+import { TVOverlayPlugin } from '@/players/video/TVOverlayPlugin';
 
 const back = vi.fn();
 const router = { back, currentRoute: { value: { path: '/watch/1' } } };
@@ -99,5 +100,67 @@ describe('back keys with a player panel open', () => {
 	it('leaves the route on Escape when no panel is open', () => {
 		pressBack('Escape');
 		expect(back).toHaveBeenCalledTimes(1);
+	});
+});
+
+// The 2.x player has no overlay element, only the container it mounts into.
+function fakePlayer() {
+	const container = document.createElement('div');
+	document.body.append(container);
+	return {
+		container,
+		on: vi.fn(),
+		off: vi.fn(),
+		play: vi.fn(),
+		pause: vi.fn(),
+		time: vi.fn(() => 0),
+		duration: vi.fn(() => 0),
+		subtitles: vi.fn(() => []),
+		audioTracks: vi.fn(() => []),
+		qualityLevels: vi.fn(() => []),
+		chapters: vi.fn(() => []),
+	};
+}
+
+describe('back keys while the video plays with no panel open', () => {
+	let host: VueWrapper;
+	let player: ReturnType<typeof fakePlayer>;
+	let overlay: TVOverlayPlugin;
+
+	beforeEach(() => {
+		Element.prototype.scrollIntoView = vi.fn();
+		back.mockClear();
+		host = mount(Host);
+		player = fakePlayer();
+		// Same wiring as VideoPlayer.vue: leaving the watch screen is router.back().
+		overlay = new TVOverlayPlugin(player as never, { skipPreScreen: true, onExit: () => router.back() });
+		overlay.attach();
+	});
+
+	afterEach(() => {
+		overlay.detach();
+		player.container.remove();
+		host.unmount();
+	});
+
+	for (const key of ['Escape', 'Back', 'GoBack', 'BrowserBack']) {
+		it(`${key} pauses on the pre-screen and keeps the route; a second ${key} leaves`, () => {
+			expect(document.querySelector('.pre-screen')).toBeNull();
+
+			pressBack(key);
+			expect(back).not.toHaveBeenCalled();
+			expect(player.pause).toHaveBeenCalledTimes(1);
+			expect(document.querySelector('.pre-screen')).not.toBeNull();
+
+			pressBack(key);
+			expect(back).toHaveBeenCalledTimes(1);
+		});
+	}
+
+	it('leaves the route on Escape once the player is gone', () => {
+		overlay.detach();
+		pressBack('Escape');
+		expect(back).toHaveBeenCalledTimes(1);
+		expect(player.pause).not.toHaveBeenCalled();
 	});
 });

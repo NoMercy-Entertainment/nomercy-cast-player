@@ -25,7 +25,8 @@ const DPAD_KEYS = new Set([
 	'BrowserBack',
 ]);
 
-const PLAYER_PANEL_SELECTOR = '.language-screen, .episode-screen, .pre-screen, .seek-container';
+// The overlay host marks a mounted video player; the panels are listed for a panel mounted without it.
+const PLAYER_SELECTOR = '.tv-overlay-host, .language-screen, .episode-screen, .pre-screen, .seek-container';
 
 function isInputFocused(): boolean {
 	const el = document.activeElement;
@@ -104,8 +105,8 @@ function handleBack(router: Router): boolean {
 	if (top?.type === 'modal') {
 		return focusStore.dispatchEscape();
 	}
-	// A player panel owns its own back key; let its listener close it.
-	if (document.querySelector(PLAYER_PANEL_SELECTOR))
+	// A player owns its own back key: it closes a panel, pauses on the pre-screen, or leaves.
+	if (document.querySelector(PLAYER_SELECTOR))
 		return false;
 	// Otherwise router back. At root we let cast_shell decide (which
 	// typically does nothing).

@@ -119,6 +119,14 @@ export class TVOverlayPlugin {
 				e.preventDefault();
 				this.showEpisodeScreen();
 				break;
+			// The player emits 'back' only from a UI button, so the remote key is read here.
+			case 'Escape':
+			case 'Back':
+			case 'GoBack':
+			case 'BrowserBack':
+				e.preventDefault();
+				this.handleBack();
+				break;
 			default:
 				break;
 		}
