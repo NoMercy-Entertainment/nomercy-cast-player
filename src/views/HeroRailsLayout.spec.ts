@@ -80,6 +80,41 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
 	});
 
+	it('draws no hero on a page that says it has none, also when a card seeds or takes focus (Music)', async () => {
+		const wrapper = mount(HeroRailsView, {
+			props: { restorationKey: 'layout-no-hero', data: homeAnswer(), isLoading: false, refetch: vi.fn(), errorContext: 'x', emptyMessage: 'x', hero: false },
+		});
+		await nextTick();
+		expect(wrapper.find('.nm-hero-rails-screen > .hero').exists()).toBe(false);
+		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
+
+		focusedCardStore.seed({ id: '00000000-0000-4000-8000-000000000004', title: 'Album', poster: '/poster.jpg' });
+		await nextTick();
+		expect(wrapper.find('.nm-hero-rails-screen > .hero').exists()).toBe(false);
+		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
+	});
+
+	it('keeps the hero room and its rail overlap while the first load draws skeleton rails', async () => {
+		const wrapper = mount(HeroRailsView, {
+			props: { restorationKey: 'layout-loading', data: undefined, isLoading: true, refetch: vi.fn(), errorContext: 'x', emptyMessage: 'x' },
+		});
+		await nextTick();
+		expect(wrapper.find('.nm-hero-rails-screen > .nm-hero-room + .nm-hero-rails').exists()).toBe(true);
+		expect(wrapper.find('.nm-hero-rails').classes()).not.toContain('nm-hero-rails--no-hero');
+		expect(wrapper.find('.nm-hero-rails .skeleton').exists()).toBe(true);
+		expect(source('../styles/components.css')).toMatch(/\.nm-hero-room\s*\{[^}]*height:\s*var\(--hero-height\)/);
+		expect(source('./home/HomeHero.vue')).toMatch(/\.hero\s*\{[^}]*height:\s*var\(--hero-height\)/);
+	});
+
+	it('keeps no hero room while a page without a hero loads', async () => {
+		const wrapper = mount(HeroRailsView, {
+			props: { restorationKey: 'layout-loading-no-hero', data: undefined, isLoading: true, refetch: vi.fn(), errorContext: 'x', emptyMessage: 'x', hero: false },
+		});
+		await nextTick();
+		expect(wrapper.find('.nm-hero-room').exists()).toBe(false);
+		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
+	});
+
 	it('keeps the hero text clear of the rails that reach up into the hero', () => {
 		expect(source('../styles/tokens.css')).toMatch(/--hero-rails-overlap:\s*72px/);
 		expect(source('../styles/components.css')).toMatch(/\.nm-hero-rails\s*\{[^}]*margin-top:\s*calc\(-1 \* var\(--hero-rails-overlap\)\)/);

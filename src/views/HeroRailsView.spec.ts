@@ -119,7 +119,7 @@ describe('the music page never ends blank', () => {
 	});
 
 	it('draws the loading rails inside the rails box, each with a title bar and a row of cards', async () => {
-		const wrapper = await screen({ data: undefined, isLoading: true, skeletonCount: 2 });
+		const wrapper = await screen({ data: undefined, isLoading: true, skeletonCount: 2, hero: false });
 
 		const placeholders = wrapper.findAll('.skeleton');
 		expect(placeholders).toHaveLength(2);

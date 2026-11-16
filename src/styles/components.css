@@ -222,6 +222,11 @@
 	display: none;
 }
 
+/* The loading state keeps the room the hero takes, so the rails do not move when it draws. */
+.nm-hero-room {
+	height: var(--hero-height);
+}
+
 /*
  * Inner rails container — flex column of carousels with APK 72dp
  * overlap into the hero scrim and an independent scroll axis.

@@ -19,6 +19,7 @@ const { data, isLoading, error, refetch, isFetching } = useMusicStartQuery();
 		error-context="Couldn't load music"
 		empty-message="No music yet. Add a music library to get started."
 		:skeleton-count="2"
+		:hero="false"
 	>
 		<template #rails-end>
 			<PluginSlot kind="music" slot-name="home-row" />

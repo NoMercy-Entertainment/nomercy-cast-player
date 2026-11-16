@@ -72,7 +72,7 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 .hero {
 	position: relative;
 	width: 100%;
-	height: 62vh;
+	height: var(--hero-height);
 	overflow: hidden;
 	background: oklch(0.12 0.01 250);
 }

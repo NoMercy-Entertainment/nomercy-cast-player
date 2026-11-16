@@ -17,6 +17,7 @@
 	--topnav-height: 64px;
 	/* How far the rails reach up into the hero; the hero text stays clear of it. */
 	--hero-rails-overlap: 72px;
+	--hero-height: 62vh;
 	--backdrop-blur: 32px;
 	--motion-fast: 150ms ease-out;
 	--motion-page: 200ms ease-out;

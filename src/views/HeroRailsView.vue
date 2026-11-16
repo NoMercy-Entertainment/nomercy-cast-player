@@ -24,7 +24,7 @@ import type { Component } from '@/server-components/types';
  * useQuery() refs directly.
  */
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
 	restorationKey: string;
 	data: Component[] | undefined;
 	isLoading: boolean;
@@ -34,7 +34,9 @@ const props = defineProps<{
 	errorContext: string;
 	emptyMessage: string;
 	skeletonCount?: number;
-}>();
+	// A page without hero art (Music) says so; it then seeds no hero and keeps no hero room.
+	hero?: boolean;
+}>(), { hero: true });
 
 const containerEl = ref<HTMLElement | null>(null);
 const railsGroup = useFocusGroup({
@@ -48,7 +50,7 @@ useNavFocusBridge({ handle: railsGroup, containerEl });
 const components = computed<Component[]>(() => props.data ?? []);
 const isInitialLoad = computed(() => props.isLoading && !props.data);
 const errVal = computed(() => (props.error as Error | null) ?? null);
-const heroCard = computed(() => focusedCardStore.debouncedCard.value);
+const heroCard = computed(() => (props.hero ? focusedCardStore.debouncedCard.value : null));
 const skeletonRailCount = computed(() => props.skeletonCount ?? 3);
 
 const errorRef = toRef(props, 'error');
@@ -60,7 +62,8 @@ const componentsRef = ref<Component[]>([]);
 watch(components, (next) => {
 	componentsRef.value = next;
 }, { immediate: true });
-useHeroSeed(componentsRef);
+if (props.hero)
+	useHeroSeed(componentsRef);
 </script>
 
 <template>
@@ -71,15 +74,18 @@ useHeroSeed(componentsRef);
 			:retry="refetch"
 			:context="errorContext"
 		/>
-		<div v-else-if="isInitialLoad" class="nm-hero-rails nm-hero-rails--no-hero">
-			<Skeleton
-				v-for="n in skeletonRailCount"
-				:key="n"
-				type="rail"
-				titled
-				:count="6"
-			/>
-		</div>
+		<template v-else-if="isInitialLoad">
+			<div v-if="hero" class="nm-hero-room" aria-hidden="true" />
+			<div class="nm-hero-rails" :class="{ 'nm-hero-rails--no-hero': !hero }">
+				<Skeleton
+					v-for="n in skeletonRailCount"
+					:key="n"
+					type="rail"
+					titled
+					:count="6"
+				/>
+			</div>
+		</template>
 		<EmptyState
 			v-else-if="!components.some(drawsContent)"
 			:message="emptyMessage"
