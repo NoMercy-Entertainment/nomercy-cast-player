@@ -3,6 +3,7 @@ import { authStore } from '@/stores/authStore';
 const ABSOLUTE_URL = /^https?:\/\//i;
 const TRAILING_SLASH = /\/$/;
 const TMDB_IMAGE_EXT = /\.(?:jpg|jpeg|png|webp)$/i;
+const SERVER_IMAGES = '/images/';
 
 export const TMDB_BASE = 'https://image.tmdb.org/t/p';
 
@@ -30,6 +31,12 @@ export function buildImageUrl(
 		return null;
 	if (ABSOLUTE_URL.test(path))
 		return path;
+
+	// The server's own files (music covers, artist art) live under /images/, like app-web's imageUrl.ts.
+	if (path.startsWith(SERVER_IMAGES)) {
+		const server = authStore.serverUrl.value?.replace(TRAILING_SLASH, '');
+		return server ? `${server}${path}` : null;
+	}
 
 	// TMDB-shaped paths — go straight to TMDB; the server doesn't proxy them.
 	if (TMDB_IMAGE_EXT.test(path)) {
