@@ -1,5 +1,6 @@
 import { onBeforeUnmount, onMounted } from 'vue';
 import type { Router } from 'vue-router';
+import { leaveToPreviousOrHome } from '@/router/leave';
 import { focusStore } from '@/stores/focusStore';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import { screensaverStore } from '@/stores/screensaverStore';
@@ -111,7 +112,10 @@ function handleBack(router: Router): boolean {
 	// Otherwise router back. At root we let cast_shell decide (which
 	// typically does nothing).
 	if (router.currentRoute.value.path !== '/') {
-		router.back();
+		if (router.currentRoute.value.path === '/splash')
+			router.back();
+		else
+			leaveToPreviousOrHome(router);
 		return true;
 	}
 	return false;

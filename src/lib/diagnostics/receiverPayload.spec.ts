@@ -62,7 +62,7 @@ function fakeEngine(): FakeEngine {
 
 const DPadHost = defineComponent({
 	setup() {
-		useDPad({ back: () => {}, currentRoute: { value: { name: 'home' } } } as never);
+		useDPad({ back: () => {}, replace: () => {}, currentRoute: { value: { name: 'home' } } } as never);
 		return () => h('div');
 	},
 });

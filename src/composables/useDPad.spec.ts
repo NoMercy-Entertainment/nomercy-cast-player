@@ -11,7 +11,9 @@ import { mountSeekContainer } from '@/players/video/pluginPanels/SeekContainer';
 import { TVOverlayPlugin } from '@/players/video/TVOverlayPlugin';
 
 const back = vi.fn();
-const router = { back, currentRoute: { value: { path: '/watch/1' } } };
+const router = { back, replace: vi.fn(), currentRoute: { value: { path: '/watch/1' } } };
+// A page before this one in the receiver, so leaving goes back.
+window.history.replaceState({ back: '/title' }, '');
 
 const Host = defineComponent({
 	setup() {

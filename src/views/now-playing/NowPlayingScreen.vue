@@ -7,6 +7,7 @@ import NowPlayingHero from '@/players/music/NowPlayingHero.vue';
 import ProgressControls from '@/players/music/ProgressControls.vue';
 import QueuePeek from '@/players/music/QueuePeek.vue';
 import Lyrics from '@/players/music/Lyrics.vue';
+import { leaveToPreviousOrHome } from '@/router/leave';
 import { playbackStore } from '@/stores/playbackStore';
 import { buildImageUrl } from '@/lib/images/urls';
 import { applyThemeColor } from '@/lib/theme';
@@ -61,7 +62,7 @@ useFocusEntry({
 	group: utilityGroup,
 	el: closeEl,
 	onAction: () => {
-		router.back();
+		leaveToPreviousOrHome(router);
 	},
 });
 useFocusEntry({

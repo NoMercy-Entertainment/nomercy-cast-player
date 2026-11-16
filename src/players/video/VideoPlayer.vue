@@ -7,6 +7,7 @@ import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipP
 import { prepareChapterPlaylist } from './chapterFile';
 import { attachAssPlainTextFallback } from './assPlainTextFallback';
 import type { NMVideoPlayer, VideoPlayerConfig } from '@nomercy-entertainment/nomercy-video-player';
+import { leaveToPreviousOrHome } from '@/router/leave';
 import { authStore } from '@/stores/authStore';
 import { TMDB_BASE } from '@/lib/images/urls';
 import { playbackStore } from '@/stores/playbackStore';
@@ -174,7 +175,7 @@ onMounted(async () => {
 
 		overlay = new TVOverlayPlugin(player, {
 			skipPreScreen: typeof props.resumeAt === 'number' && props.resumeAt > 0,
-			onExit: () => router.back(),
+			onExit: () => leaveToPreviousOrHome(router),
 		});
 		overlay.attach();
 
