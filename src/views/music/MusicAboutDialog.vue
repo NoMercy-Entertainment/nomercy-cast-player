@@ -88,8 +88,8 @@ onBeforeUnmount(() => releases.forEach(release => release()));
 	overflow-y: auto;
 	padding: 24px;
 	border-radius: 16px;
-	background: #1a1a1a;
-	color: #fff;
+	background: var(--nm-surface);
+	color: var(--nm-text-primary);
 	outline: none;
 }
 .about-dialog:focus-visible {

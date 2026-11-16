@@ -71,7 +71,7 @@ describe('settings two-pane layout matches AppSettingsScreen.kt', () => {
 		expect([c.padding, c['border-radius']]).toEqual(['14px 20px', '10px']);
 		expect(decls(f, '.category-item.selected::before').opacity).toBe('0.25');
 		expect(decls(f, '.category-item.selected:focus-visible::before').opacity).toBe('0.45');
-		expect(decls(f, '.category-item:focus-visible')['box-shadow']).toBe('inset 0 0 0 3px #fff');
+		expect(decls(f, '.category-item:focus-visible')['box-shadow']).toBe('inset 0 0 0 3px var(--cast-white)');
 	});
 });
 

@@ -33,7 +33,7 @@ describe('states match LoadingIndicator.kt / ErrorCard.kt / EmptyGrid.kt / Setup
 		const r = decls(`${F}LoadingIndicator.vue`, '.ring');
 		expect([r.width, r.height]).toEqual(['50px', '50px']);
 		expect(r.border).toBe('4px solid rgba(255, 255, 255, 0.18)');
-		expect(r['border-top-color']).toBe('#fff');
+		expect(r['border-top-color']).toBe('var(--cast-white)');
 	});
 
 	it('state.error: column max 440, pad 96/40/0, 34 ExtraBold title, error message (ErrorCard.kt:121-164)', () => {
@@ -53,6 +53,6 @@ describe('states match LoadingIndicator.kt / ErrorCard.kt / EmptyGrid.kt / Setup
 	});
 
 	it('state.setup-backdrop: black base (SetupBackdrop.kt:108-124)', () => {
-		expect(decls('components/SetupBackdrop.vue', '.setup-backdrop').background).toBe('#000');
+		expect(decls('components/SetupBackdrop.vue', '.setup-backdrop').background).toBe('var(--cast-black)');
 	});
 });

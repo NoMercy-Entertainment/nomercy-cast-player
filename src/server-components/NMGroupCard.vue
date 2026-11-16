@@ -88,21 +88,21 @@ useFocusEntry({
 	border-radius: var(--radius-card);
 	overflow: hidden;
 	position: relative;
-	background: #1a1a1a;
+	background: var(--nm-surface);
 }
 /* TvCardViewHolder.kt:156-159: accent at alpha 0.45 fading to #1A1A1A, plus a 1 dp accent stroke. */
 .cover::before {
 	content: '';
 	position: absolute;
 	inset: 0;
-	background: linear-gradient(var(--color-primary, #fff), transparent);
+	background: linear-gradient(var(--color-primary, var(--cast-white)), transparent);
 	opacity: 0.45;
 }
 .cover::after {
 	content: '';
 	position: absolute;
 	inset: 0;
-	border: 1px solid var(--color-primary, #fff);
+	border: 1px solid var(--color-primary, var(--cast-white));
 	border-radius: inherit;
 	pointer-events: none;
 }

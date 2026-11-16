@@ -96,7 +96,7 @@ useFocusEntry({
 		border-color var(--motion-fast);
 }
 .more-link:focus-visible {
-	color: #fff;
+	color: var(--nm-text-primary);
 	border-color: var(--color-primary, oklch(0.7 0.2 285));
 }
 </style>

@@ -61,7 +61,7 @@ const parts = computed<{ main: string; subtitle: string | null }>(() => {
 	font-size: 28px;
 	font-weight: 600;
 	line-height: 1.05;
-	color: #fff;
+	color: var(--nm-text-primary);
 }
 .split-subtitle {
 	font-size: 19px;

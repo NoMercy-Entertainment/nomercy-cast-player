@@ -76,7 +76,7 @@ useFocusEntry({
 	background: linear-gradient(180deg, var(--color-primary, oklch(0.7 0.2 285 / 0.4)) 0%, oklch(0 0 0 / 0.4) 100%);
 	border: 2px solid transparent;
 	border-radius: 999px;
-	color: #fff;
+	color: var(--nm-text-primary);
 	cursor: pointer;
 	font-family: inherit;
 	max-width: 360px;
@@ -97,7 +97,7 @@ useFocusEntry({
 	flex: 0 0 auto;
 	display: grid;
 	place-items: center;
-	color: #fff;
+	color: var(--nm-text-primary);
 }
 .eq {
 	position: absolute;
@@ -110,7 +110,7 @@ useFocusEntry({
 }
 .eq span {
 	width: 3px;
-	background: #fff;
+	background: var(--cast-white);
 	border-radius: 1px;
 	animation: eq-bounce 850ms ease-in-out infinite;
 }

@@ -62,7 +62,7 @@ const currentYear = new Date().getFullYear();
 	flex-direction: column;
 	align-items: center;
 	gap: 24px;
-	color: #fff;
+	color: var(--nm-text-primary);
 	text-align: center;
 }
 .brand-logo {

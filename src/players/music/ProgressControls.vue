@@ -219,10 +219,10 @@ const pct = computed(() => progressPercent(track.value, time.value));
 .ctrl-btn:focus-visible {
 	transform: scale(1.08);
 	background: oklch(1 0 0 / 0.18);
-	outline: 3px solid #fff;
+	outline: 3px solid var(--cast-white);
 }
 .ctrl-play:focus-visible {
 	background: linear-gradient(var(--color-primary, var(--color-accent)), oklch(0.12 0.01 250 / 0.1));
-	box-shadow: 0 0 0 3px #fff;
+	box-shadow: 0 0 0 3px var(--cast-white);
 }
 </style>

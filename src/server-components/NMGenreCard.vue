@@ -56,7 +56,7 @@ useFocusEntry({
 	outline: none;
 }
 .genre-card:focus-visible {
-	border: 3px solid #fff;
+	border: 3px solid var(--cast-white);
 }
 .art-img {
 	position: absolute;

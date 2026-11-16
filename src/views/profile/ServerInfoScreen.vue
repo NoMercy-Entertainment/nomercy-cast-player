@@ -117,7 +117,7 @@ const uptime = computed(() => formatUptime(info.value?.bootTime, now.value));
 	background: oklch(0.18 0.01 250 / 0.85);
 	border: 1px solid rgba(255, 255, 255, 0.18);
 	border-radius: 14px;
-	color: #fff;
+	color: var(--nm-text-primary);
 }
 .server-name {
 	margin: 0 0 16px;

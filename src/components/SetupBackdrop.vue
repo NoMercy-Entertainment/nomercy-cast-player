@@ -27,7 +27,7 @@ import splash from '@/assets/splash.png';
 	inset: 0;
 	pointer-events: none;
 	overflow: hidden;
-	background: #000;
+	background: var(--cast-black);
 }
 .setup-image {
 	position: absolute;

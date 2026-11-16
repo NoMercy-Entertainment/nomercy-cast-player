@@ -24,4 +24,9 @@
 	--focus-ring-color: rgb(255 255 255 / 0.85);
 	--focus-ring-width: 3px;
 	--focus-ring-offset: 2px;
+	/* NM ships no opaque white or black, and none of the skip prompt colors (SkipOverlay.kt:107-157). */
+	--cast-white: #fff;
+	--cast-black: #000;
+	--cast-skip-bg: #262630eb;
+	--cast-skip-ink: #262630;
 }

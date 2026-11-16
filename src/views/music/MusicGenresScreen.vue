@@ -31,7 +31,7 @@ const route = useRoute();
 .placeholder {
 	position: relative;
 	z-index: 1;
-	color: #fff;
+	color: var(--nm-text-primary);
 	font-size: 18px;
 }
 </style>

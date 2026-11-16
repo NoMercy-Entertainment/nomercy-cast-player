@@ -105,7 +105,7 @@ onBeforeUnmount(() => releases.forEach(release => release()));
 	padding: 6px;
 	border: 1px solid rgba(255, 255, 255, 0.14);
 	border-radius: 12px;
-	background: #1a1a1a;
+	background: var(--nm-surface);
 }
 .season-row {
 	display: flex;
@@ -116,7 +116,7 @@ onBeforeUnmount(() => releases.forEach(release => release()));
 	border: 1px solid transparent;
 	border-radius: 8px;
 	background: transparent;
-	color: #fff;
+	color: var(--nm-text-primary);
 	font-size: 15px;
 	font-weight: 400;
 	text-align: left;

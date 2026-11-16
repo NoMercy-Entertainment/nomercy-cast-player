@@ -114,7 +114,7 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 	gap: 24px;
 	position: relative;
 	overflow: hidden;
-	background: linear-gradient(180deg, #232323, #161616);
+	background: linear-gradient(180deg, var(--nm-gray-3), var(--nm-surface));
 	padding: 45px 100px;
 }
 
@@ -147,7 +147,7 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 	margin: 0;
 	font-size: 40px;
 	font-weight: 900;
-	color: #ededed;
+	color: var(--nm-text-primary);
 	line-height: 1;
 }
 
@@ -166,7 +166,7 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 .instructions {
 	margin: 0;
 	font-size: 20px;
-	color: #ededed;
+	color: var(--nm-text-primary);
 	line-height: 1.4;
 }
 

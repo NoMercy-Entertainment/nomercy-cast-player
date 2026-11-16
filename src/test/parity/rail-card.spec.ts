@@ -32,11 +32,11 @@ describe('cards match item_card_poster.xml / TvCardViewHolder.kt', () => {
 		expect(a['font-size']).toBe('16px');
 		expect(a['font-weight']).toBe('500');
 		expect(a.padding).toBe('12px');
-		expect(a.background).toBe('#1a1a1a');
-		expect(a.border).toBe('1px solid var(--color-primary, #fff)');
+		expect(a.background).toBe('var(--nm-surface)');
+		expect(a.border).toBe('1px solid var(--color-primary, var(--cast-white))');
 		const f = decls(CAROUSEL, '.show-all:focus-visible');
-		expect(f['border-color']).toBe('#fff');
-		expect(f['box-shadow']).toBe('0 0 0 1px #fff');
+		expect(f['border-color']).toBe('var(--cast-white)');
+		expect(f['box-shadow']).toBe('0 0 0 1px var(--cast-white)');
 	});
 
 	it('card.poster: resting 1 px palette stroke, replaced by the white ring on focus (:79-102)', () => {
@@ -54,9 +54,9 @@ describe('cards match item_card_poster.xml / TvCardViewHolder.kt', () => {
 	it('card.group: 2:3 gradient cover with an accent stroke, title hidden (:156-159,:98)', () => {
 		const g = 'server-components/NMGroupCard.vue';
 		expect(decls(g, '.cover')['aspect-ratio']).toBe('2 / 3');
-		expect(decls(g, '.cover').background).toBe('#1a1a1a');
+		expect(decls(g, '.cover').background).toBe('var(--nm-surface)');
 		expect(decls(g, '.cover::before').opacity).toBe('0.45');
-		expect(decls(g, '.cover::after').border).toBe('1px solid var(--color-primary, #fff)');
+		expect(decls(g, '.cover::after').border).toBe('1px solid var(--color-primary, var(--cast-white))');
 		expect(decls(g, '.meta').position).toBe('absolute');
 	});
 });

@@ -12,7 +12,7 @@ describe('home hero and rail match the KMP TV app (Arc measure of 7118323)', () 
 	});
 
 	it('hero overview is white and no layer dims the hero (VideoMusicHeroSection.kt:165-195)', () => {
-		expect(decls('styles/components.css', '.nm-hero-overview').color).toBe('#fff');
+		expect(decls('styles/components.css', '.nm-hero-overview').color).toBe('var(--nm-text-primary)');
 		expect(decls('views/home/HomeHero.vue', '.hero').opacity).toBeUndefined();
 		expect(decls('views/home/HomeHero.vue', '.content').opacity).toBeUndefined();
 	});

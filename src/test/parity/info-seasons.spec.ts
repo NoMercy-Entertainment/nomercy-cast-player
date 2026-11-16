@@ -209,7 +209,7 @@ describe('info.season-picker.overlay matches TvSeasonPickerOverlay.kt:74-156', (
 		expect(p.width).toBe('360px');
 		expect(p['max-height']).toBe('520px');
 		expect(p['border-radius']).toBe('12px');
-		expect(p.background).toBe('#1a1a1a');
+		expect(p.background).toBe('var(--nm-surface)');
 		expect(p.border).toBe('1px solid rgba(255, 255, 255, 0.14)');
 		expect(p.padding).toBe('6px');
 		expect(p.gap).toBe('4px');

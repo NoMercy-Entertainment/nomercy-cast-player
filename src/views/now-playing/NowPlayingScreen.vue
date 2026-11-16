@@ -221,7 +221,7 @@ onUnmounted(() => {
 .util-btn:focus-visible {
 	transform: scale(1.08);
 	background: oklch(0 0 0 / 0.7);
-	border-color: #fff;
+	border-color: var(--cast-white);
 }
 .content {
 	position: relative;

@@ -30,7 +30,7 @@ describe('music list matches ListScreen.kt / TrackRow.kt', () => {
 		const r = decls(L, '.track-row');
 		expect(r.padding).toBe('8px 12px 8px 16px');
 		expect(r['min-height']).toBe('48px');
-		expect(decls(L, '.track-row:focus-visible')['border-color']).toBe('#fff');
+		expect(decls(L, '.track-row:focus-visible')['border-color']).toBe('var(--cast-white)');
 	});
 });
 

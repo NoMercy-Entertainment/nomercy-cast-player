@@ -29,7 +29,7 @@ describe('server components match the KMP NM components', () => {
 		const g = decls(`${SC}NMGenreCard.vue`, '.genre-card');
 		expect(g['border-radius']).toBe('8px');
 		expect(g.border).toBe('1px solid rgba(255, 255, 255, 0.08)');
-		expect(decls(`${SC}NMGenreCard.vue`, '.genre-card:focus-visible').border).toBe('3px solid #fff');
+		expect(decls(`${SC}NMGenreCard.vue`, '.genre-card:focus-visible').border).toBe('3px solid var(--cast-white)');
 	});
 
 	it('nm.NMHomeCard: hero height 264, pad t24 b0 s40 e40 (NMHomeCard.kt:121-200)', () => {

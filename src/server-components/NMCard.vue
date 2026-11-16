@@ -172,7 +172,7 @@ useFocusEntry({
 	inset: auto 0 0 0;
 	padding: 4px 8px;
 	background: rgba(26, 26, 26, 0.749);
-	color: #fff;
+	color: var(--nm-text-primary);
 	font-weight: 500;
 }
 .caption p {

@@ -261,7 +261,7 @@ async function confirmSignOut(): Promise<void> {
 	display: grid;
 	place-items: center;
 	background: linear-gradient(135deg, oklch(0.7 0.2 285), oklch(0.7 0.2 35));
-	color: #fff;
+	color: var(--nm-text-primary);
 	font-weight: 700;
 	font-size: 20px;
 }

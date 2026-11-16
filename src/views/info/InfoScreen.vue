@@ -285,7 +285,7 @@ async function toggleWatchlist(): Promise<void> {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-	color: #fff;
+	color: var(--nm-text-primary);
 }
 .backdrop {
 	position: absolute;

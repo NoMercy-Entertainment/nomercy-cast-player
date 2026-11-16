@@ -361,7 +361,7 @@ useFocusEntry({
 	width: 24px;
 	height: 24px;
 	border-radius: 50%;
-	background: #fff;
+	background: var(--nm-toggle-thumb-bg);
 	transition: transform var(--motion-fast);
 }
 .toggle.on .thumb {

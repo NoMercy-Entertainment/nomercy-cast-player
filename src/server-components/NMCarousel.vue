@@ -103,9 +103,9 @@ useFocusEntry({
 	width: var(--rail-card-width, 180px);
 	aspect-ratio: 2/3;
 	border-radius: var(--radius-card);
-	background: #1a1a1a;
-	border: 1px solid var(--color-primary, #fff);
-	color: #fff;
+	background: var(--nm-surface);
+	border: 1px solid var(--color-primary, var(--cast-white));
+	color: var(--nm-text-primary);
 	text-decoration: none;
 	font-size: 16px;
 	font-weight: 500;
@@ -122,8 +122,8 @@ useFocusEntry({
 	visibility: hidden;
 }
 .show-all:focus-visible {
-	border-color: #fff;
-	box-shadow: 0 0 0 1px #fff;
+	border-color: var(--cast-white);
+	box-shadow: 0 0 0 1px var(--cast-white);
 	outline: none;
 }
 .show-all-text {

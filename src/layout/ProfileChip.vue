@@ -104,7 +104,7 @@ useFocusEntry({
 	width: 100%;
 	height: 100%;
 	background: linear-gradient(135deg, oklch(0.85 0.18 35), oklch(0.6 0.2 285));
-	color: #fff;
+	color: var(--nm-text-primary);
 	font-weight: 700;
 	font-size: 14px;
 	letter-spacing: 0.04em;

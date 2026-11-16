@@ -56,21 +56,21 @@ describe('nav matches TvNavigationBar.kt', () => {
 describe('focus rings match the KMP theme (TvFocusRing.kt:50-55, AppSettingsScreen.kt:543)', () => {
 	it('focus.ring.tv: rows r10, focused ring white', () => {
 		expect(decls(CSS, '.nm-list-row')['border-radius']).toBe('10px');
-		expect(decls(CSS, '.nm-list-row:focus-visible')['border-color']).toBe('#fff');
+		expect(decls(CSS, '.nm-list-row:focus-visible')['border-color']).toBe('var(--cast-white)');
 	});
 
 	it('focus.ring.player: panel buttons get a 2 px white ring (PlayerUiHelpers.kt:71-75)', () => {
 		const f = decls('styles/tv-safe.css', '.panel-button:focus-visible');
-		expect(f.outline).toBe('2px solid #fff');
+		expect(f.outline).toBe('2px solid var(--cast-white)');
 	});
 
 	it('focus.ring.indicator: 3 px white, 1.08 scale kept (TvFocusRing.kt:50-55)', () => {
 		const p = 'players/music/ProgressControls.vue';
-		expect(decls(p, '.ctrl-btn:focus-visible').outline).toBe('3px solid #fff');
-		expect(decls(p, '.ctrl-play:focus-visible')['box-shadow']).toBe('0 0 0 3px #fff');
+		expect(decls(p, '.ctrl-btn:focus-visible').outline).toBe('3px solid var(--cast-white)');
+		expect(decls(p, '.ctrl-play:focus-visible')['box-shadow']).toBe('0 0 0 3px var(--cast-white)');
 		const n = 'views/now-playing/NowPlayingScreen.vue';
 		expect(decls(n, '.util-btn').border).toBe('3px solid transparent');
-		expect(decls(n, '.util-btn:focus-visible')['border-color']).toBe('#fff');
+		expect(decls(n, '.util-btn:focus-visible')['border-color']).toBe('var(--cast-white)');
 	});
 });
 
@@ -86,7 +86,7 @@ describe('buttons match NMDetailActions.kt / LinkButton.kt', () => {
 		expect(b['line-height']).toBe('18px');
 		expect(b.gap).toBe('8px');
 		expect(b.background).toBe('transparent');
-		expect(decls(CSS, '.nm-pill-primary').color).toBe('#fff');
+		expect(decls(CSS, '.nm-pill-primary').color).toBe('var(--nm-text-primary)');
 		expect(decls(CSS, '.nm-pill-primary').background).toBe('transparent');
 	});
 

@@ -33,9 +33,9 @@ describe('player overlays match the KMP TV player', () => {
 
 	it('player.osd.skip: side 52, bottom 132, #262630EB, white when focused (SkipOverlay.kt:107-157)', () => {
 		const s = decls(T, '.skip-chapter-prompt');
-		expect([s.right, s.bottom, s.background]).toEqual(['52px', '132px', '#262630eb']);
+		expect([s.right, s.bottom, s.background]).toEqual(['52px', '132px', 'var(--cast-skip-bg)']);
 		const f = decls(T, '.skip-chapter-prompt:focus-visible');
-		expect([f.background, f.color]).toEqual(['#fff', '#262630']);
+		expect([f.background, f.color]).toEqual(['var(--cast-white)', 'var(--cast-skip-ink)']);
 	});
 
 	it('player.osd.menu-item: r12, pad 8/12, min 44, 15, current .12, focus 3 px .85 (TvSelectableMenuItem.kt:50-92)', () => {
