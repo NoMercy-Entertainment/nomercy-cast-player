@@ -80,19 +80,17 @@ useFocusEntry({
 	border-radius: 50%;
 	background: oklch(0 0 0 / 0.6);
 	border: 2px solid transparent;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	padding: 0;
 	cursor: pointer;
 	overflow: hidden;
 	outline: none;
-	transition:
-		border-color var(--motion-fast),
-		transform var(--motion-fast);
+	transition: background var(--motion-fast);
 	display: grid;
 	place-items: center;
 }
 .profile-chip:focus-visible {
-	border-color: var(--color-primary, oklch(0.7 0.2 285));
-	transform: translateY(-1px);
+	background: linear-gradient(135deg, var(--color-primary, oklch(0.7 0.2 285)), oklch(0 0 0 / 0.6));
 }
 .avatar {
 	width: 100%;

@@ -155,7 +155,7 @@ useFocusGroup({
 	width: 100%;
 	grid-template-columns: 1fr 3fr 1fr;
 	align-items: center;
-	padding: 16px var(--tv-safe-padding);
+	padding: 0 36px;
 	height: var(--topnav-height);
 }
 .leading {
@@ -164,15 +164,16 @@ useFocusGroup({
 	justify-content: flex-start;
 }
 .brand-logo {
-	width: 64px;
-	height: 64px;
+	width: 52px;
+	height: 52px;
 	object-fit: contain;
 	filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 .nav-items {
 	display: flex;
 	justify-content: center;
-	gap: 28px;
+	gap: 16px;
+	padding: 4px 16px 8px;
 }
 .trailing {
 	display: flex;

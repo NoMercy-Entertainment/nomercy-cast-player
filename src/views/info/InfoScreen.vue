@@ -356,8 +356,8 @@ async function toggleWatchlist(): Promise<void> {
 	z-index: 1;
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
-	padding: 0 40px;
+	gap: 8px;
+	padding: 12px 24px 24px 40px;
 	max-width: 560px;
 }
 /* Buttons in the actions column take full container width */

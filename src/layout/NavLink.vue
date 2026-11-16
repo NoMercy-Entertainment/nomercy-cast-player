@@ -45,11 +45,12 @@ useFocusEntry({
 .nav-link {
 	display: inline-flex;
 	align-items: center;
+	position: relative;
 	gap: 10px;
-	padding: 0 14px 0 12px;
-	height: 40px;
+	padding: 4px 12px 4px 8px;
+	height: auto;
 	border-radius: 20px;
-	font-size: 18px;
+	font-size: 13px;
 	font-weight: 400;
 	color: #fff;
 	text-decoration: none;
@@ -57,21 +58,32 @@ useFocusEntry({
 	transition:
 		background var(--motion-fast),
 		box-shadow var(--motion-fast);
-	outline: 2px solid transparent;
-	outline-offset: 6px;
 	border-radius: 20px;
 }
+/* TvNavigationBar.kt:303-318: 2 dp primary ring, 6 dp gap. A pseudo box keeps the radius on Chrome 92. */
+.nav-link::after {
+	content: '';
+	position: absolute;
+	inset: -8px;
+	border: 2px solid transparent;
+	border-radius: 24px;
+	pointer-events: none;
+	transition: border-color var(--motion-fast);
+}
 .nav-link.icon-only {
-	width: 40px;
+	width: 36px;
 	padding: 0;
 	justify-content: center;
 }
 .nav-link.active {
-	background: var(--color-primary, oklch(0.7 0.2 285));
-	box-shadow: 0 6px 16px hsl(from var(--color-primary, oklch(0.7 0.2 285)) h s l / 0.35);
+	background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.2)), var(--color-primary, oklch(0.7 0.2 285));
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
 }
 .nav-link:focus-visible {
-	outline-color: var(--color-primary, oklch(0.7 0.2 285));
+	outline: none;
+}
+.nav-link:focus-visible::after {
+	border-color: var(--color-primary, oklch(0.7 0.2 285));
 }
 .icon {
 	display: inline-grid;

@@ -240,7 +240,7 @@ onUnmounted(() => {
 		background var(--motion-fast),
 		color var(--motion-fast),
 		border-color var(--motion-fast);
-	border: 2px solid transparent;
+	border: 3px solid transparent;
 }
 .util-btn.active {
 	color: var(--color-primary, var(--color-accent));
@@ -248,7 +248,7 @@ onUnmounted(() => {
 .util-btn:focus-visible {
 	transform: scale(1.08);
 	background: oklch(0 0 0 / 0.7);
-	border-color: oklch(1 0 0 / 0.85);
+	border-color: #fff;
 }
 .content {
 	position: relative;

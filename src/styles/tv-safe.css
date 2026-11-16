@@ -21,7 +21,6 @@
 .genre-card[data-focusable]:focus-visible,
 .top-result[data-focusable]:focus-visible,
 .track-row[data-focusable]:focus-visible,
-.nav-link[data-focusable]:focus-visible,
 .season-row[data-focusable]:focus-visible {
 	outline: none;
 }
@@ -123,6 +122,9 @@
 		transform var(--motion-fast),
 		background var(--motion-fast);
 	font-family: inherit;
+}
+.panel-button:focus-visible {
+	outline: 2px solid #fff;
 }
 .panel-button-primary {
 	background: #fff;

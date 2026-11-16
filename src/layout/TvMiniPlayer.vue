@@ -73,7 +73,7 @@ useFocusEntry({
 .mini-player {
 	display: inline-flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
 	padding: 0 16px 0 0;
 	height: 40px;
 	background: linear-gradient(180deg, var(--color-primary, oklch(0.7 0.2 285 / 0.4)) 0%, oklch(0 0 0 / 0.4) 100%);
@@ -82,16 +82,13 @@ useFocusEntry({
 	color: #fff;
 	cursor: pointer;
 	font-family: inherit;
-	max-width: 320px;
+	max-width: 360px;
 	min-width: 0;
 	outline: none;
-	transition:
-		border-color var(--motion-fast),
-		transform var(--motion-fast);
+	transition: border-color var(--motion-fast);
 }
 .mini-player:focus-visible {
-	border-color: oklch(1 0 0 / 0.85);
-	transform: translateY(-1px);
+	border-color: var(--color-primary, oklch(0.7 0.2 285));
 }
 .art {
 	position: relative;
@@ -152,7 +149,8 @@ useFocusEntry({
 }
 .title {
 	margin: 0;
-	font-size: 12px;
+	font-size: 10px;
+	line-height: 12px;
 	font-weight: 700;
 	white-space: nowrap;
 	overflow: hidden;
@@ -162,7 +160,7 @@ useFocusEntry({
 }
 .artist {
 	margin: 1px 0 0;
-	font-size: 11px;
+	font-size: 10px;
 	color: oklch(1 0 0 / 0.85);
 	white-space: nowrap;
 	overflow: hidden;

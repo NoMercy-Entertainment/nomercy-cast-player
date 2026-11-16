@@ -127,39 +127,42 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	padding: 10px 22px;
-	border-radius: 999px;
+	box-sizing: border-box;
+	width: 260px;
+	height: 44px;
+	padding: 0 12px;
+	border-radius: 12px;
+	background: transparent;
 	font-size: 14px;
+	line-height: 18px;
 	font-weight: 600;
-	border: 2px solid transparent;
+	border: 1px solid rgba(255, 255, 255, 0.18);
 	font-family: inherit;
 	cursor: pointer;
 	outline: none;
 	transition:
-		transform var(--motion-fast),
 		background var(--motion-fast),
 		border-color var(--motion-fast);
 }
+/* LinkButton.kt:112-124,168-172: outline type, white text, 3 dp white .85 border on focus. */
 .nm-pill-primary {
-	background: #fff;
-	color: #181818;
+	background: transparent;
+	color: #fff;
 }
 .nm-pill-primary:focus-visible,
 .nm-pill-primary:hover {
-	background: oklch(0.95 0 0);
-	transform: translateY(-1px);
-	border-color: var(--color-primary, oklch(0.7 0.2 285));
+	background: rgba(255, 255, 255, 0.06);
+	border: 3px solid rgba(255, 255, 255, 0.85);
 }
 .nm-pill-secondary {
-	background: rgba(0, 0, 0, 0.7);
+	background: transparent;
 	color: #fff;
-	border-color: rgba(255, 255, 255, 0.25);
+	border-color: rgba(255, 255, 255, 0.18);
 }
 .nm-pill-secondary:focus-visible,
 .nm-pill-secondary:hover {
-	background: rgba(0, 0, 0, 0.85);
-	border-color: var(--color-primary, oklch(0.7 0.2 285));
-	transform: translateY(-1px);
+	background: rgba(255, 255, 255, 0.06);
+	border: 3px solid rgba(255, 255, 255, 0.85);
 }
 
 /* Compact pill — dialog buttons / inline confirm chips. Tighter padding
@@ -321,7 +324,7 @@
 	padding: 16px;
 	background: oklch(0.18 0.01 250 / 0.85);
 	border: 1px solid rgba(255, 255, 255, 0.18);
-	border-radius: 14px;
+	border-radius: 10px;
 	color: #fff;
 	font-family: inherit;
 	cursor: pointer;
@@ -329,7 +332,7 @@
 	transition: border-color var(--motion-fast);
 }
 .nm-list-row:focus-visible {
-	border-color: rgba(255, 255, 255, 0.85);
+	border-color: #fff;
 	border-width: 3px;
 }
 
