@@ -50,6 +50,11 @@ const progressPct = computed(() => {
 	return Math.min(100, (p.time / p.total) * 100);
 });
 
+// TvCardViewHolder.kt:213-239: a subtitle card or an episode card carries a caption strip.
+const captionSubtitle = computed(() => props.data.subtitle?.replace('(voice)', '').trim() || undefined);
+const isEpisode = computed(() => props.data.type === 'episode');
+const hasCaption = computed(() => Boolean(props.data.subtitle) || isEpisode.value);
+
 useFocusEntry({
 	key: props.id,
 	el,
@@ -96,6 +101,14 @@ useFocusEntry({
 				decoding="async"
 			>
 			<FallbackPoster v-else :title="props.data.title" />
+			<div v-if="hasCaption" class="caption">
+				<p class="caption-title" :class="{ 'caption-title-2': isEpisode && !captionSubtitle }">
+					{{ props.data.title }}
+				</p>
+				<p v-if="captionSubtitle" class="caption-subtitle">
+					{{ captionSubtitle }}
+				</p>
+			</div>
 			<div
 				v-if="progressPct > 0"
 				class="progress"
@@ -146,26 +159,32 @@ useFocusEntry({
 	background: var(--color-primary, oklch(0.7 0.2 285));
 	box-shadow: 0 0 8px var(--color-primary, oklch(0.7 0.2 285));
 }
-.meta {
-	padding: 0 4px;
+.caption {
+	position: absolute;
+	inset: auto 0 0 0;
+	padding: 4px 8px;
+	background: rgba(26, 26, 26, 0.749);
+	color: #fff;
+	font-weight: 500;
 }
-.title {
+.caption p {
 	margin: 0;
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 1.2;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	display: -webkit-box;
-	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 }
-.subtitle {
-	margin: 4px 0 0;
-	font-size: 12px;
-	color: var(--color-text-secondary);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+.caption-title {
+	font-size: 11px;
+	font-weight: 500;
+	-webkit-line-clamp: 1;
+}
+.caption-title-2 {
+	-webkit-line-clamp: 2;
+}
+.caption-subtitle {
+	font-size: 10px;
+	font-weight: 500;
+	-webkit-line-clamp: 1;
 }
 </style>
