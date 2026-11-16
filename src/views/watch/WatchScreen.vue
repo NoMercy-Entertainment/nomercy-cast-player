@@ -19,9 +19,13 @@ const type = computed(
 );
 const id = computed(() => props.id ?? String(route.params.id ?? ''));
 const resumeAt = computed(() => {
-	const q = route.query.resume_at;
-	const n = Number(Array.isArray(q) ? q[0] : q);
-	return Number.isFinite(n) && n > 0 ? n : undefined;
+	const first = (value: unknown) => Number(Array.isArray(value) ? value[0] : value);
+	const seconds = first(route.query.resume_at);
+	if (Number.isFinite(seconds) && seconds > 0)
+		return seconds;
+	// The phone's route carries `position` in milliseconds (app-kmp PhoneCastSenderImpl.kt castRoute positionMs).
+	const milliseconds = first(route.query.position);
+	return Number.isFinite(milliseconds) && milliseconds > 0 ? milliseconds / 1000 : undefined;
 });
 
 function queryText(name: string): string | undefined {

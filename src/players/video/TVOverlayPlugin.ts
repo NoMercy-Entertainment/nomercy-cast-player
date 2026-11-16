@@ -43,6 +43,8 @@ interface LooseBus {
 
 export interface TVOverlayPluginOptions {
 	skipPreScreen?: boolean;
+	// Seconds the phone handed over; the pre-screen offers Restart from it.
+	resumeAt?: number;
 	// Owns leaving the watch screen (e.g. router.back()). Pre-screen exit
 	// must not go through the player's own 'back' event: that event is
 	// what drives handleBack() in the first place, so re-emitting it here
@@ -311,7 +313,7 @@ export class TVOverlayPlugin {
 			subtitle: item?.subtitle,
 			overview: item?.overview,
 			backdropUrl: item?.backdrop ?? null,
-			resumeFromMs: item?.resumeFromMs ?? 0,
+			resumeFromMs: item?.resumeFromMs ?? Math.round((this.playerCurrentTime() || this.opts.resumeAt || 0) * 1000),
 			showEpisodes: this.queueItems().length > 1,
 			showLanguages: this.playerAudioTracks().length > 0 || this.playerSubtitleTracks().length > 0,
 			onPlay: () => {

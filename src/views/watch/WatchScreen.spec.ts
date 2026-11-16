@@ -96,6 +96,30 @@ describe('the resume time is a finite number above zero', () => {
 	});
 });
 
+describe('the position a phone sends in the watch route', () => {
+	afterEach(() => {
+		routeQuery.value = {};
+	});
+
+	const resumeOf = (query: Record<string, string>) => {
+		routeQuery.value = query;
+		data.value = { playlist: [{ id: 1 }], item: { id: 1 } };
+		isLoading.value = false;
+		error.value = null;
+		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
+		return wrapper.findComponent({ name: 'VideoPlayer' }).props('resumeAt');
+	};
+
+	it('is milliseconds and becomes the resume time in seconds', () => {
+		expect(resumeOf({ cast: 'true', position: '2576282' })).toBeCloseTo(2576.282);
+	});
+
+	it('yields to resume_at, and position 0 is no resume time', () => {
+		expect(resumeOf({ resume_at: '90', position: '2576282' })).toBe(90);
+		expect(resumeOf({ cast: 'true', position: '0' })).toBeUndefined();
+	});
+});
+
 describe('every error panel on the watch screen is reachable with the D-pad', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();

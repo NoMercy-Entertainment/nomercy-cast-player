@@ -175,6 +175,7 @@ onMounted(async () => {
 
 		overlay = new TVOverlayPlugin(player, {
 			skipPreScreen: typeof props.resumeAt === 'number' && props.resumeAt > 0,
+			resumeAt: props.resumeAt,
 			onExit: () => leaveToPreviousOrHome(router),
 		});
 		overlay.attach();

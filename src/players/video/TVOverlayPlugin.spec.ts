@@ -161,3 +161,46 @@ describe('picking subtitles in the language panel', () => {
 		expect(player.subtitle).toHaveBeenCalledWith(1);
 	});
 });
+
+describe('back after a resume launch', () => {
+	const item = { id: 'a', title: 'Manner Movie' };
+	const buttons = () => [...document.querySelectorAll('.pre-screen-buttons button')].map(button => button.textContent);
+
+	function resumedPlayer(time: number) {
+		const player = fakePlayer();
+		player.time.mockReturnValue(time);
+		player.audioTracks.mockReturnValue([{ label: 'English' }] as never);
+		player.subtitles.mockReturnValue([{ label: 'English' }] as never);
+		return { ...player, item: () => item, queue: () => [item] };
+	}
+
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('pauses and shows the title, Restart and the language button', () => {
+		const player = resumedPlayer(2576.282);
+		const plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true, resumeAt: 2576.282 });
+		plugin.attach();
+		player.emit('play');
+
+		player.emit('back');
+
+		expect(player.pause).toHaveBeenCalledTimes(1);
+		expect(document.querySelector('.pre-screen-title')?.textContent).toBe('Manner Movie');
+		expect(buttons()).toContain('Restart');
+		expect(buttons()).toContain('Audio and subtitles');
+		plugin.detach();
+	});
+
+	it('opens a launch without a resume position on Play and the title, without Restart', () => {
+		const player = resumedPlayer(0);
+		const plugin = new TVOverlayPlugin(player as never, {});
+		plugin.attach();
+
+		expect(document.querySelector('.pre-screen-title')?.textContent).toBe('Manner Movie');
+		expect(buttons()).toContain('Play');
+		expect(buttons()).not.toContain('Restart');
+		plugin.detach();
+	});
+});
