@@ -16,6 +16,7 @@ import { apiFetch } from '@/lib/http/client';
 import { QueryKeys } from '@/queries/keys';
 import { useTrailerQuery } from '@/queries/useTrailerQuery';
 import TrailerOverlay from '@/players/video/TrailerOverlay.vue';
+import InfoSeasons from './InfoSeasons.vue';
 
 /*
  * Movie / TV detail page. Mirrors APK InfoScreen.kt:
@@ -305,6 +306,7 @@ async function toggleWatchlist(): Promise<void> {
 				{{ watchlistLabel }}
 			</button>
 		</div>
+		<InfoSeasons v-if="info.seasons?.length" :seasons="info.seasons" />
 		<TrailerOverlay
 			v-if="trailerOpen && readyTrailer"
 			:trailer="readyTrailer"

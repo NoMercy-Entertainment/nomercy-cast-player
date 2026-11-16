@@ -22,6 +22,23 @@ export interface InfoColorPalette {
 	darkVibrant?: string;
 }
 
+/** EpisodeDto / SeasonDto on the media server (InfoResponseItemDto.Seasons). */
+export interface InfoEpisode {
+	id?: number;
+	episode_number?: number;
+	season_number?: number;
+	title?: string | null;
+	still?: string | null;
+	link?: string;
+}
+
+export interface InfoSeason {
+	id?: number;
+	season_number?: number;
+	title?: string | null;
+	episodes?: InfoEpisode[];
+}
+
 export interface InfoData {
 	id?: string;
 	title?: string;
@@ -50,6 +67,7 @@ export interface InfoData {
 	genres?: Array<{ id?: number; name?: string }>;
 	keywords?: Array<string | { name?: string }>;
 	videos?: InfoVideo[];
+	seasons?: InfoSeason[];
 	number_of_items?: number;
 	have_items?: number;
 }

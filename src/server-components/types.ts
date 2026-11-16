@@ -67,6 +67,8 @@ export interface NMCardWrapper {
 	logo?: string;
 	link?: string;
 	type?: string;
+	/** Set by the receiver for a seasons row: 16:9 card (TvHomeAdapter.kt:68-75). */
+	wide?: boolean;
 	year?: number | string;
 	rating?: { rating: number | string; image?: string };
 	progress?: { time?: number; total?: number };

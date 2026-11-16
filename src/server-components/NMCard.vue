@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import FallbackPoster from '@/components/cards/FallbackPoster.vue';
-import { buildImageUrl, pickPaletteColor, POSTER_SIZE } from '@/lib/images/urls';
+import { BACKDROP_SIZE, buildImageUrl, pickPaletteColor, POSTER_SIZE } from '@/lib/images/urls';
 import type { PaletteColors } from '@/lib/images/urls';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { NMCardWrapper, Update } from './types';
@@ -37,7 +37,7 @@ const imageSource = computed(() => {
 	);
 });
 
-const imageUrl = computed(() => buildImageUrl(imageSource.value, POSTER_SIZE));
+const imageUrl = computed(() => buildImageUrl(imageSource.value, props.data.wide ? BACKDROP_SIZE : POSTER_SIZE));
 
 const accent = computed(() =>
 	pickPaletteColor((wrapperData.value.color_palette ?? wrapperData.value.colorPalette) as PaletteColors | undefined),
@@ -87,6 +87,7 @@ useFocusEntry({
 	<article
 		ref="el"
 		class="card nm-focus-scale"
+		:class="{ 'card-wide': props.data.wide }"
 		data-focusable
 		tabindex="0"
 		role="button"
@@ -132,6 +133,10 @@ useFocusEntry({
 	contain: layout paint;
 	outline: none;
 }
+.card-wide {
+	flex: 0 0 calc((100vw - 40px - 42px - 24px) / 3);
+	width: calc((100vw - 40px - 42px - 24px) / 3);
+}
 .poster {
 	width: 100%;
 	aspect-ratio: 2/3;
@@ -139,6 +144,9 @@ useFocusEntry({
 	overflow: hidden;
 	background: oklch(0.18 0.01 250);
 	position: relative;
+}
+.card-wide .poster {
+	aspect-ratio: 16 / 9;
 }
 /* TvCardViewHolder.kt:79-102: a 1 dp palette stroke at rest, replaced by the white ring on focus. */
 .poster::after {
