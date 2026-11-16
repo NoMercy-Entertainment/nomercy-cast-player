@@ -42,15 +42,18 @@ describe('the sync bridge reads the 2.x payloads', () => {
 
 		engine.fire('time', { time: 61.4, position: 61.4, duration: 100 });
 
-		expect(invoke).toHaveBeenCalledWith('SetTime', expect.objectContaining({
-			VideoId: 'v-1',
-			PlaylistType: 'tv',
-			TmdbId: 7,
-			Time: 61,
-			Audio: 'eng',
-			Subtitle: 'nld',
-			SubtitleType: 'full',
+		// cast#74: the server reads snake_case (VideoProgressRequest); PascalCase left video_id empty and was refused.
+		const body = invoke.mock.calls.find(call => call[0] === 'SetTime')?.[1] as Record<string, unknown>;
+		expect(body).toEqual(expect.objectContaining({
+			video_id: 'v-1',
+			playlist_type: 'tv',
+			tmdb_id: 7,
+			time: 61,
+			audio: 'eng',
+			subtitle: 'nld',
+			subtitle_type: 'full',
 		}));
+		expect(Object.keys(body)).toEqual(expect.not.arrayContaining(['VideoId', 'Time']));
 	});
 
 	it('maps an inbound Stop to stop() so playback ends', () => {

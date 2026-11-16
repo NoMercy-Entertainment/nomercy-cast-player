@@ -82,14 +82,15 @@ function bindOutbound(p: VideoEngineLike): void {
 		if (!item)
 			return;
 		guard('syncSetTime', socketStore.videoHub.value?.invoke('SetTime', {
-			VideoId: item.videoId,
-			PlaylistType: item.type,
-			PlaylistId: item.listId,
-			TmdbId: item.tmdbId,
-			Time: Math.round(seconds),
-			Audio: p.audioTrack()?.track.language ?? '',
-			Subtitle: p.subtitle()?.track.language ?? '',
-			SubtitleType: p.subtitle()?.track.type ?? '',
+			// The server's VideoProgressRequest reads these snake_case names.
+			video_id: item.videoId,
+			playlist_type: item.type,
+			playlist_id: item.listId,
+			tmdb_id: item.tmdbId,
+			time: Math.round(seconds),
+			audio: p.audioTrack()?.track.language ?? '',
+			subtitle: p.subtitle()?.track.language ?? '',
+			subtitle_type: p.subtitle()?.track.type ?? '',
 		}));
 	}, 5000);
 
