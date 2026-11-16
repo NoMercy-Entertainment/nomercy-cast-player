@@ -41,7 +41,43 @@ export function findIssues(css, file) {
 	return issues;
 }
 
+// Colors come from the NM tokens (src/styles/nm-tokens.css). A hex color may sit only in the token
+// files and in the two brand logo files, which keep their own artwork.
+const HEX_HOLDERS = ['src/styles/tokens.css', 'src/styles/nm-tokens.css', 'src/layout/AppLogo.vue', 'src/layout/AppLogoSquare.vue'];
+const HEX = /(?<![\w&#-])#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{4}|[0-9a-f]{3})(?![\w-])/gi;
+const SOURCE_FILE = /\.(?:vue|css|ts)$/;
+const TEST_FILE = /\.(?:test|spec)\./;
+
+export function findRawHex(text, file) {
+	if (HEX_HOLDERS.includes(file.replaceAll('\\', '/')))
+		return [];
+	const code = text
+		.replace(/\/\*[\s\S]*?\*\/|<!--[\s\S]*?-->/g, m => m.replace(/[^\n]/g, ' '))
+		.replace(/^\s*\/\/.*$/gm, m => m.replace(/[^\n]/g, ' '));
+	return [...code.matchAll(HEX)].map(m => ({ file, name: 'raw hex color', line: lineOf(code, m.index), snippet: code.slice(Math.max(0, code.lastIndexOf('\n', m.index) + 1), m.index + 40).split('\n')[0].trim() }));
+}
+
+function scanSource(dir) {
+	return readdirSync(dir, { recursive: true, withFileTypes: true })
+		.filter(e => e.isFile() && SOURCE_FILE.test(e.name) && !TEST_FILE.test(e.name))
+		.flatMap((e) => {
+			const path = join(e.parentPath, e.name);
+			return findRawHex(readFileSync(path, 'utf8'), path.replaceAll('\\', '/'));
+		});
+}
+
 function selfTest() {
+	const plantedHex = ['<style>\n.x { color: #fff; }\n</style>', '.x{background:#1a1a1a}', '.x{border:1px solid #AABBCCDD}', '.x{color:#abc}'];
+	for (const text of plantedHex) {
+		if (findRawHex(text, 'src/views/Planted.vue').length === 0)
+			throw new Error(`self-test: planted hex not found: ${text}`);
+	}
+	const controls = ['.x{color:var(--nm-text-primary)}', '/* #fff in a comment */ .x{color:rgb(255 255 255 / .5)}', 'a[href="#top"]{}', '.x{color:#fff}'];
+	for (const [i, text] of controls.entries()) {
+		const file = i === 3 ? 'src/styles/tokens.css' : 'src/views/Control.vue';
+		if (findRawHex(text, file).length !== 0)
+			throw new Error(`self-test: hex control must pass: ${text}`);
+	}
 	const clean = ':root{--a:#9e9e9e;--b:rgb(10 20 30 / 50%)}.x{color:var(--a);background:rgba(0,0,0,.5)}';
 	const planted = [
 		'.x{color:lab(65.2% 0 0)}',
@@ -69,14 +105,14 @@ if (files.length === 0) {
 	console.error(`check-cast-css: no .css files in ${dir}; build first`);
 	process.exit(2);
 }
-const issues = files.flatMap(f => findIssues(readFileSync(join(dir, f), 'utf8'), f));
+const issues = [...files.flatMap(f => findIssues(readFileSync(join(dir, f), 'utf8'), f)), ...scanSource('src')];
 if (issues.length > 0) {
 	const counts = new Map();
 	for (const i of issues)
 		counts.set(i.name, (counts.get(i.name) ?? 0) + 1);
-	console.error(`check-cast-css: ${issues.length} findings the Cast device cannot draw safely (${[...counts].map(([k, v]) => `${k} ${v}`).join(', ')})`);
+	console.error(`check-cast-css: ${issues.length} findings the Cast receiver must not ship (${[...counts].map(([k, v]) => `${k} ${v}`).join(', ')})`);
 	for (const i of issues)
 		console.error(`  ${i.name} ${i.file}:${i.line} ${i.snippet}`);
 	process.exit(1);
 }
-console.log(`check-cast-css: ${files.length} css files, no Chrome 92 findings (self-test ok)`);
+console.log(`check-cast-css: ${files.length} css files, no Chrome 92 findings, no raw hex in src (self-test ok)`);
