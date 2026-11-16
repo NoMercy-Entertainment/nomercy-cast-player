@@ -27,7 +27,7 @@ export interface PlaybackOSDHandle {
 
 export function mountPlaybackOSD(opts: PlaybackOSDOptions): PlaybackOSDHandle {
 	const root = document.createElement('div');
-	root.className = 'panel playback-osd is-visible';
+	root.className = 'playback-osd is-visible';
 	root.setAttribute('role', 'presentation');
 
 	const titleRow = document.createElement('div');

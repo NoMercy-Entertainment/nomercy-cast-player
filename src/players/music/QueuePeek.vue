@@ -21,8 +21,7 @@ const upNext = computed(() => queue.value.slice(0, 3));
 
 <style scoped>
 .queue-peek {
-	background: oklch(0.18 0.01 250 / 0.6);
-	backdrop-filter: blur(16px);
+	background: oklch(0.18 0.01 250 / 0.85);
 	border-radius: 16px;
 	padding: 16px 24px;
 	width: 360px;

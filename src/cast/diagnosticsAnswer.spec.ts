@@ -41,7 +41,7 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 	});
 
 	it('reports the overlay time text the viewer sees (a screencap misses it on a TV)', () => {
-		document.body.innerHTML = '<div class="panel playback-osd is-visible"><span class="osd-time osd-elapsed">2:04</span><span class="osd-time osd-remaining">-21:58</span></div>';
+		document.body.innerHTML = '<div class="playback-osd is-visible"><span class="osd-time osd-elapsed">2:04</span><span class="osd-time osd-remaining">-21:58</span></div>';
 		const { ask, sendCustomMessage } = fakeContext();
 
 		ask({ diagnostics: true });
@@ -88,8 +88,8 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 	// devP: Music was blank and the pre-screen mounted ("panel pre") yet unseen; a screencap cannot say what covers what.
 	it('reports each screen layer: how many match, and each one\'s classes, z-index, opacity and display', () => {
 		document.body.innerHTML = [
-			'<div class="panel playback-osd is-visible" style="z-index: 5"></div>',
-			'<div class="panel playback-osd is-visible" style="z-index: 7"></div>',
+			'<div class="playback-osd is-visible" style="z-index: 5"></div>',
+			'<div class="playback-osd is-visible" style="z-index: 7"></div>',
 			'<div class="panel pre-screen" style="opacity: 0; z-index: 3"><div class="pre-screen-buttons"><button>Play</button></div></div>',
 			'<div class="nm-hero-rails-screen" style="display: none"></div>',
 		].join('');

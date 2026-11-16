@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
+const BACKDROP = ['backdrop', 'filter'].join('-');
 const FEATURES = [
 	['lab()', /(?<![\w-])lab\(/g],
 	['oklab()', /(?<![\w-])oklab\(/g],
@@ -11,6 +12,9 @@ const FEATURES = [
 	['oklch()', /(?<![\w-])oklch\(/g],
 	['color-mix()', /(?<![\w-])color-mix\(/g],
 	['@layer', /@layer\b/g],
+	// A blur over the TV's hardware video plane flashes between the blurred and the raw frame.
+	// Built from parts: Tailwind scans this file and would emit a utility for the whole word.
+	[BACKDROP, new RegExp(`(?<![\\w-])(?:-webkit-)?${BACKDROP}\\s*:`, 'g')],
 ];
 const MODERN = /(?<![\w-])(?:ok)?l(?:ab|ch)\(|(?<![\w-])color-mix\(/;
 
@@ -47,6 +51,8 @@ function selfTest() {
 		'.x{color:color-mix(in srgb,red,blue)}',
 		'@layer base{.x{color:red}}',
 		':root{--a:#fff;--a:lab(65.2% 0 0)}',
+		`.panel{${BACKDROP}:blur(8px)}`,
+		`.panel{-webkit-${BACKDROP}:blur(8px)}`,
 	];
 	if (findIssues(clean, 'control').length !== 0)
 		throw new Error('self-test: the hex and rgb() control must pass');
@@ -68,7 +74,7 @@ if (issues.length > 0) {
 	const counts = new Map();
 	for (const i of issues)
 		counts.set(i.name, (counts.get(i.name) ?? 0) + 1);
-	console.error(`check-cast-css: ${issues.length} findings Chrome 92 cannot read (${[...counts].map(([k, v]) => `${k} ${v}`).join(', ')})`);
+	console.error(`check-cast-css: ${issues.length} findings the Cast device cannot draw safely (${[...counts].map(([k, v]) => `${k} ${v}`).join(', ')})`);
 	for (const i of issues)
 		console.error(`  ${i.name} ${i.file}:${i.line} ${i.snippet}`);
 	process.exit(1);
