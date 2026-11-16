@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useFocusGroup } from '@/composables/useFocusGroup';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import ProfileChip from './ProfileChip.vue';
 import NavLink from './NavLink.vue';
 import TvMiniPlayer from './TvMiniPlayer.vue';
@@ -55,18 +56,7 @@ useFocusGroup({
 				@action="(p) => router.push(p)"
 			>
 				<template #icon>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1V9.5z" />
-					</svg>
+					<MoooomIcon icon="home1" width="20" height="20" />
 				</template>
 			</NavLink>
 			<NavLink
@@ -77,18 +67,7 @@ useFocusGroup({
 				@action="(p) => router.push(p)"
 			>
 				<template #icon>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M3 7.5C3 6.7 3.7 6 4.5 6h4.2c.4 0 .7.1 1 .4l1.4 1.5c.3.3.6.4 1 .4h7.4c.8 0 1.5.7 1.5 1.5v9C21 19.3 20.3 20 19.5 20h-15A1.5 1.5 0 0 1 3 18.5v-11z" />
-					</svg>
+					<MoooomIcon icon="folder" width="20" height="20" />
 				</template>
 			</NavLink>
 			<NavLink
@@ -99,20 +78,7 @@ useFocusGroup({
 				@action="(p) => router.push(p)"
 			>
 				<template #icon>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<path d="M9 18V5l12-2v13" />
-						<circle cx="6" cy="18" r="3" />
-						<circle cx="18" cy="16" r="3" />
-					</svg>
+					<MoooomIcon icon="noteEighthPair" width="20" height="20" />
 				</template>
 			</NavLink>
 			<NavLink
@@ -125,19 +91,7 @@ useFocusGroup({
 				@action="(p) => router.push(p)"
 			>
 				<template #icon>
-					<svg
-						width="20"
-						height="20"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<circle cx="11" cy="11" r="7" />
-						<line x1="21" y1="21" x2="16.65" y2="16.65" />
-					</svg>
+					<MoooomIcon icon="searchMagnifyingGlass" width="20" height="20" />
 				</template>
 			</NavLink>
 		</nav>

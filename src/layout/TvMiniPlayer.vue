@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { playbackStore } from '@/stores/playbackStore';
 import { buildImageUrl } from '@/lib/images/urls';
 
@@ -46,17 +47,13 @@ useFocusEntry({
 				<span />
 				<span />
 			</div>
-			<svg
+			<MoooomIcon
 				v-else
 				class="play-icon"
+				icon="nmPlay"
 				width="14"
 				height="14"
-				viewBox="0 0 24 24"
-				fill="currentColor"
-				aria-hidden="true"
-			>
-				<path d="M8 5v14l11-7z" />
-			</svg>
+			/>
 		</div>
 		<div class="meta">
 			<p class="title">

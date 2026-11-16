@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { buildImageUrl } from '@/lib/images/urls';
 import { playbackStore } from '@/stores/playbackStore';
 import { musicSyncBridge } from '@/players/music/syncBridge';
@@ -55,27 +56,8 @@ useFocusEntry({
 		role="button"
 	>
 		<span class="leading">
-			<svg
-				v-if="isPlayingCurrent"
-				width="20"
-				height="20"
-				viewBox="0 0 24 24"
-				fill="currentColor"
-				aria-hidden="true"
-			>
-				<rect x="6" y="4" width="4" height="16" />
-				<rect x="14" y="4" width="4" height="16" />
-			</svg>
-			<svg
-				v-else-if="isCurrentTrack"
-				width="20"
-				height="20"
-				viewBox="0 0 24 24"
-				fill="currentColor"
-				aria-hidden="true"
-			>
-				<path d="M8 5v14l11-7z" />
-			</svg>
+			<MoooomIcon v-if="isPlayingCurrent" icon="nmPause" width="20" height="20" />
+			<MoooomIcon v-else-if="isCurrentTrack" icon="nmPlay" width="20" height="20" />
 			<span v-else class="position">{{ props.data.position ?? '' }}</span>
 		</span>
 		<img v-if="cover" :src="cover" :alt="props.data.name" class="cover">

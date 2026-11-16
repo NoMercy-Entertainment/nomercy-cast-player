@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { playbackStore } from '@/stores/playbackStore';
 import { musicSyncBridge } from './syncBridge';
@@ -76,6 +77,7 @@ const time = playbackStore.music.timeMs;
 const track = playbackStore.music.track;
 const shuffle = playbackStore.music.shuffle;
 const repeat = playbackStore.music.repeat;
+const repeatIcon = { off: 'nmRepeatHalftone', all: 'nmRepeat', one: 'nmRepeatone' } as const satisfies Record<'off' | 'all' | 'one', string>;
 const totalText = computed(() => totalLabel(track.value));
 const pct = computed(() => progressPercent(track.value, time.value));
 </script>
@@ -98,13 +100,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				:class="{ active: shuffle }"
 				aria-label="Shuffle"
 			>
-				<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="16 3 21 3 21 8" />
-					<line x1="4" y1="20" x2="21" y2="3" />
-					<polyline points="21 16 21 21 16 21" />
-					<line x1="15" y1="15" x2="21" y2="21" />
-					<line x1="4" y1="4" x2="9" y2="9" />
-				</svg>
+				<MoooomIcon icon="nmShuffle" width="22" height="22" />
 			</button>
 			<button
 				ref="prevEl"
@@ -113,9 +109,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				class="ctrl-btn"
 				aria-label="Previous track"
 			>
-				<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M6 6h2v12H6zM9.5 12l8.5 6V6z" />
-				</svg>
+				<MoooomIcon icon="nmPrevious" width="26" height="26" />
 			</button>
 			<button
 				ref="playEl"
@@ -124,13 +118,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				class="ctrl-btn ctrl-play"
 				:aria-label="playing ? 'Pause' : 'Play'"
 			>
-				<svg v-if="playing" width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-					<rect x="6" y="4" width="4" height="16" />
-					<rect x="14" y="4" width="4" height="16" />
-				</svg>
-				<svg v-else width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M8 5v14l11-7z" />
-				</svg>
+				<MoooomIcon :icon="playing ? 'nmPause' : 'nmPlay'" width="32" height="32" />
 			</button>
 			<button
 				ref="nextEl"
@@ -139,9 +127,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				class="ctrl-btn"
 				aria-label="Next track"
 			>
-				<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-					<path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z" />
-				</svg>
+				<MoooomIcon icon="nmNext" width="26" height="26" />
 			</button>
 			<button
 				ref="repeatEl"
@@ -151,19 +137,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 				:class="{ active: repeat !== 'off' }"
 				:aria-label="`Repeat ${repeat}`"
 			>
-				<svg v-if="repeat === 'one'" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="17 1 21 5 17 9" />
-					<path d="M3 11V9a4 4 0 0 1 4-4h14" />
-					<polyline points="7 23 3 19 7 15" />
-					<path d="M21 13v2a4 4 0 0 1-4 4H3" />
-					<text x="9.5" y="15" font-size="8" fill="currentColor" stroke="none">1</text>
-				</svg>
-				<svg v-else width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<polyline points="17 1 21 5 17 9" />
-					<path d="M3 11V9a4 4 0 0 1 4-4h14" />
-					<polyline points="7 23 3 19 7 15" />
-					<path d="M21 13v2a4 4 0 0 1-4 4H3" />
-				</svg>
+				<MoooomIcon :icon="repeatIcon[repeat]" width="22" height="22" />
 			</button>
 		</div>
 	</div>

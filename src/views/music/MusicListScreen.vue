@@ -8,6 +8,7 @@ import type { MusicTrack } from '@/queries/useMusicListQuery';
 import { buildImageUrl, SQUARE_SIZE } from '@/lib/images/urls';
 import { applyThemeColor, clearThemeColor } from '@/lib/theme';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
@@ -305,9 +306,7 @@ function trackArtistText(track: MusicTrack): string {
 						aria-label="Back"
 						@click.prevent="router.back()"
 					>
-						<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M15 5l-7 7 7 7" />
-						</svg>
+						<MoooomIcon icon="chevronLeft" width="28" height="28" />
 					</button>
 					<button
 						v-if="list.link"
@@ -320,9 +319,7 @@ function trackArtistText(track: MusicTrack): string {
 						:aria-pressed="isFavorite"
 						@click.prevent="onLikeClick"
 					>
-						<svg width="28" height="28" viewBox="0 0 24 24" :fill="isFavorite ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
-							<path d="M12 20.5l-7.4-7.2a4.7 4.7 0 0 1 6.6-6.7L12 7.4l.8-.8a4.7 4.7 0 0 1 6.6 6.7z" />
-						</svg>
+						<MoooomIcon :icon="isFavorite ? 'heartFilled' : 'heart'" width="28" height="28" />
 					</button>
 					<button
 						v-if="aboutText"
@@ -334,10 +331,7 @@ function trackArtistText(track: MusicTrack): string {
 						aria-label="About"
 						@click.prevent="aboutOpen = true"
 					>
-						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-							<circle cx="12" cy="12" r="9" />
-							<path d="M12 11v5M12 8h.01" />
-						</svg>
+						<MoooomIcon icon="infoCircle" width="24" height="24" />
 					</button>
 				</div>
 				<button
@@ -349,25 +343,8 @@ function trackArtistText(track: MusicTrack): string {
 					:aria-label="playButtonLabel"
 					@click.prevent="onPlayClick"
 				>
-					<svg
-						v-if="isCurrentList && playbackStore.music.playing.value"
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="currentColor"
-					>
-						<rect x="6" y="4" width="4" height="16" />
-						<rect x="14" y="4" width="4" height="16" />
-					</svg>
-					<svg
-						v-else
-						width="18"
-						height="18"
-						viewBox="0 0 24 24"
-						fill="currentColor"
-					>
-						<path d="M8 5v14l11-7z" />
-					</svg>
+					<MoooomIcon v-if="isCurrentList && playbackStore.music.playing.value" icon="nmPause" width="18" height="18" />
+					<MoooomIcon v-else icon="nmPlay" width="18" height="18" />
 					{{ playButtonLabel }}
 				</button>
 			</div>

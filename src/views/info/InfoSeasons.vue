@@ -2,6 +2,7 @@
 import { computed, nextTick, ref } from 'vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import type { InfoSeason } from '@/queries/useInfoQuery';
 import Resolver from '@/server-components/Resolver.vue';
 import type { Component } from '@/server-components/types';
@@ -89,18 +90,7 @@ function close(): void {
 			@click="open = true"
 		>
 			<span>{{ label }}</span>
-			<svg
-				width="20"
-				height="20"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d="M6 9l6 6 6-6" />
-			</svg>
+			<MoooomIcon icon="chevronDown" width="20" height="20" />
 		</button>
 		<Resolver :key="rail.id" :component="rail" />
 		<SeasonPickerOverlay

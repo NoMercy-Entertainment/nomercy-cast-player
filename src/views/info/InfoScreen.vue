@@ -10,6 +10,7 @@ import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge'
 import { BACKDROP_SIZE, buildImageUrl } from '@/lib/images/urls';
 import { applyThemeColor, clearThemeColor } from '@/lib/theme';
 import SplitTitleText from '@/components/text/SplitTitleText.vue';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { apiFetch } from '@/lib/http/client';
@@ -243,14 +244,7 @@ async function toggleWatchlist(): Promise<void> {
 				tabindex="0"
 				@click.prevent="watchPath && router.push(watchPath)"
 			>
-				<svg
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="currentColor"
-				>
-					<path d="M8 5v14l11-7z" />
-				</svg>
+				<MoooomIcon icon="nmPlay" width="18" height="18" />
 				Watch
 			</button>
 			<button
@@ -261,19 +255,7 @@ async function toggleWatchlist(): Promise<void> {
 				tabindex="0"
 				@click="openTrailer"
 			>
-				<svg
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<circle cx="12" cy="12" r="10" />
-					<polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
-				</svg>
+				<MoooomIcon icon="playCircle" width="18" height="18" />
 				Watch trailer
 			</button>
 			<button
@@ -283,26 +265,7 @@ async function toggleWatchlist(): Promise<void> {
 				tabindex="0"
 				@click.prevent="toggleWatchlist"
 			>
-				<svg
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<path
-						v-if="info.watchlist"
-						d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-						fill="currentColor"
-					/>
-					<path
-						v-else
-						d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"
-					/>
-				</svg>
+				<MoooomIcon :icon="info.watchlist ? 'bookmark' : 'bookmarkAdd'" width="18" height="18" />
 				{{ watchlistLabel }}
 			</button>
 		</div>

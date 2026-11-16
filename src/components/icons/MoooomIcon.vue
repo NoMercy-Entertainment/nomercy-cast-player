@@ -11,6 +11,8 @@ const drawing = computed(() => moooomIcons[props.icon] ?? null);
 	<svg
 		v-if="drawing"
 		class="moooom-icon"
+		width="24"
+		height="24"
 		:data-icon="icon"
 		:viewBox="drawing.viewBox"
 		:fill="drawing.fill"
@@ -21,6 +23,8 @@ const drawing = computed(() => moooomIcons[props.icon] ?? null);
 	<svg
 		v-else
 		class="moooom-icon"
+		width="24"
+		height="24"
 		:data-icon="icon"
 		viewBox="0 0 24 24"
 		aria-hidden="true"
@@ -32,8 +36,6 @@ const drawing = computed(() => moooomIcons[props.icon] ?? null);
 :where(.moooom-icon) {
 	display: block;
 	flex: none;
-	width: 24px;
-	height: 24px;
 	pointer-events: none;
 }
 </style>
