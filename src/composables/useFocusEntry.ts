@@ -10,6 +10,8 @@ export interface FocusEntry {
 	el: () => HTMLElement | null;
 	isFocused: () => boolean;
 	focus: () => void;
+	/** How a move from another entry arrives, when that differs from focus() (a rail picks its first visible card). */
+	enter?: () => void;
 	blur: () => void;
 	action: () => void;
 }
@@ -27,6 +29,7 @@ export interface FocusEntryOptions {
 }
 
 export interface FocusGroupRegistry {
+	type?: FocusGroupHandle['type'];
 	register: (entry: FocusEntry) => () => void;
 }
 
@@ -61,7 +64,7 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 			const scroll = !focusStore.isAutoFocus();
 			el.focus({ preventScroll: !scroll });
 			if (scroll)
-				el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+				el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: group?.type === 'horizontal' ? 'start' : 'center' });
 			opts.onFocus?.();
 		},
 		blur: () => {

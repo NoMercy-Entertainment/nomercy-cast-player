@@ -14,6 +14,8 @@ export interface FocusGroupHandle {
 	hasEntry: (key: string) => boolean;
 	/** True when one of this group's entries is the document's activeElement. */
 	containsFocused: () => boolean;
+	/** True when the focused element is this group's own entry, not a child group's. */
+	ownsFocused?: () => boolean;
 	/** Internal: triggers `escape` callback so modals can close on Back. */
 	dispatchEscape: () => boolean;
 }
@@ -44,6 +46,12 @@ function activeGroup(): FocusGroupHandle | null {
 	// nested groups push onto the stack (page → rails → carousels), so the
 	// LAST mounted group isn't always the right key handler. Walk top-down
 	// looking for the group whose containsFocused() reports true.
+	// A parent counts a child group's card as its own focus; the group holding the card itself wins,
+	// whichever mounted last (a cached chunk mounts the child before the parent).
+	for (let i = stack.length - 1; i >= 0; i--) {
+		if (stack[i].ownsFocused?.())
+			return stack[i];
+	}
 	for (let i = stack.length - 1; i >= 0; i--) {
 		const group = stack[i];
 		if (group.containsFocused())

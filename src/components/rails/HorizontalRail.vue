@@ -28,6 +28,7 @@ defineExpose({ trackEl });
 	overflow-y: visible;
 	/* item_tv_row.xml: 40 dp each side; 2 px above and below keep the focus ring unclipped. */
 	padding: 2px 40px;
+	scroll-padding-inline: 40px;
 	scroll-behavior: smooth;
 }
 /* No card drawn yet: keep one card row of room so the rails below stay put. */

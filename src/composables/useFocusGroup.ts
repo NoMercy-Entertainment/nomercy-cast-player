@@ -154,6 +154,9 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		containsFocused() {
 			return entries.value.some(e => e.isFocused());
 		},
+		ownsFocused() {
+			return entries.value.some(e => !e.key.startsWith('group:') && e.isFocused());
+		},
 		handleKey(dir) {
 			const current = entries.value.find(e => e.isFocused());
 			if (!current) {
@@ -166,7 +169,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 			}
 			const target = pickNeighbor(current, dir);
 			if (target) {
-				target.focus();
+				(target.enter ?? target.focus)();
 				return true;
 			}
 			if (opts.type === 'modal')
@@ -201,9 +204,23 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 				}
 				handle.focusFirst();
 			},
+			// TvRowFocus.focusFirstFocusableInRow: a row change lands on the first card fully in view.
+			enter: opts.type === 'horizontal' ? focusFirstVisible : undefined,
 			blur: () => {},
 			action: () => {},
 		};
+	}
+
+	function focusFirstVisible(): void {
+		const view = opts.containerEl?.value?.getBoundingClientRect();
+		const target = sortedEnabled().find((e) => {
+			const box = e.el()?.getBoundingClientRect();
+			return !!box && !!view && box.left >= view.left && box.right <= view.right;
+		});
+		if (target)
+			target.focus();
+		else
+			handle.focusFirst();
 	}
 
 	function activate(): void {
