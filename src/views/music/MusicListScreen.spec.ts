@@ -58,6 +58,31 @@ describe('pressing Play only opens Now Playing once playback actually starts', (
 		expect(push).not.toHaveBeenCalledWith('/now-playing');
 	});
 
+	it('stays on the list and shows an error when the server answers ok: false', async () => {
+		const invoke = vi.fn(async () => ({ ok: false, error_code: 'invalid_input', message: 'no' }));
+		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
+
+		const wrapper = screen();
+		await wrapper.findAll('.track-row')[1]!.trigger('click');
+		await flushPromises();
+
+		expect(invoke).toHaveBeenCalledWith('StartPlaybackCommand', 'album', 'alb-1', 'trk-2');
+		expect(push).not.toHaveBeenCalledWith('/now-playing');
+		expect(wrapper.find('.start-error').exists()).toBe(true);
+	});
+
+	it('the Play button still starts track 1 when the server answers ok: true', async () => {
+		const invoke = vi.fn(async () => ({ ok: true }));
+		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
+
+		const wrapper = screen();
+		await wrapper.find('[aria-label="Play"]').trigger('click');
+		await flushPromises();
+
+		expect(invoke).toHaveBeenCalledWith('StartPlaybackCommand', 'album', 'alb-1', 'trk-1');
+		expect(push).toHaveBeenCalledWith('/now-playing');
+	});
+
 	it('navigates to Now Playing once the start command succeeds', async () => {
 		socketStore.musicHub.value = {
 			invoke: vi.fn(async () => undefined),

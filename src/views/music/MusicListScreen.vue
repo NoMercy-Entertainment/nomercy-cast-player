@@ -178,7 +178,12 @@ async function startPlayback(trackId: string): Promise<boolean> {
 		return false;
 	}
 	try {
-		await hub.invoke('StartPlaybackCommand', type.value, id.value, trackId);
+		// The server reports a refused start as { ok: false } and does not throw.
+		const result = await hub.invoke('StartPlaybackCommand', type.value, id.value, trackId) as { ok?: boolean } | undefined;
+		if (result?.ok === false) {
+			startError.value = 'Could not start playback.';
+			return false;
+		}
 		startError.value = null;
 		return true;
 	}
