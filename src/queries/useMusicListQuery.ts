@@ -22,6 +22,9 @@ export interface MusicListData {
 	title?: string;
 	cover?: string;
 	overview?: string;
+	description?: string;
+	link?: string;
+	favorite?: boolean;
 	year?: number | string;
 	artists?: string[];
 	tracks?: MusicTrack[];

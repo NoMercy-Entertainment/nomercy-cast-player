@@ -12,6 +12,8 @@ import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import { musicSyncBridge } from '@/players/music/syncBridge';
+import { apiFetch } from '@/lib/http/client';
+import MusicAboutDialog from './MusicAboutDialog.vue';
 
 /*
  * Album / playlist detail. Mirrors APK ListScreen.kt's two-column TV
@@ -61,6 +63,7 @@ const containerEl = ref<HTMLElement | null>(null);
 const listGroup = useFocusGroup({
 	type: 'vertical',
 	restorationKey: 'music-list-tracks',
+	initialFocusKey: 'music-list-play',
 	containerEl,
 });
 
@@ -104,6 +107,60 @@ function onPlayClick(): void {
 			router.push('/now-playing');
 	});
 }
+
+const backEl = ref<HTMLElement | null>(null);
+const likeEl = ref<HTMLElement | null>(null);
+const aboutEl = ref<HTMLElement | null>(null);
+const aboutOpen = ref(false);
+const aboutText = computed(() => list.value?.description || list.value?.overview || '');
+
+// The server's value until the user toggles; ListScreen's MediaLikeButton posts `${link}/like`.
+const favoriteOverride = ref<boolean | null>(null);
+const isFavorite = computed(() => favoriteOverride.value ?? list.value?.favorite ?? false);
+
+async function onLikeClick(): Promise<void> {
+	const link = list.value?.link;
+	if (!link)
+		return;
+	const before = isFavorite.value;
+	favoriteOverride.value = !before;
+	try {
+		await apiFetch({
+			path: `${link}/like`,
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ value: !before }),
+		});
+	}
+	catch {
+		favoriteOverride.value = before;
+	}
+}
+
+// Order -3 to -1 puts the icon buttons before Play (order 0) in the vertical group.
+useFocusEntry({
+	key: 'music-list-back',
+	group: listGroup,
+	order: -3,
+	el: backEl,
+	onAction: () => router.back(),
+});
+useFocusEntry({
+	key: 'music-list-like',
+	group: listGroup,
+	order: -2,
+	el: likeEl,
+	onAction: () => void onLikeClick(),
+});
+useFocusEntry({
+	key: 'music-list-about',
+	group: listGroup,
+	order: -1,
+	el: aboutEl,
+	onAction: () => {
+		aboutOpen.value = true;
+	},
+});
 
 useFocusEntry({
 	key: 'music-list-play',
@@ -233,39 +290,92 @@ function trackArtistText(track: MusicTrack): string {
 				<span v-if="totalDurationText">·</span>
 				<span v-if="totalDurationText">{{ totalDurationText }}</span>
 			</p>
-			<button
-				ref="playEl"
-				class="nm-pill nm-pill-primary"
-				type="button"
-				data-focusable
-				tabindex="0"
-				:aria-label="playButtonLabel"
-				@click.prevent="onPlayClick"
-			>
-				<svg
-					v-if="isCurrentList && playbackStore.music.playing.value"
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="currentColor"
+			<div class="music-list-controls">
+				<div class="icon-row">
+					<button
+						ref="backEl"
+						class="icon-btn"
+						type="button"
+						data-focusable
+						tabindex="0"
+						aria-label="Back"
+						@click.prevent="router.back()"
+					>
+						<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M15 5l-7 7 7 7" />
+						</svg>
+					</button>
+					<button
+						v-if="list.link"
+						ref="likeEl"
+						class="icon-btn"
+						type="button"
+						data-focusable
+						tabindex="0"
+						aria-label="Like"
+						:aria-pressed="isFavorite"
+						@click.prevent="onLikeClick"
+					>
+						<svg width="28" height="28" viewBox="0 0 24 24" :fill="isFavorite ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2" stroke-linejoin="round">
+							<path d="M12 20.5l-7.4-7.2a4.7 4.7 0 0 1 6.6-6.7L12 7.4l.8-.8a4.7 4.7 0 0 1 6.6 6.7z" />
+						</svg>
+					</button>
+					<button
+						v-if="aboutText"
+						ref="aboutEl"
+						class="icon-btn"
+						type="button"
+						data-focusable
+						tabindex="0"
+						aria-label="About"
+						@click.prevent="aboutOpen = true"
+					>
+						<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+							<circle cx="12" cy="12" r="9" />
+							<path d="M12 11v5M12 8h.01" />
+						</svg>
+					</button>
+				</div>
+				<button
+					ref="playEl"
+					class="nm-pill nm-pill-primary"
+					type="button"
+					data-focusable
+					tabindex="0"
+					:aria-label="playButtonLabel"
+					@click.prevent="onPlayClick"
 				>
-					<rect x="6" y="4" width="4" height="16" />
-					<rect x="14" y="4" width="4" height="16" />
-				</svg>
-				<svg
-					v-else
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="currentColor"
-				>
-					<path d="M8 5v14l11-7z" />
-				</svg>
-				{{ playButtonLabel }}
-			</button>
+					<svg
+						v-if="isCurrentList && playbackStore.music.playing.value"
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+					>
+						<rect x="6" y="4" width="4" height="16" />
+						<rect x="14" y="4" width="4" height="16" />
+					</svg>
+					<svg
+						v-else
+						width="18"
+						height="18"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+					>
+						<path d="M8 5v14l11-7z" />
+					</svg>
+					{{ playButtonLabel }}
+				</button>
+			</div>
 			<p v-if="startError" class="start-error">
 				{{ startError }}
 			</p>
+			<MusicAboutDialog
+				v-if="aboutOpen"
+				:name="list.title"
+				:description="aboutText"
+				@close="aboutOpen = false"
+			/>
 		</div>
 
 		<div class="tracks-col nm-no-scrollbar">
@@ -350,6 +460,34 @@ function trackArtistText(track: MusicTrack): string {
 	gap: 8px;
 	font-size: 14px;
 	color: oklch(0.85 0.005 250);
+}
+.music-list-controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding-right: 52px;
+}
+.icon-row {
+	display: flex;
+	align-items: center;
+}
+.icon-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	padding: 0;
+	border: 2px solid transparent;
+	border-radius: 50%;
+	background: transparent;
+	color: #fff;
+	outline: none;
+	cursor: pointer;
+}
+.icon-btn:focus-visible {
+	border-color: #fff;
+	background: rgba(255, 255, 255, 0.08);
 }
 /* Music list Play button — palette-tinted instead of white */
 .header-col :deep(.nm-pill-primary) {
