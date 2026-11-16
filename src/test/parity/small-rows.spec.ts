@@ -61,8 +61,7 @@ const Rail = defineComponent({
 });
 
 describe('d-pad focus memory and back (TvCardViewHolder.kt:279-294,348-350)', () => {
-	// Open defect: nothing is saved when a group deactivates (focus is gone by then). Remove .fails with the fix.
-	it.fails('dpad.focus.memory: leaving a screen and coming back lands on the entry that held focus', async () => {
+	it('dpad.focus.memory: leaving a screen and coming back lands on the entry that held focus', async () => {
 		const page = ref<'rail' | 'other'>('rail');
 		const Host = defineComponent({
 			setup: () => () => h(KeepAlive, null, [page.value === 'rail' ? h(Rail) : h('div')]),

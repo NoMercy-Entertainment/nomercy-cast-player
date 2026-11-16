@@ -228,6 +228,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 			return;
 		isActive = true;
 		focusStore.pushGroup(handle);
+		document.addEventListener('focusin', trackFocus);
 		// Register self as a focusable proxy in the parent group so the
 		// parent's pickNeighbor can navigate between sibling groups
 		// (e.g. rails ↔ rails on home, action col ↔ poster col on info).
@@ -235,11 +236,12 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 			parentUnregister = parent.register(buildProxyEntry());
 	}
 
-	function deactivate(): void {
+	function deactivate(keepAliveLeave = false): void {
 		if (!isActive)
 			return;
 		isActive = false;
-		saveRestoration();
+		document.removeEventListener('focusin', trackFocus);
+		saveRestoration(keepAliveLeave);
 		parentUnregister?.();
 		parentUnregister = undefined;
 		focusStore.popGroup(handle);
@@ -283,10 +285,20 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		});
 	}
 
-	function saveRestoration(): void {
+	// KMP keeps the position of the card that last held focus (TvCardViewHolder.kt:279-287).
+	// A KeepAlive leave saves it even though focus is already gone; an unmount keeps the old rule.
+	let lastFocusedKey: string | null = null;
+	function trackFocus(): void {
+		const focused = entries.value.find(e => e.isFocused());
+		if (focused)
+			lastFocusedKey = focused.key;
+	}
+
+	function saveRestoration(keepAliveLeave: boolean): void {
 		if (!opts.restorationKey)
 			return;
-		const focused = entries.value.find(e => e.isFocused());
+		const focused = entries.value.find(e => e.isFocused())
+			?? (keepAliveLeave ? entries.value.find(e => e.key === lastFocusedKey) : undefined);
 		if (focused)
 			focusStore.saveRestoration(opts.restorationKey, focused.key);
 	}
@@ -318,7 +330,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 			attemptAutoFocus();
 		});
 		onDeactivated(() => {
-			deactivate();
+			deactivate(true);
 		});
 	}
 
