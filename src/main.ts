@@ -1,4 +1,6 @@
 import { createApp } from 'vue';
+import I18NextVue from 'i18next-vue';
+import i18next from './i18n/i18next';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import App from './App.vue';
 import router from './router';
@@ -37,6 +39,7 @@ const queryClient = new QueryClient(defaultQueryClientOptions);
 setQueryClient(queryClient);
 
 const app = createApp(App);
+app.use(I18NextVue, { i18next });
 app.use(router);
 installChunkReload(router);
 app.use(VueQueryPlugin, { queryClient });

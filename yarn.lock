@@ -3309,6 +3309,28 @@ __metadata:
   languageName: node
   linkType: hard
 
+"i18next-vue@npm:5.4.0":
+  version: 5.4.0
+  resolution: "i18next-vue@npm:5.4.0"
+  peerDependencies:
+    i18next: ">=23"
+    vue: ^3.4.38
+  checksum: 10c0/e66446ca8488f0e132093130691a4c08161819f09e61cd5297299cfe68f529cc041ee7c1f87a18cb5293480d74f086b0312eb183d80b86ee5e1fd9406a2764ae
+  languageName: node
+  linkType: hard
+
+"i18next@npm:26.3.1":
+  version: 26.3.1
+  resolution: "i18next@npm:26.3.1"
+  peerDependencies:
+    typescript: ^5 || ^6
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/8f26cb9a09b648edde395a58c2fe890dd996cb81a969d0a05da178b9cb4ce3dee009f9c677a480bb58b5a9d8bbf762fd226111626b015e9bbd66b96132dbba39
+  languageName: node
+  linkType: hard
+
 "iconv-lite@npm:^0.7.2":
   version: 0.7.2
   resolution: "iconv-lite@npm:0.7.2"
@@ -4682,6 +4704,8 @@ __metadata:
     eslint-plugin-format: "npm:^2.0.1"
     eslint-plugin-vuejs-accessibility: "npm:^2.5.0"
     hls.js: "npm:^1.6.15"
+    i18next: "npm:26.3.1"
+    i18next-vue: "npm:5.4.0"
     jsdom: "npm:^30.1.0"
     tailwindcss: "npm:^4.0.0"
     typescript: "npm:^5.6.0"
