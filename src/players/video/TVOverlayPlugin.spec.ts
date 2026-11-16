@@ -3,6 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { TVOverlayPlugin } from './TVOverlayPlugin';
 import { diagnosticsRing } from '@/lib/diagnostics/sink';
 
+// jsdom has no layout, so it has no scrollIntoView; the Episodes panel scrolls its card into view.
+Element.prototype.scrollIntoView = vi.fn();
+
 // The 2.x player has no overlay element, only the container it mounts into.
 function fakePlayer() {
 	const handlers = new Map<string, Array<(data?: unknown) => void>>();
@@ -191,6 +194,31 @@ describe('back after a resume launch', () => {
 		expect(document.querySelector('.pre-screen-title')?.textContent).toBe('Manner Movie');
 		expect(buttons()).toContain('Restart');
 		expect(buttons()).toContain('Audio and subtitles');
+		plugin.detach();
+	});
+
+	// cast#59: BACK in a panel opened from the pre-screen returns to the pre-screen, never out of the player.
+	it.each(['Episodes', 'Audio and subtitles'])('returns from the %s panel to the pre-screen on BACK', (label) => {
+		const second = { id: 'b', title: 'Second Episode' };
+		const player = { ...resumedPlayer(2576.282), queue: () => [item, second] };
+		const onExit = vi.fn();
+		const plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true, resumeAt: 2576.282, onExit });
+		plugin.attach();
+		player.emit('play');
+		player.emit('back');
+
+		const button = [...document.querySelectorAll<HTMLButtonElement>('.pre-screen-buttons button')]
+			.find(entry => entry.textContent === label);
+		expect(button).toBeDefined();
+		button!.click();
+		const panel = label === 'Episodes' ? 'panel episode' : 'panel language';
+		expect(diagnosticsRing.snapshot().map(entry => entry.label)).toContain(panel);
+		expect(document.querySelector('.pre-screen-title')).toBeNull();
+
+		player.emit('back');
+
+		expect(document.querySelector('.pre-screen-title')?.textContent).toBe('Manner Movie');
+		expect(onExit).not.toHaveBeenCalled();
 		plugin.detach();
 	});
 

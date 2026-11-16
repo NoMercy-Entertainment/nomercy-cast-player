@@ -39,6 +39,8 @@ const page = { template: '<div />' };
 
 async function leaveFrom(path: string[]) {
 	overlayOptions.length = 0;
+	// jsdom keeps one history per file: start each case as a fresh launch on its first page.
+	window.history.replaceState(null, '', path[0]);
 	const router = createRouter({
 		history: createWebHistory(),
 		routes: [
