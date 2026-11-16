@@ -1,0 +1,43 @@
+.tvui-root { position: absolute; inset: 0; z-index: 10; color: oklch(1 0 0); font-size: 18px; }
+.tvui-icon { display: inline-flex; width: 24px; height: 24px; }
+.tvui-top-bar { position: absolute; inset: 0 0 auto; display: flex; align-items: center; gap: 12px; padding: 32px 40px 48px 32px; background: linear-gradient(oklch(0 0 0 / 0.8), transparent); }
+.tvui-titles { margin-left: auto; text-align: right; max-width: 75%; }
+.tvui-title { font-weight: 500; font-size: 18px; }
+.tvui-subtitle { font-size: 14px; opacity: 0.8; }
+.tvui-bottom-bar { position: absolute; inset: auto 0 0; display: flex; align-items: center; gap: 16px; padding: 32px 52px; background: linear-gradient(transparent, oklch(0 0 0 / 0.9)); }
+.tvui-time { font-family: monospace; font-size: 14px; }
+.tvui-dim { opacity: 0.7; }
+.tvui-chapter-bar { flex: 1; display: flex; gap: 4px; height: 6px; }
+.tvui-chapter { position: relative; flex-basis: 0; background: oklch(1 0 0 / 0.2); border-radius: 4px; overflow: hidden; }
+.tvui-chapter-fill { height: 100%; background: oklch(1 0 0); }
+.tvui-icon-button, .tvui-button { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 8px; background: transparent; color: inherit; font: inherit; }
+.tvui-icon-button:focus-visible, .tvui-button:focus-visible, .tvui-row:focus-visible, .tvui-card:focus-visible { outline: 3px solid oklch(1 0 0 / 0.85); }
+.tvui-seek-strip { position: absolute; inset: auto 0 132px; display: flex; gap: 16px; padding: 0 calc(50% - 140px); overflow: hidden; }
+.tvui-seek-tile { flex: none; width: 280px; aspect-ratio: 16 / 9; display: grid; place-items: center; border-radius: 8px; background: oklch(0.2 0 0); opacity: 0.55; }
+.tvui-seek-selected { opacity: 1; transform: scale(1.1); outline: 4px solid oklch(1 0 0 / 0.9); }
+.tvui-dialog { position: absolute; inset: 0; display: flex; gap: 32px; padding: 32px; background: oklch(0 0 0 / 0.8); }
+.tvui-column { flex: 1; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.tvui-column-title, .tvui-message-title { font-size: 20px; font-weight: 600; }
+.tvui-row { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; border-radius: 12px; }
+.tvui-row[aria-disabled] { opacity: 0.35; }
+.tvui-row-label { flex: 1; }
+.tvui-row-value { opacity: 0.55; font-size: 14px; }
+.tvui-selected { background: oklch(1 0 0 / 0.12); }
+.tvui-pre-info { align-self: center; display: flex; flex-direction: column; gap: 12px; max-width: 60%; }
+.tvui-pre-title { font-size: 28px; font-weight: 600; margin: 0; }
+.tvui-pre-buttons { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.tvui-meta { display: flex; gap: 24px; font-size: 14px; }
+.tvui-settings { position: absolute; inset: 0; background: linear-gradient(90deg, oklch(0 0 0 / 0.88), transparent); }
+.tvui-sidebar { width: 320px; height: 100%; padding: 12px; display: flex; flex-direction: column; }
+.tvui-sidebar-header { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; }
+.tvui-sidebar-rows { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+.tvui-seasons { width: 240px; display: flex; flex-direction: column; gap: 4px; }
+.tvui-episode-list { flex: 1; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
+.tvui-card { display: flex; gap: 16px; padding: 8px; border-radius: 8px; }
+.tvui-card-art { flex: none; width: 240px; aspect-ratio: 16 / 9; background-size: cover; background-color: oklch(0.2 0 0); }
+.tvui-card-progress { height: 3px; background: oklch(1 0 0); }
+.tvui-card-title { font-weight: 600; }
+.tvui-card-overview { font-size: 14px; opacity: 0.8; }
+.tvui-message { flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.tvui-volume { position: absolute; top: 50%; right: 64px; transform: translateY(-50%); width: 140px; height: 140px; border-radius: 999px; background: oklch(0 0 0 / 0.75); display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 700; font-size: 22px; }
+.tvui-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; }
