@@ -52,6 +52,17 @@ export default antfu(
 		],
 	},
 	{
+		// Icons come from MoooomIcon; only the brand logos draw an inline svg.
+		files: ['src/**/*.vue'],
+		ignores: ['src/components/icons/MoooomIcon.vue', 'src/layout/AppLogo.vue', 'src/layout/AppLogoSquare.vue'],
+		rules: {
+			'vue/no-restricted-html-elements': ['error', {
+				element: 'svg',
+				message: 'Draw icons with <MoooomIcon icon="name" /> (src/components/icons/MoooomIcon.vue), with the icon name KMP uses.',
+			}],
+		},
+	},
+	{
 		// Module boundary rules per spec §7.1. The cast/ directory is the only
 		// place that touches cast.framework; stores never import from
 		// components or queries; lib has zero Vue imports; etc.
