@@ -1,3 +1,4 @@
+import './lib/chrome92Polyfills';
 import { createApp } from 'vue';
 import I18NextVue from 'i18next-vue';
 import i18next from './i18n/i18next';

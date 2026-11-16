@@ -5,7 +5,11 @@ const native = Object.hasOwn;
 
 // The test runner itself calls Object.hasOwn, so each case puts it back at once.
 afterEach(() => {
-	Object.defineProperty(Object, 'hasOwn', { value: native, configurable: true, writable: true });
+	Object.defineProperty(Object, 'hasOwn', {
+		value: native,
+		configurable: true,
+		writable: true,
+	});
 });
 
 describe('the Chrome 92 polyfills', () => {

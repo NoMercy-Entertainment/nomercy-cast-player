@@ -1,4 +1,4 @@
-// Fails when the built CSS holds a feature the Cast device browser (Chrome 92) cannot read.
+// Fails when the built CSS or JS holds a feature the Cast device browser (Chrome 92) cannot read.
 // Usage: node scripts/check-cast-css.mjs [assetsDir]   (default: docs/assets, the build outDir)
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -41,6 +41,38 @@ export function findIssues(css, file) {
 	return issues;
 }
 
+// Built-ins newer than Chrome 92. A bundle may use one only when src/lib/chrome92Polyfills.ts lists it.
+// Vue's reactive array wrappers call the array methods as `fn(this).toSorted(`; nothing in src uses them.
+const JS_APIS = [
+	['Object.hasOwn', /\bObject\.hasOwn\b/g],
+	['structuredClone', /(?<![.\w])structuredClone\s*\(/g],
+	['Array.prototype.findLast', /\.findLast(?:Index)?\(/g],
+	['Array.prototype.toSorted', /(?<!\(this\))\.(?:toSorted|toReversed|toSpliced)\(/g],
+	['Object.groupBy', /\b(?:Object|Map)\.groupBy\b/g],
+	['Promise.withResolvers', /\bPromise\.withResolvers\b/g],
+	['AbortSignal.timeout', /\bAbortSignal\.(?:timeout|any)\b/g],
+	['Array.fromAsync', /\bArray\.fromAsync\b/g],
+	['String.prototype.isWellFormed', /\.(?:is|to)WellFormed\(/g],
+	['URL.canParse', /\bURL\.canParse\b/g],
+	['Set.prototype.union', /\.(?:union|intersection|difference|symmetricDifference|isSubsetOf|isSupersetOf|isDisjointFrom)\(/g],
+];
+
+export function findJsIssues(js, file, polyfilled) {
+	return JS_APIS.filter(([name]) => !polyfilled.includes(name)).flatMap(([name, re]) =>
+		[...js.matchAll(re)].map(m => ({ file, name, line: lineOf(js, m.index), snippet: js.slice(Math.max(0, m.index - 20), m.index + 50).split('\n')[0] })));
+}
+
+const JS_FILE = /\.js$/;
+const POLYFILL_LIST = /POLYFILLED\s*=\s*\[([^\]]*)\]/;
+
+function readPolyfilled() {
+	const source = readFileSync('src/lib/chrome92Polyfills.ts', 'utf8');
+	const list = source.match(POLYFILL_LIST);
+	if (!list)
+		throw new Error('check-cast-css: src/lib/chrome92Polyfills.ts has no POLYFILLED list');
+	return [...list[1].matchAll(/'([^']+)'/g)].map(m => m[1]);
+}
+
 // Colors come from the NM tokens (src/styles/nm-tokens.css). A hex color may sit only in the token
 // files and in the two brand logo files, which keep their own artwork.
 const HEX_HOLDERS = ['src/styles/tokens.css', 'src/styles/nm-tokens.css', 'src/layout/AppLogo.vue', 'src/layout/AppLogoSquare.vue'];
@@ -78,6 +110,28 @@ function selfTest() {
 		if (findRawHex(text, file).length !== 0)
 			throw new Error(`self-test: hex control must pass: ${text}`);
 	}
+	const plantedJs = [
+		'if(Object.hasOwn(a,`x`))b()',
+		'let c=structuredClone(a)',
+		'a.findLast(f)',
+		'a.findLastIndex(f)',
+		'a.toSorted(f)',
+		'Object.groupBy(a,f)',
+		'Promise.withResolvers()',
+		'AbortSignal.timeout(5)',
+		'Array.fromAsync(a)',
+		's.isWellFormed()',
+		'URL.canParse(u)',
+		'new Set(a).union(b)',
+	];
+	for (const js of plantedJs) {
+		if (findJsIssues(js, 'planted.js', []).length === 0)
+			throw new Error(`self-test: planted built-in not found: ${js}`);
+	}
+	if (findJsIssues('Object.hasOwn(a,b)', 'covered.js', ['Object.hasOwn']).length !== 0)
+		throw new Error('self-test: a polyfilled built-in must pass');
+	if (findJsIssues('toReversed(){return ot(this).toReversed()},toSorted(e){return ot(this).toSorted(e)}', 'vue.js', []).length !== 0)
+		throw new Error('self-test: the Vue array wrappers must pass');
 	const clean = ':root{--a:#9e9e9e;--b:rgb(10 20 30 / 50%)}.x{color:var(--a);background:rgba(0,0,0,.5)}';
 	const planted = [
 		'.x{color:lab(65.2% 0 0)}',
@@ -105,7 +159,17 @@ if (files.length === 0) {
 	console.error(`check-cast-css: no .css files in ${dir}; build first`);
 	process.exit(2);
 }
-const issues = [...files.flatMap(f => findIssues(readFileSync(join(dir, f), 'utf8'), f)), ...scanSource('src')];
+const polyfilled = readPolyfilled();
+// Default: the whole build output (assets and the copied octopus worker). A given css dir scans itself.
+const jsRoot = process.argv[3] ?? (process.argv[2] ? dir : join(dir, '..'));
+const jsFiles = readdirSync(jsRoot, { recursive: true, withFileTypes: true })
+	.filter(e => e.isFile() && JS_FILE.test(e.name))
+	.map(e => join(e.parentPath, e.name));
+const issues = [
+	...files.flatMap(f => findIssues(readFileSync(join(dir, f), 'utf8'), f)),
+	...jsFiles.flatMap(f => findJsIssues(readFileSync(f, 'utf8'), f.replaceAll('\\', '/'), polyfilled)),
+	...scanSource('src'),
+];
 if (issues.length > 0) {
 	const counts = new Map();
 	for (const i of issues)
@@ -115,4 +179,4 @@ if (issues.length > 0) {
 		console.error(`  ${i.name} ${i.file}:${i.line} ${i.snippet}`);
 	process.exit(1);
 }
-console.log(`check-cast-css: ${files.length} css files, no Chrome 92 findings, no raw hex in src (self-test ok)`);
+console.log(`check-cast-css: ${files.length} css and ${jsFiles.length} js files, no Chrome 92 findings, no raw hex in src (self-test ok)`);
