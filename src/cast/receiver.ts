@@ -2,9 +2,16 @@ import type { Router } from 'vue-router';
 import { ref } from 'vue';
 import i18next from '@/i18n/i18next';
 import { ALL_CUSTOM_NAMESPACES } from './namespaces';
-import type { NavigatePayload } from './messageBus';
+import type { JsonValue, NavigatePayload, ReceiverContextLike } from './messageBus';
 import type { ResolvedServer } from '@/lib/resolveServer';
-import { attachMessageBus, onSenderNavigate, onSenderToken, onServerLaunch, requestTokenRenewal, resolveServerFromAppConfig } from './messageBus';
+import {
+	attachMessageBus,
+	onSenderNavigate,
+	onSenderToken,
+	onServerLaunch,
+	requestTokenRenewal,
+	resolveServerFromAppConfig,
+} from './messageBus';
 import { authStore } from '@/stores/authStore';
 import { dispatchInitialIntent } from '@/stores/navStore';
 import { socketStore } from '@/stores/socketStore';
@@ -14,6 +21,50 @@ import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 /** Senders attached to this receiver; 0 on a TV that fell back here with no phone. */
 export const connectedSenders = ref(0);
+
+interface CastOptions {
+	disableIdleTimeout?: boolean;
+	skipPlayersLoad?: boolean;
+	customNamespaces?: Record<string, string>;
+}
+
+interface CastContext extends ReceiverContextLike {
+	addEventListener: (type: string, listener: () => void) => void;
+	getSenders: () => readonly object[];
+	start: (options: CastOptions) => void;
+	stop: () => void;
+}
+
+interface CastGlobal {
+	framework?: {
+		CastReceiverContext: { getInstance: () => CastContext };
+		CastReceiverOptions: new () => CastOptions;
+	};
+}
+
+interface MockAuth {
+	token: string;
+	route: string;
+	serverUrl?: string;
+}
+
+function isCastGlobal(value: unknown): value is CastGlobal {
+	return typeof value === 'object' && value !== null;
+}
+
+function isMockAuth(value: unknown): value is MockAuth {
+	return typeof value === 'object' && value !== null &&
+		'token' in value && typeof value.token === 'string' &&
+		'route' in value && typeof value.route === 'string';
+}
+
+function readCastGlobal(): CastGlobal | null {
+	const candidate = Reflect.get(globalThis, 'cast');
+
+	return isCastGlobal(candidate)
+		? candidate
+		: null;
+}
 
 /**
  * Cast receiver bootstrap. Called once from main.ts after the Vue app
@@ -30,17 +81,7 @@ export const connectedSenders = ref(0);
 export function bootCastReceiver(router: Router): void {
 	// Runtime guard — the CAF SDK <script> in index.html may fail to load in
 	// dev preview. Without it we render the splash and skip cast wiring.
-	const castGlobal = (globalThis as { cast?: unknown }).cast as
-		| {
-			framework?: {
-				CastReceiverContext: {
-					getInstance: () => unknown;
-				};
-				CastReceiverOptions: new () => Record<string, unknown>;
-				system: { MessageType: { JSON: string } };
-			};
-		} |
-		undefined;
+	const castGlobal = readCastGlobal();
 
 	// Dev-only escape hatch — set sessionStorage["nm_cast_mock"] to
 	// {token, route, serverUrl?} before navigating to the receiver and we'll
@@ -56,11 +97,10 @@ export function bootCastReceiver(router: Router): void {
 		document.body.dataset.mockHasRaw = String(Boolean(raw));
 
 		if (raw) {
-			const mock = JSON.parse(raw) as {
-				token: string;
-				route: string;
-				serverUrl?: string;
-			};
+			const mock = JSON.parse(raw);
+
+			if (!isMockAuth(mock))
+				throw new Error('nm_cast_mock is not {token, route}');
 
 			document.body.dataset.mockParsed = 'yes';
 
@@ -89,7 +129,10 @@ export function bootCastReceiver(router: Router): void {
 			return;
 		}
 	} catch (err) {
-		document.body.dataset.mockError = (err as Error).message;
+		document.body.dataset.mockError = err instanceof Error
+			? err.message
+			: String(err);
+
 		console.error('[cast] mock auth hydration failed', err);
 	}
 
@@ -99,21 +142,7 @@ export function bootCastReceiver(router: Router): void {
 		return;
 	}
 
-	const context = castGlobal.framework.CastReceiverContext.getInstance() as {
-		addEventListener: (type: string, listener: (event: unknown) => void) => void;
-		addCustomMessageListener: (
-			namespace: string,
-			listener: (event: { senderId?: string; data: unknown }) => void,
-		) => void;
-		sendCustomMessage: (
-			namespace: string,
-			senderId: string | undefined,
-			data: unknown,
-		) => void;
-		getApplicationData: () => unknown;
-		getSenders: () => unknown[];
-		start: (options: Record<string, unknown>) => void;
-	};
+	const context = castGlobal.framework.CastReceiverContext.getInstance();
 
 	const options = new castGlobal.framework.CastReceiverOptions();
 
@@ -211,10 +240,7 @@ export function bootCastReceiver(router: Router): void {
  * there's no CastReceiverContext to stop.
  */
 export function closeCastSession(): void {
-	const castGlobal = (globalThis as { cast?: unknown }).cast as
-		| { framework?: { CastReceiverContext: { getInstance: () => { stop: () => void } } } } |
-		undefined;
-	const context = castGlobal?.framework?.CastReceiverContext.getInstance();
+	const context = readCastGlobal()?.framework?.CastReceiverContext.getInstance();
 
 	if (context) {
 		context.stop();
@@ -226,27 +252,41 @@ export function closeCastSession(): void {
 }
 
 // A server waking a TV with no phone sends NoMercy.Setup.Cast.LaunchCustomData, maybe as JSON text.
-export function readLaunchCustomData(data: unknown): LaunchCustomData | null {
-	let raw = data;
-
-	if (typeof raw === 'string') {
-		try {
-			raw = JSON.parse(raw);
-		} catch {
-			return null;
-		}
+export function readLaunchCustomData(data: JsonValue | undefined): LaunchCustomData | null {
+	if (typeof data !== 'string') {
+		return isLaunchCustomData(data)
+			? data
+			: null;
 	}
 
-	const launch = raw as Partial<LaunchCustomData> | null | undefined;
+	try {
+		const parsed = JSON.parse(data);
 
-	if (!launch?.access_token || !launch.server_url || !launch.intent)
+		return isLaunchCustomData(parsed)
+			? parsed
+			: null;
+	} catch {
 		return null;
+	}
+}
 
-	return launch as LaunchCustomData;
+function isLaunchCustomData(value: unknown): value is LaunchCustomData {
+	return typeof value === 'object' && value !== null &&
+		'access_token' in value && Boolean(value.access_token) &&
+		'server_url' in value && Boolean(value.server_url) &&
+		'intent' in value && Boolean(value.intent);
 }
 
 function startFromLaunch(launch: LaunchCustomData, router: Router): void {
-	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CastSessionStarted, 0, 0, 0, `cast-launch ${launch.intent.type}`);
+	recordDiagnostic(
+		DiagnosticsCategory.Lifecycle,
+		DiagnosticsCode.CastSessionStarted,
+		0,
+		0,
+		0,
+		`cast-launch ${launch.intent.type}`,
+	);
+
 	const server = {
 		serverId: launch.server_id,
 		serverUrl: launch.server_url,
@@ -274,14 +314,16 @@ let bootRun = 0;
 interface BootPlan {
 	token: string;
 	resolve: (onStep: (step: 'account' | 'server') => void) => Promise<ResolvedServer | null>;
-	open: () => Promise<unknown> | void;
+	open: () => Promise<void> | void;
 }
 
 function runNavigateBoot(payload: NavigatePayload, router: Router): void {
 	runBoot({
 		token: payload.token!,
 		resolve: (onStep) => resolveServerFromAppConfig(payload.token!, payload, onStep),
-		open: () => router.push(payload.route),
+		open: async () => {
+			await router.push(payload.route);
+		},
 	});
 }
 

@@ -20,8 +20,14 @@ const LINUX_PREFIX = /^Linux\s+/;
 const BYTES_PER_MB = 1024 * 1024;
 
 interface CastDeviceCapabilities {
-	model?: unknown;
-	device_model?: unknown;
+	model?: string;
+	device_model?: string;
+}
+
+interface CastFramework {
+	CastReceiverContext?: {
+		getInstance: () => { getDeviceCapabilities?: () => CastDeviceCapabilities | undefined };
+	};
 }
 
 /**
@@ -29,14 +35,12 @@ interface CastDeviceCapabilities {
  * happens to expose one and say `unknown` rather than inventing a name.
  */
 function readCastModel(): string {
-	const framework = (globalThis as { cast?: { framework?: unknown } }).cast?.framework as
-		| { CastReceiverContext?: { getInstance: () => { getDeviceCapabilities?: () => unknown } } } |
-		undefined;
+	const framework: CastFramework | undefined = Reflect.get(globalThis, 'cast')?.framework;
 
 	try {
 		const capabilities = framework?.CastReceiverContext
 			?.getInstance()
-			?.getDeviceCapabilities?.() as CastDeviceCapabilities | undefined;
+			?.getDeviceCapabilities?.();
 		const model = capabilities?.model ?? capabilities?.device_model;
 
 		if (typeof model === 'string' && model.length > 0)

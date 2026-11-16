@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/vue-query';
+import type { RefreshLibraryPayload } from '@/lib/signalr/events';
 
 /**
  * Server-key → client-key shim per spec §6.2.
@@ -21,10 +22,10 @@ export function registerQueryClientGetter(getter: () => QueryClient): void {
 }
 
 // The server sends RefreshLibraryDto as { queryKey: [...] }; a bare list is kept for older senders.
-export function refreshKeyOf(payload: unknown): string[] | null {
-	const key = Array.isArray(payload)
-		? payload
-		: (payload as { queryKey?: unknown } | null | undefined)?.queryKey;
+export function refreshKeyOf(payload: RefreshLibraryPayload | undefined): string[] | null {
+	const key = payload && 'queryKey' in payload
+		? payload.queryKey
+		: payload;
 
 	return Array.isArray(key) && key.length > 0
 		? key.map(String)
@@ -32,7 +33,10 @@ export function refreshKeyOf(payload: unknown): string[] | null {
 }
 
 // KMP batches RefreshLibrary keys for 400 ms and flushes each distinct key once (SharedMainScreen.kt:606-617).
-export function createRefreshBatcher(windowMs: number, flush: (key: readonly string[]) => void): (key: readonly string[]) => void {
+export function createRefreshBatcher(
+	windowMs: number,
+	flush: (key: readonly string[]) => void,
+): (key: readonly string[]) => void {
 	const pending = new Map<string, readonly string[]>();
 	let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -126,7 +130,11 @@ export function invalidatePlugins(): void {
 /** NoMercyApplication.kt:760-787: a foreground after 10 s away refreshes the library; every foreground sweeps. */
 export const ForegroundThresholdMs = 10_000;
 
-export function createForegroundWatch(refresh: () => void, sweep: () => void, now: () => number = Date.now) {
+export function createForegroundWatch(
+	refresh: () => void,
+	sweep: () => void,
+	now: () => number = Date.now,
+) {
 	let hiddenAt: number | null = null;
 
 	return {

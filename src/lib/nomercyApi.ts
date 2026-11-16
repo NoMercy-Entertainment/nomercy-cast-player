@@ -64,8 +64,8 @@ export interface SaasUser {
 	avatarUrl: string;
 	admin: boolean;
 	moderator: boolean;
-	messages?: unknown[];
-	notifications?: unknown[];
+	messages?: object[];
+	notifications?: object[];
 	features?: Record<string, boolean>;
 }
 

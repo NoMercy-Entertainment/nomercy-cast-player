@@ -108,15 +108,19 @@ export class DiagnosticsRing {
 
 		for (let offset = 0; offset < held; offset += 1) {
 			const slot = (oldest + offset) % this.capacity;
-			const labelId = this.labelIds[slot];
+			const labelId = this.labelIds[slot] ?? NO_LABEL;
+			const category = DIAGNOSTICS_CATEGORIES[this.categories[slot] ?? -1];
+			const code = DIAGNOSTICS_CODES[this.codes[slot] ?? -1];
+
+			if (category === undefined || code === undefined) continue;
 
 			entries.push({
-				atMs: this.atMs[slot],
-				category: DIAGNOSTICS_CATEGORIES[this.categories[slot]],
-				code: DIAGNOSTICS_CODES[this.codes[slot]],
-				a: this.fieldA[slot],
-				b: this.fieldB[slot],
-				c: this.fieldC[slot],
+				atMs: this.atMs[slot] ?? 0,
+				category,
+				code,
+				a: this.fieldA[slot] ?? 0,
+				b: this.fieldB[slot] ?? 0,
+				c: this.fieldC[slot] ?? 0,
 				label: labelId === NO_LABEL
 					? undefined
 					: this.labels[labelId],

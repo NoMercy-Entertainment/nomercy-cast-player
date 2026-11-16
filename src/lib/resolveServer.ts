@@ -1,4 +1,5 @@
 import { nomercyApiBase } from '@/lib/nomercyApi';
+import type { JsonValue } from '@/types/cast';
 
 /**
  * Resolves the media server this account talks to, the same call the KMP
@@ -22,7 +23,7 @@ interface AppConfigServer {
 interface AppConfigResponse {
 	data?: {
 		servers?: AppConfigServer[];
-		settings?: Record<string, unknown>;
+		settings?: Record<string, JsonValue>;
 	};
 }
 
@@ -39,10 +40,10 @@ export interface ResolvedServer {
 }
 
 // app_config sends each synced setting as { value, updatedAt }.
-function languageSetting(settings: Record<string, unknown> | undefined, key: string): string | null {
+function languageSetting(settings: Record<string, JsonValue> | undefined, key: string): string | null {
 	const entry = settings?.[key];
-	const value = typeof entry === 'object' && entry !== null
-		? (entry as { value?: unknown }).value
+	const value = typeof entry === 'object' && entry !== null && !Array.isArray(entry)
+		? entry.value
 		: entry;
 
 	return typeof value === 'string' && value !== ''
@@ -82,7 +83,9 @@ function findNamed(servers: AppConfigServer[], named: NamedServer): AppConfigSer
 	if (byId || !namedOrigin)
 		return byId;
 
-	return servers.find((server) => origin(server.serverBaseUrl) === namedOrigin || origin(server.internal_server_url) === namedOrigin);
+	return servers.find((server) =>
+		origin(server.serverBaseUrl) === namedOrigin ||
+		origin(server.internal_server_url) === namedOrigin);
 }
 
 export type ResolveStep = 'account' | 'server';
@@ -121,16 +124,20 @@ export async function resolveServerFromAppConfig(
 
 	// No server named: the account's own servers first (KMP restores the saved choice, which a
 	// receiver lacks). Probed together, picked in that order: a dead first server costs no wait.
-	const ordered = [...servers.filter((server) => server.is_owner === true), ...servers.filter((server) => server.is_owner !== true)];
+	const owned = servers.filter((server) => server.is_owner === true);
+	const shared = servers.filter((server) => server.is_owner !== true);
+	const ordered = [...owned, ...shared];
 	const routes = await Promise.all(ordered.map(reachableRoute));
 	const first = routes.findIndex((route) => route !== null);
+	const server = ordered[first];
+	const serverUrl = routes[first];
 
-	if (first === -1)
+	if (!server || !serverUrl)
 		return null;
 
 	return {
-		serverId: ordered[first].id,
-		serverUrl: routes[first]!,
+		serverId: server.id,
+		serverUrl,
 		...languages,
 	};
 }

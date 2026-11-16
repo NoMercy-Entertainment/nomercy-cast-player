@@ -23,7 +23,10 @@ const ALLOWED = new Set<string>(['owned', 'shared']);
  * receiver keeps the same words as the phone and the browser so one device
  * cannot decide differently about the same queue.
  */
-export function mayPlay(pluginId: string | null | undefined, access: Record<string, string>): boolean {
+export function mayPlay(
+	pluginId: string | null | undefined,
+	access: Record<string, string>,
+): boolean {
 	return !pluginId || ALLOWED.has(access[pluginId] ?? '');
 }
 

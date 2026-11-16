@@ -12,11 +12,13 @@ const NON_ERROR = 'nonError';
  * prose and can carry a title, a path or a token, and the censor must not be
  * the only thing standing between a message and the report.
  */
-export function swallowedClassName(error: unknown): string {
+export type Thrown = PromiseRejectionEvent['reason'];
+
+export function swallowedClassName(error: Thrown): string {
 	if (error === null || typeof error !== 'object')
 		return NON_ERROR;
 
-	const name = (error as { constructor?: { name?: unknown } }).constructor?.name;
+	const name = error.constructor?.name;
 
 	return typeof name === 'string' && name.length > 0
 		? name
@@ -29,7 +31,7 @@ export function swallowedClassName(error: unknown): string {
  * not, which are otherwise invisible to a report.
  * See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
  */
-export function recordSwallowed(where: string, error: unknown): void {
+export function recordSwallowed(where: string, error: Thrown): void {
 	const className = swallowedClassName(error);
 
 	// Both parts are source identifiers, not user data, so they are registered

@@ -60,7 +60,7 @@ export function youTubeId(src: string | undefined): string | null {
 
 	const match = src.match(YOUTUBE_ID);
 
-	if (match)
+	if (match?.[1])
 		return match[1];
 
 	return BARE_ID.test(src)
@@ -125,7 +125,10 @@ async function lookup(videoId: string, accessToken: string): Promise<TrailerLook
  * is reported as such, so the caller can ask again later rather than showing
  * a button that opens nothing.
  */
-export async function findTrailer(candidates: string[], accessToken: string): Promise<TrailerLookup> {
+export async function findTrailer(
+	candidates: string[],
+	accessToken: string,
+): Promise<TrailerLookup> {
 	let processing: TrailerLookup | null = null;
 
 	for (const videoId of candidates) {

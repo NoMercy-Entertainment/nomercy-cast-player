@@ -1,4 +1,5 @@
 import { DiagnosticsCategory, DiagnosticsCode } from './events';
+import type { DiagnosticsCodeValue } from './events';
 import { recordDiagnostic } from './sink';
 
 const WHITESPACE = /\s+/;
@@ -9,7 +10,9 @@ const WHITESPACE = /\s+/;
  * first word of the call travel — the censor drops the rest anyway, and this
  * keeps the label table from filling with one entry per unique message.
  */
-export function caughtLabel(args: readonly unknown[]): string | undefined {
+type ConsoleArgs = Parameters<Console['error']>;
+
+export function caughtLabel(args: Readonly<ConsoleArgs>): string | undefined {
 	const parts: string[] = [];
 
 	for (const arg of args) {
@@ -48,13 +51,19 @@ export function installDiagnosticsConsoleTap(target: Console = console): void {
 	const originalError = target.error.bind(target);
 	const originalWarn = target.warn.bind(target);
 
-	target.error = (...args: unknown[]) => {
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ErrorCaught, args.length, 0, 0, caughtLabel(args));
+	const record = (code: DiagnosticsCodeValue, args: ConsoleArgs): void => {
+		const label = caughtLabel(args);
+
+		recordDiagnostic(DiagnosticsCategory.Lifecycle, code, args.length, 0, 0, label);
+	};
+
+	target.error = (...args: ConsoleArgs) => {
+		record(DiagnosticsCode.ErrorCaught, args);
 		originalError(...args);
 	};
 
-	target.warn = (...args: unknown[]) => {
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.WarningLogged, args.length, 0, 0, caughtLabel(args));
+	target.warn = (...args: ConsoleArgs) => {
+		record(DiagnosticsCode.WarningLogged, args);
 		originalWarn(...args);
 	};
 }

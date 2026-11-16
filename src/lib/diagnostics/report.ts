@@ -35,9 +35,7 @@ export function renderDiagnosticsReport(
 		`events ${entries.length} held, ${dropped} dropped`,
 		'',
 	];
-	const startMs = entries.length > 0
-		? entries[0].atMs
-		: 0;
+	const startMs = entries[0]?.atMs ?? 0;
 
 	return [...header, ...entries.map((entry) => line(entry, startMs))].join('\n');
 }

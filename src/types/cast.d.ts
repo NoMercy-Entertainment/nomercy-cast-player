@@ -1,5 +1,14 @@
 /// <reference types="@types/chromecast-caf-receiver" />
 
+/** What JSON text holds: a cast custom message, a token claim, a server payload. */
+export type JsonValue =
+	| string |
+	number |
+	boolean |
+	null |
+	JsonValue[] |
+	{ [key: string]: JsonValue };
+
 /**
  * LAUNCH customData bundle. Mirrors server-side
  * NoMercy.Setup.Cast.LaunchCustomData (Phase 0). Volatile — receiver holds

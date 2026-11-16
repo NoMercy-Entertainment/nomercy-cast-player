@@ -109,14 +109,14 @@ export function fastLuminosity(c: string): number {
 		b = n & 0xFF;
 	} else {
 		// RGB string: extract numbers directly
-		const m = c.match(/(\d+)/g);
+		const m = c.match(/\d+/g);
 
 		if (!m)
 			return 0;
 
-		r = +m[0];
-		g = +m[1];
-		b = +m[2];
+		r = Number(m[0]);
+		g = Number(m[1]);
+		b = Number(m[2]);
 	}
 
 	const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -149,7 +149,11 @@ function inRange(c: string | undefined, dark: number, light: number): boolean {
 	return !!c && !tooDark(c, dark) && !tooLight(c, light);
 }
 
-export function pickPaletteColor(color_palette?: PaletteColors | null | undefined, dark = 40, light = 120): string {
+export function pickPaletteColor(
+	color_palette?: PaletteColors | null | undefined,
+	dark = 40,
+	light = 120,
+): string {
 	if (!color_palette || !color_palette.darkVibrant) {
 		return '';
 	}

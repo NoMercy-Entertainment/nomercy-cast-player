@@ -11,6 +11,15 @@ const CODECS = [
 
 const LAST_EVENTS = 60;
 
+function sourceKind(src: string): 'mse' | 'url' | 'none' {
+	if (src.startsWith('blob:'))
+		return 'mse';
+
+	return src
+		? 'url'
+		: 'none';
+}
+
 function ranges(range: TimeRanges): Array<[number, number]> {
 	const out: Array<[number, number]> = [];
 
@@ -21,29 +30,34 @@ function ranges(range: TimeRanges): Array<[number, number]> {
 	return out;
 }
 
+// The tv-ui bottom bar is mounted only while the controls are shown.
 function osdText(): {
 	visible: boolean;
 	elapsed: string | null;
 	remaining: string | null;
 } | null {
-	const osd = document.querySelector('.playback-osd');
+	const root = document.querySelector('.tvui-root');
 
-	if (!osd)
+	if (!root)
 		return null;
 
+	const bar = root.querySelector('.tvui-bottom-bar');
+
 	return {
-		visible: osd.classList.contains('is-visible'),
-		elapsed: osd.querySelector('.osd-elapsed')?.textContent ?? null,
-		remaining: osd.querySelector('.osd-remaining')?.textContent ?? null,
+		visible: bar !== null,
+		elapsed: bar?.querySelector('.tvui-time:not(.tvui-dim)')?.textContent ?? null,
+		remaining: bar?.querySelector('.tvui-time.tvui-dim')?.textContent ?? null,
 	};
 }
 
 // The surfaces a viewer can report as blank or covered. Class names and styles only, no text or URLs.
 const LAYERS = [
-	'.playback-osd',
-	'.pre-screen',
-	'.pre-screen-buttons button',
-	'.tv-overlay-host',
+	'.tvui-root',
+	'.tvui-top-bar',
+	'.tvui-bottom-bar',
+	'.tvui-dialog',
+	'.tvui-pre-screen',
+	'.tvui-pre-buttons button',
 	'.nm-hero-rails-screen',
 	'.nm-hero-rails',
 	'.nm-hero-rails [data-rail-id]',
@@ -53,7 +67,7 @@ const LAYERS = [
 ] as const;
 const LAYER_ITEMS = 4;
 
-function layers(): Record<string, unknown> {
+function layers() {
 	return Object.fromEntries(LAYERS.map((selector) => {
 		const found = Array.from(document.querySelectorAll<HTMLElement>(selector));
 
@@ -82,10 +96,10 @@ function layers(): Record<string, unknown> {
 const FOCUS_LABEL = 40;
 
 // Where the remote is: a TV screencap can be stale, the focused element is not.
-function focus(): Record<string, unknown> | null {
-	const el = document.activeElement as HTMLElement | null;
+function focus() {
+	const el = document.activeElement;
 
-	if (!el || el === document.body || el === document.documentElement)
+	if (!(el instanceof HTMLElement) || el === document.body || el === document.documentElement)
 		return null;
 
 	const label = el.getAttribute('aria-label') ?? el.textContent ?? '';
@@ -101,8 +115,11 @@ function focus(): Record<string, unknown> | null {
 }
 
 /** Only what a sender needs to see why playback stalls: no tokens, no server address. */
-export function buildDiagnosticsAnswer(): Record<string, unknown> {
-	const mse = (globalThis as { MediaSource?: { isTypeSupported: (type: string) => boolean } }).MediaSource;
+export function buildDiagnosticsAnswer() {
+	const mse = typeof MediaSource === 'undefined'
+		? null
+		: MediaSource;
+
 	const videos = Array.from(document.querySelectorAll('video')).map((video) => ({
 		paused: video.paused,
 		currentTime: video.currentTime,
@@ -115,11 +132,7 @@ export function buildDiagnosticsAnswer(): Record<string, unknown> {
 			? { code: video.error.code, message: video.error.message }
 			: null,
 		buffered: ranges(video.buffered),
-		srcKind: video.currentSrc.startsWith('blob:')
-			? 'mse'
-			: video.currentSrc
-				? 'url'
-				: 'none',
+		srcKind: sourceKind(video.currentSrc),
 	}));
 
 	return {

@@ -114,6 +114,7 @@ export const ALL_PLAYER_EVENTS = [
 	'transitionStart',
 	'transitionProgress',
 	'transitionComplete',
+	// cspell:disable-next-line
 	'transitionCancelled',
 	'pip',
 	'theater',
@@ -179,21 +180,28 @@ const CODED_EVENTS: Readonly<Record<string, [DiagnosticsCategoryValue, Diagnosti
 
 /** The minimum an engine has to offer for its events to be recorded. */
 export interface DiagnosticsEngine {
-	on: (event: string, handler: (...args: unknown[]) => void) => void;
-	off: (event: string, handler?: (...args: unknown[]) => void) => void;
+	on: (event: string, handler: (...args: EventPayload[]) => void) => void;
+	off: (event: string, handler?: (...args: EventPayload[]) => void) => void;
 }
+
+/** What a kit event carries: a bare value or a record of them. */
+export type EventPayload = string | number | boolean | null | undefined | PayloadRecord;
+
+interface PayloadRecord { [key: string]: EventPayload }
 
 const WORD_KEYS = ['reason', 'to', 'method', 'lang', 'code', 'name'] as const;
 
-/** The one word that explains the line, where the payload carries one. */
-export function payloadWord(payload: unknown): string | undefined {
-	const record = payload as Record<string, unknown> | null | undefined;
+function isPayloadRecord(payload: EventPayload): payload is PayloadRecord {
+	return typeof payload === 'object' && payload !== null;
+}
 
-	if (!record || typeof record !== 'object')
+/** The one word that explains the line, where the payload carries one. */
+export function payloadWord(payload: EventPayload): string | undefined {
+	if (!isPayloadRecord(payload))
 		return undefined;
 
 	for (const key of WORD_KEYS) {
-		const value = record[key];
+		const value = payload[key];
 
 		if (typeof value === 'string' && value.length > 0)
 			return value;
@@ -207,7 +215,7 @@ export function payloadWord(payload: unknown): string | undefined {
  * payload that means something numeric — a seek target, a volume, an error id,
  * a quality level — lands in field `b` without a per-event unpacker.
  */
-export function numericField(payload: unknown): number {
+export function numericField(payload: EventPayload): number {
 	if (typeof payload === 'number' && Number.isFinite(payload))
 		return Math.round(payload);
 
@@ -217,13 +225,23 @@ export function numericField(payload: unknown): number {
 			: 0;
 	}
 
-	const record = payload as Record<string, unknown> | null | undefined;
-
-	if (!record || typeof record !== 'object')
+	if (!isPayloadRecord(payload))
 		return 0;
 
-	const nested = (record.error ?? record.data) as Record<string, unknown> | undefined;
-	const candidates = [record.time, record.id, record.level, record.percentage, record.length, nested?.id, nested?.time];
+	const detail = payload.error ?? payload.data;
+	const nested = isPayloadRecord(detail)
+		? detail
+		: undefined;
+
+	const candidates = [
+		payload.time,
+		payload.id,
+		payload.level,
+		payload.percentage,
+		payload.length,
+		nested?.id,
+		nested?.time,
+	];
 
 	for (const candidate of candidates) {
 		if (typeof candidate === 'number' && Number.isFinite(candidate))
@@ -253,7 +271,7 @@ export function attachEngineDiagnostics(
 
 		subscribed += 1;
 
-		const handler = (...args: unknown[]): void => {
+		const handler = (...args: EventPayload[]): void => {
 			const payload = args[0];
 			const coded = CODED_EVENTS[event];
 			const category = coded

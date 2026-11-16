@@ -1,10 +1,13 @@
 import { buildDiagnosticsAnswer } from './diagnosticsAnswer';
 import { answerControl, isControlRequest } from './controlChannel';
-import type { ControlEngine } from './controlChannel';
 import { videoSyncBridge } from '@/players/video/syncBridge';
 import { NAMESPACE_GENERAL, NAMESPACE_STATUS } from './namespaces';
 import { resolveServerFromAppConfig } from '@/lib/resolveServer';
 import type { NamedServer } from '@/lib/resolveServer';
+import type { ControlResponse } from './controlChannel';
+import type { JsonValue } from '@/types/cast';
+
+export type { JsonValue };
 
 /**
  * Outbound + inbound custom-namespace message bus.
@@ -27,17 +30,28 @@ export interface NavigatePayload extends NamedServer {
 
 type NavigateHandler = (payload: NavigatePayload) => void;
 type TokenHandler = (token: string) => void;
-type LaunchHandler = (launch: unknown) => void;
+type LaunchHandler = (launch: JsonValue) => void;
 
-interface ReceiverContextLike {
+type OutboundMessage =
+	| { control: ControlResponse } |
+	{ diagnostics: ReturnType<typeof buildDiagnosticsAnswer> } |
+	{
+		ack: true;
+		route?: string;
+		launch?: true;
+	} |
+	{ renew: true } |
+	Record<string, JsonValue>;
+
+export interface ReceiverContextLike {
 	addCustomMessageListener: (
 		namespace: string,
-		listener: (event: { senderId?: string; data: unknown }) => void,
+		listener: (event: { senderId?: string; data: JsonValue }) => void,
 	) => void;
 	sendCustomMessage: (
 		namespace: string,
 		senderId: string | undefined,
-		data: unknown,
+		data: OutboundMessage,
 	) => void;
 }
 
@@ -48,20 +62,24 @@ let tokenHandlers: TokenHandler[] = [];
 let launchHandlers: LaunchHandler[] = [];
 
 // A media server that woke this TV sends its LaunchCustomData here: CAF hides the LAUNCH customData.
-function isLaunchMessage(data: unknown): data is { launch: unknown } {
-	return typeof data === 'object' && data !== null && (data as { launch?: unknown }).launch !== undefined;
+function isLaunchMessage(data: unknown): data is { launch: JsonValue } {
+	return typeof data === 'object' && data !== null && 'launch' in data && data.launch !== undefined;
+}
+
+function isDiagnosticsRequest(data: unknown): data is { diagnostics: true } {
+	return typeof data === 'object' && data !== null && 'diagnostics' in data && data.diagnostics === true;
 }
 
 function isNavigatePayload(data: unknown): data is NavigatePayload {
-	return typeof data === 'object' && data !== null && typeof (data as { route?: unknown }).route === 'string';
+	return typeof data === 'object' && data !== null && 'route' in data && typeof data.route === 'string';
 }
 
 // A token with no route is the sender's answer to {renew: true}: it swaps
 // the token and must never navigate.
 function isTokenUpdate(data: unknown): data is { token: string } {
 	return typeof data === 'object' && data !== null &&
-		typeof (data as { token?: unknown }).token === 'string' &&
-		(data as { route?: unknown }).route === undefined;
+		'token' in data && typeof data.token === 'string' &&
+		(!('route' in data) || data.route === undefined);
 }
 
 export function attachMessageBus(ctx: ReceiverContextLike): void {
@@ -69,16 +87,20 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 
 	ctx.addCustomMessageListener(NAMESPACE_GENERAL, (event) => {
 		if (isControlRequest(event.data)) {
-			void answerControl(event.data.control, videoSyncBridge.current() as unknown as ControlEngine | null)
-				.then((control) => ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { control }))
-				.catch((err: unknown) => console.warn('[cast] control answer failed', err));
+			const { senderId } = event;
+
+			void answerControl(event.data.control, videoSyncBridge.current())
+				.then((control) => ctx.sendCustomMessage(NAMESPACE_GENERAL, senderId, { control }))
+				.catch((err) => console.warn('[cast] control answer failed', err));
 
 			return;
 		}
 
-		if ((event.data as { diagnostics?: unknown } | null)?.diagnostics === true) {
+		if (isDiagnosticsRequest(event.data)) {
 			try {
-				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { diagnostics: buildDiagnosticsAnswer() });
+				const diagnostics = buildDiagnosticsAnswer();
+
+				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { diagnostics });
 			} catch (err) {
 				console.warn('[cast] diagnostics answer failed', err);
 			}
@@ -164,7 +186,7 @@ export function requestTokenRenewal(): void {
 	}
 }
 
-export function broadcastStatus(payload: Record<string, unknown>): void {
+export function broadcastStatus(payload: Record<string, JsonValue>): void {
 	if (!context || !lastSenderId) return;
 
 	try {

@@ -1,3 +1,5 @@
+import type { JsonValue } from '@/types/cast';
+
 /**
  * SignalR event payload types per spec §9.2-§9.4. Mirror authoritative
  * server-side shapes from NoMercy.Api/Services/{Music,Video}/* and
@@ -17,7 +19,7 @@ export interface PlayerStateEnvelope<TState> {
 		event: { event_id: number; state: TState | null };
 		source: string;
 		type: string;
-		user?: unknown;
+		user?: JsonValue;
 	}>;
 }
 

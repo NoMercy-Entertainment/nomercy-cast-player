@@ -130,7 +130,7 @@ function recordCompleted(opts: FetchOptions, status: number, startedAt: number):
 	);
 }
 
-export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
+export async function apiFetch<T>(opts: FetchOptions): Promise<T> {
 	let response = await singleAttempt(opts);
 
 	if (response.status === 401 && !opts.skipAuth) {
@@ -163,11 +163,11 @@ export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
 	}
 
 	if (!text)
-		return undefined as unknown as T;
+		return undefined as T;
 
 	try {
-		return JSON.parse(text) as T;
+		return JSON.parse(text);
 	} catch {
-		return text as unknown as T;
+		return text as T;
 	}
 }

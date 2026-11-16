@@ -4,6 +4,7 @@ import { castDeviceId } from './deviceId';
 import { diagnosticsRing, recordDiagnostic } from './sink';
 import { DiagnosticsCategory, DiagnosticsCode } from './events';
 import { diagnosticsSender } from './sender';
+import type { Thrown } from './swallowed';
 import { authStore } from '@/stores/authStore';
 import { settingsStore } from '@/stores/settingsStore';
 import { postDiagnosticsReport } from '@/lib/nomercyApi';
@@ -14,7 +15,7 @@ let uploaded = false;
 
 // The error class, never its message. A message carries a fresh id on every
 // fault and would exhaust the ring's 256-name table by itself.
-function faultName(reason: unknown): string {
+function faultName(reason: Thrown): string {
 	if (reason instanceof Error)
 		return reason.name;
 
@@ -36,7 +37,7 @@ const faults: PendingCrash[] = [];
 
 // Stays on the device. Only a sender that asks for diagnostics reads it, so it
 // is cut to what finds the line: no query strings, which carry tokens.
-function keepFault(reason: unknown): void {
+function keepFault(reason: Thrown): void {
 	if (faults.length >= MAX_FAULTS) return;
 
 	const error = reason instanceof Error
@@ -62,7 +63,7 @@ function dropSavedCrashReport(): void {
 	}
 }
 
-async function upload(reason: unknown): Promise<void> {
+async function upload(reason: Thrown): Promise<void> {
 	if (!settingsStore.crashReports.value) {
 		dropSavedCrashReport();
 
@@ -77,7 +78,7 @@ async function upload(reason: unknown): Promise<void> {
 
 	uploaded = true;
 
-	const payload = buildDiagnosticsReport({
+	const report = buildDiagnosticsReport({
 		deviceId: castDeviceId(),
 		kind: 'crash',
 		facts: collectDeviceFacts(),
@@ -85,8 +86,9 @@ async function upload(reason: unknown): Promise<void> {
 		recorded: diagnosticsRing.recorded(),
 	});
 
-	// A message or stack can hold a title, a URL or a token: the upload is automatic, so only the class leaves.
-	payload.body = `${payload.body}\n\ncrash\n${faultName(reason)}`;
+	// A message or stack can hold a title, a URL or a token: the upload is automatic,
+	// so only the class leaves.
+	const payload = { ...report, body: `${report.body}\n\ncrash\n${faultName(reason)}` };
 
 	try {
 		await postDiagnosticsReport(token, payload);
@@ -109,7 +111,16 @@ export function installCrashHandlers(): void {
 		const reason = event.error ?? event.message;
 
 		keepFault(reason);
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CrashReportPending, 0, 0, 0, faultName(reason));
+
+		recordDiagnostic(
+			DiagnosticsCategory.Lifecycle,
+			DiagnosticsCode.CrashReportPending,
+			0,
+			0,
+			0,
+			faultName(reason),
+		);
+
 		void upload(reason);
 	});
 

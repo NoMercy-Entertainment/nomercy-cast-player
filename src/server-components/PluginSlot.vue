@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/vue-query';
 
 import type { Component, PluginSlotWrapper } from './types';
 import type { CastPluginDescriptor } from '@/lib/plugin/contract';
+import type { JsonValue } from '@/types/cast';
 
 import Resolver from './Resolver.vue';
 import { apiFetch } from '@/lib/http/client';
@@ -40,7 +41,7 @@ const slotName = computed<string>(() => props.slotName ?? props.data?.slot ?? ''
  */
 const placements = useQuery({
 	queryKey: [...QueryKeys.pluginUi()],
-	queryFn: () => apiFetch<unknown>({ path: PLUGIN_UI_PATH, method: 'GET' }).then(decodePlacements),
+	queryFn: () => apiFetch<JsonValue>({ path: PLUGIN_UI_PATH, method: 'GET' }).then(decodePlacements),
 	...queryConfigs.standard,
 });
 
@@ -82,7 +83,7 @@ const views = useQuery({
 		return Promise.all(placed.value.map(async ({ plugin, entry }) => ({
 			key: `${plugin.id}:${entry.route}`,
 			// A plugin whose view fails is one empty row, never an empty wall.
-			components: await apiFetch<unknown>({ path: viewPath(plugin.id, entry.route), method: 'GET' })
+			components: await apiFetch<JsonValue>({ path: viewPath(plugin.id, entry.route), method: 'GET' })
 				.then(decodeView)
 				.catch((error: unknown) => {
 					console.error(`[plugin] view failed for ${plugin.id} at ${entry.route}:`, error);

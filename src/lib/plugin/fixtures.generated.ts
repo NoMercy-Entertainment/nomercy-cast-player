@@ -4,6 +4,8 @@
 // Every client renders this same set, so a slot a client draws nowhere
 // fails a test instead of looking fine until someone opens that screen.
 
+import type { JsonValue } from '@/types/cast';
+
 export interface PluginFixtureEntry {
 	section: string;
 	label: string;
@@ -24,7 +26,7 @@ export interface PluginFixture {
 		components: Array<{
 			id: string;
 			component: string;
-			props: Record<string, unknown>;
+			props: Record<string, JsonValue>;
 		}>;
 	};
 }
@@ -1313,7 +1315,7 @@ export const pluginFixtures = {
 			},
 		},
 	],
-} as unknown as {
+} as {
 	plugin: string;
 	fixtures: PluginFixture[];
 };

@@ -1,5 +1,7 @@
 import type { Component } from '@/server-components/types';
 
+import type { JsonValue } from '@/types/cast';
+
 import type { CastNavEntry } from './slots';
 
 /**
@@ -32,9 +34,23 @@ export function viewPath(pluginId: string, route: string): string {
 	return `/api/v1/plugins/${encodeURIComponent(pluginId)}/view?${query}`;
 }
 
-function unwrap(payload: unknown): unknown {
-	if (payload && typeof payload === 'object' && 'data' in payload)
-		return (payload as { data: unknown }).data;
+interface JsonRecord { [key: string]: JsonValue }
+
+function isRecord(value: JsonValue | undefined): value is JsonRecord {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isNavEntry(value: unknown): value is CastNavEntry {
+	return typeof value === 'object' && value !== null;
+}
+
+function isComponentList(value: unknown): value is Component[] {
+	return Array.isArray(value);
+}
+
+function unwrap(payload: JsonValue): JsonValue {
+	if (isRecord(payload) && 'data' in payload)
+		return payload.data ?? null;
 
 	return payload;
 }
@@ -45,17 +61,15 @@ function unwrap(payload: unknown): unknown {
  * Everything unreadable is dropped rather than guessed at: one plugin sending a
  * shape this build has never met must not empty the wall for the other five.
  */
-export function decodePlacements(payload: unknown): CastPluginDescriptor[] {
+export function decodePlacements(payload: JsonValue): CastPluginDescriptor[] {
 	const list = unwrap(payload);
 
 	if (!Array.isArray(list))
 		return [];
 
-	return list.flatMap((one) => {
-		if (!one || typeof one !== 'object')
+	return list.flatMap((record) => {
+		if (!isRecord(record))
 			return [];
-
-		const record = one as Record<string, unknown>;
 
 		if (typeof record.id !== 'string' || record.id.length === 0)
 			return [];
@@ -72,7 +86,10 @@ export function decodePlacements(payload: unknown): CastPluginDescriptor[] {
 			access: typeof record.access === 'string'
 				? record.access
 				: undefined,
-			entries: entries.filter((entry) => entry && typeof entry === 'object') as CastNavEntry[],
+			entries: entries.flatMap((entry) =>
+				isNavEntry(entry)
+					? [entry]
+					: []),
 		}];
 	});
 }
@@ -85,14 +102,14 @@ export function decodePlacements(payload: unknown): CastPluginDescriptor[] {
  * component this build does not know draws the unknown-component notice, which
  * is a sentence the viewer can read rather than a hole in the row.
  */
-export function decodeView(payload: unknown): Component[] {
+export function decodeView(payload: JsonValue): Component[] {
 	const view = unwrap(payload);
 
-	if (Array.isArray(view))
-		return view as Component[];
+	if (isComponentList(view))
+		return view;
 
-	if (view && typeof view === 'object' && Array.isArray((view as { components?: unknown }).components))
-		return (view as { components: Component[] }).components;
+	if (isRecord(view) && isComponentList(view.components))
+		return view.components;
 
 	return [];
 }

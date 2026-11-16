@@ -4,6 +4,8 @@
  * UI display.
  */
 
+import type { JsonValue } from '@/types/cast';
+
 export interface JwtPayload {
 	sub?: string;
 	iss?: string;
@@ -12,7 +14,7 @@ export interface JwtPayload {
 	iat?: number;
 	azp?: string;
 	scope?: string;
-	[k: string]: unknown;
+	[k: string]: JsonValue | undefined;
 }
 
 function base64UrlDecode(input: string): string {
@@ -28,15 +30,15 @@ export function decodeJwt(token: string): JwtPayload | null {
 	if (!token)
 		return null;
 
-	const parts = token.split('.');
+	const body = token.split('.')[1];
 
-	if (parts.length < 2)
+	if (body === undefined)
 		return null;
 
 	try {
-		const json = base64UrlDecode(parts[1]);
+		const json = base64UrlDecode(body);
 
-		return JSON.parse(json) as JwtPayload;
+		return JSON.parse(json);
 	} catch {
 		return null;
 	}

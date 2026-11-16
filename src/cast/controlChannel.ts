@@ -3,17 +3,22 @@
  * Cast custom channel, so the phone's cast remote drives this receiver like a native TV.
  */
 
+import { clampVolume } from '@nomercy-entertainment/nomercy-player-core';
+
+type Body = Record<string, string | number | boolean | null | undefined>;
+type ResponseBody = object | null;
+
 export interface ControlRequest {
 	id: number;
 	method: string;
 	path: string;
-	body?: unknown;
+	body?: Body;
 }
 
 export interface ControlResponse {
 	id: number;
 	status: number;
-	body: unknown;
+	body: ResponseBody;
 }
 
 interface Track { label?: string; language?: string }
@@ -64,8 +69,29 @@ const PLAYBACK_STATE = {
 	error: 'idle',
 } as const satisfies Record<string, string>;
 
+function isPlaybackState(state: string): state is keyof typeof PLAYBACK_STATE {
+	return Object.hasOwn(PLAYBACK_STATE, state);
+}
+
 function isEpisode(item: Item | undefined): boolean {
 	return item?.season != null && item?.episode != null;
+}
+
+function itemKind(item: Item | undefined): string {
+	if (!item)
+		return 'none';
+
+	return isEpisode(item)
+		? 'episode'
+		: 'movie';
+}
+
+function toMilliseconds(seconds: number): number {
+	return Math.max(0, Math.round(seconds * 1000));
+}
+
+function toUnitVolume(percent: number): number {
+	return Math.min(1, Math.max(0, percent / 100));
 }
 
 // The server sends duration as seconds or as "HH:MM:SS".
@@ -128,18 +154,17 @@ function session(e: ControlEngine) {
 	const item = e.item();
 	const audio = e.audioTrack();
 	const subtitle = e.subtitle();
+	const state = e.playState();
 
 	return {
 		sessionId: String(item?.id ?? ''),
-		playbackState: PLAYBACK_STATE[e.playState()] ?? 'idle',
-		positionMs: Math.max(0, Math.round(e.time() * 1000)),
-		durationMs: Math.max(0, Math.round(e.duration() * 1000)),
+		playbackState: isPlaybackState(state)
+			? PLAYBACK_STATE[state]
+			: 'idle',
+		positionMs: toMilliseconds(e.time()),
+		durationMs: toMilliseconds(e.duration()),
 		itemId: String(item?.id ?? ''),
-		itemKind: item
-			? (isEpisode(item)
-					? 'episode'
-					: 'movie')
-			: 'none',
+		itemKind: itemKind(item),
 		itemTitle: item?.title ?? item?.name ?? '',
 		audioTrackId: audio
 			? String(audio.index)
@@ -151,7 +176,7 @@ function session(e: ControlEngine) {
 		qualityLevel: e.quality() === 'auto'
 			? 'auto'
 			: 'high',
-		volume: Math.min(1, Math.max(0, e.volume() / 100)),
+		volume: toUnitVolume(e.volume()),
 		muted: e.volumeState() === 'muted',
 		playlistActiveIndex: e.index(),
 		playlistLength: e.queue().length,
@@ -189,17 +214,18 @@ async function setVolume(e: ControlEngine, body: {
 		? current + body.delta * 100
 		: (body.level ?? current / 100) * 100;
 
-	await e.volume(Math.round(Math.min(100, Math.max(0, target))));
+	await e.volume(clampVolume(target));
 }
-
-type Body = Record<string, unknown>;
-type Handler = (e: ControlEngine, body: Body) => Promise<unknown> | unknown;
 
 const NO_CONTENT = Symbol('no content');
 const V1_PREFIX = /^\/v1(?=\/)/;
 
+type Command = (e: ControlEngine, body: Body) => Promise<void> | void;
+type Answer = ResponseBody | typeof NO_CONTENT;
+type Handler = (e: ControlEngine, body: Body) => Promise<Answer> | Answer;
+
 // A command answers 204 once the player took it.
-function command(fn: Handler): Handler {
+function command(fn: Command): Handler {
 	return async (e, b) => {
 		await fn(e, b);
 
@@ -228,7 +254,14 @@ const ROUTES = {
 	'PATCH /session/playlist': command((e, b) => e.seekToIndex(Number(b.activeIndex))),
 } as const satisfies Record<string, Handler>;
 
-export async function answerControl(req: ControlRequest, engine: ControlEngine | null): Promise<ControlResponse> {
+function isRoute(key: string): key is keyof typeof ROUTES {
+	return Object.hasOwn(ROUTES, key);
+}
+
+export async function answerControl(
+	req: ControlRequest,
+	engine: ControlEngine | null,
+): Promise<ControlResponse> {
 	const path = req.path.replace(V1_PREFIX, '');
 	const method = req.method.toUpperCase();
 
@@ -240,9 +273,9 @@ export async function answerControl(req: ControlRequest, engine: ControlEngine |
 		};
 	}
 
-	const handler = ROUTES[`${method} ${path}`];
+	const key = `${method} ${path}`;
 
-	if (!handler) {
+	if (!isRoute(key)) {
 		return {
 			id: req.id,
 			status: 404,
@@ -259,7 +292,7 @@ export async function answerControl(req: ControlRequest, engine: ControlEngine |
 	}
 
 	try {
-		const result = await handler(engine, (req.body ?? {}) as Body);
+		const result = await ROUTES[key](engine, req.body ?? {});
 
 		return result === NO_CONTENT
 			? {
@@ -282,7 +315,13 @@ export async function answerControl(req: ControlRequest, engine: ControlEngine |
 }
 
 export function isControlRequest(data: unknown): data is { control: ControlRequest } {
-	const control = (data as { control?: Partial<ControlRequest> } | null)?.control;
+	if (typeof data !== 'object' || data === null || !('control' in data))
+		return false;
 
-	return typeof control?.id === 'number' && typeof control.method === 'string' && typeof control.path === 'string';
+	const { control } = data;
+
+	return typeof control === 'object' && control !== null &&
+		'id' in control && typeof control.id === 'number' &&
+		'method' in control && typeof control.method === 'string' &&
+		'path' in control && typeof control.path === 'string';
 }

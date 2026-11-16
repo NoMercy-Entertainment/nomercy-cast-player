@@ -1,5 +1,7 @@
 import type { HubConnection } from '@microsoft/signalr';
 
+type HubArgs = Array<number | string | object | null | undefined>;
+
 /**
  * Typed thin wrappers around the three hubs receiver subscribes to per
  * spec §9. Phase 2 just exposes invoke/on shells; Phase 8/9 fill in the
@@ -13,15 +15,15 @@ import type { HubConnection } from '@microsoft/signalr';
 export class TypedHub {
 	constructor(private readonly conn: HubConnection) {}
 
-	invoke<T = void>(method: string, ...args: Array<number | string | object | null | undefined>): Promise<T> {
+	invoke<T = void>(method: string, ...args: HubArgs): Promise<T> {
 		return this.conn.invoke<T>(method, ...args);
 	}
 
-	on(event: string, handler: (...args: never[]) => void): void {
+	on<Args extends HubArgs>(event: string, handler: (...args: Args) => void): void {
 		this.conn.on(event, handler);
 	}
 
-	off(event: string, handler?: (...args: never[]) => void): void {
+	off<Args extends HubArgs>(event: string, handler?: (...args: Args) => void): void {
 		if (handler) {
 			this.conn.off(event, handler);
 		} else {
