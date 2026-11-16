@@ -1,3 +1,4 @@
+// cspell:ignore Dialogue
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { attachAssPlainTextFallback, parseAssPlainText } from './assPlainTextFallback';

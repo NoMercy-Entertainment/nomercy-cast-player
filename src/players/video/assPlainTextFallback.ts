@@ -1,3 +1,4 @@
+// cspell:ignore Dialogue
 import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
 import { authStore } from '@/stores/authStore';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
