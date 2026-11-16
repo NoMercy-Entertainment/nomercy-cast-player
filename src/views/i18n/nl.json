@@ -1,0 +1,22 @@
+{
+	"views": {
+		"empty_default": "Nog niets hier.",
+		"home": {
+			"load_error": "Home laden lukte niet",
+			"empty": "Je home is leeg. Voeg een bibliotheek toe op je telefoon of computer om te beginnen."
+		},
+		"libraries": {
+			"load_error": "Bibliotheken laden lukte niet",
+			"empty": "Nog geen bibliotheken. Voeg er een toe vanaf je telefoon of computer."
+		},
+		"library": {
+			"load_error": "Deze bibliotheek laden lukte niet",
+			"empty": "Deze bibliotheek is leeg."
+		},
+		"watch": {
+			"load_error": "Video laden lukte niet",
+			"play_error": "Video afspelen lukte niet",
+			"nothing_to_play": "Niets om af te spelen"
+		}
+	}
+}

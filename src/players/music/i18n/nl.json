@@ -2,7 +2,14 @@
 	"music": {
 		"player": {
 			"live": "Live",
-			"shuffle": "Shuffle"
+			"shuffle": "Shuffle",
+			"lyrics_coming_soon": "Songteksten komen binnenkort.",
+			"up_next": "Hierna",
+			"previous_track": "Vorig nummer",
+			"next_track": "Volgend nummer",
+			"repeat_off": "Herhalen uit",
+			"repeat_all": "Alles herhalen",
+			"repeat_one": "Eén herhalen"
 		}
 	}
 }

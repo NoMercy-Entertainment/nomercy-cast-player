@@ -1,0 +1,7 @@
+{
+	"cast": {
+		"boot_step_account": "De accountdienst gaf geen antwoord.",
+		"boot_step_server": "De mediaserver geeft geen antwoord.",
+		"boot_step_connect": "De verbinding met de mediaserver ging niet open."
+	}
+}

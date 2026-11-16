@@ -3,7 +3,13 @@
 		"search_videos": "Video's zoeken",
 		"search_music": "Muziek zoeken",
 		"search": {
-			"video": "Video"
+			"video": "Video",
+			"label": "Zoeken:",
+			"space": "Spatie",
+			"backspace": "Wissen",
+			"start_typing": "Begin met typen om te zoeken.",
+			"no_results": "Geen resultaten voor \"{{query}}\".",
+			"error": "Zoeken lukte niet"
 		}
 	}
 }

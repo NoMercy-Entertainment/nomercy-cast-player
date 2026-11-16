@@ -21,7 +21,30 @@
 			"switch": "Wijzigen",
 			"settings": "Instellingen",
 			"status": "Status",
-			"online": "Online"
+			"online": "Online",
+			"user": "Gebruiker",
+			"tagline": "Je media, op elk scherm. Zelf gehost. Geen advertenties, geen tracking, geen compromissen.",
+			"copyright": "© {{from}}–{{to}} NoMercy Entertainment. Alle productnamen, logo's en merken zijn eigendom van hun respectieve eigenaren.",
+			"server_info": "Serverinformatie",
+			"server_info_error": "Serverinformatie laden lukte niet",
+			"switch_servers_hint": "Wissel van server in de NoMercy-app op je telefoon of in je browser.",
+			"category_display": "Weergave",
+			"category_playback": "Afspelen",
+			"category_privacy": "Privacy",
+			"auto_skip": "Intro's en aftiteling automatisch overslaan",
+			"auto_skip_hint": "Spring automatisch naar het einde van een hoofdstuk dat als intro of aftiteling is gemarkeerd",
+			"auto_theme": "Automatische themakleuren gebruiken",
+			"auto_theme_hint": "Neem de accentkleur over uit het palet van de geselecteerde poster",
+			"subtitle_hints": "Ondertitelingshints",
+			"subtitle_hints_hint": "Toon op kaarten een badge als er ondertiteling is",
+			"crash_reports_hint": "Standaard uit. Een rapport bevat: apparaat-id, apparaatmodel, CPU-type, geheugen- en threadgegevens, appversie en de stacktrace van de fout. Wordt alleen naar nomercy.tv verstuurd.",
+			"diag_sending": "Versturen…",
+			"diag_sent": "Verstuurd. Rapport {{id}}",
+			"diag_failed": "Niet verstuurd. {{error}}",
+			"diag_idle": "Bekijk wat een rapport zou bevatten en kies dan of je het verstuurt",
+			"diag_preview": "Voorbeeld van de diagnostische gegevens. Druk op OK om te scrollen.",
+			"diag_send_now": "Dit rapport nu versturen",
+			"diag_send_now_hint": "Er verlaat niets dit apparaat tot je dit kiest"
 		}
 	}
 }

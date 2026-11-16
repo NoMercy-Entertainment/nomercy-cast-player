@@ -1,7 +1,19 @@
 {
 	"views": {
 		"splash": {
-			"connected": "Verbonden"
+			"connected": "Verbonden",
+			"ready": "Klaar om te casten",
+			"connecting": "Verbinden…",
+			"connecting_server": "Verbinden met je server…",
+			"closing": "Afsluiten",
+			"hi": "Hoi",
+			"hi_rest": ", tik om te casten op de",
+			"button_in_app": "knop in de NoMercy-app.",
+			"no_user_start": "Tik om audio of video te casten op de",
+			"button_in_player": "knop in de mediaspeler of app.",
+			"recast": "Cast opnieuw vanaf je telefoon",
+			"expired": "Je castsessie is verlopen. Open NoMercy op je telefoon of computer en tik op de",
+			"button_to_continue": "knop om verder te gaan."
 		}
 	}
 }
