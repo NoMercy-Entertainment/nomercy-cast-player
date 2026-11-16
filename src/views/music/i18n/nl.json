@@ -1,0 +1,15 @@
+{
+	"views": {
+		"music": {
+			"resume": "Hervatten",
+			"like": "Vind ik leuk",
+			"start_error_offline": "Afspelen kon niet starten. Muziek is niet verbonden.",
+			"start_error": "Afspelen kon niet starten.",
+			"list_error": "Deze lijst laden lukte niet",
+			"cards_error": "Muziekkaarten laden lukte niet",
+			"cards_empty": "Niets te zien.",
+			"start_error_load": "Muziek laden lukte niet",
+			"start_empty": "Nog geen muziek. Voeg een muziekbibliotheek toe om te beginnen."
+		}
+	}
+}

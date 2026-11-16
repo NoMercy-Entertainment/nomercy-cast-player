@@ -55,6 +55,7 @@
 		}
 	},
 	"views": {
-		"unknown": "Onbekend"
+		"unknown": "Onbekend",
+		"refreshing": "Vernieuwen…"
 	}
 }
