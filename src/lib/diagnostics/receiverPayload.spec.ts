@@ -125,7 +125,7 @@ describe('the receiver payload, built by the real recorders', () => {
 
 		// The bridges' own outbound handlers expect their real payload shapes.
 		// This drives the diagnostics recorder, not those handlers, so a shape
-		// they reject is caught here rather than modelled.
+		// they reject is caught here rather than modeled.
 		for (const event of ALL_PLAYER_EVENTS) {
 			for (const engine of [video, music]) {
 				try {

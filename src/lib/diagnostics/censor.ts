@@ -1,5 +1,5 @@
 // Censoring runs once, where a label is interned, so no recorder has to
-// remember the rules. The default for an unrecognised word is to drop it: a
+// remember the rules. The default for an unrecognized word is to drop it: a
 // report that loses a word is readable, a report that carries a viewer's
 // library is not. See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
 

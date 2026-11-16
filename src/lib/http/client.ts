@@ -120,11 +120,13 @@ function withTimeout(callerSignal: AbortSignal | null | undefined, ms: number) {
 }
 
 function recordCompleted(opts: FetchOptions, status: number, startedAt: number): void {
+	const elapsedMs = Math.round(performance.now() - startedAt);
+
 	recordDiagnostic(
 		DiagnosticsCategory.Network,
 		DiagnosticsCode.RequestCompleted,
 		status,
-		Math.round(performance.now() - startedAt),
+		elapsedMs,
 		0,
 		requestLabel(opts),
 	);

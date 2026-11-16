@@ -40,7 +40,10 @@ export interface ResolvedServer {
 }
 
 // app_config sends each synced setting as { value, updatedAt }.
-function languageSetting(settings: Record<string, JsonValue> | undefined, key: string): string | null {
+function languageSetting(
+	settings: Record<string, JsonValue> | undefined,
+	key: string,
+): string | null {
 	const entry = settings?.[key];
 	const value = typeof entry === 'object' && entry !== null && !Array.isArray(entry)
 		? entry.value
