@@ -74,8 +74,16 @@ function findNamed(servers: AppConfigServer[], named: NamedServer): AppConfigSer
 	return servers.find(server => origin(server.serverBaseUrl) === namedOrigin || origin(server.internal_server_url) === namedOrigin);
 }
 
-export async function resolveServerFromAppConfig(accessToken: string, named: NamedServer = {}): Promise<ResolvedServer | null> {
+export type ResolveStep = 'account' | 'server';
+
+export async function resolveServerFromAppConfig(
+	accessToken: string,
+	named: NamedServer = {},
+	onStep: (step: ResolveStep) => void = () => {},
+): Promise<ResolvedServer | null> {
+	onStep('account');
 	const config = await fetchAppConfig(accessToken);
+	onStep('server');
 	const servers = config?.servers ?? [];
 	const languages = {
 		defaultSubtitleLanguage: languageSetting(config?.settings, 'defaultSubtitleLanguage'),
@@ -83,15 +91,19 @@ export async function resolveServerFromAppConfig(accessToken: string, named: Nam
 	};
 
 	const listed = findNamed(servers, named);
-	if (listed)
-		return { serverId: listed.id, serverUrl: await preferLocalRoute(listed), ...languages };
+	if (listed) {
+		const route = await reachableRoute(listed);
+		if (route)
+			return { serverId: listed.id, serverUrl: route, ...languages };
+	}
 
 	// Probed together, picked in list order: a dead first server costs no extra wait.
-	const routes = await Promise.all(servers.map(reachableRoute));
+	const others = servers.filter(server => server !== listed);
+	const routes = await Promise.all(others.map(reachableRoute));
 	const first = routes.findIndex(route => route !== null);
 	if (first === -1)
 		return null;
-	return { serverId: servers[first].id, serverUrl: routes[first]!, ...languages };
+	return { serverId: others[first].id, serverUrl: routes[first]!, ...languages };
 }
 
 async function fetchAppConfig(accessToken: string): Promise<AppConfigResponse['data']> {

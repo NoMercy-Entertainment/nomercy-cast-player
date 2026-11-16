@@ -1,6 +1,8 @@
 import type { Router } from 'vue-router';
 import { ref } from 'vue';
 import { ALL_CUSTOM_NAMESPACES } from './namespaces';
+import type { NavigatePayload } from './messageBus';
+import type { ResolvedServer } from '@/lib/resolveServer';
 import { attachMessageBus, onSenderNavigate, onSenderToken, onServerLaunch, requestTokenRenewal, resolveServerFromAppConfig } from './messageBus';
 import { authStore } from '@/stores/authStore';
 import { dispatchInitialIntent } from '@/stores/navStore';
@@ -53,28 +55,20 @@ export function bootCastReceiver(router: Router): void {
 		if (raw) {
 			const mock = JSON.parse(raw) as { token: string; route: string; serverUrl?: string };
 			document.body.dataset.mockParsed = 'yes';
-			void (async () => {
-				let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
-				try {
-					server = mock.serverUrl
+			runBoot({
+				token: mock.token,
+				resolve: async (onStep) => {
+					const server = mock.serverUrl
 						? { serverId: 'mock', serverUrl: mock.serverUrl, defaultSubtitleLanguage: null, defaultAudioLanguage: null }
-						: await resolveServerFromAppConfig(mock.token);
-				}
-				catch (err) {
-					console.warn('[cast] mock app_config request failed', err);
-					authStore.receiverState.value = 'DEGRADED';
-					return;
-				}
-				document.body.dataset.mockHasServer = String(Boolean(server));
-				if (!server)
-					return;
-				const ok = authStore.consumeRealHandshake(mock.token, server);
-				document.body.dataset.mockHydrated = String(ok);
-				if (ok) {
-					await bootSocketsAndDispatch(mock.route, router);
+						: await resolveServerFromAppConfig(mock.token, {}, onStep);
+					document.body.dataset.mockHasServer = String(Boolean(server));
+					return server;
+				},
+				open: async () => {
+					await router.push(mock.route);
 					document.body.dataset.mockDispatched = 'yes';
-				}
-			})();
+				},
+			});
 			return;
 		}
 	}
@@ -133,43 +127,7 @@ export function bootCastReceiver(router: Router): void {
 			0,
 			`cast-session ${payload.route}`,
 		);
-		void (async () => {
-			let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
-			try {
-				server = await resolveServerFromAppConfig(payload.token!, payload);
-			}
-			catch (err) {
-				console.warn('[cast] app_config request failed', err);
-				server = null;
-			}
-			if (!server) {
-				recordDiagnostic(
-					DiagnosticsCategory.Network,
-					DiagnosticsCode.RequestFailed,
-					0,
-					0,
-					0,
-					'app_config',
-				);
-				console.warn('[cast] app_config resolution failed');
-				authStore.receiverState.value = 'DEGRADED';
-				return;
-			}
-			if (!authStore.consumeRealHandshake(payload.token!, server)) {
-				recordDiagnostic(
-					DiagnosticsCategory.Network,
-					DiagnosticsCode.RequestFailed,
-					0,
-					0,
-					0,
-					'cast-handshake token',
-				);
-				console.warn('[cast] token expired or malformed at handshake time');
-				authStore.receiverState.value = 'DEGRADED';
-				return;
-			}
-			await bootSocketsAndDispatch(payload.route, router);
-		})();
+		runNavigateBoot(payload, router);
 	});
 
 	authStore.setRenewalRequester(requestTokenRenewal);
@@ -194,7 +152,7 @@ export function bootCastReceiver(router: Router): void {
 	onServerLaunch((data) => {
 		const launch = readLaunchCustomData(data);
 		if (launch)
-			void startFromLaunch(launch, router);
+			startFromLaunch(launch, router);
 	});
 
 	context.addEventListener('shutdown', () => {
@@ -215,19 +173,6 @@ export function bootCastReceiver(router: Router): void {
 	context.start(options);
 }
 
-/**
- * Boot SignalR + navigate to the sender's requested route. Sequenced so the
- * receiver's Vue components can read live socket state (and fire RPC
- * commands) by the time their first `onMounted` lifecycle runs.
- *
- * SignalR connection failure does NOT block navigation - the UI shows the
- * browse view with the connection-state badge, and forever-retry recovers
- * in the background.
- *
- * `route` is the sender's own full path+query string (e.g.
- * "/movie/533535/watch?cast=true&position=0") - router.push parses it
- * directly, no CastIntent reconstruction needed.
- */
 /**
  * Shuts the cast application down. The TV's cast_shell unloads this page in
  * response — the only way off a receiver that's stuck with nowhere to go
@@ -264,7 +209,7 @@ export function readLaunchCustomData(data: unknown): LaunchCustomData | null {
 	return launch as LaunchCustomData;
 }
 
-async function startFromLaunch(launch: LaunchCustomData, router: Router): Promise<void> {
+function startFromLaunch(launch: LaunchCustomData, router: Router): void {
 	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CastSessionStarted, 0, 0, 0, `cast-launch ${launch.intent.type}`);
 	const server = {
 		serverId: launch.server_id,
@@ -272,25 +217,97 @@ async function startFromLaunch(launch: LaunchCustomData, router: Router): Promis
 		defaultSubtitleLanguage: null,
 		defaultAudioLanguage: null,
 	};
-	if (!authStore.consumeRealHandshake(launch.access_token, server)) {
-		console.warn('[cast] launch token expired or malformed');
-		authStore.receiverState.value = 'DEGRADED';
-		return;
-	}
-	authStore.receiverState.value = 'CONNECTING';
-	void socketStore.connectAll().then(() => {
-		authStore.receiverState.value = 'READY';
+	runBoot({
+		token: launch.access_token,
+		resolve: async () => server,
+		open: () => dispatchInitialIntent(launch.intent, router),
 	});
-	dispatchInitialIntent(launch.intent, router);
 }
 
-async function bootSocketsAndDispatch(
-	route: string,
-	router: Router,
-): Promise<void> {
-	authStore.receiverState.value = 'CONNECTING';
-	void socketStore.connectAll().then(() => {
-		authStore.receiverState.value = 'READY';
+const BootDeadlineMs = 15_000;
+
+const BootStepReasons = {
+	account: 'The account service did not answer.',
+	server: 'The media server does not answer.',
+	connect: 'The connection to the media server did not open.',
+} as const;
+
+let bootRun = 0;
+
+interface BootPlan {
+	token: string;
+	resolve: (onStep: (step: 'account' | 'server') => void) => Promise<ResolvedServer | null>;
+	open: () => Promise<unknown> | void;
+}
+
+function runNavigateBoot(payload: NavigatePayload, router: Router): void {
+	runBoot({
+		token: payload.token!,
+		resolve: onStep => resolveServerFromAppConfig(payload.token!, payload, onStep),
+		open: () => router.push(payload.route),
 	});
-	await router.push(route);
+}
+
+/** One boot attempt: it ends in READY, the recast screen, or the boot error screen within the deadline. */
+function runBoot(plan: BootPlan): void {
+	authStore.setBootRetry(() => runBoot(plan));
+	const run = ++bootRun;
+	const current = (): boolean => run === bootRun;
+	let step: keyof typeof BootStepReasons = 'account';
+	authStore.bootError.value = null;
+	authStore.receiverState.value = 'LOADING';
+
+	const timer = setTimeout(() => {
+		if (!current())
+			return;
+		bootRun++;
+		if (step === 'connect')
+			void socketStore.disconnectAll();
+		console.warn('[cast] boot passed its deadline at step', step);
+		authStore.bootError.value = BootStepReasons[step];
+	}, BootDeadlineMs);
+
+	void (async () => {
+		let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
+		let threw = false;
+		try {
+			server = await plan.resolve((next) => {
+				if (current())
+					step = next;
+			});
+		}
+		catch (err) {
+			console.warn('[cast] app_config request failed', err);
+			server = null;
+			threw = true;
+		}
+		if (!current())
+			return;
+		if (!server) {
+			clearTimeout(timer);
+			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.RequestFailed, 0, 0, 0, 'app_config');
+			console.warn('[cast] app_config resolution failed');
+			if (threw)
+				authStore.receiverState.value = 'DEGRADED';
+			else
+				authStore.bootError.value = BootStepReasons.server;
+			return;
+		}
+		if (!authStore.consumeRealHandshake(plan.token, server)) {
+			clearTimeout(timer);
+			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.RequestFailed, 0, 0, 0, 'cast-handshake token');
+			console.warn('[cast] token expired or malformed at handshake time');
+			authStore.receiverState.value = 'DEGRADED';
+			return;
+		}
+		step = 'connect';
+		authStore.receiverState.value = 'CONNECTING';
+		void socketStore.connectAll().then(() => {
+			if (!current())
+				return;
+			clearTimeout(timer);
+			authStore.receiverState.value = 'READY';
+		});
+		await plan.open();
+	})();
 }

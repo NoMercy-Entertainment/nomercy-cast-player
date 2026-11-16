@@ -140,12 +140,12 @@ describe('a cast from the phone plays from the right media server (cast-player#6
 		expect(authStore.serverUrl.value).toBe(FirstServer.serverBaseUrl);
 	});
 
-	it('shows the recast screen when no server answers', async () => {
+	it('shows the error screen with Try again when no server answers', async () => {
 		stubNetwork([]);
 
 		const push = await castFromPhone({});
 
-		await vi.waitFor(() => expect(authStore.receiverState.value).toBe('DEGRADED'));
+		await vi.waitFor(() => expect(authStore.bootError.value).toBe('The media server does not answer.'));
 		expect(push).not.toHaveBeenCalled();
 	});
 });

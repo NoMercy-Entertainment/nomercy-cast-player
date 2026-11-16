@@ -26,6 +26,9 @@ const defaultAudioLanguage = ref<string | null>(null);
 const receiverState = ref<ReceiverState>('LOADING');
 const renewalRequired = ref(false);
 const castAgainRequired = ref(false);
+/** Why the boot stopped (a step failed or ran past its deadline); null otherwise. */
+const bootError = ref<string | null>(null);
+let bootRetry: (() => void) | null = null;
 
 const RENEWAL_REPLY_TIMEOUT_MS = 10_000;
 
@@ -96,6 +99,14 @@ function requestRenewal(): void {
 		if (renewalRequired.value)
 			requestRenewal();
 	}, Math.min(RENEWAL_REPLY_TIMEOUT_MS, msLeft));
+}
+
+function setBootRetry(retry: () => void): void {
+	bootRetry = retry;
+}
+
+function retryBoot(): void {
+	bootRetry?.();
 }
 
 function setRenewalRequester(requester: () => void): void {
@@ -199,6 +210,7 @@ export const authStore = {
 	receiverState,
 	renewalRequired,
 	castAgainRequired,
+	bootError,
 	ready,
 	expiresAtMs,
 	userClaims,
@@ -206,6 +218,8 @@ export const authStore = {
 	acceptRenewedToken,
 	requestRenewal,
 	setRenewalRequester,
+	setBootRetry,
+	retryBoot,
 	clear,
 	scheduleRefresh,
 	forceRefresh: runRefresh,

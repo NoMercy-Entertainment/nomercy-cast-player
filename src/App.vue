@@ -46,7 +46,13 @@ onMounted(() => {
 </script>
 
 <template>
-	<SenderRequiredScreen v-if="inDegraded" />
+	<SenderRequiredScreen
+		v-if="authStore.bootError.value"
+		title="Could not start the cast"
+		:message="authStore.bootError.value"
+		:retry="authStore.retryBoot"
+	/>
+	<SenderRequiredScreen v-else-if="inDegraded" />
 	<SenderRequiredScreen
 		v-else-if="castAgain"
 		title="Cast again to keep watching"
