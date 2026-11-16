@@ -68,7 +68,7 @@
 .pre-screen-content {
 	position: relative;
 	z-index: 2;
-	padding: 56px 56px 64px;
+	padding: 32px;
 	max-width: 60%;
 	display: flex;
 	flex-direction: column;
@@ -76,24 +76,25 @@
 }
 .pre-screen-subtitle {
 	margin: 0;
-	font-size: 13px;
+	font-size: 19px;
+	line-height: 24px;
 	font-weight: 700;
 	letter-spacing: 0.12em;
-	text-transform: uppercase;
+	text-transform: none;
 	color: oklch(0.85 0.01 250);
 }
 .pre-screen-title {
 	margin: 0;
-	font-size: 36px;
+	font-size: 28px;
 	font-weight: 700;
-	line-height: 1.05;
+	line-height: 26px;
 	letter-spacing: -0.01em;
 	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
 .pre-screen-overview {
 	margin: 0;
-	font-size: 15px;
-	line-height: 1.5;
+	font-size: 14px;
+	line-height: 20px;
 	color: oklch(0.95 0.005 250);
 	display: -webkit-box;
 	-webkit-line-clamp: 6;
@@ -150,7 +151,7 @@
 
 /* Episode picker (APK EpisodeDialog parity) */
 .episode-screen {
-	background: rgba(0, 0, 0, 0.92);
+	background: rgba(0, 0, 0, 0.9);
 	display: flex;
 	overflow: hidden;
 }
@@ -159,7 +160,7 @@
 	display: grid;
 	grid-template-columns: minmax(220px, 1fr) 2fr;
 	gap: 32px;
-	padding: 32px 56px;
+	padding: 32px;
 	overflow: hidden;
 }
 .episode-season-col {
@@ -213,7 +214,7 @@
 	background: transparent;
 	color: #fff;
 	border: 3px solid transparent;
-	border-radius: 12px;
+	border-radius: 8px;
 	padding: 8px;
 	font-family: inherit;
 	cursor: pointer;
@@ -234,9 +235,9 @@
 .episode-thumb {
 	position: relative;
 	flex: 0 0 auto;
-	width: 200px;
+	width: 180px;
 	aspect-ratio: 16 / 9;
-	border-radius: 8px;
+	border-radius: 6px;
 	overflow: hidden;
 	background: rgba(0, 0, 0, 0.4);
 }
@@ -293,7 +294,7 @@
 	margin: 0;
 	font-size: 16px;
 	font-weight: 700;
-	line-height: 1.15;
+	line-height: 18px;
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
@@ -302,7 +303,7 @@
 .episode-description {
 	margin: 0;
 	font-size: 13px;
-	line-height: 1.35;
+	line-height: 16px;
 	color: rgba(255, 255, 255, 0.7);
 	display: -webkit-box;
 	-webkit-line-clamp: 4;
@@ -312,13 +313,13 @@
 
 /* Language / quality / subtitles picker (APK LanguageDialog parity) */
 .language-screen {
-	background: rgba(0, 0, 0, 0.85);
-	padding: 32px;
+	background: rgba(0, 0, 0, 0.8);
+	padding: 32px 40px;
 	overflow: hidden;
 }
 .language-layout {
 	display: flex;
-	gap: 32px;
+	gap: 24px;
 	height: 100%;
 }
 .lang-section {
@@ -341,17 +342,18 @@
 	justify-content: flex-start;
 	background: transparent;
 	color: rgba(255, 255, 255, 0.85);
-	border: 1px solid transparent;
-	padding: 10px 16px;
-	border-radius: 999px;
-	font-size: 14px;
+	border: 3px solid transparent;
+	padding: 8px 12px;
+	min-height: 44px;
+	border-radius: 12px;
+	font-size: 15px;
 	text-align: left;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
 }
 .lang-section .track-row.current {
-	background: rgba(255, 255, 255, 0.16);
+	background: rgba(255, 255, 255, 0.12);
 	color: #fff;
 	border-color: rgba(255, 255, 255, 0.4);
 }
@@ -371,18 +373,18 @@
    is inside a skippable chapter and auto-skip is disabled. */
 .skip-chapter-prompt {
 	position: absolute;
-	right: 64px;
-	bottom: 64px;
+	right: 52px;
+	bottom: 132px;
 	z-index: 6;
-	background: rgba(0, 0, 0, 0.75);
+	background: #262630eb;
 	color: #fff;
 	border: 1px solid rgba(255, 255, 255, 0.35);
 	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
 	animation: skip-prompt-in 220ms ease;
 }
 .skip-chapter-prompt:focus-visible {
-	background: var(--color-primary, oklch(0.7 0.2 285));
-	color: oklch(0.18 0.02 35);
+	background: #fff;
+	color: #262630;
 	border-color: oklch(1 0 0 / 0.85);
 	transform: translateY(-1px);
 }
@@ -404,11 +406,11 @@
 	right: 0;
 	bottom: 0;
 	pointer-events: none;
-	background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.55) 50%, transparent 100%);
+	background: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.55) 50%, transparent 100%);
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
-	padding: 56px 64px 56px;
+	padding: 32px 52px;
 	gap: 16px;
 	opacity: 0;
 	transition: opacity 220ms ease;
@@ -447,7 +449,8 @@
 }
 .osd-time {
 	font-variant-numeric: tabular-nums;
-	font-size: 13px;
+	font-size: 14px;
+	font-family: ui-monospace, monospace;
 	font-weight: 600;
 }
 .osd-elapsed {
@@ -455,13 +458,13 @@
 }
 .osd-remaining {
 	text-align: right;
-	color: oklch(0.85 0.01 250);
+	color: rgba(255, 255, 255, 0.7);
 }
 .osd-bar {
 	position: relative;
-	height: 4px;
-	border-radius: 999px;
-	background: rgba(255, 255, 255, 0.25);
+	height: 8px;
+	border-radius: 4px;
+	background: rgba(211, 211, 211, 0.4);
 	overflow: hidden;
 }
 .osd-bar-fill {
@@ -469,7 +472,7 @@
 	left: 0;
 	top: 0;
 	bottom: 0;
-	background: var(--color-primary, oklch(0.7 0.2 285));
+	background: rgba(255, 255, 255, 0.8);
 	transition: width 200ms linear;
 	z-index: 1;
 }
@@ -505,13 +508,13 @@
 	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 .seek-bar {
-	height: 6px;
+	height: 8px;
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.25);
 	overflow: hidden;
 }
 .seek-fill {
 	height: 100%;
-	background: var(--color-primary, oklch(0.7 0.2 285));
+	background: rgba(255, 255, 255, 0.8);
 	transition: width 90ms linear;
 }
