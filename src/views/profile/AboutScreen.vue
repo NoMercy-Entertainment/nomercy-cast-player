@@ -61,7 +61,7 @@ const currentYear = new Date().getFullYear();
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 20px;
+	gap: 24px;
 	color: #fff;
 	text-align: center;
 }
@@ -80,14 +80,14 @@ const currentYear = new Date().getFullYear();
 	margin: 0;
 	font-size: 16px;
 	line-height: 1.5;
-	color: oklch(0.92 0.005 250);
+	color: rgba(255, 255, 255, 0.85);
 	max-width: 540px;
 }
 .footer {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	margin-top: 12px;
+	margin-top: 4px;
 }
 .developed {
 	margin: 0;
@@ -96,9 +96,9 @@ const currentYear = new Date().getFullYear();
 }
 .copyright {
 	margin: 0;
-	font-size: 11px;
+	font-size: 12px;
 	line-height: 1.5;
-	color: oklch(0.7 0.005 250);
+	color: rgba(255, 255, 255, 0.7);
 	max-width: 600px;
 }
 </style>

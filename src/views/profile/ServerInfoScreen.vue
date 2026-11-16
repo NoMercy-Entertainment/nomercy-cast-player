@@ -111,12 +111,12 @@ const uptime = computed(() => formatUptime(info.value?.bootTime, now.value));
 	z-index: 1;
 }
 .card {
-	max-width: 920px;
+	max-width: 70%;
 	margin: 0 auto 24px;
 	padding: 28px 32px;
 	background: oklch(0.18 0.01 250 / 0.85);
 	border: 1px solid rgba(255, 255, 255, 0.18);
-	border-radius: 16px;
+	border-radius: 14px;
 	color: #fff;
 }
 .server-name {
@@ -129,11 +129,11 @@ const uptime = computed(() => formatUptime(info.value?.bootTime, now.value));
 	margin: 0;
 	display: grid;
 	grid-template-columns: 140px 1fr;
-	row-gap: 8px;
+	row-gap: 4px;
 	column-gap: 12px;
 }
 .kv dt {
-	font-size: 13px;
+	font-size: 14px;
 	font-weight: 500;
 	color: oklch(0.75 0.005 250);
 }

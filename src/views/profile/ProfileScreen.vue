@@ -248,11 +248,11 @@ async function confirmSignOut(): Promise<void> {
 	z-index: 1;
 }
 .header-card {
-	gap: 12px;
+	gap: 16px;
 }
 .avatar {
-	width: 48px;
-	height: 48px;
+	width: 56px;
+	height: 56px;
 	border-radius: 50%;
 	object-fit: cover;
 	flex: 0 0 auto;
@@ -271,12 +271,12 @@ async function confirmSignOut(): Promise<void> {
 }
 .name {
 	margin: 0;
-	font-size: 18px;
+	font-size: 22px;
 	font-weight: 700;
 }
 .email {
 	margin: 4px 0 0;
-	font-size: 13px;
+	font-size: 14px;
 	color: oklch(0.85 0.005 250);
 }
 .hint {

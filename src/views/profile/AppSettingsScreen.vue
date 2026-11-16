@@ -310,10 +310,11 @@ useFocusEntry({
 	margin: 4px 0 0;
 	font-size: 12px;
 	color: oklch(0.85 0.005 250);
+	opacity: 0.6;
 }
 .toggle {
-	width: 44px;
-	height: 24px;
+	width: 56px;
+	height: 32px;
 	border-radius: 999px;
 	background: rgba(255, 255, 255, 0.18);
 	position: relative;
@@ -324,16 +325,16 @@ useFocusEntry({
 }
 .thumb {
 	position: absolute;
-	top: 2px;
-	left: 2px;
-	width: 20px;
-	height: 20px;
+	top: 4px;
+	left: 4px;
+	width: 24px;
+	height: 24px;
 	border-radius: 50%;
 	background: #fff;
 	transition: transform var(--motion-fast);
 }
 .toggle.on .thumb {
-	transform: translateX(20px);
+	transform: translateX(24px);
 }
 .diagnostics-preview {
 	margin: 12px 0;
