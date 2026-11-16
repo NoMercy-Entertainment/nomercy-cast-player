@@ -106,6 +106,30 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 		expect(layers['.empty-state'].count).toBe(0);
 	});
 
+	// devAA: keys reached the page but nothing showed where focus went; a screencap of this TV is stale.
+	it('reports the focused element: tag, classes, data ids and a short label', () => {
+		document.body.innerHTML = '<article class="music-home-card nm-focus-scale-sm" data-focusable data-rail-id="favorites" tabindex="0" aria-label="Made-up Artist with a very long name that keeps going on and on"></article>';
+		(document.querySelector('article') as HTMLElement).focus();
+		const { ask, sendCustomMessage } = fakeContext();
+
+		ask({ diagnostics: true });
+
+		expect(sendCustomMessage.mock.calls[0]![2].diagnostics.focus).toEqual({
+			tag: 'article',
+			className: 'music-home-card nm-focus-scale-sm',
+			data: { focusable: '', railId: 'favorites' },
+			label: 'Made-up Artist with a very long name th',
+		});
+	});
+
+	it('reports focus on the body as nothing focused', () => {
+		const { ask, sendCustomMessage } = fakeContext();
+
+		ask({ diagnostics: true });
+
+		expect(sendCustomMessage.mock.calls[0]![2].diagnostics.focus).toBeNull();
+	});
+
 	it('reports no crashes when none was recorded (positive control: the field is there)', () => {
 		const { ask, sendCustomMessage } = fakeContext();
 

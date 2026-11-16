@@ -66,6 +66,22 @@ function layers(): Record<string, unknown> {
 	}));
 }
 
+const FOCUS_LABEL = 40;
+
+// Where the remote is: a TV screencap can be stale, the focused element is not.
+function focus(): Record<string, unknown> | null {
+	const el = document.activeElement as HTMLElement | null;
+	if (!el || el === document.body || el === document.documentElement)
+		return null;
+	const label = el.getAttribute('aria-label') ?? el.textContent ?? '';
+	return {
+		tag: el.tagName.toLowerCase(),
+		className: typeof el.className === 'string' ? el.className : '',
+		data: { ...el.dataset },
+		label: label.replace(/\s+/g, ' ').trim().slice(0, FOCUS_LABEL - 1),
+	};
+}
+
 /** Only what a sender needs to see why playback stalls: no tokens, no server address. */
 export function buildDiagnosticsAnswer(): Record<string, unknown> {
 	const mse = (globalThis as { MediaSource?: { isTypeSupported: (type: string) => boolean } }).MediaSource;
@@ -87,6 +103,7 @@ export function buildDiagnosticsAnswer(): Record<string, unknown> {
 		codecs: Object.fromEntries(CODECS.map(type => [type, mse?.isTypeSupported(type) ?? null])),
 		crashes: pendingCrashes(),
 		layers: layers(),
+		focus: focus(),
 		events: diagnosticsRing.snapshot().slice(-LAST_EVENTS),
 	};
 }
