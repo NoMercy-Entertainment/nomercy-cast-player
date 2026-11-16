@@ -79,7 +79,7 @@ export default defineConfig(({ command, mode }) => {
 			environment: 'jsdom',
 			globals: true,
 			setupFiles: ['src/test/setup.ts'],
-			include: ['src/**/*.{test,spec}.{ts,vue}'],
+			include: ['src/**/*.{test,spec}.{ts,vue}', 'eslint-rules/__tests__/*.spec.ts'],
 			exclude: ['**/node_modules/**', '**/docs/**'],
 		},
 		// Chrome 92 on the Cast device reads no lab(), oklch() or @layer.

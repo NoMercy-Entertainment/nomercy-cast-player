@@ -1,0 +1,101 @@
+// -----------------------------------------------------------------------------
+//  Copyright (c) NoMercy Labs.
+//
+//  This file is part of NomNomzBot. You may use, change and share it for free,
+//  for any noncommercial purpose, under the PolyForm Noncommercial License
+//  1.0.0. You may not earn money with it. Distributed WITHOUT ANY WARRANTY.
+//  See LICENSE for details, and TRADEMARKS.md for the name and logo.
+//
+//  SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+// -----------------------------------------------------------------------------
+
+import { RuleTester } from '@typescript-eslint/rule-tester';
+import { afterAll, describe, it } from 'vitest';
+
+import { bodyShape } from '../body-shape';
+
+RuleTester.afterAll = afterAll;
+RuleTester.describe = describe;
+RuleTester.it = it;
+RuleTester.itOnly = it.only;
+
+const tester = new RuleTester();
+
+tester.run('body-shape', bodyShape, {
+  valid: [
+    // A bare exit stays on the if line.
+    'function f(a: boolean) { if (a) return }',
+    'for (const a of [1]) { if (a) continue }',
+    'for (const a of [1]) { if (a) break }',
+    // A returned or thrown value goes on the next line, one level in.
+    'function f(a: boolean) {\n  if (a)\n    return 1\n\n  return 2\n}',
+    'function f(a: boolean) {\n  if (a)\n    throw new Error()\n}',
+    // Anything else sits in a block.
+    'function f(a: boolean) {\n  let b = 0\n  if (a) {\n    b = 1\n  }\n}',
+    'function f(a: boolean) {\n  if (a)\n    return 1\n  else\n    return 2\n}',
+    'function f(a: boolean, b: boolean) {\n  if (a) {\n    g()\n  } else if (b) {\n    g()\n  }\n}',
+  ],
+  invalid: [
+    {
+      code: 'function f(a: boolean) {\n\tif (a) return 1\n}',
+      output: 'function f(a: boolean) {\n\tif (a)\n\t\treturn 1\n}',
+      errors: [{ messageId: 'nextLine' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n\tif (a) b = 1\n}',
+      output: 'function f(a: boolean) {\n\tif (a) {\n\t\tb = 1\n\t}\n}',
+      errors: [{ messageId: 'block' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n  if (a) return 1\n}',
+      output: 'function f(a: boolean) {\n  if (a)\n    return 1\n}',
+      errors: [{ messageId: 'nextLine' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n  if (a) throw new Error()\n}',
+      output: 'function f(a: boolean) {\n  if (a)\n    throw new Error()\n}',
+      errors: [{ messageId: 'nextLine' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n  let b = 0\n  if (a) b = 1\n}',
+      output: 'function f(a: boolean) {\n  let b = 0\n  if (a) {\n    b = 1\n  }\n}',
+      errors: [{ messageId: 'block' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n  if (a)\n    g()\n}',
+      output: 'function f(a: boolean) {\n  if (a) {\n    g()\n  }\n}',
+      errors: [{ messageId: 'block' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n  if (a)\n    return\n}',
+      output: 'function f(a: boolean) {\n  if (a) return\n}',
+      errors: [{ messageId: 'sameLine' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n  if (a) g()\n  else h()\n}',
+      output: 'function f(a: boolean) {\n  if (a) {\n    g()\n  }\n  else {\n    h()\n  }\n}',
+      errors: [{ messageId: 'block' }, { messageId: 'block' }],
+    },
+    {
+      // A loop body always sits in a block.
+      code: 'function f(rows: string[]) {\n  for (const row of rows)\n    g(row)\n}',
+      output: 'function f(rows: string[]) {\n  for (const row of rows) {\n    g(row)\n  }\n}',
+      errors: [{ messageId: 'loopBlock' }],
+    },
+    {
+      code: 'function f(n: number) {\n  for (let i = 0; i < n; i++) g(i)\n}',
+      output: 'function f(n: number) {\n  for (let i = 0; i < n; i++) {\n    g(i)\n  }\n}',
+      errors: [{ messageId: 'loopBlock' }],
+    },
+    {
+      code: 'function f(o: object) {\n  for (const k in o) g(k)\n}',
+      output: 'function f(o: object) {\n  for (const k in o) {\n    g(k)\n  }\n}',
+      errors: [{ messageId: 'loopBlock' }],
+    },
+    {
+      code: 'function f(a: boolean) {\n  while (a) g()\n}',
+      output: 'function f(a: boolean) {\n  while (a) {\n    g()\n  }\n}',
+      errors: [{ messageId: 'loopBlock' }],
+    },
+  ],
+});
