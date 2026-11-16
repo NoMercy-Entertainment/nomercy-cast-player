@@ -26,7 +26,8 @@ describe('an NMLolomo component from the server', () => {
 			},
 		});
 
-		await vi.waitFor(() => expect(wrapper.find('.resolved').exists()).toBe(true));
+		// The lazy NMLolomo chunk can take over 1 s on a busy CI runner (Pages run 43848940253 failed at 1065 ms).
+		await vi.waitFor(() => expect(wrapper.find('.resolved').exists()).toBe(true), { timeout: 10_000 });
 		expect(wrapper.get('.resolved').text()).toBe('NMCarousel');
 	});
 });
