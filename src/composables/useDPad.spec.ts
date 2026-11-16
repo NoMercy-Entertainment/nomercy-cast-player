@@ -149,8 +149,9 @@ describe('back keys with a tv-ui panel open', () => {
 		});
 	}
 
-	it('Back cancels the seek strip and stays on the route', () => {
+	it('back cancels the seek strip and stays on the route', () => {
 		startOverlay(player, true, onExit);
+
 		window.dispatchEvent(new KeyboardEvent('keydown', {
 			key: 'ArrowRight',
 			bubbles: true,
@@ -180,8 +181,10 @@ describe('back keys while the video plays with no panel open', () => {
 		host = mount(Host);
 		player = new FakePlayer();
 		document.body.append(player.container);
+
 		// Same wiring as VideoPlayer.vue: leaving the watch screen is router.back().
-		startOverlay(player, true, () => router.back());
+		startOverlay(player, true, () =>
+			router.back());
 	});
 
 	afterEach(() => {

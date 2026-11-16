@@ -89,6 +89,11 @@ vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', 
 	SubtitleOverlayPlugin,
 }));
 
+/** The options the first player was set up with, read as the shape a test checks. */
+function firstSetupOptions<T>(): T {
+	return players[0]!.setup.mock.calls[0]![0] as T;
+}
+
 function router() {
 	return createRouter({
 		history: createWebHistory(),
@@ -155,8 +160,11 @@ describe('videoPlayer starts the cast watch session', () => {
 
 		const player = players[0]!;
 
-		expect(player.setup).toHaveBeenCalledWith(expect.objectContaining({ language: expect.any(String) }));
-		const onQueue = player.once.mock.calls.find(([event]) => event === 'queue')?.[1] as (() => void) | undefined;
+		expect(player.setup)
+			.toHaveBeenCalledWith(expect.objectContaining({ language: expect.any(String) }));
+
+		const queueCall = player.once.mock.calls.find(([event]) => event === 'queue');
+		const onQueue = queueCall?.[1] as (() => void) | undefined;
 
 		expect(onQueue).toBeTypeOf('function');
 		onQueue!();
@@ -263,7 +271,7 @@ describe('videoPlayer starts the cast watch session', () => {
 		}));
 
 		// The player attaches the bearer token only to these origins; without it the server answers 401.
-		const options = players[0]!.setup.mock.calls[0]![0] as { auth?: { mediaOrigins?: () => unknown } };
+		const options = firstSetupOptions<{ auth?: { mediaOrigins?: () => unknown } }>();
 
 		expect(options.auth?.mediaOrigins?.()).toBe('https://192-0-2-10.example.invalid:7626');
 
@@ -299,9 +307,10 @@ describe('videoPlayer starts the cast watch session', () => {
 
 		await flushPromises();
 
-		const options = players[0]!.setup.mock.calls[0]![0] as { storage?: { get: (key: string) => unknown } };
+		const options = firstSetupOptions<{ storage?: { get: (key: string) => unknown } }>();
+		const storedSubtitle = String(options.storage?.get('nmplayer-language-subtitle'));
 
-		expect(JSON.parse(String(options.storage?.get('nmplayer-language-subtitle'))))
+		expect(JSON.parse(storedSubtitle))
 			.toEqual({
 				language: 'eng',
 				type: 'full',
@@ -382,7 +391,9 @@ describe('videoPlayer starts the cast watch session', () => {
 		const { TvUiPlugin } = await import('./plugins/tv-ui');
 		const added = player.addPlugin.mock.calls;
 
-		expect(added.map(([plugin]) => plugin)).toEqual([SubtitleOverlayPlugin, OctopusPlugin, TvUiPlugin]);
+		expect(added.map(([plugin]) => plugin))
+			.toEqual([SubtitleOverlayPlugin, OctopusPlugin, TvUiPlugin]);
+
 		const options = added[1]![1]!;
 
 		expect(options.workerUrl).toBe('/js/octopus/nomercy-libass-worker.js');
@@ -425,7 +436,10 @@ describe('videoPlayer starts the cast watch session', () => {
 
 		await flushPromises();
 
-		const options = players[0]!.setup.mock.calls[0]![0] as { auth?: { bearerToken?: () => string }; accessToken?: unknown };
+		const options = firstSetupOptions<{
+			auth?: { bearerToken?: () => string };
+			accessToken?: unknown;
+		}>();
 
 		expect(options.accessToken).toBeUndefined();
 		expect(options.auth?.bearerToken?.()).toBe('placeholder-token');

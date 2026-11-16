@@ -29,6 +29,12 @@ function token(exp: number): string {
 	return `header.${btoa(JSON.stringify({ sub: 'made-up-user', exp }))}.signature`;
 }
 
+function tokenExpiringIn(seconds: number): string {
+	const now = Math.floor(Date.now() / 1000);
+
+	return token(now + seconds);
+}
+
 describe('the receiver asks for a new cast on every screen when the sign-in ends', () => {
 	const requester = vi.fn();
 	let wrapper: VueWrapper;
@@ -36,7 +42,7 @@ describe('the receiver asks for a new cast on every screen when the sign-in ends
 	/** A music cast on the now-playing screen whose token has 60 s left. */
 	function castMusic(): void {
 		authStore.setRenewalRequester(requester);
-		authStore.consumeRealHandshake(token(Math.floor(Date.now() / 1000) + 60), server);
+		authStore.consumeRealHandshake(tokenExpiringIn(60), server);
 
 		wrapper = mount(App, {
 			attachTo: document.body,
@@ -116,7 +122,9 @@ describe('the receiver asks for a new cast on every screen when the sign-in ends
 		castMusic();
 		await untilExpiry();
 
-		expect(authStore.acceptRenewedToken(token(Math.floor(Date.now() / 1000) + 600))).toBe(true);
+		const fresh = tokenExpiringIn(600);
+
+		expect(authStore.acceptRenewedToken(fresh)).toBe(true);
 		await nextTick();
 
 		expect(wrapper.find('.now-playing').exists()).toBe(true);

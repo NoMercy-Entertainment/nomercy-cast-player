@@ -152,7 +152,11 @@ describe('the D-pad moves focus row to row on screens that own their focus group
 	});
 
 	it('music list: the play button registers in the list group', async () => {
-		wrapper = mount(MusicListScreen, { attachTo: document.body, global: { plugins: [VueQueryPlugin] } });
+		wrapper = mount(MusicListScreen, {
+			attachTo: document.body,
+			global: { plugins: [VueQueryPlugin] },
+		});
+
 		await flushPromises();
 		document.body.querySelector<HTMLElement>('button[data-focusable]')!.focus();
 

@@ -15,7 +15,11 @@ vi.mock('vue-router', () => ({
 
 Element.prototype.scrollIntoView = vi.fn();
 
-const source = (relative: string): string => readFileSync(fileURLToPath(new URL(relative, import.meta.url)), 'utf8');
+function source(relative: string): string {
+	const file = fileURLToPath(new URL(relative, import.meta.url));
+
+	return readFileSync(file, 'utf8');
+}
 
 function card(id: string): Component {
 	return {

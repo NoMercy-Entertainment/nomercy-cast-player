@@ -7,7 +7,13 @@ const ROOT = process.env.ICON_SRC_DIR ?? path.resolve(__dirname, '../..');
 const RESOURCES = path.resolve(__dirname, '../../../resources');
 const source = (file: string) => fs.readFileSync(path.join(ROOT, file), 'utf8');
 
-const sprite = Object.assign({}, ...['mooooom-icons.svg', 'player-icons.svg'].map((f) => parseSprite(fs.readFileSync(path.join(RESOURCES, f), 'utf8'))));
+function spriteFile(file: string): ReturnType<typeof parseSprite> {
+	const text = fs.readFileSync(path.join(RESOURCES, file), 'utf8');
+
+	return parseSprite(text);
+}
+
+const sprite = Object.assign({}, ...['mooooom-icons.svg', 'player-icons.svg'].map(spriteFile));
 
 // Icon names KMP uses at the same spot. The web sprite names the KMP FilmMedia "film".
 const spots = {

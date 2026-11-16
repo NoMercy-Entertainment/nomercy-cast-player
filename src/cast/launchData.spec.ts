@@ -48,8 +48,10 @@ function installFakeCast() {
 	const messages = new Map<string, MessageListener[]>();
 	const sendCustomMessage = vi.fn();
 	const context = {
-		addEventListener: (type: string, fn: EventListener) => events.set(type, [...(events.get(type) ?? []), fn]),
-		addCustomMessageListener: (ns: string, fn: MessageListener) => messages.set(ns, [...(messages.get(ns) ?? []), fn]),
+		addEventListener: (type: string, fn: EventListener) =>
+			events.set(type, [...(events.get(type) ?? []), fn]),
+		addCustomMessageListener: (ns: string, fn: MessageListener) =>
+			messages.set(ns, [...(messages.get(ns) ?? []), fn]),
 		sendCustomMessage,
 		getApplicationData: () => ({
 			id: '925B4C3C',
@@ -134,7 +136,9 @@ describe('a TV the server woke opens the video from the launch message (cast-pla
 
 		bootCastReceiver(router as never);
 
-		sendFromServer(fake, { launch: JSON.stringify(serverLaunch(jwt(3600))) });
+		const launch = serverLaunch(jwt(3600));
+
+		sendFromServer(fake, { launch: JSON.stringify(launch) });
 
 		await vi.waitFor(() => expect(router.push).toHaveBeenCalled());
 		expect(authStore.accessToken.value).not.toBeNull();

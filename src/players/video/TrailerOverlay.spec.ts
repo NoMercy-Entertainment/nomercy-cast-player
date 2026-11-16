@@ -131,7 +131,7 @@ describe('the trailer controls are the tv-ui panels', () => {
 		wrapper.unmount();
 	});
 
-	it('Left pauses and opens the tv-ui scrub strip, Enter seeks to the tile and plays', async () => {
+	it('left pauses and opens the tv-ui scrub strip, Enter seeks to the tile and plays', async () => {
 		player.duration.mockReturnValue(100);
 		player.time.mockReturnValue(25);
 		player.pause.mockClear();

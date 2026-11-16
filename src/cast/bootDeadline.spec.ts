@@ -51,8 +51,11 @@ function installFakeCast(): MessageListener[] {
 /** app_config lists `servers`; a probe answers for a base in `reachable`, hangs for one in `hung`, else fails. */
 function stubNetwork(servers: object[], reachable: () => string[], hung: string[] = []): void {
 	vi.stubGlobal('fetch', vi.fn((url: string) => {
-		if (url.endsWith('/v1/app_config'))
-			return Promise.resolve(new Response(JSON.stringify({ data: { servers } }), { status: 200 }));
+		if (url.endsWith('/v1/app_config')) {
+			const config = new Response(JSON.stringify({ data: { servers } }), { status: 200 });
+
+			return Promise.resolve(config);
+		}
 
 		if (hung.some((base) => url.startsWith(base)))
 			return NeverSettles;

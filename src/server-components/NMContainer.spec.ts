@@ -51,7 +51,8 @@ async function draw(component: Component): Promise<ReturnType<typeof mount>> {
 
 describe('the Music favorites container', () => {
 	it('draws its cards in one row with their cover and title', async () => {
-		const favorites = container('favorites', [container('favorites-cards', [homeCard(1), homeCard(2), homeCard(3)])]);
+		const cards = container('favorites-cards', [homeCard(1), homeCard(2), homeCard(3)]);
+		const favorites = container('favorites', [cards]);
 
 		const wrapper = await draw(favorites);
 
@@ -70,7 +71,8 @@ describe('the Music favorites container', () => {
 	});
 
 	it('stacks a container that holds sections instead of putting them in a row', async () => {
-		const stacked = container('sections', [container('inner', [homeCard(1)])]);
+		const inner = container('inner', [homeCard(1)]);
+		const stacked = container('sections', [inner]);
 
 		const wrapper = await draw(stacked);
 

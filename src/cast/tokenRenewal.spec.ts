@@ -162,7 +162,9 @@ describe('the receiver asks the sender for a fresh token before it expires', () 
 	});
 
 	it('asks for a cast again when a request fails with 401 while the token is still valid', async () => {
-		expect(authStore.consumeRealHandshake(token('made-up-user', nowSeconds() + 600), server)).toBe(true);
+		const valid = token('made-up-user', nowSeconds() + 600);
+
+		expect(authStore.consumeRealHandshake(valid, server)).toBe(true);
 		fromSender({});
 
 		await authStore.forceRefresh();

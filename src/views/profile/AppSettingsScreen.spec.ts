@@ -35,8 +35,12 @@ vi.mock('@/lib/diagnostics/sender', () => ({
 // jsdom has no layout, so it has no scrollIntoView; focusing a row calls it.
 Element.prototype.scrollIntoView = vi.fn();
 
+function mountSettings(): ReturnType<typeof mount> {
+	return mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } });
+}
+
 function screen(): string {
-	return mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }).text();
+	return mountSettings().text();
 }
 
 describe('the crash-report row on the settings screen', () => {
@@ -49,14 +53,14 @@ describe('the crash-report row on the settings screen', () => {
 	}
 
 	it('exists and shows off by default', () => {
-		const r = row(mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }));
+		const r = row(mountSettings());
 
 		expect(r).toBeDefined();
 		expect(r!.find('.toggle').classes()).not.toContain('on');
 	});
 
 	it('says what a report holds and where it goes', () => {
-		const text = row(mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }))!.text();
+		const text = row(mountSettings())!.text();
 
 		for (const item of ['device id', 'device model', 'CPU type', 'memory and thread facts', 'app version', 'stack trace', 'nomercy.tv']) {
 			expect(text).toContain(item);
@@ -64,7 +68,7 @@ describe('the crash-report row on the settings screen', () => {
 	});
 
 	it('flips the setting on a click and shows it on', async () => {
-		const wrapper = mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } });
+		const wrapper = mountSettings();
 
 		await row(wrapper)!.trigger('click');
 
@@ -73,7 +77,7 @@ describe('the crash-report row on the settings screen', () => {
 	});
 
 	it('flips the setting on OK or Enter (the focus entry action)', async () => {
-		const wrapper = mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } });
+		const wrapper = mountSettings();
 		const r = row(wrapper)!;
 
 		await r.trigger('keydown', { key: 'Enter' });

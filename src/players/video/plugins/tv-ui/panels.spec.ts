@@ -199,13 +199,15 @@ function attached(root: HTMLElement): () => void {
 	return () => root.remove();
 }
 
-const episode = (overrides: Partial<UiItem> = {}) => ({
-	show: 'Show',
-	title: 'Pilot',
-	season: 1,
-	episode: 2,
-	...overrides,
-}) as const satisfies UiItem;
+function episode(overrides: Partial<UiItem> = {}) {
+	return ({
+		show: 'Show',
+		title: 'Pilot',
+		season: 1,
+		episode: 2,
+		...overrides,
+	}) as const satisfies UiItem;
+}
 
 describe('top bar (TVTopBar.kt)', () => {
 	const noop = () => undefined;
@@ -291,8 +293,9 @@ describe('menu item (TvSelectableMenuItem.kt)', () => {
 		});
 
 		root.querySelectorAll<HTMLElement>('.tvui-row').forEach((node) => {
-			if (node.textContent?.includes('Dutch'))
+			if (node.textContent?.includes('Dutch')) {
 				node.click();
+			}
 		});
 
 		expect(picked).toEqual(['Dutch']);
@@ -464,7 +467,8 @@ describe('error overlay (ErrorOverlay.kt)', () => {
 
 	it('r02 Retry and Exit call their handlers', () => {
 		const calls: string[] = [];
-		const dialog = errorDialog('boom', false, () => calls.push('retry'), () => calls.push('exit'));
+		const dialog = errorDialog('boom', false, () => calls.push('retry'), () =>
+			calls.push('exit'));
 
 		dialog.root.querySelectorAll<HTMLElement>('.tvui-button').forEach((button) => button.click());
 		expect(calls).toEqual(['retry', 'exit']);

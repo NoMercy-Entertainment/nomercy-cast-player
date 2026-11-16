@@ -177,7 +177,10 @@ describe('the music page never ends blank', () => {
 });
 
 describe('a page opened by the sender gets its first focus', () => {
-	async function mountAttached(data: Component[] | undefined, isLoading: boolean): Promise<ReturnType<typeof mount>> {
+	async function mountAttached(
+		data: Component[] | undefined,
+		isLoading: boolean,
+	): Promise<ReturnType<typeof mount>> {
 		const wrapper = mount(HeroRailsView, {
 			attachTo: document.body,
 			props: {

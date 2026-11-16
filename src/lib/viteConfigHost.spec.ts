@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const config = readFileSync(join(process.cwd(), 'vite.config.ts'), 'utf8');
+const configPath = join(process.cwd(), 'vite.config.ts');
+const config = readFileSync(configPath, 'utf8');
 
 describe('the dev proxy in vite.config.ts (AUD-0006)', () => {
 	it('holds no server host name, so a public repo names nobody\'s server', () => {

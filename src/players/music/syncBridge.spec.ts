@@ -16,7 +16,9 @@ function fakeEngine() {
 			handlers.set(event, [...(handlers.get(event) ?? []), handler]);
 		},
 		off(event: string, handler?: (...args: unknown[]) => void) {
-			handlers.set(event, (handlers.get(event) ?? []).filter((entry) => handler && entry !== handler));
+			const kept = (handlers.get(event) ?? []).filter((entry) => handler && entry !== handler);
+
+			handlers.set(event, kept);
 		},
 		emit(event: string, payload?: unknown) {
 			for (const handler of [...(handlers.get(event) ?? [])]) {

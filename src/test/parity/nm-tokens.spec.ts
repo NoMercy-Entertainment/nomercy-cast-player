@@ -35,8 +35,9 @@ describe('the receiver reads the NM design tokens', () => {
 
 		for (const file of sourceFiles(path.join(ROOT, 'src'))) {
 			for (const m of fs.readFileSync(file, 'utf8').matchAll(/var\((--nm-[\w-]+)/g)) {
-				if (m[1])
+				if (m[1]) {
 					used.add(m[1]);
+				}
 			}
 		}
 
@@ -69,7 +70,8 @@ describe('no raw hex color outside the token files', () => {
 	}
 
 	it('check:css passes over src', () => {
-		const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cast-css-'));
+		const prefix = path.join(os.tmpdir(), 'cast-css-');
+		const dir = fs.mkdtempSync(prefix);
 		const css = path.join(dir, 'empty.css');
 
 		fs.writeFileSync(css, ':root{--a:1}');

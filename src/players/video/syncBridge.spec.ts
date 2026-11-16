@@ -178,11 +178,9 @@ describe('the sync bridge reads the 2.x payloads', () => {
 			expect(caught()).toHaveLength(1);
 			expect(caught()[0]?.label).toContain(where);
 
-			expect(playbackStore.video.playing.value).toBe(event === 'play'
-				? true
-				: event === 'pause'
-					? false
-					: before);
+			const optimistic = new Map<string, boolean>([['play', true], ['pause', false]]);
+
+			expect(playbackStore.video.playing.value).toBe(optimistic.get(event) ?? before);
 		});
 
 		it('records nothing for a command the server accepted', async () => {

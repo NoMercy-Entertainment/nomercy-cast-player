@@ -49,8 +49,11 @@ function installFakeCast(): MessageListener[] {
 /** app_config lists both servers; a probe answers only for a server in `reachable`. */
 function stubNetwork(reachable: string[]): void {
 	vi.stubGlobal('fetch', vi.fn(async (url: string) => {
-		if (url.endsWith('/v1/app_config'))
-			return new Response(JSON.stringify({ data: { servers: [FirstServer, SecondServer] } }), { status: 200 });
+		if (url.endsWith('/v1/app_config')) {
+			const body = { data: { servers: [FirstServer, SecondServer] } };
+
+			return new Response(JSON.stringify(body), { status: 200 });
+		}
 
 		if (reachable.some((base) => url.startsWith(base)))
 			return new Response('{}', { status: 200 });
@@ -60,7 +63,12 @@ function stubNetwork(reachable: string[]): void {
 }
 
 /** Plays the phone: one navigate message, then the route the receiver opened. */
-async function castFromPhone(server: { server_id?: string; server_url?: string }): Promise<ReturnType<typeof vi.fn>> {
+interface PhoneServer {
+	server_id?: string;
+	server_url?: string;
+}
+
+async function castFromPhone(server: PhoneServer): Promise<ReturnType<typeof vi.fn>> {
 	const push = vi.fn(async () => {});
 	const listeners = installFakeCast();
 

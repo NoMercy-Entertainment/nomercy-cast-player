@@ -4,6 +4,11 @@ import { ALL_PLAYER_EVENTS, attachEngineDiagnostics } from './playerEvents';
 import type { DiagnosticsEngine, EventPayload } from './playerEvents';
 import { diagnosticsRing } from './sink';
 
+interface FakeEngine {
+	engine: DiagnosticsEngine;
+	emit: (event: string, payload?: EventPayload) => void;
+}
+
 function fakeEngine() {
 	const handlers = new Map<string, Array<(...args: EventPayload[]) => void>>();
 
@@ -30,7 +35,7 @@ function fakeEngine() {
 				handler(payload);
 			}
 		},
-	} as const satisfies { engine: DiagnosticsEngine; emit: (event: string, payload?: EventPayload) => void };
+	} as const satisfies FakeEngine;
 }
 
 describe('the receiver subscribes to every engine event', () => {
@@ -43,7 +48,9 @@ describe('the receiver subscribes to every engine event', () => {
 		const unsubs: Array<() => void> = [];
 
 		// `time` is the per-frame clock and is the one deliberate exclusion.
-		expect(attachEngineDiagnostics(engine, () => undefined, unsubs)).toBe(ALL_PLAYER_EVENTS.length - 1);
+		const subscribed = attachEngineDiagnostics(engine, () => undefined, unsubs);
+
+		expect(subscribed).toBe(ALL_PLAYER_EVENTS.length - 1);
 	});
 
 	it('records seams the old four-event list never carried', () => {

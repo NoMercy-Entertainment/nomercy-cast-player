@@ -32,7 +32,8 @@ describe('moooomIcons plugin', () => {
 
 	it('includes only the icons the sources name, also inside a ternary', () => {
 		const icons = parseSprite(miniSprite);
-		const used = collectIconNames(['const x = on ? \'beta\' : \'delta\';'], new Set(Object.keys(icons)));
+		const known = new Set(Object.keys(icons));
+		const used = collectIconNames(['const x = on ? \'beta\' : \'delta\';'], known);
 
 		expect([...used]).toEqual(['beta']);
 		expect(usedIconModule(icons, used)).not.toContain('"alpha"');
