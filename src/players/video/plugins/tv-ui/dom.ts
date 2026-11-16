@@ -2,13 +2,17 @@ import { h, render } from 'vue';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import i18next from '@/i18n/i18next';
 
-export type IconName = 'play' | 'pause' | 'settings' | 'next' | 'check' | 'chevronLeft' | 'chevronRight' | 'globe' | 'playlist1' | 'volumeMuted' | 'volumeOne' | 'volumeTwo' | 'volumeThree' | 'rewind' | 'translate';
+export type IconName = 'play' | 'pause' | 'settings' | 'next' | 'check' | 'chevronLeft' |
+	'chevronRight' | 'globe' | 'playlist1' | 'rewind' | 'translate' | 'alertTriangle' |
+	'volumeMuted' | 'volumeOne' | 'volumeTwo' | 'volumeThree';
 
-export function t(key: string, vars?: Record<string, unknown>): string {
+export type Child = Node | string | null | false;
+
+export function t(key: string, vars?: Record<string, string | number>): string {
 	return i18next.t(`tvui.${key}`, vars);
 }
 
-export function el(tag: string, className: string, ...children: Array<Node | string | null | false>): HTMLElement {
+export function el(tag: string, className: string, ...children: Child[]): HTMLElement {
 	const node = document.createElement(tag);
 
 	node.className = className;
@@ -53,11 +57,24 @@ export function formatTime(seconds: number): string {
 
 export type Direction = 'up' | 'down' | 'left' | 'right';
 
+const DISTANCE_ALONG = {
+	up: (_dx: number, dy: number) => -dy,
+	down: (_dx: number, dy: number) => dy,
+	left: (dx: number) => -dx,
+	right: (dx: number) => dx,
+} as const satisfies Record<Direction, (dx: number, dy: number) => number>;
+
+function enabledFocusables(root: HTMLElement): HTMLElement[] {
+	const all = Array.from(root.querySelectorAll<HTMLElement>('[data-focusable]'));
+
+	return all.filter((node) => !node.hasAttribute('aria-disabled'));
+}
+
 // Directional focus like Compose's moveFocus: the nearest focusable in that direction.
 export function moveFocus(root: HTMLElement, direction: Direction): boolean {
-	const nodes = Array.from(root.querySelectorAll<HTMLElement>('[data-focusable]')).filter((node) => !node.hasAttribute('aria-disabled'));
-	const current = document.activeElement as HTMLElement | null;
-	const from = current && nodes.includes(current)
+	const nodes = enabledFocusables(root);
+	const current = document.activeElement;
+	const from = current instanceof HTMLElement && nodes.includes(current)
 		? current
 		: null;
 
@@ -79,13 +96,7 @@ export function moveFocus(root: HTMLElement, direction: Direction): boolean {
 		const b = node.getBoundingClientRect();
 		const dx = b.left + b.width / 2 - ax;
 		const dy = b.top + b.height / 2 - ay;
-		const along = direction === 'up'
-			? -dy
-			: direction === 'down'
-				? dy
-				: direction === 'left'
-					? -dx
-					: dx;
+		const along = DISTANCE_ALONG[direction](dx, dy);
 
 		if (along <= 0) continue;
 

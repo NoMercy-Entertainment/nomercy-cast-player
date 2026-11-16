@@ -8,6 +8,7 @@ export interface SubtitleCandidate {
 	releaseName?: string;
 	fileName?: string;
 	downloads: number;
+	rating: number;
 	format: string;
 	hearingImpaired: boolean;
 }
@@ -33,6 +34,7 @@ interface RawCandidate {
 	release_name?: string | null;
 	file_name?: string | null;
 	downloads?: number;
+	rating?: number;
 	format: string;
 	hearing_impaired?: boolean;
 }
@@ -61,11 +63,14 @@ export function searchTarget(item: PlayingItem | undefined): SearchTarget | null
 	};
 }
 
-export function isRateLimited(error: unknown): boolean {
+export function isRateLimited(error: Error): boolean {
 	return error instanceof HttpError && error.status === 429;
 }
 
-export async function searchSubtitles(target: SearchTarget, language: string): Promise<SubtitleCandidate[]> {
+export async function searchSubtitles(
+	target: SearchTarget,
+	language: string,
+): Promise<SubtitleCandidate[]> {
 	const query = new URLSearchParams({ type: target.type, id: String(target.id) });
 
 	if (target.videoFileId) {
@@ -73,7 +78,8 @@ export async function searchSubtitles(target: SearchTarget, language: string): P
 	}
 
 	query.set('language', language);
-	const body = await apiFetch<{ data?: RawCandidate[] }>({ path: `/api/v1/subtitles/search?${query.toString()}`, method: 'GET' });
+	const path = `/api/v1/subtitles/search?${query.toString()}`;
+	const body = await apiFetch<{ data?: RawCandidate[] }>({ path, method: 'GET' });
 
 	return (body.data ?? []).map((raw) => ({
 		id: raw.id,
@@ -83,12 +89,16 @@ export async function searchSubtitles(target: SearchTarget, language: string): P
 		releaseName: raw.release_name ?? undefined,
 		fileName: raw.file_name ?? undefined,
 		downloads: raw.downloads ?? 0,
+		rating: raw.rating ?? 0,
 		format: raw.format,
 		hearingImpaired: raw.hearing_impaired ?? false,
 	}));
 }
 
-export async function downloadSubtitle(target: SearchTarget, candidate: SubtitleCandidate): Promise<DownloadedSubtitle> {
+export async function downloadSubtitle(
+	target: SearchTarget,
+	candidate: SubtitleCandidate,
+): Promise<DownloadedSubtitle> {
 	const body = await apiFetch<{ data: DownloadedSubtitle }>({
 		path: '/api/v1/subtitles/download',
 		method: 'POST',

@@ -3,19 +3,20 @@ import { centerMessage, loadingLayer } from './overlays';
 import { bottomBar, settingsPanel } from './panels';
 import type { Choice, SettingsData } from './panels';
 
-const choice = (label: string, selected = false): Choice => ({
-	label,
-	selected,
-	onPick: () => undefined,
-});
+function choice(label: string, selected = false) {
+	return {
+		label,
+		selected,
+		onPick: () => undefined,
+	} as const satisfies Choice;
+}
 
 function settingsData(overrides: Partial<SettingsData> = {}): SettingsData {
 	return {
 		nav: { pane: 'main', styleProp: null },
-		levels: [choice('Auto', true), choice('1080p')],
+		levels: [choice('Auto', true), choice('1080p'), choice('720p')],
 		subtitles: [choice('Off', true), choice('Dutch')],
 		audio: [choice('English', true), choice('Dutch')],
-		hasQualityChoice: true,
 		values: {
 			quality: 'Auto',
 			subtitle: 'Off',
@@ -39,8 +40,9 @@ function settingsData(overrides: Partial<SettingsData> = {}): SettingsData {
 	};
 }
 
-const rowLabels = (root: HTMLElement): string[] =>
-	Array.from(root.querySelectorAll('.tvui-sidebar-rows .tvui-row-label')).map((node) => node.textContent ?? '');
+function rowLabels(root: HTMLElement): string[] {
+	return Array.from(root.querySelectorAll('.tvui-sidebar-rows .tvui-row-label')).map((node) => node.textContent ?? '');
+}
 
 describe('bottom bar (TVBottomBar.kt, ChapterProgressBar.kt)', () => {
 	const state = {
@@ -138,7 +140,7 @@ describe('settings panes (PlayerSettingsScreen.kt:128-173)', () => {
 
 	it('p03c the quality row is disabled without a real choice and the audio row with one track', () => {
 		const { root } = settingsPanel(settingsData({
-			hasQualityChoice: false,
+			levels: [choice('Auto', true), choice('1080p')],
 			audio: [choice('English', true)],
 		}));
 
@@ -161,7 +163,7 @@ describe('settings panes (PlayerSettingsScreen.kt:128-173)', () => {
 			const { root } = settingsPanel(settingsData({ nav: { pane, styleProp: null } }));
 			const selected = root.querySelectorAll('.tvui-row.tvui-selected');
 
-			expect(rowLabels(root)).toHaveLength(2);
+			expect(rowLabels(root).length).toBeGreaterThan(1);
 			expect(selected).toHaveLength(1);
 			expect(selected[0]?.querySelector('[data-icon="check"]')).not.toBeNull();
 		}

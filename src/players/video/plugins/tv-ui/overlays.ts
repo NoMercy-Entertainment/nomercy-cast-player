@@ -37,7 +37,10 @@ export function backdropLayer(image: string): HTMLElement {
 
 // CastLoadingOverlay.kt:39-90: the item image under a dark gradient, a spinner and two lines.
 export function loadingLayer(image: string | null): HTMLElement {
-	const node = el('div', 'tvui-loading', layer('tvui-loading-art', image), el('div', 'tvui-spinner'), el('div', 'tvui-loading-title', t('player_loading')), el('div', 'tvui-loading-subtitle', t('player_preparing')));
+	const art = layer('tvui-loading-art', image);
+	const title = el('div', 'tvui-loading-title', t('player_loading'));
+	const subtitle = el('div', 'tvui-loading-subtitle', t('player_preparing'));
+	const node = el('div', 'tvui-loading', art, el('div', 'tvui-spinner'), title, subtitle);
 
 	node.setAttribute('role', 'status');
 

@@ -58,6 +58,7 @@
 		"subtitle_search_download_success": "Subtitle added",
 		"subtitle_search_hearing_impaired": "Hearing impaired",
 		"subtitle_search_downloads_count": "{{a}} downloads",
+		"subtitle_search_rating": "Rating {{a}}",
 		"player_backdrop": "Player backdrop",
 		"player_preparing": "Preparing playback",
 		"skip_intro": "Skip intro",

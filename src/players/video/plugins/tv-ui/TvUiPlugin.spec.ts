@@ -4,7 +4,7 @@ import { TvUiPlugin } from './index';
 import type { TvUiOptions } from './index';
 
 vi.mock('@/lib/http/client', () => ({
-	apiFetch: vi.fn(),
+	apiFetch: vi.fn<(options: { path: string; method: string }) => Promise<unknown>>(),
 	HttpError: class HttpError extends Error {
 		constructor(message: string, public readonly status: number, public readonly body: string) {
 			super(message);
@@ -21,7 +21,11 @@ interface Item {
 	video_id?: string;
 	video_type?: string;
 	tmdb_id?: number;
-	skip_segments?: Array<{ type: string; credits_start: number; content_end: number }>;
+	skip_segments?: Array<{
+		type: string;
+		credits_start: number;
+		content_end: number;
+	}>;
 	season?: number;
 	episode?: number;
 }
@@ -47,7 +51,12 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 
 	calls: string[] = [];
 	seeks: number[] = [];
-	added: unknown[] = [];
+	added: Array<{
+		url: string;
+		language: string;
+		label?: string;
+	}> = [];
+
 	playState = (): string => this.state;
 	time = (value?: number): number => {
 		if (value !== undefined) {
@@ -76,7 +85,11 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 
 	restart = vi.fn<() => void>();
 	next = vi.fn<() => void>();
-	addSubtitleTrack = (track: unknown): unknown => {
+	addSubtitleTrack = (track: {
+		url: string;
+		language: string;
+		label?: string;
+	}) => {
 		this.added.push(track);
 
 		return track;
@@ -317,6 +330,8 @@ describe('subtitle search dialog (SubtitleSearchDialog.kt:60-300)', () => {
 		await vi.advanceTimersByTimeAsync(0);
 		expect(vi.mocked(apiFetch).mock.calls[1]?.[0]).toMatchObject({ method: 'POST', path: '/api/v1/subtitles/download' });
 		expect(player.added).toHaveLength(1);
+		expect(player.added[0]).toMatchObject({ language: 'nl', label: 'Dutch' });
+		expect(player.added[0]?.url.endsWith('/s/nl.srt')).toBe(true);
 		expect(root.textContent).toContain('Subtitle added');
 	});
 
@@ -350,10 +365,12 @@ describe('subtitle search statuses (SubtitleSearchDialog.kt:133-208)', () => {
 		const { root } = setup({ skipPreScreen: false });
 
 		Array.from(root.querySelectorAll<HTMLElement>('.tvui-pre-buttons button'))
-			.find((button) => button.textContent?.includes('Audio'))!.click();
+			.find((button) => button.textContent?.includes('Audio'))!
+			.click();
 
 		Array.from(root.querySelectorAll<HTMLElement>('.tvui-row'))
-			.find((row) => row.textContent?.includes('Search subtitles online'))!.click();
+			.find((row) => row.textContent?.includes('Search subtitles online'))!
+			.click();
 
 		await vi.advanceTimersByTimeAsync(0);
 
@@ -461,8 +478,10 @@ describe('quality choice (PlayerSettingsScreen.kt mainRows, LanguageDialog.kt:83
 		const { player, root } = setup({ skipPreScreen: false });
 
 		player.levels = levels;
+
 		Array.from(root.querySelectorAll<HTMLElement>('.tvui-pre-buttons button'))
-			.find((button) => button.textContent?.includes('Audio'))!.click();
+			.find((button) => button.textContent?.includes('Audio'))!
+			.click();
 
 		return Array.from(root.querySelectorAll('.tvui-column-title')).map((title) => title.textContent ?? '');
 	}

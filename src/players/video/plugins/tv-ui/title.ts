@@ -9,7 +9,7 @@ export interface TitledItem {
 	videoType?: string;
 }
 
-export type Translate = (key: string, vars?: Record<string, unknown>) => string;
+export type Translate = (key: string, vars?: Record<string, string | number>) => string;
 
 function nonSeasonal(item: TitledItem): boolean {
 	const kind = [item.playlistType, item.videoType];
@@ -36,13 +36,17 @@ export function episodeLabel(item: TitledItem, t: Translate): string | null {
 	return null;
 }
 
-export function titleAndSubtitle(item: TitledItem | undefined, t: Translate): { title: string; subtitle: string } {
+export function titleAndSubtitle(
+	item: TitledItem | undefined,
+	t: Translate,
+): { title: string; subtitle: string } {
 	const loading = t('player_loading');
+	const placeholders = [loading, loading.replace(TRAILING_ELLIPSIS, '')].map((text) => text.toLowerCase());
 
 	const real = (text?: string): string | undefined => {
 		const value = text?.trim();
 
-		return value && value.toLowerCase() !== loading.toLowerCase() && value.toLowerCase() !== loading.replace(TRAILING_ELLIPSIS, '').toLowerCase()
+		return value && !placeholders.includes(value.toLowerCase())
 			? value
 			: undefined;
 	};

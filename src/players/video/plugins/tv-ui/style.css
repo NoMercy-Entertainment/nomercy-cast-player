@@ -372,6 +372,25 @@
 	font-size: 14px;
 	opacity: 0.7;
 }
+.tvui-result-meta {
+	font-size: 12px;
+	opacity: 0.5;
+}
+.tvui-search-title {
+	font-size: 20px;
+	font-weight: 600;
+}
+.tvui-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	opacity: 0.85;
+}
+.tvui-status .tvui-spinner {
+	width: 20px;
+	height: 20px;
+	border-width: 2px;
+}
 .tvui-message-detail,
 .tvui-message-body {
 	opacity: 0.8;

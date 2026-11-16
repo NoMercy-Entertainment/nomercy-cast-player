@@ -58,6 +58,7 @@
 		"subtitle_search_download_success": "Ondertitel toegevoegd",
 		"subtitle_search_hearing_impaired": "Slechthorend",
 		"subtitle_search_downloads_count": "{{a}} keer gedownload",
+		"subtitle_search_rating": "Waardering {{a}}",
 		"player_backdrop": "Achtergrond van de speler",
 		"player_preparing": "Afspelen voorbereiden",
 		"skip_intro": "Intro overslaan",

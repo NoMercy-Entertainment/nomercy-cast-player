@@ -1,4 +1,5 @@
 import { LocalStorageBackend, Plugin } from '@nomercy-entertainment/nomercy-player-core';
+import type { SidecarSubtitleInput } from '@nomercy-entertainment/nomercy-player-core';
 import type { NMVideoPlayer, SubtitleStyle } from '@nomercy-entertainment/nomercy-video-player';
 import { StorageBackedSubtitleStyleStore, VttChapterSource, VttSpriteThumbnailSource } from '@nomercy-entertainment/nomercy-video-player';
 import i18next from '@/i18n/i18next';
@@ -37,19 +38,36 @@ export interface TvUiEvents {
 	exit: undefined;
 }
 
+interface SkipChapter {
+	type?: string;
+	endTime?: number;
+}
+
+type ChapterBusEvent = 'chapter-skip-available' | 'chapter-skip-clear';
+
+// The chapter plugin emits these two; the library's event map does not list them.
+interface ChapterBus {
+	on: (event: ChapterBusEvent, fn: (chapter?: SkipChapter | null) => void) => void;
+	off: (event: ChapterBusEvent, fn: (chapter?: SkipChapter | null) => void) => void;
+}
+
+function hasChapterBus(player: NMVideoPlayer): player is NMVideoPlayer & ChapterBus {
+	return typeof player.on === 'function' && typeof player.off === 'function';
+}
+
 interface Engine {
-	play: () => unknown;
-	pause: () => unknown;
-	restart: () => unknown;
-	next?: () => unknown;
+	play: () => void;
+	pause: () => void;
+	restart: () => void;
+	next?: () => void;
 	item: (id?: number | string) => UiItem | undefined;
-	queue: () => UiItem[];
+	queue: () => readonly UiItem[];
 	index?: () => number;
 	time: (seconds?: number) => number;
 	duration: () => number;
 	chapters?: () => Array<{ start: number; end?: number }>;
 	audioTracks?: () => Array<{ label: string }>;
-	audioTrack?: (index?: number) => { index: number } | undefined;
+	audioTrack?: (index?: number) => { index: number } | null | undefined;
 	subtitles?: () => Array<{ label: string }>;
 	subtitle?: (index?: number | null) => { index: number } | null | undefined;
 	qualityLevels?: () => Array<{ index: number; label: string }>;
@@ -59,13 +77,7 @@ interface Engine {
 	volume?: () => number;
 	volumeState?: () => string;
 	buffered?: () => number;
-	addSubtitleTrack?: (track: {
-		id: string;
-		kind: 'subtitles';
-		label: string;
-		language: string;
-		file: string;
-	}) => unknown;
+	addSubtitleTrack?: (track: SidecarSubtitleInput) => void;
 	subtitleStyle?: (patch?: Partial<SubtitleStyle>) => Partial<SubtitleStyle> | undefined;
 }
 
@@ -89,6 +101,35 @@ const DEFAULT_STYLE = {
 const AUTO_HIDE_MS = 5000;
 const WATCHDOG_MS = 500;
 const VOLUME_MS = 2000;
+const SEEK_STEP_SECONDS = 10;
+const NAMED_STYLE_CHOICES = {
+	edgeStyle: {
+		field: 'edgeStyle',
+		group: 'edge',
+		names: ['none', 'depressed', 'drop_shadow', 'raised', 'uniform', 'text_shadow'],
+	},
+	textColor: {
+		field: 'fontColor',
+		group: 'color',
+		names: [
+			'white',
+			'black',
+			'red',
+			'green',
+			'blue',
+			'yellow',
+			'magenta',
+			'cyan',
+			'orange',
+			'purple',
+			'gray',
+		],
+	},
+} as const satisfies Record<'edgeStyle' | 'textColor', {
+	field: 'edgeStyle' | 'fontColor';
+	group: string;
+	names: readonly string[];
+}>;
 const ARROWS: Partial<Record<KeyName, Direction>> = {
 	left: 'left',
 	right: 'right',
@@ -133,7 +174,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	private styleStore = new StorageBackedSubtitleStyleStore(new LocalStorageBackend());
 
 	private get engine(): Engine {
-		return this.player as unknown as Engine;
+		return this.player;
 	}
 
 	private playing(): boolean {
@@ -180,29 +221,16 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			this.updateBar();
 		});
 
-		const bus = this.player as unknown as { on: (event: string, fn: (data?: unknown) => void) => void; off: (event: string, fn: (data?: unknown) => void) => void };
+		if (hasChapterBus(this.player)) {
+			this.listenChapters(this.player);
+		}
 
-		const listen = (event: string, fn: (data?: unknown) => void): void => {
-			bus.on(event, fn);
-			this.lifecycle.addCleanup(() => bus.off(event, fn));
-		};
-
-		listen('chapter-skip-available', (chapter) => {
-			this.skipChapter = (chapter as { type?: string; endTime?: number } | null) ?? null;
+		this.on('display-message', (data) => {
+			this.message = data.text;
 			this.refresh();
 		});
 
-		listen('chapter-skip-clear', () => {
-			this.skipChapter = null;
-			this.refresh();
-		});
-
-		listen('display-message', (data) => {
-			this.message = (data as { text?: string } | undefined)?.text ?? null;
-			this.refresh();
-		});
-
-		listen('remove-message', () => {
+		this.on('remove-message', () => {
 			this.message = null;
 			this.refresh();
 		});
@@ -215,7 +243,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			this.nextOffered = false;
 			this.advancedItem = null;
 			this.loadThumbnails();
-			void this.chapterSource.load(this.engine.item() as never);
+			this.loadChapters();
 			this.refresh();
 		});
 
@@ -229,6 +257,26 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		});
 
 		this.refresh();
+	}
+
+	private listenChapters(bus: ChapterBus): void {
+		const available = (chapter?: SkipChapter | null): void => {
+			this.skipChapter = chapter ?? null;
+			this.refresh();
+		};
+
+		const cleared = (): void => {
+			this.skipChapter = null;
+			this.refresh();
+		};
+
+		bus.on('chapter-skip-available', available);
+		bus.on('chapter-skip-clear', cleared);
+
+		this.lifecycle.addCleanup(() => {
+			bus.off('chapter-skip-available', available);
+			bus.off('chapter-skip-clear', cleared);
+		});
 	}
 
 	showPreScreen(): void {
@@ -307,8 +355,12 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		this.emit('exit');
 	}
 
+	private dialogOpen(): boolean {
+		return this.episodeOpen || this.languageOpen || this.searchOpen || this.settings !== null;
+	}
+
 	private blockingUi(): boolean {
-		return this.preScreenVisible || this.episodeOpen || this.languageOpen || this.searchOpen || this.settings !== null;
+		return this.preScreenVisible || this.dialogOpen();
 	}
 
 	private onPlayState(playing: boolean): void {
@@ -365,10 +417,9 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		if (this.seekMode)
 			return this.seekKey(key);
 
-		const dialogOpen = this.episodeOpen || this.languageOpen || this.searchOpen || this.settings !== null;
 		const route = routeRootKey({
 			preScreen: this.preScreenVisible,
-			dialogOpen,
+			dialogOpen: this.dialogOpen(),
 			seekMode: false,
 			controlsVisible: this.controlsVisible,
 			topBarFocused: Boolean(document.activeElement?.closest('.tvui-top-bar')),
@@ -430,7 +481,6 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 	private shared(key: KeyName): boolean {
 		const action = sharedKeyAction(key);
-		const starts = this.chapterList().map((chapter) => chapter.start);
 
 		switch (action) {
 			case 'toggleMute':
@@ -438,16 +488,23 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 				return true;
 			case 'seekBack':
-				this.engine.time(chapterSeekTarget(starts, this.engine.time(), false, 10));
+				this.seekByChapter(false);
 
 				return true;
 			case 'seekForward':
-				this.engine.time(chapterSeekTarget(starts, this.engine.time(), true, 10));
+				this.seekByChapter(true);
 
 				return true;
 			default:
 				return false;
 		}
+	}
+
+	private seekByChapter(forward: boolean): void {
+		const starts = this.chapterList().map((chapter) => chapter.start);
+		const target = chapterSeekTarget(starts, this.engine.time(), forward, SEEK_STEP_SECONDS);
+
+		this.engine.time(target);
 	}
 
 	private enterSeek(): void {
@@ -522,8 +579,12 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	private updateBar(): void {
 		if (!this.bar || !this.controlsVisible) return;
 
-		const chapters = this.chapterList().map((chapter, index, all) => ({ start: chapter.start, end: chapter.end ?? all[index + 1]?.start ?? this.engine.duration() }));
 		const duration = this.engine.duration();
+		const chapters = this.chapterList().map((chapter, index, all) => ({
+			start: chapter.start,
+			end: chapter.end ?? all[index + 1]?.start ?? duration,
+		}));
+
 		const buffered = duration > 0
 			? (this.engine.buffered?.() ?? 0) / duration * 100
 			: 0;
@@ -543,7 +604,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 	// TVOverlayPlugin.ts:186-214: offer the next episode inside the credits, advance at the content end.
 	private updateNextEpisode(): void {
-		const item = this.engine.item() as (UiItem & { skip_segments?: unknown }) | undefined;
+		const item = this.engine.item();
 		const items = this.engine.queue();
 		const index = this.engine.index?.() ?? 0;
 		const hasNext = Boolean(item && index < items.length - 1 && this.engine.next);
@@ -579,7 +640,12 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			time: this.engine.time(),
 		};
 
-		return { backdrop: showBackdrop(state), loading: showLoading({ ...state, playing: this.playing() }) } as const satisfies { backdrop: boolean; loading: boolean };
+		const loading = showLoading({ ...state, playing: this.playing() });
+
+		return { backdrop: showBackdrop(state), loading } as const satisfies {
+			backdrop: boolean;
+			loading: boolean;
+		};
 	}
 
 	// TvUiPlugin.kt:447-485: BACK and the D-pad need focus inside the player.
@@ -612,15 +678,25 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		this.spriteBlob = null;
 	}
 
+	private loadChapters(): void {
+		const item = this.engine.item();
+
+		if (item?.id === undefined) return;
+
+		void this.chapterSource.load({ ...item, id: item.id });
+	}
+
 	private loadThumbnails(): void {
 		this.thumbsReady = false;
-		const item = this.engine.item() as { tracks?: Array<{ kind?: string; file?: string }> } | undefined;
+		const item = this.engine.item();
 		const file = item?.tracks?.find((track) => track.kind === 'thumbnails')?.file;
 		const base = authStore.serverUrl.value;
 
-		if (!file || !base) return;
+		if (item?.id === undefined || !file || !base) return;
 
-		void this.thumbs.load({ previewSpriteUrl: new URL(file, base).href } as never).then((ready) => {
+		const source = { id: item.id, previewSpriteUrl: new URL(file, base).href };
+
+		void this.thumbs.load(source).then((ready) => {
 			this.thumbsReady = ready;
 		});
 	}
@@ -648,8 +724,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	};
 
 	private runSearch(): void {
-		const item = this.engine.item();
-		const target = searchTarget(item as never);
+		const target = searchTarget(this.engine.item());
 
 		this.search = { status: 'loading', results: [] };
 
@@ -660,18 +735,22 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		}
 
 		void searchSubtitles(target, i18next.language || 'en').then((results) => {
-			this.search = { status: results.length > 0
+			const status = results.length > 0
 				? 'results'
-				: 'empty', results };
-		}).catch((error: unknown) => {
-			this.search = { status: isRateLimited(error)
+				: 'empty';
+
+			this.search = { status, results };
+		}).catch((error: Error) => {
+			const status = isRateLimited(error)
 				? 'rateLimited'
-				: 'error', results: [] };
+				: 'error';
+
+			this.search = { status, results: [] };
 		}).finally(() => this.refresh());
 	}
 
 	private pickSubtitle(candidate: SubtitleCandidate): void {
-		const target = searchTarget(this.engine.item() as never);
+		const target = searchTarget(this.engine.item());
 
 		if (!target || !this.search) return;
 
@@ -681,21 +760,30 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		this.refresh();
 
 		void downloadSubtitle(target, candidate).then((track) => {
+			const base = authStore.serverUrl.value ?? window.location.href;
+
 			this.engine.addSubtitleTrack?.({
-				id: track.file,
-				kind: 'subtitles',
+				url: new URL(track.file, base).href,
 				label: candidate.languageName || track.label,
 				language: track.language,
-				file: track.file,
 			});
 
 			this.search = { status: 'downloaded', results };
-		}).catch(() => {
-			this.search = { status: 'downloadError', results };
+		}).catch((error: Error) => {
+			const status = isRateLimited(error)
+				? 'rateLimited'
+				: 'downloadError';
+
+			this.search = { status, results };
 		}).finally(() => this.refresh());
 	}
 
-	private choices(labels: string[] | undefined, current: number | null, pick: (index: number) => void, first?: Choice): Choice[] {
+	private choices(
+		labels: string[] | undefined,
+		current: number | null,
+		pick: (index: number) => void,
+		first?: Choice,
+	): Choice[] {
 		const list = (labels ?? []).map((label, index) => ({
 			label,
 			selected: current === index,
@@ -733,48 +821,65 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			}));
 		}
 
-		const names = prop === 'edgeStyle'
-			? ['none', 'depressed', 'drop_shadow', 'raised', 'uniform', 'text_shadow']
-			: prop === 'textColor'
-				? ['white', 'black', 'red', 'green', 'blue', 'yellow', 'magenta', 'cyan', 'orange', 'purple', 'gray']
-				: [];
-		const field = prop === 'edgeStyle'
-			? 'edgeStyle'
-			: 'fontColor';
-		const group = prop === 'edgeStyle'
-			? 'edge'
-			: 'color';
+		if (prop !== 'edgeStyle' && prop !== 'textColor')
+			return [];
 
-		return names.map((name) => ({
-			label: t(`subtitle_style_${group}_${name}`),
-			selected: current[field] === name,
-			onPick: apply({ [field]: name }),
+		const named = NAMED_STYLE_CHOICES[prop];
+
+		return named.names.map((name) => ({
+			label: t(`subtitle_style_${named.group}_${name}`),
+			selected: current[named.field] === name,
+			onPick: apply({ [named.field]: name }),
 		}));
 	}
 
-	private buildDialog(): Panel | null {
+	// The first level is Auto; KMP's own level list holds only the real ones.
+	private trackChoices() {
 		const engine = this.engine;
-		const items = engine.queue();
-		const current = engine.item();
 		const audioIndex = engine.audioTrack?.()?.index ?? null;
 		const subtitleIndex = engine.subtitle?.()?.index ?? null;
 		const quality = engine.quality?.();
 		const levelIndex = typeof quality === 'object'
 			? quality.index
 			: -1;
-		const audio = this.choices(engine.audioTracks?.().map((track) => track.label), audioIndex, (index) =>
-			void engine.audioTrack?.(index));
-		const subtitles = this.choices(engine.subtitles?.().map((track) => track.label), subtitleIndex, (index) => void engine.subtitle?.(index), {
+
+		const audioLabels = engine.audioTracks?.().map((track) => track.label);
+		const subtitleLabels = engine.subtitles?.().map((track) => track.label);
+		const levelLabels = engine.qualityLevels?.().map((level) => level.label);
+		const off = {
 			label: t('dialog_subtitle_off'),
 			selected: subtitleIndex === null,
 			onPick: () => void engine.subtitle?.(null),
-		});
+		};
+
 		const auto = {
 			label: t('player_quality_auto'),
 			selected: levelIndex === -1,
 			onPick: () => void engine.quality?.('auto'),
 		};
-		const levels = this.choices(engine.qualityLevels?.().map((level) => level.label), levelIndex, (index) => void engine.quality?.(index), auto);
+
+		return {
+			audio: this.choices(audioLabels, audioIndex, (index) =>
+				void engine.audioTrack?.(index)),
+			subtitles: this.choices(
+				subtitleLabels,
+				subtitleIndex,
+				(index) => void engine.subtitle?.(index),
+				off,
+			),
+			levels: this.choices(levelLabels, levelIndex, (index) => void engine.quality?.(index), auto),
+		} as const satisfies {
+			audio: Choice[];
+			subtitles: Choice[];
+			levels: Choice[];
+		};
+	}
+
+	private buildDialog(): Panel | null {
+		const engine = this.engine;
+		const items = engine.queue();
+		const current = engine.item();
+		const { audio, subtitles, levels } = this.trackChoices();
 		const toMain = (choice: Choice) => ({
 			...choice,
 			onPick: this.act(() => {
@@ -804,9 +909,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				subtitles: subtitles.map(toMain),
 				audio: audio.map(toMain),
 				values: {
-					quality: levelIndex === -1
-						? t('player_quality_auto')
-						: levels.find((l) => l.selected)?.label ?? '',
+					quality: levels.find((l) => l.selected)?.label ?? t('player_quality_auto'),
 					subtitle: subtitles.find((s) => s.selected)?.label ?? t('dialog_subtitle_off'),
 					audio: audio.find((a) => a.selected)?.label ?? '',
 				},
@@ -878,9 +981,6 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				status: this.search.status,
 				results: this.search.results,
 				onPick: (candidate) => this.pickSubtitle(candidate),
-				onClose: this.act(() => {
-					this.searchOpen = false;
-				}),
 			});
 		}
 
@@ -942,9 +1042,11 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		const chapter = this.skipChapter;
 
 		if (chapter) {
-			pills.push(skipPrompt(t(chapter.type === 'credits'
+			const label = t(chapter.type === 'credits'
 				? 'skip_credits'
-				: 'skip_intro'), () => {
+				: 'skip_intro');
+
+			pills.push(skipPrompt(label, () => {
 				this.skipChapter = null;
 
 				if (typeof chapter.endTime === 'number') {
@@ -956,7 +1058,9 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		}
 
 		if (this.nextOffered) {
-			pills.push(skipPrompt(t('skip_next_episode'), () => {
+			const label = t('skip_next_episode');
+
+			pills.push(skipPrompt(label, () => {
 				this.nextOffered = false;
 				void this.engine.next?.();
 				this.refresh();

@@ -1,8 +1,15 @@
 import { el, focusable, formatTime, icon, t } from './dom';
+import type { IconName } from './dom';
 import { episodeLabel, titleAndSubtitle } from './title';
 import type { TitledItem } from './title';
 import { errorHintKey, errorMessageKey } from './errors';
-import { BACKGROUND_CHOICES, FONT_SIZE_CHOICES, mainRows, paneTitleKey, styleRowFocus } from './settingsModel';
+import {
+	BACKGROUND_CHOICES,
+	FONT_SIZE_CHOICES,
+	mainRows,
+	paneTitleKey,
+	styleRowFocus,
+} from './settingsModel';
 import type { SettingsNav, StyleProp } from './state';
 import type { SubtitleCandidate } from './subtitleSearch';
 
@@ -21,6 +28,7 @@ export interface UiItem extends TitledItem {
 	duration?: number;
 	seasonName?: string;
 	progress?: { time?: number };
+	tracks?: Array<{ kind?: string; file?: string }>;
 }
 
 export interface Choice {
@@ -29,30 +37,75 @@ export interface Choice {
 	onPick: () => void;
 }
 
-function button(label: string, onClick: () => void, iconName?: Parameters<typeof icon>[0]): HTMLElement {
-	return focusable(el('button', 'tvui-button', iconName
+const STYLE_TITLES = {
+	fontFamily: 'font',
+	fontSize: 'font_size',
+	edgeStyle: 'edge',
+	textColor: 'color',
+	background: 'background',
+} as const satisfies Record<StyleProp, string>;
+
+function button(label: string, onClick: () => void, iconName?: IconName): HTMLElement {
+	const glyph = iconName
 		? icon(iconName)
-		: false, label), onClick);
+		: false;
+
+	return focusable(el('button', 'tvui-button', glyph, label), onClick);
 }
 
-function row(label: string, selected: boolean, onPick: () => void, value = '', trailing: Parameters<typeof icon>[0] | null = null): HTMLElement {
-	const node = focusable(el('div', `tvui-row${selected
-		? ' tvui-selected'
-		: ''}`, el('span', 'tvui-row-label', label), value
+function iconButton(name: IconName, label: string, onClick: () => void): HTMLElement {
+	const glyph = icon(name);
+	const node = focusable(el('button', 'tvui-icon-button', glyph), onClick);
+
+	node.setAttribute('aria-label', label);
+
+	return node;
+}
+
+function row(
+	label: string,
+	selected: boolean,
+	onPick: () => void,
+	value = '',
+	trailing: IconName | null = null,
+): HTMLElement {
+	const classes = selected
+		? 'tvui-row tvui-selected'
+		: 'tvui-row';
+
+	const current = value
 		? el('span', 'tvui-row-value', value)
-		: false, selected && !trailing
+		: false;
+
+	const check = selected && !trailing
 		? icon('check')
-		: false, trailing
+		: false;
+
+	const arrow = trailing
 		? icon(trailing)
-		: false), onPick);
+		: false;
+
+	const name = el('span', 'tvui-row-label', label);
+	const node = focusable(el('div', classes, name, current, check, arrow), onPick);
 
 	node.setAttribute('role', 'button');
 
 	return node;
 }
 
-function column(title: string, rows: HTMLElement[]): HTMLElement {
-	return el('div', 'tvui-column', el('h2', 'tvui-column-title', title), ...rows);
+function column(titleKey: string, rows: HTMLElement[]): HTMLElement {
+	const title = el('h2', 'tvui-column-title', t(titleKey));
+
+	return el('div', 'tvui-column', title, ...rows);
+}
+
+function choiceRows(choices: Choice[]): HTMLElement[] {
+	return choices.map((choice) => row(choice.label, choice.selected, choice.onPick));
+}
+
+// The first choice is Auto, which is not a real level: a lone real level is no choice (KMP levels.size > 1).
+function hasQualityChoice(levels: Choice[]): boolean {
+	return levels.length - 1 > 1;
 }
 
 export function topBar(opts: {
@@ -62,31 +115,65 @@ export function topBar(opts: {
 	onNext: () => void;
 }) {
 	const { title, subtitle } = titleAndSubtitle(opts.item, t);
-	const settings = focusable(el('button', 'tvui-icon-button', icon('settings')), opts.onSettings);
+	const settings = iconButton('settings', t('player_settings'), opts.onSettings);
+	const next = iconButton('next', t('player_next_episode'), opts.onNext);
+	const second = subtitle
+		? el('div', 'tvui-subtitle', subtitle)
+		: false;
 
-	settings.setAttribute('aria-label', t('player_settings'));
-	const next = focusable(el('button', 'tvui-icon-button', icon('next')), opts.onNext);
-
-	next.setAttribute('aria-label', t('player_next_episode'));
+	const titles = el('div', 'tvui-titles', el('div', 'tvui-title', title), second);
 	const root = el('div', 'tvui-top-bar', settings, opts.hasNext
 		? next
-		: false, el('div', 'tvui-titles', el('div', 'tvui-title', title), subtitle
-		? el('div', 'tvui-subtitle', subtitle)
-		: false));
+		: false, titles);
 
 	return { root, focus: () => settings.focus() } as const satisfies Panel;
 }
 
+export interface BottomBarState {
+	playing: boolean;
+	time: number;
+	duration: number;
+	buffered: number;
+	// The scrubbed time while the strip is open (TVBottomBar.kt elapsed readout).
+	override?: number | null;
+	chapters: Array<{ start: number; end: number }>;
+}
+
 export interface BottomBarHandle extends Panel {
-	// override is the scrubbed time while the strip is open (TVBottomBar.kt elapsed readout).
-	update: (state: {
-		playing: boolean;
-		time: number;
-		duration: number;
-		buffered: number;
-		override?: number | null;
-		chapters: Array<{ start: number; end: number }>;
-	}) => void;
+	update: (state: BottomBarState) => void;
+}
+
+function fillShare(time: number, start: number, end: number): number {
+	const span = Math.max(end - start, 0);
+
+	if (time >= end)
+		return 1;
+
+	if (time <= start || span === 0)
+		return 0;
+
+	return (time - start) / span;
+}
+
+function chapterSegment(
+	chapter: { start: number; end: number },
+	index: number,
+	state: BottomBarState,
+): HTMLElement {
+	const span = Math.max(chapter.end - chapter.start, 0);
+	const fill = el('div', 'tvui-chapter-fill');
+	const grow = state.duration > 0
+		? span / state.duration
+		: 1;
+
+	fill.style.width = `${fillShare(state.time, chapter.start, chapter.end) * 100}%`;
+	const segment = el('div', 'tvui-chapter', fill);
+
+	segment.style.flexGrow = String(grow);
+	segment.style.setProperty('--buffered', `${Math.min(state.buffered, 100)}%`);
+	segment.dataset.index = String(index);
+
+	return segment;
 }
 
 export function bottomBar(onPlayPause: () => void) {
@@ -99,47 +186,32 @@ export function bottomBar(onPlayPause: () => void) {
 	bar.setAttribute('aria-label', t('player_seek_bar'));
 	const root = el('div', 'tvui-bottom-bar', playPause, elapsed, bar, remaining);
 
+	const update = (state: BottomBarState): void => {
+		const label = state.playing
+			? t('player_pause')
+			: t('player_play');
+
+		const spoken = { a: formatTime(state.time), b: formatTime(state.duration) };
+		const whole = [{ start: 0, end: state.duration }];
+		const segments = state.chapters.length > 0
+			? state.chapters
+			: whole;
+
+		playPause.replaceChildren(icon(state.playing
+			? 'pause'
+			: 'play'));
+
+		playPause.setAttribute('aria-label', label);
+		elapsed.textContent = formatTime(state.override ?? state.time);
+		remaining.textContent = formatTime(Math.max(state.duration - state.time, 0));
+		bar.setAttribute('aria-valuetext', t('player_seek_position', spoken));
+		bar.replaceChildren(...segments.map((chapter, index) => chapterSegment(chapter, index, state)));
+	};
+
 	return {
 		root,
 		focus: () => playPause.focus(),
-		update: ({ playing, time, duration, buffered, override, chapters }) => {
-			playPause.replaceChildren(icon(playing
-				? 'pause'
-				: 'play'));
-
-			playPause.setAttribute('aria-label', playing
-				? t('player_pause')
-				: t('player_play'));
-
-			elapsed.textContent = formatTime(override ?? time);
-			remaining.textContent = formatTime(Math.max(duration - time, 0));
-			bar.setAttribute('aria-valuetext', t('player_seek_position', { a: formatTime(time), b: formatTime(duration) }));
-			const segments = chapters.length > 0
-				? chapters
-				: [{ start: 0, end: duration }];
-
-			bar.replaceChildren(...segments.map((chapter, index) => {
-				const span = Math.max(chapter.end - chapter.start, 0);
-				const fill = el('div', 'tvui-chapter-fill');
-				const done = time >= chapter.end
-					? 1
-					: time <= chapter.start || span === 0
-						? 0
-						: (time - chapter.start) / span;
-
-				fill.style.width = `${done * 100}%`;
-				const seg = el('div', 'tvui-chapter', fill);
-
-				seg.style.flexGrow = String(duration > 0
-					? span / duration
-					: 1);
-
-				seg.style.setProperty('--buffered', `${Math.min(buffered, 100)}%`);
-				seg.dataset.index = String(index);
-
-				return seg;
-			}));
-		},
+		update,
 	} as const satisfies BottomBarHandle;
 }
 
@@ -157,8 +229,23 @@ export interface Thumbnail {
 
 const TILE_WIDTH = 280;
 
+function frameArt(frame: Thumbnail): HTMLElement {
+	const art = el('div', 'tvui-seek-frame');
+	const position = `background-position:-${frame.x}px -${frame.y}px`;
+	const size = `width:${frame.w}px;height:${frame.h}px`;
+
+	art.style.cssText = `${size};background-image:url("${frame.url}");${position};` +
+		`transform:scale(${TILE_WIDTH / frame.w})`;
+
+	return art;
+}
+
 // A tile with a sprite frame draws it; without one the tile carries its timestamp (TVSeekContainer.kt:208-226).
-export function seekStrip(frameTimes: number[], index: number, thumbnail?: (time: number) => Thumbnail | null) {
+export function seekStrip(
+	frameTimes: number[],
+	index: number,
+	thumbnail?: (time: number) => Thumbnail | null,
+) {
 	const tiles = frameTimes.map((time) => {
 		const frame = thumbnail?.(time) ?? null;
 		const tile = el('div', 'tvui-seek-tile', frame
@@ -166,16 +253,14 @@ export function seekStrip(frameTimes: number[], index: number, thumbnail?: (time
 			: formatTime(time));
 
 		if (frame) {
-			const art = el('div', 'tvui-seek-frame');
-
-			art.style.cssText = `width:${frame.w}px;height:${frame.h}px;background-image:url("${frame.url}");background-position:-${frame.x}px -${frame.y}px;transform:scale(${TILE_WIDTH / frame.w})`;
-			tile.append(art);
+			tile.append(frameArt(frame));
 		}
 
 		tile.setAttribute('aria-label', t('player_seek_preview_at', { a: formatTime(time) }));
 
 		return tile;
 	});
+
 	const root = el('div', 'tvui-seek-strip', ...tiles);
 
 	root.setAttribute('aria-label', t('player_seek_previews'));
@@ -209,27 +294,92 @@ export function preScreen(opts: {
 	const label = item
 		? episodeLabel(item, t)
 		: null;
+
 	const play = button(t('player_play'), opts.onPlay, 'play');
-	const buttons = [play, button(t('player_restart'), opts.onRestart, 'play'), button(t('player_audio_subtitles'), opts.onLanguage, 'globe')];
+	const restart = button(t('player_restart'), opts.onRestart, 'play');
+	const languages = button(t('player_audio_subtitles'), opts.onLanguage, 'globe');
+	const buttons = [play, restart, languages];
 
 	if (opts.playlistSize > 1) {
-		buttons.push(button(t('player_episodes'), opts.onEpisodes, 'playlist1'));
+		const episodes = button(t('player_episodes'), opts.onEpisodes, 'playlist1');
+
+		buttons.push(episodes);
 	}
 
-	const meta = el('div', 'tvui-meta', item?.year
+	const year = item?.year
 		? el('span', '', String(item.year))
-		: false, opts.episodeCount > 0
-		? el('span', '', `${opts.episodeCount} ${t('player_episodes')}`)
-		: false);
-	const info = el('div', 'tvui-pre-info', el('h1', 'tvui-pre-title', title), meta, el('div', 'tvui-pre-episode', label
-		? el('span', '', label)
-		: false, item?.title ?? ''), el('p', 'tvui-pre-overview', item?.description ?? item?.overview ?? ''), el('div', 'tvui-pre-buttons', ...buttons));
+		: false;
 
-	return { root: el('div', 'tvui-dialog tvui-pre-screen', info), focus: () => play.focus() } as const satisfies Panel;
+	const count = opts.episodeCount > 0
+		? el('span', '', `${opts.episodeCount} ${t('player_episodes')}`)
+		: false;
+
+	const tag = label
+		? el('span', '', label)
+		: false;
+
+	const meta = el('div', 'tvui-meta', year, count);
+	const episode = el('div', 'tvui-pre-episode', tag, item?.title ?? '');
+	const overview = el('p', 'tvui-pre-overview', item?.description ?? item?.overview ?? '');
+	const actions = el('div', 'tvui-pre-buttons', ...buttons);
+	const heading = el('h1', 'tvui-pre-title', title);
+	const info = el('div', 'tvui-pre-info', heading, meta, episode, overview, actions);
+	const root = el('div', 'tvui-dialog tvui-pre-screen', info);
+
+	return { root, focus: () => play.focus() } as const satisfies Panel;
+}
+
+function episodeCard(
+	item: UiItem,
+	index: number,
+	current: number,
+	onPick: (index: number) => void,
+) {
+	const label = episodeLabel(item, t);
+	const art = el('div', 'tvui-card-art');
+	const prefix = label
+		? `${label} • `
+		: '';
+
+	const heading = `${prefix}${item.title ?? t('player_episode', { a: item.episode ?? 0 })}`;
+	const percent = item.duration && item.progress?.time
+		? Math.min(item.progress.time / item.duration, 1)
+		: 0;
+
+	const bar = el('div', 'tvui-card-progress');
+	const text = el('div', 'tvui-card-text', el('div', 'tvui-card-title', heading));
+	const card = row('', index === current, () =>
+		onPick(index));
+
+	if (item.image) {
+		art.style.backgroundImage = `url("${item.image}")`;
+	}
+
+	text.append(el('div', 'tvui-card-overview', item.description ?? item.overview ?? ''));
+	bar.style.width = `${percent * 100}%`;
+
+	card.className = index === current
+		? 'tvui-card tvui-selected'
+		: 'tvui-card';
+
+	card.replaceChildren(art, percent > 0.01
+		? bar
+		: '', text);
+
+	return card;
+}
+
+function seasonName(season: number, item: UiItem): string {
+	if (item.seasonName)
+		return item.seasonName;
+
+	return season === 0
+		? t('player_extras')
+		: t('player_season', { a: season });
 }
 
 export function episodeDialog(opts: {
-	items: UiItem[];
+	items: readonly UiItem[];
 	currentIndex: number;
 	onPick: (index: number) => void;
 }) {
@@ -242,42 +392,21 @@ export function episodeDialog(opts: {
 	}
 
 	const browsing = opts.items[opts.currentIndex]?.season ?? 1;
-	const cards = opts.items.map((item, index) => {
-		const label = episodeLabel(item, t);
-		const art = el('div', 'tvui-card-art');
+	const { currentIndex, onPick } = opts;
+	const cards = opts.items.map((item, index) => episodeCard(item, index, currentIndex, onPick));
+	const seasonRows = [...seasons.entries()].map(([season, item]) => {
+		const first = opts.items.findIndex((i) => i.season === season);
 
-		if (item.image) {
-			art.style.backgroundImage = `url("${item.image}")`;
-		}
-
-		const percent = item.duration && item.progress?.time
-			? Math.min(item.progress.time / item.duration, 1)
-			: 0;
-		const bar = el('div', 'tvui-card-progress');
-
-		bar.style.width = `${percent * 100}%`;
-		const card = row('', index === opts.currentIndex, () =>
-			opts.onPick(index));
-
-		card.className = `tvui-card${index === opts.currentIndex
-			? ' tvui-selected'
-			: ''}`;
-
-		card.replaceChildren(art, percent > 0.01
-			? bar
-			: '', el('div', 'tvui-card-text', el('div', 'tvui-card-title', `${label
-			? `${label} • `
-			: ''}${item.title ?? t('player_episode', { a: item.episode ?? 0 })}`), el('div', 'tvui-card-overview', item.description ?? item.overview ?? '')));
-
-		return card;
+		return row(seasonName(season, item), season === browsing, () =>
+			cards[first]?.focus());
 	});
-	const seasonRows = [...seasons.entries()].map(([season, item]) => row(item.seasonName ?? (season === 0
-		? t('player_extras')
-		: t('player_season', { a: season })), season === browsing, () =>
-		cards[opts.items.findIndex((i) => i.season === season)]?.focus()));
-	const root = el('div', 'tvui-dialog tvui-episodes', el('div', 'tvui-seasons', ...seasonRows), el('div', 'tvui-episode-list', ...cards));
 
-	return { root, focus: () => (cards[opts.currentIndex] ?? cards[0])?.focus() } as const satisfies Panel;
+	const list = el('div', 'tvui-episode-list', ...cards);
+	const root = el('div', 'tvui-dialog tvui-episodes', el('div', 'tvui-seasons', ...seasonRows), list);
+
+	const focus = (): void => (cards[currentIndex] ?? cards[0])?.focus();
+
+	return { root, focus } as const satisfies Panel;
 }
 
 export function languageDialog(opts: {
@@ -288,26 +417,40 @@ export function languageDialog(opts: {
 	onToggleAutoSkip: () => void;
 	onSearch: () => void;
 }) {
-	const toRows = (choices: Choice[]): HTMLElement[] => choices.map((choice) => row(choice.label, choice.selected, choice.onPick));
 	const columns: HTMLElement[] = [];
+	const search = row(t('player_subtitle_search_online'), false, opts.onSearch);
+	const skip = row(t('settings_auto_skip_chapters'), opts.autoSkip, opts.onToggleAutoSkip);
+	const subtitles = [...choiceRows(opts.subtitles), search];
 
-	if (opts.quality.length > 1) {
-		columns.push(column(t('player_quality'), toRows(opts.quality)));
+	if (hasQualityChoice(opts.quality)) {
+		const levels = choiceRows(opts.quality);
+
+		columns.push(column('player_quality', levels));
 	}
 
 	if (opts.audio.length > 1) {
-		columns.push(column(t('dialog_audio_tracks'), toRows(opts.audio)));
+		const tracks = choiceRows(opts.audio);
+
+		columns.push(column('dialog_audio_tracks', tracks));
 	}
 
-	columns.push(column(t('dialog_subtitle_tracks'), [...toRows(opts.subtitles), row(t('player_subtitle_search_online'), false, opts.onSearch)]));
-	columns.push(column(t('section_playback'), [row(t('settings_auto_skip_chapters'), opts.autoSkip, opts.onToggleAutoSkip)]));
+	columns.push(column('dialog_subtitle_tracks', subtitles));
+	columns.push(column('section_playback', [skip]));
 	const root = el('div', 'tvui-dialog tvui-languages', ...columns);
 
-	return { root, focus: () => (root.querySelector<HTMLElement>('.tvui-selected') ?? root.querySelector<HTMLElement>('[data-focusable]'))?.focus() } as const satisfies Panel;
+	const focus = (): void => {
+		const target = root.querySelector<HTMLElement>('.tvui-selected') ??
+			root.querySelector<HTMLElement>('[data-focusable]');
+
+		target?.focus();
+	};
+
+	return { root, focus } as const satisfies Panel;
 }
 
 export interface SettingsData {
 	nav: SettingsNav;
+	// The first level is Auto; the rest are the real ones.
 	levels: Choice[];
 	subtitles: Choice[];
 	audio: Choice[];
@@ -332,89 +475,104 @@ export interface SettingsData {
 	onResetStyle: () => void;
 }
 
-export function settingsPanel(data: SettingsData) {
+function mainPaneRows(data: SettingsData): HTMLElement[] {
+	const enabled = mainRows({
+		levels: data.levels.length - 1,
+		textTracks: data.subtitles.length - 1,
+		audioTracks: data.audio.length,
+	});
+
+	const make = (
+		id: string,
+		label: string,
+		value: string,
+		onClick: () => void,
+		trailing: IconName | null = 'chevronRight',
+	): HTMLElement => {
+		const node = row(label, false, onClick, value, trailing);
+
+		if (!enabled.find((entry) => entry.id === id)?.enabled) {
+			node.setAttribute('aria-disabled', 'true');
+		}
+
+		return node;
+	};
+
+	const autoSkip = data.autoSkip
+		? t('settings_state_on')
+		: t('settings_state_off');
+
+	return [
+		make('audio', t('dialog_audio_tracks'), data.values.audio, () =>
+			data.open('audio')),
+		make('subtitle', t('dialog_subtitle_tracks'), data.values.subtitle, () =>
+			data.open('subtitle')),
+		make('subtitleStyle', t('subtitle_style'), '', () =>
+			data.open('subtitleStyle')),
+		make('quality', t('player_quality'), data.values.quality, () =>
+			data.open('quality')),
+		make('autoSkip', t('settings_auto_skip_chapters_short'), autoSkip, data.onToggleAutoSkip, null),
+		make('restart', t('player_restart'), '', data.onRestart, null),
+	];
+}
+
+function stylePaneRows(data: SettingsData): HTMLElement[] {
+	const s = data.style;
+	const open = (prop: StyleProp) => () => data.open('subtitleStyle', prop);
+	const background = s.background === 0
+		? t('subtitle_style_background_transparent')
+		: `${Math.round(s.background * 100)}%`;
+
+	return [
+		row(t('subtitle_style_font'), false, open('fontFamily'), s.font, 'chevronRight'),
+		row(t('subtitle_style_font_size'), false, open('fontSize'), `${s.size}sp`, 'chevronRight'),
+		row(t('subtitle_style_edge'), false, open('edgeStyle'), s.edge, 'chevronRight'),
+		row(t('subtitle_style_color'), false, open('textColor'), s.color, 'chevronRight'),
+		row(t('subtitle_style_background'), false, open('background'), background, 'chevronRight'),
+		row(t('subtitle_style_reset'), false, data.onResetStyle),
+	];
+}
+
+function settingsRows(data: SettingsData): HTMLElement[] {
 	const { nav } = data;
-	const back = focusable(el('button', 'tvui-icon-button', icon('chevronLeft')), data.onBack);
 
-	back.setAttribute('aria-label', t('close'));
-	const title = nav.pane === 'subtitleStyle' && nav.styleProp
-		? t(`subtitle_style_${nav.styleProp === 'fontFamily'
-				? 'font'
-				: nav.styleProp === 'fontSize'
-					? 'font_size'
-					: nav.styleProp === 'edgeStyle'
-						? 'edge'
-						: nav.styleProp === 'textColor'
-							? 'color'
-							: 'background'}`)
-		: t(paneTitleKey(nav.pane));
-	let rows: HTMLElement[] = [];
-	const choiceRows = (choices: Choice[]): HTMLElement[] => choices.map((choice) => row(choice.label, choice.selected, choice.onPick));
-
-	if (nav.pane === 'main') {
-		const enabled = mainRows({
-			levels: data.levels.length,
-			textTracks: data.subtitles.length - 1,
-			audioTracks: data.audio.length,
-		});
-
-		const make = (id: string, label: string, value: string, onClick: () => void, trailing: Parameters<typeof icon>[0] | null = 'chevronRight'): HTMLElement => {
-			const node = row(label, false, onClick, value, trailing);
-
-			if (!enabled.find((entry) => entry.id === id)?.enabled) {
-				node.setAttribute('aria-disabled', 'true');
-			}
-
-			return node;
-		};
-
-		rows = [
-			make('audio', t('dialog_audio_tracks'), data.values.audio, () =>
-				data.open('audio')),
-			make('subtitle', t('dialog_subtitle_tracks'), data.values.subtitle, () =>
-				data.open('subtitle')),
-			make('subtitleStyle', t('subtitle_style'), '', () =>
-				data.open('subtitleStyle')),
-			make('quality', t('player_quality'), data.values.quality, () =>
-				data.open('quality')),
-			make('autoSkip', t('settings_auto_skip_chapters_short'), data.autoSkip
-				? t('settings_state_on')
-				: t('settings_state_off'), data.onToggleAutoSkip, null),
-			make('restart', t('player_restart'), '', data.onRestart, null),
-		];
-	} else if (nav.pane === 'quality') {
-		rows = choiceRows(data.levels);
-	} else if (nav.pane === 'subtitle') {
-		rows = choiceRows(data.subtitles);
-	} else if (nav.pane === 'audio') {
-		rows = choiceRows(data.audio);
-	} else if (nav.styleProp) {
-		rows = choiceRows(data.styleChoices(nav.styleProp));
-	} else {
-		const s = data.style;
-		const open = (prop: StyleProp) => () => data.open('subtitleStyle', prop);
-
-		rows = [
-			row(t('subtitle_style_font'), false, open('fontFamily'), s.font, 'chevronRight'),
-			row(t('subtitle_style_font_size'), false, open('fontSize'), `${s.size}sp`, 'chevronRight'),
-			row(t('subtitle_style_edge'), false, open('edgeStyle'), s.edge, 'chevronRight'),
-			row(t('subtitle_style_color'), false, open('textColor'), s.color, 'chevronRight'),
-			row(t('subtitle_style_background'), false, open('background'), s.background === 0
-				? t('subtitle_style_background_transparent')
-				: `${Math.round(s.background * 100)}%`, 'chevronRight'),
-			row(t('subtitle_style_reset'), false, data.onResetStyle),
-		];
+	switch (nav.pane) {
+		case 'main':
+			return mainPaneRows(data);
+		case 'quality':
+			return choiceRows(data.levels);
+		case 'subtitle':
+			return choiceRows(data.subtitles);
+		case 'audio':
+			return choiceRows(data.audio);
+		case 'subtitleStyle':
+			return nav.styleProp
+				? choiceRows(data.styleChoices(nav.styleProp))
+				: stylePaneRows(data);
 	}
+}
 
-	const root = el('div', 'tvui-settings', el('div', 'tvui-sidebar', el('div', 'tvui-sidebar-header', back, el('span', '', title)), el('div', 'tvui-sidebar-rows', ...rows)));
+function settingsTitle(nav: SettingsNav): string {
+	return nav.pane === 'subtitleStyle' && nav.styleProp
+		? t(`subtitle_style_${STYLE_TITLES[nav.styleProp]}`)
+		: t(paneTitleKey(nav.pane));
+}
+
+export function settingsPanel(data: SettingsData) {
+	const back = iconButton('chevronLeft', t('close'), data.onBack);
+	const rows = settingsRows(data);
+	const title = el('span', '', settingsTitle(data.nav));
+	const header = el('div', 'tvui-sidebar-header', back, title);
+	const list = el('div', 'tvui-sidebar-rows', ...rows);
+	const root = el('div', 'tvui-settings', el('div', 'tvui-sidebar', header, list));
 
 	const focusTarget = (): HTMLElement | null => {
-		const current = styleRowFocus(rows.map((node) => node.classList.contains('tvui-selected')));
-		const enabled = rows.filter((node) => !node.hasAttribute('aria-disabled'));
+		const selected = rows.map((node) => node.classList.contains('tvui-selected'));
 
-		return rows.some((node) => node.classList.contains('tvui-selected'))
-			? rows[current] ?? null
-			: enabled[0] ?? null;
+		if (selected.includes(true))
+			return rows[styleRowFocus(selected)] ?? null;
+
+		return rows.find((node) => !node.hasAttribute('aria-disabled')) ?? null;
 	};
 
 	return { root, focus: () => focusTarget()?.focus() } as const satisfies Panel;
@@ -427,24 +585,37 @@ export function messageDialog(opts: {
 	error?: string | null;
 }) {
 	const buttons = opts.actions.map((action) => button(action.label, action.run));
-	const root = el('div', 'tvui-dialog tvui-message', el('h2', 'tvui-message-title', opts.title), opts.body
+	const body = opts.body
 		? el('p', 'tvui-message-body', opts.body)
-		: false, opts.error
+		: false;
+
+	const detail = opts.error
 		? el('p', 'tvui-message-detail', opts.error)
-		: false, el('div', 'tvui-pre-buttons', ...buttons));
+		: false;
+
+	const actions = el('div', 'tvui-pre-buttons', ...buttons);
+	const heading = el('h2', 'tvui-message-title', opts.title);
+	const root = el('div', 'tvui-dialog tvui-message', heading, body, detail, actions);
 
 	root.setAttribute('role', 'alertdialog');
 
 	return { root, focus: () => buttons[0]?.focus() } as const satisfies Panel;
 }
 
-export function errorDialog(error: string | null, transcodeFailed: boolean, onRetry: () => void, onExit: () => void): Panel {
+export function errorDialog(
+	error: string | null,
+	transcodeFailed: boolean,
+	onRetry: () => void,
+	onExit: () => void,
+): Panel {
 	const hint = errorHintKey(error);
 	const message = t(errorMessageKey(error));
+	const title = transcodeFailed
+		? t('transcode_error_title')
+		: t('error_playback');
+
 	const panel = messageDialog({
-		title: transcodeFailed
-			? t('transcode_error_title')
-			: t('error_playback'),
+		title,
 		body: message,
 		error: error && error !== message && !transcodeFailed
 			? error
@@ -453,7 +624,9 @@ export function errorDialog(error: string | null, transcodeFailed: boolean, onRe
 	});
 
 	if (hint) {
-		panel.root.querySelector('.tvui-message-body')?.after(el('p', 'tvui-message-detail', t(hint)));
+		const detail = el('p', 'tvui-message-detail', t(hint));
+
+		panel.root.querySelector('.tvui-message-body')?.after(detail);
 	}
 
 	return panel;
@@ -463,63 +636,107 @@ export interface SearchView {
 	status: 'loading' | 'results' | 'empty' | 'error' | 'rateLimited' | 'downloading' | 'downloaded' | 'downloadError';
 	results: SubtitleCandidate[];
 	onPick: (candidate: SubtitleCandidate) => void;
-	onClose: () => void;
 }
 
-// SubtitleSearchDialog.kt:60-300: title and close, a status line, then the candidate rows.
+const SEARCH_NOTICES = {
+	loading: 'subtitle_search_loading',
+	downloading: 'subtitle_search_downloading',
+	downloaded: 'subtitle_search_download_success',
+	downloadError: 'subtitle_search_download_error',
+	error: 'subtitle_search_error',
+	rateLimited: 'subtitle_search_rate_limited',
+	empty: 'subtitle_search_empty',
+} as const satisfies Partial<Record<SearchView['status'], string>>;
+
+function statusMark(status: keyof typeof SEARCH_NOTICES): HTMLElement | false {
+	switch (status) {
+		case 'loading':
+		case 'downloading':
+			return el('div', 'tvui-spinner');
+		case 'downloaded':
+			return icon('check');
+		case 'empty':
+			return false;
+		default:
+			return icon('alertTriangle');
+	}
+}
+
+// SubtitleSearchDialog.kt:133-208 (TvStatusRow): a status replaces the list until there are results.
+function statusRow(status: keyof typeof SEARCH_NOTICES): HTMLElement {
+	const text = el('span', '', t(SEARCH_NOTICES[status]));
+	const node = el('div', 'tvui-status', statusMark(status), text);
+
+	node.setAttribute('role', 'status');
+
+	return node;
+}
+
+// SubtitleSearchDialog.kt:240-293 (TvSubtitleResultRow).
+function resultRow(candidate: SubtitleCandidate, onPick: () => void): HTMLElement {
+	const label = candidate.releaseName ?? candidate.fileName ?? candidate.language;
+	const downloads = t('subtitle_search_downloads_count', { a: candidate.downloads });
+	const rating = t('subtitle_search_rating', { a: candidate.rating.toFixed(1) });
+	const parts = [downloads, rating];
+
+	if (candidate.hearingImpaired) {
+		parts.push(t('subtitle_search_hearing_impaired'));
+	}
+
+	const language = el('div', 'tvui-result-language', candidate.languageName);
+	const release = el('div', 'tvui-result-release', label);
+	const meta = el('div', 'tvui-result-meta', parts.join(' • '));
+	const text = el('div', 'tvui-row-label', language, release, meta);
+	const node = focusable(el('div', 'tvui-row tvui-result', text), onPick);
+
+	node.setAttribute('role', 'button');
+
+	return node;
+}
+
+// Back is the only exit, as in KMP (the dialog has no close control).
 export function subtitleSearchPanel(view: SearchView) {
-	const close = focusable(el('button', 'tvui-icon-button', icon('chevronLeft')), view.onClose);
+	const showList = view.status === 'results' && view.results.length > 0;
+	const rows = showList
+		? view.results.map((candidate) => resultRow(candidate, () =>
+				view.onPick(candidate)))
+		: [];
 
-	close.setAttribute('aria-label', t('close'));
-	const notice: Partial<Record<SearchView['status'], string>> = {
-		loading: t('subtitle_search_loading'),
-		downloading: t('subtitle_search_downloading'),
-		downloaded: t('subtitle_search_download_success'),
-		downloadError: t('subtitle_search_download_error'),
-		error: t('subtitle_search_error'),
-		rateLimited: t('subtitle_search_rate_limited'),
-		empty: t('subtitle_search_empty'),
-	};
-	const rows = view.status === 'loading' || view.status === 'error' || view.status === 'rateLimited'
-		? []
-		: view.results.map((candidate) => {
-				const label = candidate.releaseName ?? candidate.fileName ?? candidate.language;
-				const extra = candidate.hearingImpaired
-					? `, ${t('subtitle_search_hearing_impaired')}`
-					: '';
-				const node = focusable(el('div', 'tvui-row tvui-result', el('div', 'tvui-row-label', el('div', 'tvui-result-language', candidate.languageName), el('div', 'tvui-result-release', label)), el('span', 'tvui-row-value', `${t('subtitle_search_downloads_count', { a: candidate.downloads })}${extra}`)), () =>
-					view.onPick(candidate));
+	const body = showList
+		? el('div', 'tvui-sidebar-rows', ...rows)
+		: statusRow(view.status === 'results'
+				? 'empty'
+				: view.status);
 
-				node.setAttribute('role', 'button');
-
-				return node;
-			});
-	const status = notice[view.status === 'results'
-		? 'empty'
-		: view.status];
-	const root = el('div', 'tvui-dialog tvui-search', el('div', 'tvui-search-card', el('div', 'tvui-sidebar-header', close, el('span', '', t('subtitle_search_title'))), view.status === 'results' && rows.length > 0
-		? false
-		: el('p', 'tvui-message-detail', status ?? ''), notice[view.status] && view.status !== 'empty' && view.status !== 'results' && rows.length > 0
-		? el('p', 'tvui-message-detail', notice[view.status] ?? '')
-		: false, el('div', 'tvui-sidebar-rows', ...rows)));
+	const title = el('div', 'tvui-search-title', t('subtitle_search_title'));
+	const root = el('div', 'tvui-dialog tvui-search', el('div', 'tvui-search-card', title, body));
 
 	root.setAttribute('role', 'dialog');
+	root.tabIndex = -1;
 
-	return { root, focus: () => (rows[0] ?? close).focus() } as const satisfies Panel;
+	return { root, focus: () => (rows[0] ?? root).focus() } as const satisfies Panel;
 }
 
 export function volumeIndicator(volume: number, muted: boolean): HTMLElement {
-	const name = muted || volume === 0
-		? 'volumeMuted'
-		: volume > 0.7
-			? 'volumeThree'
-			: volume > 0.4
-				? 'volumeTwo'
-				: 'volumeOne';
-
-	return el('div', 'tvui-volume', icon(name), el('span', '', muted || volume === 0
+	const silent = muted || volume === 0;
+	const name = volumeIcon(volume, silent);
+	const label = silent
 		? t('player_muted')
-		: `${Math.round(volume * 100)}%`));
+		: `${Math.round(volume * 100)}%`;
+
+	return el('div', 'tvui-volume', icon(name), el('span', '', label));
+}
+
+function volumeIcon(volume: number, silent: boolean): IconName {
+	if (silent)
+		return 'volumeMuted';
+
+	if (volume > 0.7)
+		return 'volumeThree';
+
+	return volume > 0.4
+		? 'volumeTwo'
+		: 'volumeOne';
 }
 
 export { BACKGROUND_CHOICES, FONT_SIZE_CHOICES };

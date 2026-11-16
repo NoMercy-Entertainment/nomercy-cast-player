@@ -7,7 +7,12 @@ export function canEnterSeekMode(duration: number): boolean {
 	return duration > 0;
 }
 
-export function commitSeek(time: number, seek: (time: number) => void, clearOverrideTime: () => void, play: () => void): void {
+export function commitSeek(
+	time: number,
+	seek: (time: number) => void,
+	clearOverrideTime: () => void,
+	play: () => void,
+): void {
 	seek(time);
 	clearOverrideTime();
 	play();
@@ -83,7 +88,12 @@ export function seekStripKey(frameTimes: number[], index: number, key: KeyName):
 }
 
 // VideoChromeStoreAdapter.kt:195-219: chapter-aware rewind and forward.
-export function chapterSeekTarget(chapterStarts: number[], now: number, forward: boolean, step: number): number {
+export function chapterSeekTarget(
+	chapterStarts: number[],
+	now: number,
+	forward: boolean,
+	step: number,
+): number {
 	if (forward) {
 		const next = chapterStarts.find((start) => start > now + CHAPTER_RESTART_THRESHOLD);
 
