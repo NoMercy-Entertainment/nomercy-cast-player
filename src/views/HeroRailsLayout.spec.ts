@@ -116,11 +116,11 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 	});
 
 	it('keeps the hero text clear of the rails that reach up into the hero', () => {
-		expect(source('../styles/tokens.css')).toMatch(/--hero-rails-overlap:\s*72px/);
+		expect(source('../styles/tokens.css')).toMatch(/--hero-rails-overlap:\s*10px/);
 		expect(source('../styles/components.css')).toMatch(/\.nm-hero-rails\s*\{[^}]*margin-top:\s*calc\(-1 \* var\(--hero-rails-overlap\)\)/);
-		expect(source('./home/HomeHero.vue')).toMatch(/\.content\s*\{[^}]*padding:[^;]*var\(--hero-rails-overlap\)/);
-		expect(source('./home/HomeHero.vue')).toMatch(/\.nm-hero-overview\s*\{[^}]*line-height:\s*20px;[^}]*-webkit-line-clamp:\s*5/);
-		expect(source('./home/HomeHero.vue')).toMatch(/\.nm-hero-logo\s*\{[^}]*max-height:\s*58px/);
+		expect(source('./home/HomeHero.vue')).toMatch(/\.content\s*\{[^}]*padding:\s*0 16px 12px 40px/);
+		expect(source('../styles/components.css')).toMatch(/\.nm-hero-overview\s*\{[^}]*line-height:\s*20px;[^}]*-webkit-line-clamp:\s*5/);
+		expect(source('../styles/components.css')).toMatch(/\.nm-hero-logo\s*\{[^}]*max-height:\s*58px/);
 	});
 
 	it('does not scroll the rails for the first focus the page makes, but does for a key press', async () => {

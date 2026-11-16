@@ -84,27 +84,17 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 	position: absolute;
 	inset: 0;
 	width: 60%;
-	/* Below the nav and above the rails that reach up into the hero. */
-	padding: var(--topnav-height) 16px calc(var(--hero-rails-overlap) + 16px) 40px;
+	padding: 0 16px 12px 40px;
 	color: #fff;
 	display: flex;
 	flex-direction: column;
-	justify-content: center;
-	gap: 18px;
-}
-/* KMP TV hero sizes (58 dp logo, 5 lines of 14/20): they fit between the nav and the rails at 540 px. */
-.nm-hero-logo {
-	max-height: 58px;
-}
-.nm-hero-overview {
-	font-size: 14px;
-	line-height: 20px;
-	-webkit-line-clamp: 5;
+	justify-content: flex-end;
+	gap: 12px;
 }
 
 .hero-fade-enter-active,
 .hero-fade-leave-active {
-	transition: opacity 360ms ease;
+	transition: opacity 200ms ease;
 }
 .hero-fade-enter-from,
 .hero-fade-leave-to {

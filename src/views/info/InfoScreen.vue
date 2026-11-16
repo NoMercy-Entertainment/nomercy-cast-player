@@ -201,7 +201,7 @@ async function toggleWatchlist(): Promise<void> {
 				loading="eager"
 				decoding="async"
 			>
-			<div class="scrim" />
+			<div class="nm-hero-scrim" />
 		</div>
 
 		<div class="hero-row">
@@ -228,7 +228,7 @@ async function toggleWatchlist(): Promise<void> {
 				<span v-if="ratingText">{{ ratingText }}</span>
 			</div>
 
-			<p v-if="info.overview" class="nm-hero-overview info-overview">
+			<p v-if="info.overview" class="nm-hero-overview">
 				{{ info.overview }}
 			</p>
 		</div>
@@ -324,25 +324,24 @@ async function toggleWatchlist(): Promise<void> {
 }
 .backdrop {
 	position: absolute;
-	inset: 0;
+	inset: 0 0 auto;
+	height: var(--hero-height);
 }
 .backdrop img {
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
 }
-.scrim {
-	position: absolute;
-	inset: 0;
-	background:
-		linear-gradient(90deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.55) 50%, rgba(0, 0, 0, 0.2) 100%),
-		linear-gradient(0deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.2) 60%, transparent 100%);
-}
 .hero-row {
 	position: relative;
 	z-index: 1;
-	padding: 80px 36px 24px 40px;
-	max-width: 720px;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	height: var(--hero-height);
+	width: 60%;
+	padding: 0 16px 12px 40px;
+	box-sizing: border-box;
 }
 .meta-row {
 	display: flex;
@@ -351,11 +350,6 @@ async function toggleWatchlist(): Promise<void> {
 	color: oklch(0.85 0.01 250);
 	margin-bottom: 12px;
 	letter-spacing: 0.02em;
-}
-/* Info overview is a bit longer than the home hero — extend the line
-   clamp from the shared utility's 5 lines to 8. */
-.info-overview {
-	-webkit-line-clamp: 8;
 }
 .actions {
 	position: relative;

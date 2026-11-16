@@ -26,7 +26,8 @@ vi.mock('@/lib/signalr/connection', () => ({
 	}),
 }));
 
-vi.mock('@/lib/queryShim', () => ({
+vi.mock('@/lib/queryShim', async importActual => ({
+	...(await importActual<typeof import('@/lib/queryShim')>()),
 	invalidateAllLibrary: vi.fn(),
 	invalidateFromServer: vi.fn(),
 	invalidatePlugins,

@@ -87,7 +87,7 @@
  */
 .nm-hero-logo {
 	max-width: 420px;
-	max-height: 96px;
+	max-height: 58px;
 	object-fit: contain;
 	object-position: left center;
 	filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
@@ -95,7 +95,7 @@
 .nm-hero-title-main {
 	font-size: 28px;
 	font-weight: 600;
-	line-height: 1.1;
+	line-height: 26px;
 	letter-spacing: -0.005em;
 	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 	color: #fff;
@@ -103,15 +103,15 @@
 .nm-hero-title-sub {
 	font-size: 19px;
 	font-weight: 500;
-	line-height: 1.2;
+	line-height: 24px;
 	color: oklch(0.92 0.005 250);
 	text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
 }
 .nm-hero-overview {
 	margin: 0;
-	font-size: 18px;
-	font-weight: 600;
-	line-height: 1.5;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 20px;
 	color: oklch(1 0 0);
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
