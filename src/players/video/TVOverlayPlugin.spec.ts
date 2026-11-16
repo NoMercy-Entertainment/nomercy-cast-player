@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { TVOverlayPlugin } from './TVOverlayPlugin';
+import { diagnosticsRing } from '@/lib/diagnostics/sink';
 
 // The 2.x player has no overlay element, only the container it mounts into.
 function fakePlayer() {
@@ -201,6 +202,51 @@ describe('back after a resume launch', () => {
 		expect(document.querySelector('.pre-screen-title')?.textContent).toBe('Manner Movie');
 		expect(buttons()).toContain('Play');
 		expect(buttons()).not.toContain('Restart');
+		plugin.detach();
+	});
+});
+
+describe('the overlay says why a panel did not appear (a TV has no DevTools)', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	function labels(): Array<string | undefined> {
+		return diagnosticsRing.snapshot().map(entry => entry.label);
+	}
+
+	it('records a panel that mounted, by its name', () => {
+		const plugin = new TVOverlayPlugin(fakePlayer() as never, {});
+
+		plugin.attach();
+
+		expect(labels()).toContain('panel pre');
+		plugin.detach();
+	});
+
+	it('records a panel that could not open because the overlay host is gone', () => {
+		const plugin = new TVOverlayPlugin(fakePlayer() as never, { skipPreScreen: true });
+		plugin.attach();
+		(plugin as unknown as { host: HTMLElement | null }).host = null;
+
+		plugin.showSeekContainer();
+
+		expect(labels()).toContain('seek noHost');
+		plugin.detach();
+	});
+
+	it('records a panel that threw while mounting and frees the panel slot', () => {
+		const queue = vi.fn(() => {
+			throw new TypeError('boom');
+		});
+		const player = { ...fakePlayer(), queue, item: () => ({ id: 1, title: 'Made up' }) };
+		const plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true });
+		plugin.attach();
+
+		expect(() => player.emit('back')).not.toThrow();
+
+		expect(labels()).toContain('TypeError pre');
+		expect((plugin as unknown as { currentPanel: string | null }).currentPanel).toBeNull();
 		plugin.detach();
 	});
 });

@@ -1,3 +1,4 @@
+import { pendingCrashes } from '@/lib/diagnostics/crashHandler';
 import { diagnosticsRing } from '@/lib/diagnostics/sink';
 
 const CODECS = [
@@ -47,6 +48,7 @@ export function buildDiagnosticsAnswer(): Record<string, unknown> {
 		videos,
 		osd: osdText(),
 		codecs: Object.fromEntries(CODECS.map(type => [type, mse?.isTypeSupported(type) ?? null])),
+		crashes: pendingCrashes(),
 		events: diagnosticsRing.snapshot().slice(-LAST_EVENTS),
 	};
 }

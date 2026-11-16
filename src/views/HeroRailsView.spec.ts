@@ -26,6 +26,24 @@ function album(id: string): Component {
 	} as unknown as Component;
 }
 
+function groupCard(id: string): Component {
+	return {
+		id,
+		component: 'NMGroupCard',
+		props: {
+			id,
+			data: {
+				id,
+				title: 'Rock',
+				type: 'genre',
+				link: '/music/genres/00000000-0000-4000-8000-000000000002',
+				have_items: 2,
+				item_posters: [{ src: 'https://example.com/cover-one.jpg' }, { src: 'https://example.com/cover-two.jpg' }],
+			},
+		},
+	} as unknown as Component;
+}
+
 async function screen(overrides: Record<string, unknown>): Promise<ReturnType<typeof mount>> {
 	const wrapper = mount(HeroRailsView, {
 		props: {
@@ -49,6 +67,23 @@ describe('the music page never ends blank', () => {
 		const wrapper = await screen({ data: [carousel('albums', [album('00000000-0000-4000-8000-000000000001')])] });
 
 		expect(wrapper.find('[data-rail-id="albums"]').exists()).toBe(true);
+	});
+
+	it('draws the group cards of a genre rail', async () => {
+		const wrapper = await screen({ data: [carousel('genres', [groupCard('00000000-0000-4000-8000-000000000003')])] });
+
+		expect(wrapper.find('[data-rail-id="genres"]').exists()).toBe(true);
+		expect(wrapper.find('.group-card').exists()).toBe(true);
+		expect(wrapper.find('.group-card img').attributes('src')).toBe('https://example.com/cover-one.jpg');
+		expect(wrapper.text()).toContain('Rock');
+	});
+
+	it('shows the empty message when the only rail holds a type the receiver cannot draw', async () => {
+		const unknown = { id: 'x', component: 'NMFutureCard', props: { id: 'x', data: {} } } as unknown as Component;
+
+		const wrapper = await screen({ data: [carousel('future', [unknown])] });
+
+		expect(wrapper.text()).toContain(EMPTY_MESSAGE);
 	});
 
 	it('shows the empty message when every rail in the answer has no items', async () => {

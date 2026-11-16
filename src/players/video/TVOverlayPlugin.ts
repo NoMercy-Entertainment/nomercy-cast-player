@@ -12,6 +12,8 @@ import type { SkipChapterPromptHandle } from './pluginPanels/SkipChapterPrompt';
 import { mountOverlayHost } from './overlayHost';
 import { settingsStore } from '@/stores/settingsStore';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
+import { recordDiagnostic } from '@/lib/diagnostics/sink';
+import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { decideSkipAction, segmentsForItem } from './skipSegments';
 
 /**
@@ -300,14 +302,32 @@ export class TVOverlayPlugin {
 		return this.host;
 	}
 
-	private showPreScreen(): void {
+	// A panel that cannot open leaves a line in the diagnostics: a TV has no DevTools.
+	private openPanel(name: NonNullable<TVOverlayPlugin['currentPanel']>, mount: (host: HTMLElement) => () => void): void {
 		const host = this.overlayHost();
-		if (!host)
+		if (!host) {
+			recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.WarningLogged, 0, 0, 0, `${name} noHost`);
 			return;
+		}
 		this.closeAllPanels();
+		this.currentPanel = name;
+		try {
+			this.unmount = mount(host);
+			recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, `panel ${name}`);
+		}
+		catch (error) {
+			this.closeAllPanels();
+			recordSwallowed(name, error);
+		}
+	}
+
+	private showPreScreen(): void {
+		this.openPanel('pre', host => this.mountPre(host));
+	}
+
+	private mountPre(host: HTMLElement): () => void {
 		const item = this.currentItem();
-		this.currentPanel = 'pre';
-		this.unmount = mountPreScreen({
+		return mountPreScreen({
 			parent: host,
 			title: item?.title ?? 'Now playing',
 			subtitle: item?.subtitle,
@@ -332,35 +352,22 @@ export class TVOverlayPlugin {
 	}
 
 	private showEpisodeScreen(): void {
-		const host = this.overlayHost();
-		if (!host)
-			return;
-		this.closeAllPanels();
-		this.currentPanel = 'episode';
-		const episodes = this.queueItems();
-		const current = this.currentItem();
-		const currentTimeSec = this.playerCurrentTime();
-		this.unmount = mountEpisodeScreen({
+		this.openPanel('episode', host => mountEpisodeScreen({
 			parent: host,
-			episodes,
-			currentId: current?.id,
-			currentTimeMs: Math.round(currentTimeSec * 1000),
+			episodes: this.queueItems(),
+			currentId: this.currentItem()?.id,
+			currentTimeMs: Math.round(this.playerCurrentTime() * 1000),
 			onPick: (item) => {
 				this.closeAllPanels();
 				this.player.item(item.id);
 			},
 			onExit: () => this.showPreScreen(),
-		});
+		}));
 	}
 
 	private showLanguageScreen(): void {
-		const host = this.overlayHost();
-		if (!host)
-			return;
-		this.closeAllPanels();
-		this.currentPanel = 'language';
 		const canSetQuality = Boolean(this.player.quality);
-		this.unmount = mountLanguageScreen({
+		this.openPanel('language', host => mountLanguageScreen({
 			parent: host,
 			audioTracks: this.playerAudioTracks(),
 			subtitleTracks: this.playerSubtitleTracks(),
@@ -377,18 +384,13 @@ export class TVOverlayPlugin {
 				settingsStore.autoSkipChapters.value = next;
 			},
 			onExit: () => this.showPreScreen(),
-		});
+		}));
 	}
 
 	showSeekContainer(): void {
-		const host = this.overlayHost();
-		if (!host)
-			return;
 		if (this.currentPanel === 'seek')
 			return;
-		this.closeAllPanels();
-		this.currentPanel = 'seek';
-		this.unmount = mountSeekContainer({
+		this.openPanel('seek', host => mountSeekContainer({
 			parent: host,
 			getCurrentTime: () => this.playerCurrentTime(),
 			getDuration: () => this.playerDuration(),
@@ -397,7 +399,7 @@ export class TVOverlayPlugin {
 				this.closeAllPanels();
 			},
 			onCancel: () => this.closeAllPanels(),
-		});
+		}));
 	}
 
 	private maybeShowPreScreen(): void {

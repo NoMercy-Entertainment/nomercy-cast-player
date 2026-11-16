@@ -5,6 +5,7 @@ import { NAMESPACE_GENERAL } from './namespaces';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { authStore } from '@/stores/authStore';
+import { installCrashHandlers } from '@/lib/diagnostics/crashHandler';
 
 type Listener = (event: { senderId?: string; data: unknown }) => void;
 
@@ -63,5 +64,32 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 		ask({ diagnostics: true });
 
 		expect(JSON.stringify(sendCustomMessage.mock.calls[0]![2])).not.toContain('secret-placeholder-token');
+	});
+
+	it('names the pending crash: class, message and the first 5 stack lines, without a query string', () => {
+		installCrashHandlers();
+		const error = new TypeError('cannot read x of https://example.com/api?access_token=secret-placeholder-token');
+		error.stack = ['TypeError: cannot read x', ...Array.from({ length: 8 }, (_, i) => `    at frame${i} (https://example.com/assets/app.js?v=secret-placeholder-token:1:${i})`)].join('\n');
+		window.dispatchEvent(new ErrorEvent('error', { error }));
+		const { ask, sendCustomMessage } = fakeContext();
+
+		ask({ diagnostics: true });
+
+		const answer = sendCustomMessage.mock.calls[0]![2];
+		const crash = answer.diagnostics.crashes.at(-1);
+		expect(crash.name).toBe('TypeError');
+		expect(crash.message).toContain('cannot read x');
+		expect(crash.stack.split('\n')).toHaveLength(5);
+		expect(crash.stack).toContain('frame3');
+		expect(crash.stack).not.toContain('frame4');
+		expect(JSON.stringify(answer)).not.toContain('secret-placeholder-token');
+	});
+
+	it('reports no crashes when none was recorded (positive control: the field is there)', () => {
+		const { ask, sendCustomMessage } = fakeContext();
+
+		ask({ diagnostics: true });
+
+		expect(Array.isArray(sendCustomMessage.mock.calls[0]![2].diagnostics.crashes)).toBe(true);
 	});
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import resolverSource from './Resolver.vue?raw';
+import resolverSource from './registry.ts?raw';
 import { sinkComponents } from '@/lib/plugin/sinkComponents.generated';
 
 /**
@@ -115,6 +115,7 @@ describe('what the receiver draws', () => {
 			'NMContainer',
 			'NMGenreCard',
 			'NMGrid',
+			'NMGroupCard',
 			'NMHero',
 			'NMHeroCard',
 			'NMHomeCard',

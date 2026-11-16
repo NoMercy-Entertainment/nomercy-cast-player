@@ -21,6 +21,37 @@ function faultName(reason: unknown): string {
 	return 'unhandled';
 }
 
+const MAX_FAULTS = 3;
+const MAX_MESSAGE = 200;
+const STACK_LINES = 5;
+const QUERY_STRING = /\?[^\s)'"]*/g;
+
+export interface PendingCrash {
+	name: string;
+	message: string;
+	stack: string;
+}
+
+const faults: PendingCrash[] = [];
+
+// Stays on the device. Only a sender that asks for diagnostics reads it, so it
+// is cut to what finds the line: no query strings, which carry tokens.
+function keepFault(reason: unknown): void {
+	if (faults.length >= MAX_FAULTS)
+		return;
+	const error = reason instanceof Error ? reason : null;
+	faults.push({
+		name: faultName(reason),
+		message: (error?.message ?? String(reason)).replace(QUERY_STRING, '').slice(0, MAX_MESSAGE),
+		stack: (error?.stack ?? '').split('\n').slice(0, STACK_LINES).join('\n').replace(QUERY_STRING, ''),
+	});
+}
+
+/** The first faults of this session, for the diagnostics answer. */
+export function pendingCrashes(): readonly PendingCrash[] {
+	return faults;
+}
+
 // Off means a crash report prepared earlier is deleted, never sent later.
 function dropSavedCrashReport(): void {
 	if (diagnosticsSender.pending.value?.kind === 'crash')
@@ -70,11 +101,13 @@ export function installCrashHandlers(): void {
 
 	window.addEventListener('error', (event: ErrorEvent) => {
 		const reason = event.error ?? event.message;
+		keepFault(reason);
 		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CrashReportPending, 0, 0, 0, faultName(reason));
 		void upload(reason);
 	});
 
 	window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+		keepFault(event.reason);
 		recordDiagnostic(
 			DiagnosticsCategory.Lifecycle,
 			DiagnosticsCode.CrashReportPending,

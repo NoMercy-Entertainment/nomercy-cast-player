@@ -4,6 +4,8 @@
  * web/android server-driven UI.
  */
 
+import { canDraw } from './registry';
+
 export type ComponentType
 	= | 'NMGrid'
 		| 'NMList'
@@ -16,6 +18,7 @@ export type ComponentType
 		| 'NMMusicHomeCard'
 		| 'NMTopResultCard'
 		| 'NMGenreCard'
+		| 'NMGroupCard'
 		| 'NMTrackRow'
 		| 'NMHero'
 		| 'NMHeroCard'
@@ -68,6 +71,17 @@ export interface NMCardWrapper {
 	rating?: { rating: number | string; image?: string };
 	progress?: { time?: number; total?: number };
 	context_menu_items?: ContextMenuItem[];
+}
+
+/** GroupCardData on the server: a group with no image of its own, drawn from its items' posters. */
+export interface NMGroupCardWrapper {
+	id: string | number;
+	title?: string;
+	type?: string;
+	link?: string;
+	have_items?: number;
+	item_shape?: string;
+	item_posters?: Array<{ src: string; color?: string }>;
 }
 
 export interface NMHomeCardWrapper extends NMCardWrapper {
@@ -138,6 +152,7 @@ export type ComponentData
 		| NMLolomoWrapper
 		| NMCarouselWrapper
 		| NMCardWrapper
+		| NMGroupCardWrapper
 		| NMHomeCardWrapper
 		| NMMusicCardWrapper
 		| NMMusicHomeCardWrapper
@@ -164,10 +179,10 @@ export const CONTAINER_TYPES: ReadonlySet<ComponentType> = new Set([
 	'NMCarousel',
 ]);
 
-/** A container with no items draws nothing, so it counts only when something inside draws. */
+/** A container with no items draws nothing, so it counts only when something inside draws. A leaf counts only when the Resolver has a renderer for it. */
 export function drawsContent(component: Component): boolean {
 	if (!CONTAINER_TYPES.has(component.component))
-		return true;
+		return canDraw(component.component);
 	const items = (component.props as ContainerWrapper | undefined)?.items;
 	return Array.isArray(items) && items.some(drawsContent);
 }
