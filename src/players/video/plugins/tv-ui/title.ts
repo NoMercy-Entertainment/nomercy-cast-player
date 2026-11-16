@@ -1,3 +1,5 @@
+const TRAILING_ELLIPSIS = /…$/;
+
 export interface TitledItem {
 	title?: string;
 	show?: string;
@@ -32,7 +34,7 @@ export function titleAndSubtitle(item: TitledItem | undefined, t: Translate): { 
 	const loading = t('player_loading');
 	const real = (text?: string): string | undefined => {
 		const value = text?.trim();
-		return value && value.toLowerCase() !== loading.toLowerCase() && value.toLowerCase() !== loading.replace(/…$/, '').toLowerCase() ? value : undefined;
+		return value && value.toLowerCase() !== loading.toLowerCase() && value.toLowerCase() !== loading.replace(TRAILING_ELLIPSIS, '').toLowerCase() ? value : undefined;
 	};
 	if (!item)
 		return { title: loading, subtitle: '' };

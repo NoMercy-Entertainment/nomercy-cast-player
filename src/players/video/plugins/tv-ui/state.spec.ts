@@ -15,40 +15,40 @@ const idle: BackState = {
 };
 
 describe('backAction (TvUiPlugin.kt:298-346)', () => {
-	it('K12a closes the subtitle search first', () => {
+	it('k12a closes the subtitle search first', () => {
 		expect(backAction({ ...idle, search: true, settings: true })).toBe('closeSearch');
 	});
-	it('K12b steps the settings panel back one level', () => {
+	it('k12b steps the settings panel back one level', () => {
 		expect(backAction({ ...idle, settings: true })).toBe('settingsStepBack');
 	});
-	it('K12c closes the episode and language dialogs and shows the pre-screen', () => {
+	it('k12c closes the episode and language dialogs and shows the pre-screen', () => {
 		expect(backAction({ ...idle, episodeOrLanguage: true })).toBe('closeDialogToPreScreen');
 	});
-	it('K12d leaves seek mode', () => {
+	it('k12d leaves seek mode', () => {
 		expect(backAction({ ...idle, seekMode: true, controlsVisible: true })).toBe('cancelSeek');
 	});
-	it('K12e hides the controls', () => {
+	it('k12e hides the controls', () => {
 		expect(backAction({ ...idle, controlsVisible: true })).toBe('hideControls');
 	});
-	it('K12f local playback pauses and shows the pre-screen', () => {
+	it('k12f local playback pauses and shows the pre-screen', () => {
 		expect(backAction(idle)).toBe('pauseToPreScreen');
 	});
-	it('K12f remote playback pauses and leaves the screen', () => {
+	it('k12f remote playback pauses and leaves the screen', () => {
 		expect(backAction({ ...idle, remote: true })).toBe('pauseAndExit');
 	});
-	it('K12g the pre-screen leaves the screen', () => {
+	it('k12g the pre-screen leaves the screen', () => {
 		expect(backAction({ ...idle, preScreen: true })).toBe('exit');
 	});
 });
 
 describe('settingsStepBack (TvUiPlugin.kt:227-234, PlayerSettingsScreen.kt:56-63)', () => {
-	it('P02 a style property goes back to the property list', () => {
+	it('p02 a style property goes back to the property list', () => {
 		expect(settingsStepBack({ pane: 'subtitleStyle', styleProp: 'fontSize' })).toEqual({ pane: 'subtitleStyle', styleProp: null });
 	});
-	it('P02 the main pane closes the panel', () => {
+	it('p02 the main pane closes the panel', () => {
 		expect(settingsStepBack({ pane: 'main', styleProp: null })).toBe('close');
 	});
-	it('P02 any other pane goes back to main', () => {
+	it('p02 any other pane goes back to main', () => {
 		expect(settingsStepBack({ pane: 'audio', styleProp: null })).toEqual({ pane: 'main', styleProp: null });
 		expect(settingsStepBack({ pane: 'subtitleStyle', styleProp: null })).toEqual({ pane: 'main', styleProp: null });
 	});

@@ -34,17 +34,30 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 		}
 		return this.now;
 	};
+
 	duration = (): number => this.length;
 	buffered = (): number => this.bufferedTo;
 	queue = (): Item[] => this.items;
 	item = (): Item => this.items[0];
 	index = (): number => 0;
 	chapters = (): never[] => [];
-	play = vi.fn(async () => { this.calls.push('play'); this.state = 'playing'; });
-	pause = vi.fn(async () => { this.calls.push('pause'); this.state = 'paused'; });
+	play = vi.fn(async () => {
+		this.calls.push('play');
+		this.state = 'playing';
+	});
+
+	pause = vi.fn(async () => {
+		this.calls.push('pause');
+		this.state = 'paused';
+	});
+
 	restart = vi.fn();
 	next = vi.fn();
-	addSubtitleTrack = (track: unknown): unknown => { this.added.push(track); return track; };
+	addSubtitleTrack = (track: unknown): unknown => {
+		this.added.push(track);
+		return track;
+	};
+
 	subtitles = (): never[] => [];
 	audioTracks = (): never[] => [];
 	qualityLevels = (): never[] => [];
@@ -57,11 +70,16 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 	toggleMute = vi.fn();
 }
 
+// A plugin's window key listener outlives its test unless its lifecycle is disposed.
+const registries: LifecycleRegistry[] = [];
+
 function setup(options: TvUiOptions = { skipPreScreen: true }): { player: FakePlayer; plugin: TvUiPlugin; root: HTMLElement } {
 	const player = new FakePlayer();
 	document.body.append(player.container);
 	const plugin = new TvUiPlugin();
-	plugin.initialize(player as never, options, new LifecycleRegistry());
+	const lifecycle = new LifecycleRegistry();
+	registries.push(lifecycle);
+	plugin.initialize(player as never, options, lifecycle);
 	plugin.use();
 	return { player, plugin, root: player.container.querySelector<HTMLElement>('.tvui-root')! };
 }
@@ -77,6 +95,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	registries.splice(0).forEach(registry => registry.dispose());
 	vi.useRealTimers();
 	document.body.replaceChildren();
 	vi.mocked(apiFetch).mockReset();
@@ -147,7 +166,7 @@ describe('first-frame overlays and messages (TvUiPlugin.kt:624-666)', () => {
 });
 
 describe('engine accessors', () => {
-	it('Enter with hidden controls pauses a playing engine through playState()', () => {
+	it('enter with hidden controls pauses a playing engine through playState()', () => {
 		const { player } = setup();
 		player.now = 5;
 		player.emit('time', { time: 5 });

@@ -738,12 +738,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nomercy-entertainment/nomercy-player-core@npm:2.6.1":
-  version: 2.6.1
-  resolution: "@nomercy-entertainment/nomercy-player-core@npm:2.6.1"
+"@nomercy-entertainment/nomercy-player-core@npm:2.9.1":
+  version: 2.9.1
+  resolution: "@nomercy-entertainment/nomercy-player-core@npm:2.9.1"
   dependencies:
     hls.js: "npm:^1.6.0"
-  checksum: 10c0/74e01281f1e3c49d731d8a920b643efb09c4a1e09387187949dbfef8ecd09522d4de219a2cac286abc33f0cf5466a384e4ec65ef779c84638f147aee76bfcd20
+  checksum: 10c0/399f3bc5d05cfd2bad8b4c42829ab22aa50a80090244475832ae95239ccd6a13182dfee314f651dbce6ec0d978f552e6a7ba185e7027a4b8631ef5b7c43f9543
   languageName: node
   linkType: hard
 
@@ -754,13 +754,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nomercy-entertainment/nomercy-video-player@npm:^2.8.3":
-  version: 2.8.3
-  resolution: "@nomercy-entertainment/nomercy-video-player@npm:2.8.3"
+"@nomercy-entertainment/nomercy-video-player@npm:^2.9.0":
+  version: 2.9.0
+  resolution: "@nomercy-entertainment/nomercy-video-player@npm:2.9.0"
   dependencies:
-    "@nomercy-entertainment/nomercy-player-core": "npm:2.6.1"
+    "@nomercy-entertainment/nomercy-player-core": "npm:2.9.1"
     "@nomercy-entertainment/nomercy-subtitle-octopus": "npm:^0.2.0"
-  checksum: 10c0/c7944a5b059af4dca668882b9835e0a2fb8c63dc0ad6c2e7fa8c595ff29a674421d98bb240cb064f1b6914d728ce191d60f45adeee579c6ed150cc12079c861d
+  checksum: 10c0/64d711531acf3c27ff1f12fdba02910b6e297dce26a0d6bcf06a152f50f8334f8c8cb61b0544629f3abeb5aa0dedc81a1df3da5045e1ee830c6aaec65b5695ee
   languageName: node
   linkType: hard
 
@@ -4692,7 +4692,7 @@ __metadata:
     "@antfu/eslint-config": "npm:8.1.1"
     "@microsoft/signalr": "npm:^10.0.0"
     "@nomercy-entertainment/nomercy-music-player": "npm:0.2.15"
-    "@nomercy-entertainment/nomercy-video-player": "npm:^2.8.3"
+    "@nomercy-entertainment/nomercy-video-player": "npm:^2.9.0"
     "@tailwindcss/vite": "npm:^4.0.0"
     "@tanstack/vue-query": "npm:^5.62.0"
     "@types/chromecast-caf-receiver": "npm:^6.0.25"

@@ -4,6 +4,7 @@ import type { TitledItem } from './title';
 import { errorHintKey, errorMessageKey } from './errors';
 import { BACKGROUND_CHOICES, FONT_SIZE_CHOICES, mainRows, paneTitleKey, styleRowFocus } from './settingsModel';
 import type { SettingsNav, StyleProp } from './state';
+import type { SubtitleCandidate } from './subtitleSearch';
 
 export interface Panel {
 	root: HTMLElement;
@@ -53,7 +54,8 @@ export function topBar(opts: { item?: UiItem; hasNext: boolean; onSettings: () =
 }
 
 export interface BottomBarHandle extends Panel {
-	update: (state: { playing: boolean; time: number; duration: number; buffered: number; chapters: Array<{ start: number; end: number }> }) => void;
+	// override is the scrubbed time while the strip is open (TVBottomBar.kt elapsed readout).
+	update: (state: { playing: boolean; time: number; duration: number; buffered: number; override?: number | null; chapters: Array<{ start: number; end: number }> }) => void;
 }
 
 export function bottomBar(onPlayPause: () => void): BottomBarHandle {
@@ -67,10 +69,10 @@ export function bottomBar(onPlayPause: () => void): BottomBarHandle {
 	return {
 		root,
 		focus: () => playPause.focus(),
-		update: ({ playing, time, duration, buffered, chapters }) => {
+		update: ({ playing, time, duration, buffered, override, chapters }) => {
 			playPause.replaceChildren(icon(playing ? 'pause' : 'play'));
 			playPause.setAttribute('aria-label', playing ? t('player_pause') : t('player_play'));
-			elapsed.textContent = formatTime(time);
+			elapsed.textContent = formatTime(override ?? time);
 			remaining.textContent = formatTime(Math.max(duration - time, 0));
 			bar.setAttribute('aria-valuetext', t('player_seek_position', { a: formatTime(time), b: formatTime(duration) }));
 			const segments = chapters.length > 0 ? chapters : [{ start: 0, end: duration }];
@@ -93,9 +95,26 @@ export interface SeekStripHandle extends Panel {
 	select: (index: number) => void;
 }
 
-export function seekStrip(frameTimes: number[], index: number): SeekStripHandle {
+export interface Thumbnail {
+	url: string;
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+}
+
+const TILE_WIDTH = 280;
+
+// A tile with a sprite frame draws it; without one the tile carries its timestamp (TVSeekContainer.kt:208-226).
+export function seekStrip(frameTimes: number[], index: number, thumbnail?: (time: number) => Thumbnail | null): SeekStripHandle {
 	const tiles = frameTimes.map((time) => {
-		const tile = el('div', 'tvui-seek-tile', formatTime(time));
+		const frame = thumbnail?.(time) ?? null;
+		const tile = el('div', 'tvui-seek-tile', frame ? false : formatTime(time));
+		if (frame) {
+			const art = el('div', 'tvui-seek-frame');
+			art.style.cssText = `width:${frame.w}px;height:${frame.h}px;background-image:url("${frame.url}");background-position:-${frame.x}px -${frame.y}px;transform:scale(${TILE_WIDTH / frame.w})`;
+			tile.append(art);
+		}
 		tile.setAttribute('aria-label', t('player_seek_preview_at', { a: formatTime(time) }));
 		return tile;
 	});
@@ -104,7 +123,7 @@ export function seekStrip(frameTimes: number[], index: number): SeekStripHandle 
 	root.tabIndex = 0;
 	const select = (next: number): void => {
 		tiles.forEach((tile, i) => tile.classList.toggle('tvui-seek-selected', i === next));
-		tiles[next]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+		tiles[next]?.scrollIntoView?.({ inline: 'center', block: 'nearest' });
 	};
 	select(index);
 	return { root, focus: () => root.focus(), select };
@@ -253,6 +272,41 @@ export function errorDialog(error: string | null, transcodeFailed: boolean, onRe
 	if (hint)
 		panel.root.querySelector('.tvui-message-body')?.after(el('p', 'tvui-message-detail', t(hint)));
 	return panel;
+}
+
+export interface SearchView {
+	status: 'loading' | 'results' | 'empty' | 'error' | 'rateLimited' | 'downloading' | 'downloaded' | 'downloadError';
+	results: SubtitleCandidate[];
+	onPick: (candidate: SubtitleCandidate) => void;
+	onClose: () => void;
+}
+
+// SubtitleSearchDialog.kt:60-300: title and close, a status line, then the candidate rows.
+export function subtitleSearchPanel(view: SearchView): Panel {
+	const close = focusable(el('button', 'tvui-icon-button', icon('chevronLeft')), view.onClose);
+	close.setAttribute('aria-label', t('close'));
+	const notice: Partial<Record<SearchView['status'], string>> = {
+		loading: t('subtitle_search_loading'),
+		downloading: t('subtitle_search_downloading'),
+		downloaded: t('subtitle_search_download_success'),
+		downloadError: t('subtitle_search_download_error'),
+		error: t('subtitle_search_error'),
+		rateLimited: t('subtitle_search_rate_limited'),
+		empty: t('subtitle_search_empty'),
+	};
+	const rows = view.status === 'loading' || view.status === 'error' || view.status === 'rateLimited'
+		? []
+		: view.results.map((candidate) => {
+				const label = candidate.releaseName ?? candidate.fileName ?? candidate.language;
+				const extra = candidate.hearingImpaired ? `, ${t('subtitle_search_hearing_impaired')}` : '';
+				const node = focusable(el('div', 'tvui-row tvui-result', el('div', 'tvui-row-label', el('div', 'tvui-result-language', candidate.languageName), el('div', 'tvui-result-release', label)), el('span', 'tvui-row-value', `${t('subtitle_search_downloads_count', { a: candidate.downloads })}${extra}`)), () => view.onPick(candidate));
+				node.setAttribute('role', 'button');
+				return node;
+			});
+	const status = notice[view.status === 'results' ? 'empty' : view.status];
+	const root = el('div', 'tvui-dialog tvui-search', el('div', 'tvui-search-card', el('div', 'tvui-sidebar-header', close, el('span', '', t('subtitle_search_title'))), view.status === 'results' && rows.length > 0 ? false : el('p', 'tvui-message-detail', status ?? ''), notice[view.status] && view.status !== 'empty' && view.status !== 'results' && rows.length > 0 ? el('p', 'tvui-message-detail', notice[view.status] ?? '') : false, el('div', 'tvui-sidebar-rows', ...rows)));
+	root.setAttribute('role', 'dialog');
+	return { root, focus: () => (rows[0] ?? close).focus() };
 }
 
 export function volumeIndicator(volume: number, muted: boolean): HTMLElement {

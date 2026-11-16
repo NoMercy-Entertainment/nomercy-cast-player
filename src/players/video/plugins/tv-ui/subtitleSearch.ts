@@ -58,9 +58,10 @@ export function isRateLimited(error: unknown): boolean {
 }
 
 export async function searchSubtitles(target: SearchTarget, language: string): Promise<SubtitleCandidate[]> {
-	const query = new URLSearchParams({ type: target.type, id: String(target.id), language });
+	const query = new URLSearchParams({ type: target.type, id: String(target.id) });
 	if (target.videoFileId)
 		query.set('videoFileId', target.videoFileId);
+	query.set('language', language);
 	const body = await apiFetch<{ data?: RawCandidate[] }>({ path: `/api/v1/subtitles/search?${query.toString()}`, method: 'GET' });
 	return (body.data ?? []).map(raw => ({
 		id: raw.id,
