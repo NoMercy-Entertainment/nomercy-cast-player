@@ -1,12 +1,9 @@
 // -----------------------------------------------------------------------------
-//  Copyright (c) NoMercy Labs.
+//  Copyright (c) NoMercy Entertainment
 //
-//  This file is part of NomNomzBot. You may use, change and share it for free,
-//  for any noncommercial purpose, under the PolyForm Noncommercial License
-//  1.0.0. You may not earn money with it. Distributed WITHOUT ANY WARRANTY.
-//  See LICENSE for details, and TRADEMARKS.md for the name and logo.
+//  Licensed under the Apache License, Version 2.0. See LICENSE for details.
 //
-//  SPDX-License-Identifier: PolyForm-Noncommercial-1.0.0
+//  SPDX-License-Identifier: Apache-2.0
 // -----------------------------------------------------------------------------
 
 import { AST_NODE_TYPES, ESLintUtils, type TSESLint } from '@typescript-eslint/utils';
