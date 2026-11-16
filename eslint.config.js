@@ -64,6 +64,22 @@ export default antfu(
 		},
 	},
 	{
+		// Words come from i18n/*.json through t(); the allowlist holds symbols KMP also draws literally.
+		files: ['src/**/*.vue'],
+		rules: {
+			'vue/no-bare-strings-in-template': ['error', {
+				allowlist: ['(', ')', ',', '.', '&', '+', '-', '=', '*', '/', '#', '%', '!', '?', ':', '[', ']', '{', '}', '<', '>', '·', '•', '—', '–', '×', '©', 'S', 'E'],
+			}],
+		},
+	},
+	{
+		// Dev-only placeholders with no KMP twin (MusicGenreScreen:, PersonScreen: id=) and the DEV-only /__focus route.
+		files: ['src/views/music/MusicGenresScreen.vue', 'src/views/person/PersonScreen.vue', 'src/views/__test__/FocusPlayground.vue'],
+		rules: {
+			'vue/no-bare-strings-in-template': 'off',
+		},
+	},
+	{
 		// Module boundary rules per spec §7.1. The cast/ directory is the only
 		// place that touches cast.framework; stores never import from
 		// components or queries; lib has zero Vue imports; etc.
