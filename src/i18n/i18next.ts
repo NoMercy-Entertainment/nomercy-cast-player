@@ -2,9 +2,7 @@ import i18next from 'i18next';
 
 // Port of app-web src/i18n/i18next.ts. The receiver has no server locale route, so every
 // i18n/*.json in src is bundled and added per language, as app-web's loadFeatureWords does.
-// Held on English while only part of the receiver reads t(): a Dutch device would get a mixed screen.
-// Pass 5 moves the rest and restores `navigator.language.split('-')[0] || 'en'`.
-const language = 'en';
+const language = navigator.language.split('-')[0] || 'en';
 
 i18next
 	.init({

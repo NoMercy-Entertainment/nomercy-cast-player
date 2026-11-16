@@ -19,13 +19,13 @@ it('starts on English with no HTTP request and English as the fallback', async (
 	expect(fetchSpy).not.toHaveBeenCalled();
 });
 
-// Until every string reads t(), a Dutch device would see half Dutch, half English. Pass 5 lifts this.
-it('stays on English on a Dutch device while the move to i18n is partial', async () => {
+// Every string reads t(), so the receiver follows the device language.
+it('follows a Dutch device language', async () => {
 	vi.resetModules();
 	vi.stubGlobal('navigator', { ...navigator, language: 'nl-NL' });
 
 	const { default: i18n } = await import('@/i18n/i18next');
 	await new Promise(resolve => setTimeout(resolve, 50));
 
-	expect(i18n.language).toBe('en');
+	expect(i18n.language).toBe('nl');
 });
