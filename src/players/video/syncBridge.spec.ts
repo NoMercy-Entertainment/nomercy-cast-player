@@ -71,25 +71,27 @@ describe('the sync bridge reads the 2.x payloads', () => {
 	});
 
 	// cast#73: the server binds an object argument to nothing and fails the call; app-web and KMP send whole seconds.
-	it('sends the seek target as whole seconds, like app-web and KMP', () => {
-		const invoke = vi.fn();
+	it('sends the seek target as whole seconds, like app-web and KMP', async () => {
+		const invoke = vi.fn(() => Promise.resolve({ ok: true }));
 		socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
 		const engine = fakeEngine();
 		videoSyncBridge.attach(engine as never);
 
 		engine.fire('seek', { time: 33.6 });
+		await new Promise(resolve => setTimeout(resolve, 0));
 
 		expect(invoke).toHaveBeenCalledWith('PlaybackCommand', 'seek', 34);
 	});
 
 	// SignalR binds by argument count: VideoHub.PlaybackCommand(command, data) refuses one argument.
-	it.each(['play', 'pause'])('sends %s with both hub arguments', (event) => {
-		const invoke = vi.fn();
+	it.each(['play', 'pause'])('sends %s with both hub arguments', async (event) => {
+		const invoke = vi.fn(() => Promise.resolve({ ok: true }));
 		socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
 		const engine = fakeEngine();
 		videoSyncBridge.attach(engine as never);
 
 		engine.fire(event);
+		await new Promise(resolve => setTimeout(resolve, 0));
 
 		expect(invoke).toHaveBeenCalledWith('PlaybackCommand', event, null);
 	});
@@ -109,7 +111,7 @@ describe('the sync bridge reads the 2.x payloads', () => {
 			['seek', { time: 5 }, 'syncPlaybackCommand'],
 			['time', { time: 61.4 }, 'syncSetTime'],
 		])('records one line for a rejected %s and keeps the play state', async (event, payload, where) => {
-			const invoke = vi.fn(() => Promise.reject(new Error('refused')));
+			const invoke = vi.fn((method: string) => (method === 'StartPlaybackCommand' ? Promise.resolve({ ok: true }) : Promise.reject(new Error('refused'))));
 			socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
 			const engine = fakeEngine();
 			videoSyncBridge.attach(engine as never);
@@ -133,8 +135,83 @@ describe('the sync bridge reads the 2.x payloads', () => {
 			engine.fire('seek', { time: 5 });
 			await flush();
 
-			expect(invoke).toHaveBeenCalledTimes(2);
+			expect(invoke).toHaveBeenCalledTimes(3);
 			expect(caught()).toHaveLength(0);
+		});
+	});
+
+	// cast-player#76: the server's in-memory player state is filled only by StartPlaybackCommand, and a seek saves progress to it.
+	describe('the item start is reported before any command', () => {
+		const flushAll = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+		const names = (invoke: ReturnType<typeof vi.fn>) => invoke.mock.calls.map(call => (call[0] === 'PlaybackCommand' ? `${call[0]}:${String(call[1])}` : String(call[0])));
+		const hubWith = (invoke: ReturnType<typeof vi.fn>) => {
+			socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
+		};
+
+		it('sends StartPlaybackCommand with the item\'s type, list id and id before the first seek', async () => {
+			const invoke = vi.fn(() => Promise.resolve({ ok: true }));
+			hubWith(invoke);
+			const engine = fakeEngine();
+			videoSyncBridge.attach(engine as never);
+
+			engine.fire('seek', { time: 90 });
+			await flushAll();
+
+			expect(invoke.mock.calls[0]).toEqual(['StartPlaybackCommand', 'tv', 60808, 986190]);
+			expect(names(invoke)).toEqual(['StartPlaybackCommand', 'PlaybackCommand:seek']);
+		});
+
+		it('reports a new item when the player starts it', async () => {
+			const invoke = vi.fn(() => Promise.resolve({ ok: true }));
+			hubWith(invoke);
+			const engine = fakeEngine();
+			videoSyncBridge.attach(engine as never);
+
+			engine.fire('item');
+			await flushAll();
+
+			expect(invoke).toHaveBeenCalledWith('StartPlaybackCommand', 'tv', 60808, 986190);
+		});
+
+		it('sends a later seek on the same item once, without a second start', async () => {
+			const invoke = vi.fn(() => Promise.resolve({ ok: true }));
+			hubWith(invoke);
+			const engine = fakeEngine();
+			videoSyncBridge.attach(engine as never);
+			engine.fire('seek', { time: 90 });
+			await flushAll();
+
+			engine.fire('seek', { time: 120 });
+			await flushAll();
+
+			expect(names(invoke)).toEqual(['StartPlaybackCommand', 'PlaybackCommand:seek', 'PlaybackCommand:seek']);
+			expect(invoke).toHaveBeenLastCalledWith('PlaybackCommand', 'seek', 120);
+		});
+
+		it('reports the item again when the video hub connects again', async () => {
+			const invoke = vi.fn(() => Promise.resolve({ ok: true }));
+			hubWith(invoke);
+			const engine = fakeEngine();
+			videoSyncBridge.attach(engine as never);
+			engine.fire('item');
+			await flushAll();
+
+			socketStore.announceVideoHubConnected();
+			await flushAll();
+
+			expect(names(invoke)).toEqual(['StartPlaybackCommand', 'StartPlaybackCommand']);
+		});
+
+		it('sends no seek for an item the server did not take', async () => {
+			const invoke = vi.fn((method: string) => (method === 'StartPlaybackCommand' ? Promise.reject(new Error('refused')) : Promise.resolve({ ok: true })));
+			hubWith(invoke);
+			const engine = fakeEngine();
+			videoSyncBridge.attach(engine as never);
+
+			engine.fire('seek', { time: 90 });
+			await flushAll();
+
+			expect(names(invoke)).toEqual(['StartPlaybackCommand']);
 		});
 	});
 

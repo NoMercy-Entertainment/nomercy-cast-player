@@ -64,19 +64,51 @@ function guard(where: string, sent: Promise<unknown> | undefined): void {
 	void Promise.resolve(sent).catch((error: unknown) => recordSwallowed(where, error));
 }
 
+// The server keeps one player state per user, filled only by StartPlaybackCommand, and a seek
+// saves progress to whatever item that state names. The item is reported before any command.
+let started: { id: number | string; taken: Promise<unknown> } | null = null;
+
+function reportStart(p: VideoEngineLike): Promise<unknown> | undefined {
+	const item = p.item() as WireItem | undefined;
+	const hub = socketStore.videoHub.value;
+	if (!hub || !item?.id || !item.playlist_type || item.playlist_id === undefined)
+		return undefined;
+
+	const taken = Promise.resolve(hub.invoke('StartPlaybackCommand', item.playlist_type, item.playlist_id, Number(item.id)));
+	const mine = { id: item.id, taken };
+	started = mine;
+	taken.catch((error: unknown) => {
+		recordSwallowed('syncStartPlayback', error);
+		if (started === mine)
+			started = null;
+	});
+	return taken;
+}
+
+// Runs `send` once the server has taken the start of the item that plays now.
+function afterStart(p: VideoEngineLike, send: () => void): void {
+	const item = p.item() as WireItem | undefined;
+	const taken = started && started.id === item?.id ? started.taken : reportStart(p);
+	void taken?.then(send, () => {});
+}
+
 function bindOutbound(p: VideoEngineLike): void {
+	started = null;
+	const onItem = (): void => {
+		reportStart(p);
+	};
 	const onPlay = (): void => {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, mediaLabel(p));
-		guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'play', null));
+		afterStart(p, () => guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'play', null)));
 		playbackStore.video.applyPlayState(true);
 	};
 	const onPause = (): void => {
-		guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'pause', null));
+		afterStart(p, () => guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'pause', null)));
 		playbackStore.video.applyPlayState(false);
 	};
 	const onSeek = (...args: unknown[]): void => {
 		const data = args[0] as { time: number };
-		guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', Math.round(data.time)));
+		afterStart(p, () => guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', Math.round(data.time))));
 	};
 	const onTime = throttle((...args: unknown[]) => {
 		const seconds = (args[0] as { time?: number } | undefined)?.time ?? 0;
@@ -97,12 +129,19 @@ function bindOutbound(p: VideoEngineLike): void {
 		}));
 	}, 5000);
 
+	p.on('item', onItem);
 	p.on('play', onPlay);
 	p.on('pause', onPause);
 	p.on('seek', onSeek);
 	p.on('time', onTime);
+	const offConnected = socketStore.onVideoHubConnected(() => {
+		started = null;
+		reportStart(p);
+	});
 
 	unsubs.push(
+		offConnected,
+		() => p.off('item', onItem),
 		() => p.off('play', onPlay),
 		() => p.off('pause', onPause),
 		() => p.off('seek', onSeek),

@@ -41,6 +41,19 @@ const pluginHub = shallowRef<TypedHub | null>(null);
 
 let stopRequested = false;
 
+// The video hub holds per-connection state, so what a device plays is told to it again on every connect.
+const videoHubConnectedListeners = new Set<() => void>();
+
+function announceVideoHubConnected(): void {
+	for (const listener of [...videoHubConnectedListeners])
+		listener();
+}
+
+function onVideoHubConnected(listener: () => void): () => void {
+	videoHubConnectedListeners.add(listener);
+	return () => videoHubConnectedListeners.delete(listener);
+}
+
 // The `a` field on a socket event, so a report says which hub without the
 // reader having to parse text.
 const HUB_ORDINAL: Record<HubName, number> = {
@@ -60,6 +73,8 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 			await hub.start();
 			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
 			console.debug(`[socket] ${name} started`);
+			if (name === 'videoHub')
+				announceVideoHubConnected();
 			return;
 		}
 		catch (err) {
@@ -210,6 +225,8 @@ function bindLifecycle(hub: TypedHub, name: HubName): void {
 		connectionState.value = 'connected';
 		console.debug(`[socket] ${name} reconnected — invalidating library cache`);
 		invalidateAllLibrary();
+		if (name === 'videoHub')
+			announceVideoHubConnected();
 		// Every PluginMessage sent while the socket was down is gone. The wall
 		// re-reads rather than waiting for the next push, which for a plugin
 		// that pushes once an hour is an hour of a row nobody may see any more.
@@ -295,4 +312,6 @@ export const socketStore = {
 	connectAll,
 	disconnectAll,
 	onForegroundResume,
+	onVideoHubConnected,
+	announceVideoHubConnected,
 };
