@@ -164,9 +164,10 @@ onMounted(async () => {
 
 		// setup() plays the first queue item. A cast names the item to watch
 		// (episode 5, not episode 1): switch to it once the queue is loaded.
+		// seekToIndex takes a 1-based position, the list index is 0-based.
 		const startIndex = props.playlist?.findIndex(item => item.id === props.initialItem?.id) ?? -1;
 		if (startIndex > 0)
-			player.once('queue', () => player.seekToIndex(startIndex));
+			player.once('queue', () => player.seekToIndex(startIndex + 1));
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, mediaLabel.value);
 
 		videoSyncBridge.attach(player);

@@ -27,7 +27,8 @@ function makePlayer() {
 		}),
 		item: vi.fn(() => items[current]),
 		index: vi.fn(() => current),
-		seekToIndex: vi.fn((position: number) => { current = position; }),
+		// nomercy-player-core: the position is 1-based, seekToIndex(1) loads the first item.
+		seekToIndex: vi.fn((position: number) => { current = position - 1; }),
 		time: vi.fn(),
 		chapters: vi.fn(() => []),
 		audioTrack: vi.fn(() => null),
@@ -120,7 +121,25 @@ describe('videoPlayer starts the cast watch session', () => {
 		const onQueue = player.once.mock.calls.find(([event]) => event === 'queue')?.[1] as (() => void) | undefined;
 		expect(onQueue).toBeTypeOf('function');
 		onQueue!();
-		expect(player.seekToIndex).toHaveBeenCalledWith(2);
+		expect(player.item()?.id).toBe('e3');
+
+		wrapper.unmount();
+	});
+
+	it('keeps the first item when the cast names the first item or a movie', async () => {
+		players.length = 0;
+		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
+
+		const items = ['e1', 'e2'].map(id => ({ id, title: id, duration: 100, file: `https://example.invalid/${id}.m3u8` }));
+		const wrapper = mount(VideoPlayer, {
+			props: { type: 'movie', id: '1', playlist: items, initialItem: items[0] },
+			global: { plugins: [router()] },
+		});
+		await flushPromises();
+
+		const player = players[0]!;
+		expect(player.item()?.id).toBe('e1');
+		expect(player.seekToIndex).not.toHaveBeenCalled();
 
 		wrapper.unmount();
 	});
@@ -219,7 +238,7 @@ describe('videoPlayer starts the cast watch session', () => {
 
 		const replacements = player.queue.mock.calls.filter(args => args.length > 0);
 		expect(replacements).toEqual([[[e1, e2, e3, e4, e5, e6]]]);
-		expect(player.seekToIndex.mock.calls).toEqual([[1]]);
+		expect(player.seekToIndex.mock.calls).toEqual([[2]]);
 		expect(player.dispose).not.toHaveBeenCalled();
 		expect(player.setup).toHaveBeenCalledTimes(1);
 		await wrapper.setProps({ playlist: [e1, e1a, e2, e3, e4, e5, e6] });
