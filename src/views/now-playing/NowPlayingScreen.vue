@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
@@ -20,6 +21,7 @@ import { applyThemeColor } from '@/lib/theme';
  * here — backdrop layer → scrim → content grid.
  */
 
+const { t } = useTranslation();
 const router = useRouter();
 
 const containerEl = ref<HTMLElement | null>(null);
@@ -122,7 +124,7 @@ onUnmounted(() => {
 				data-focusable
 				tabindex="0"
 				class="util-btn"
-				aria-label="Close"
+				:aria-label="t('common.close')"
 			>
 				<MoooomIcon icon="cross" width="22" height="22" />
 			</button>
@@ -132,7 +134,7 @@ onUnmounted(() => {
 				tabindex="0"
 				class="util-btn"
 				:class="{ active: track?.favorite }"
-				aria-label="Like"
+				:aria-label="t('views.music.like')"
 			>
 				<MoooomIcon :icon="track?.favorite ? 'heartFilled' : 'heart'" width="22" height="22" />
 			</button>
@@ -142,7 +144,7 @@ onUnmounted(() => {
 				tabindex="0"
 				class="util-btn"
 				:class="{ active: lyricsOpen }"
-				aria-label="Lyrics"
+				:aria-label="t('music.player.lyrics')"
 			>
 				<MoooomIcon icon="lyrics" width="22" height="22" />
 			</button>

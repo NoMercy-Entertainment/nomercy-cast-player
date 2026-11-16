@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, toRef, watch } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { useAutoRetry } from '@/composables/useAutoRetry';
@@ -37,6 +38,8 @@ const props = withDefaults(defineProps<{
 	// A page without hero art (Music) says so; it then seeds no hero and keeps no hero room.
 	hero?: boolean;
 }>(), { hero: true });
+
+const { t } = useTranslation();
 
 const containerEl = ref<HTMLElement | null>(null);
 const railsGroup = useFocusGroup({
@@ -89,7 +92,7 @@ if (props.hero)
 		<EmptyState
 			v-else-if="!components.some(drawsContent)"
 			:message="emptyMessage"
-			:action="{ label: 'Refresh', onAction: refetch }"
+			:action="{ label: t('common.refresh'), onAction: refetch }"
 		/>
 		<template v-else>
 			<HomeHero v-if="heroCard" :card="heroCard" />
@@ -107,7 +110,7 @@ if (props.hero)
 				<slot name="rails-end" />
 			</div>
 			<p v-if="isFetching" class="nm-refresh-hint">
-				Refreshing…
+				{{ t('views.refreshing') }}
 			</p>
 		</template>
 	</div>

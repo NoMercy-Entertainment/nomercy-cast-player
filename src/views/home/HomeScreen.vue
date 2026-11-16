@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import { useHomeQuery } from '@/queries/useHomeQuery';
 import HeroRailsView from '@/views/HeroRailsView.vue';
 import PluginSlot from '@/server-components/PluginSlot.vue';
@@ -10,6 +11,7 @@ import PluginSlot from '@/server-components/PluginSlot.vue';
  * useHomeQuery result and per-screen copy.
  */
 
+const { t } = useTranslation();
 const { data, isLoading, error, refetch, isFetching } = useHomeQuery();
 </script>
 
@@ -21,8 +23,8 @@ const { data, isLoading, error, refetch, isFetching } = useHomeQuery();
 		:is-fetching="isFetching"
 		:error="error"
 		:refetch="() => refetch()"
-		error-context="Couldn't load home"
-		empty-message="Your home is empty. Add a library on your phone or desktop to get started."
+		:error-context="t('views.home.load_error')"
+		:empty-message="t('views.home.empty')"
 		:skeleton-count="4"
 	>
 		<template #rails-end>

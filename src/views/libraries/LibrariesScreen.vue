@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import { useLibrariesQuery } from '@/queries/useLibrariesQuery';
 import HeroRailsView from '@/views/HeroRailsView.vue';
 
 /* Libraries view — same hero + rails composition as TvHomeScreen. */
 
+const { t } = useTranslation();
 const { data, isLoading, error, refetch, isFetching } = useLibrariesQuery();
 </script>
 
@@ -15,7 +17,7 @@ const { data, isLoading, error, refetch, isFetching } = useLibrariesQuery();
 		:is-fetching="isFetching"
 		:error="error"
 		:refetch="() => refetch()"
-		error-context="Couldn't load libraries"
-		empty-message="No libraries yet. Add one from your phone or desktop."
+		:error-context="t('views.libraries.load_error')"
+		:empty-message="t('views.libraries.empty')"
 	/>
 </template>

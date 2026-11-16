@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { usePlaylistQuery } from '@/queries/usePlaylistQuery';
 import { invalidateAfterPlayback } from '@/lib/queryShim';
 import { playbackStore } from '@/stores/playbackStore';
@@ -13,6 +14,7 @@ const props = defineProps<{
 	id?: string;
 }>();
 
+const { t } = useTranslation();
 const route = useRoute();
 const type = computed(
 	() => (props.type ?? String(route.params.type ?? '')) as 'movie' | 'tv',
@@ -69,14 +71,14 @@ onBeforeUnmount(() => invalidateAfterPlayback(playbackStore.video.timeMs.value >
 			v-if="error"
 			:error="error as Error"
 			:retry="() => refetch()"
-			context="Couldn't load video"
+			:context="t('views.watch.load_error')"
 		/>
 		<Skeleton v-else-if="isLoading" type="hero" :count="1" />
 		<ErrorPanel
 			v-else-if="playerError"
 			:error="{ message: playerError }"
 			:retry="() => { playerError = null; refetch(); }"
-			context="Couldn't play video"
+			:context="t('views.watch.play_error')"
 		/>
 		<VideoPlayer
 			v-else-if="initialItem"
@@ -91,9 +93,9 @@ onBeforeUnmount(() => invalidateAfterPlayback(playbackStore.video.timeMs.value >
 		/>
 		<ErrorPanel
 			v-else
-			:error="{ message: 'Nothing to play' }"
+			:error="{ message: t('views.watch.nothing_to_play') }"
 			:retry="() => refetch()"
-			context="Nothing to play"
+			:context="t('views.watch.nothing_to_play')"
 		/>
 	</div>
 </template>

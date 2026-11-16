@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useMusicCardQuery } from '@/queries/useMusicCardQuery';
 import ServerDrivenView from '../ServerDrivenView.vue';
 
+const { t } = useTranslation();
 const route = useRoute();
 const path = computed(() => {
 	const matched = route.params.pathMatch;
@@ -23,7 +25,7 @@ const { data, isLoading, isFetching, error, refetch } = useMusicCardQuery(path);
 		:is-fetching="isFetching"
 		:error="error"
 		:refetch="() => refetch()"
-		error-context="Couldn't load music cards"
-		empty-message="Nothing here."
+		:error-context="t('views.music.cards_error')"
+		:empty-message="t('views.music.cards_empty')"
 	/>
 </template>

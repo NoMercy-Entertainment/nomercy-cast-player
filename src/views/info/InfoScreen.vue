@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, toRefs, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useQueryClient } from '@tanstack/vue-query';
 import { useInfoQuery } from '@/queries/useInfoQuery';
 import type { InfoData } from '@/queries/useInfoQuery';
@@ -33,6 +34,7 @@ const props = defineProps<{
 const API_PREFIX = /^\/api\/v1\//;
 const LEADING_SLASH = /^\//;
 
+const { t } = useTranslation();
 const router = useRouter();
 const { type, id } = toRefs(props);
 
@@ -76,14 +78,14 @@ const readyTrailer = computed(() => {
 const trailerOpen = ref(false);
 
 const watchlistLabel = computed(() =>
-	info.value?.watchlist ? 'Remove from watchlist' : 'Add to watchlist',
+	info.value?.watchlist ? t('components.buttons.remove_from_watchlist') : t('components.buttons.add_to_watchlist'),
 );
 
 const yearText = computed(() => (info.value?.year ? String(info.value.year) : ''));
 const durationText = computed(() => {
 	const d = info.value?.duration;
 	if (typeof d === 'number')
-		return `${Math.round(d / 60)} min`;
+		return t('views.info.minutes', { count: Math.round(d / 60) });
 	return d ? String(d) : '';
 });
 const ratingText = computed(() =>
@@ -192,7 +194,7 @@ async function toggleWatchlist(): Promise<void> {
 		v-else-if="error"
 		:error="error as Error"
 		:retry="() => refetch()"
-		context="Couldn't load details"
+		:context="t('views.info.load_error')"
 	/>
 	<section v-else-if="info" class="info-screen">
 		<div class="backdrop">
@@ -245,7 +247,7 @@ async function toggleWatchlist(): Promise<void> {
 				@click.prevent="watchPath && router.push(watchPath)"
 			>
 				<MoooomIcon icon="nmPlay" width="18" height="18" />
-				Watch
+				{{ t('components.cards.watch') }}
 			</button>
 			<button
 				v-if="readyTrailer"
@@ -256,7 +258,7 @@ async function toggleWatchlist(): Promise<void> {
 				@click="openTrailer"
 			>
 				<MoooomIcon icon="playCircle" width="18" height="18" />
-				Watch trailer
+				{{ t('info.watch_trailer') }}
 			</button>
 			<button
 				ref="watchlistEl"

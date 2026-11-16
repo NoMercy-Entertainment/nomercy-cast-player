@@ -27,3 +27,48 @@ const rows: I18nRow[] = [
 ];
 
 checkRows('views', rows);
+
+// Part 2: the rest of views (HeroRailsView ... SeasonPickerOverlay).
+const rest: I18nRow[] = [
+	['views/HeroRailsView.vue', 'label: \'Refresh\'', 'common.refresh', 'Refresh', 'Vernieuwen'],
+	['views/HeroRailsView.vue', 'Refreshing…', 'views.refreshing', 'Refreshing…'],
+	['views/ServerDrivenView.vue', 'Nothing here yet.', 'views.empty_default', 'Nothing here yet.'],
+	['views/ServerDrivenView.vue', 'label: \'Refresh\'', 'common.refresh', 'Refresh'],
+	['views/home/HomeScreen.vue', 'Couldn\'t load home', 'views.home.load_error', 'Couldn\'t load home'],
+	['views/home/HomeScreen.vue', 'Your home is empty', 'views.home.empty', 'Your home is empty. Add a library on your phone or desktop to get started.'],
+	['views/libraries/LibrariesScreen.vue', 'Couldn\'t load libraries', 'views.libraries.load_error', 'Couldn\'t load libraries'],
+	['views/libraries/LibrariesScreen.vue', 'No libraries yet', 'views.libraries.empty', 'No libraries yet. Add one from your phone or desktop.'],
+	['views/library/LibraryScreen.vue', 'Couldn\'t load this library', 'views.library.load_error', 'Couldn\'t load this library'],
+	['views/library/LibraryScreen.vue', 'This library is empty.', 'views.library.empty', 'This library is empty.'],
+	['views/watch/WatchScreen.vue', 'Couldn\'t load video', 'views.watch.load_error', 'Couldn\'t load video'],
+	['views/watch/WatchScreen.vue', 'Couldn\'t play video', 'views.watch.play_error', 'Couldn\'t play video'],
+	['views/watch/WatchScreen.vue', 'Nothing to play', 'views.watch.nothing_to_play', 'Nothing to play'],
+	['views/music/MusicStartScreen.vue', 'Couldn\'t load music', 'views.music.start_error_load', 'Couldn\'t load music'],
+	['views/music/MusicStartScreen.vue', 'No music yet', 'views.music.start_empty', 'No music yet. Add a music library to get started.'],
+	['views/music/MusicCardsScreen.vue', 'Couldn\'t load music cards', 'views.music.cards_error', 'Couldn\'t load music cards'],
+	['views/music/MusicCardsScreen.vue', 'Nothing here.', 'views.music.cards_empty', 'Nothing here.'],
+	['views/music/MusicListScreen.vue', 'return \'Pause\'', 'common.pause', 'Pause', 'Pauzeren'],
+	['views/music/MusicListScreen.vue', 'return \'Resume\'', 'views.music.resume', 'Resume'],
+	['views/music/MusicListScreen.vue', 'return \'Play\'', 'common.play', 'Play', 'Afspelen'],
+	['views/music/MusicListScreen.vue', 'Music is not connected', 'views.music.start_error_offline', 'Could not start playback. Music is not connected.'],
+	['views/music/MusicListScreen.vue', '= \'Could not start playback.\'', 'views.music.start_error', 'Could not start playback.'],
+	['views/music/MusicListScreen.vue', 'Couldn\'t load this list', 'views.music.list_error', 'Couldn\'t load this list'],
+	['views/music/MusicListScreen.vue', '?? \'Album\'', 'components.music_card_type.album', 'Album', 'Album'],
+	['views/music/MusicListScreen.vue', '}} tracks<', 'music.tracks', 'tracks', 'nummers'],
+	['views/music/MusicListScreen.vue', 'aria-label="Back"', 'common.back', 'Back', 'Terug'],
+	['views/music/MusicListScreen.vue', 'aria-label="Like"', 'views.music.like', 'Like'],
+	['views/music/MusicListScreen.vue', 'aria-label="About"', 'nav.about', 'About', 'Over'],
+	['views/music/MusicListScreen.vue', '<span>Title</span>', 'common.title', 'Title', 'Titel'],
+	['views/music/MusicAboutDialog.vue', '|| \'About\'', 'nav.about', 'About'],
+	['views/now-playing/NowPlayingScreen.vue', 'aria-label="Close"', 'common.close', 'Close', 'Sluiten'],
+	['views/now-playing/NowPlayingScreen.vue', 'aria-label="Like"', 'views.music.like', 'Like'],
+	['views/now-playing/NowPlayingScreen.vue', 'aria-label="Lyrics"', 'music.player.lyrics', 'Lyrics', 'Songteksten'],
+	['views/info/InfoScreen.vue', 'Couldn\'t load details', 'views.info.load_error', 'Couldn\'t load details'],
+	['views/info/InfoScreen.vue', '\'Remove from watchlist\'', 'components.buttons.remove_from_watchlist', 'Remove from watchlist', 'Van kijklijst verwijderen'],
+	['views/info/InfoScreen.vue', '\'Add to watchlist\'', 'components.buttons.add_to_watchlist', 'Add to watchlist', 'Aan kijklijst toevoegen'],
+	['views/info/InfoScreen.vue', ' min`', 'views.info.minutes', '{{count}} min'],
+	['views/info/InfoScreen.vue', '>Watch trailer<', 'info.watch_trailer', 'Watch trailer', 'Trailer bekijken'],
+	['views/info/SeasonPickerOverlay.vue', 'aria-label="Season"', 'views.info.season', 'Season'],
+];
+
+checkRows('views part 2', rest);

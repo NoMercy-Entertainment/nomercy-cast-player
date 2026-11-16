@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import type { FocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
@@ -15,6 +16,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{ select: [number]; close: [] }>();
+
+const { t } = useTranslation();
 
 const rowEls = ref<HTMLElement[]>([]);
 
@@ -64,7 +67,7 @@ onBeforeUnmount(() => releases.forEach(release => release()));
 <template>
 	<Teleport to="body">
 		<div class="season-scrim">
-			<div class="season-overlay season-panel" role="listbox" aria-label="Season">
+			<div class="season-overlay season-panel" role="listbox" :aria-label="t('views.info.season')">
 				<button
 					v-for="option in props.options"
 					:key="option.number"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import Resolver from '@/server-components/Resolver.vue';
 import Skeleton from '@/components/feedback/Skeleton.vue';
@@ -23,6 +24,7 @@ const props = defineProps<{
 	errorContext?: string;
 }>();
 
+const { t } = useTranslation();
 const containerEl = ref<HTMLElement | null>(null);
 useFocusGroup({
 	type: 'vertical',
@@ -49,8 +51,8 @@ const errVal = computed(() => (props.error as Error | null) ?? null);
 		</template>
 		<EmptyState
 			v-else-if="components.length === 0"
-			:message="emptyMessage ?? 'Nothing here yet.'"
-			:action="refetch ? { label: 'Refresh', onAction: refetch } : undefined"
+			:message="emptyMessage ?? t('views.empty_default')"
+			:action="refetch ? { label: t('common.refresh'), onAction: refetch } : undefined"
 		/>
 		<template v-else>
 			<Resolver

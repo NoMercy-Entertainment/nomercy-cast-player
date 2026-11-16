@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useTranslation } from 'i18next-vue';
 import type { FocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusStore } from '@/stores/focusStore';
@@ -11,6 +12,8 @@ import { focusStore } from '@/stores/focusStore';
 defineProps<{ name?: string; description: string }>();
 
 const emit = defineEmits<{ close: [] }>();
+
+const { t } = useTranslation();
 
 const bodyEl = ref<HTMLElement | null>(null);
 
@@ -56,7 +59,7 @@ onBeforeUnmount(() => releases.forEach(release => release()));
 				class="about-dialog"
 				role="dialog"
 				aria-modal="true"
-				:aria-label="name || 'About'"
+				:aria-label="name || t('nav.about')"
 				data-focusable
 				tabindex="0"
 			>

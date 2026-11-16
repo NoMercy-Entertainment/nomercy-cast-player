@@ -30,6 +30,9 @@
 	"components": {
 		"cards": {
 			"watch": "Bekijken"
+		},
+		"music_card_type": {
+			"album": "Album"
 		}
 	},
 	"info": {

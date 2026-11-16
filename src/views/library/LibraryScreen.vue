@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useLibraryQuery } from '@/queries/useLibraryQuery';
 import HeroRailsView from '@/views/HeroRailsView.vue';
 
@@ -11,6 +12,7 @@ import HeroRailsView from '@/views/HeroRailsView.vue';
  */
 
 const LEADING_SLASH = /^\//;
+const { t } = useTranslation();
 const route = useRoute();
 const path = computed(() => route.fullPath.replace(LEADING_SLASH, '').split('?')[0]);
 
@@ -25,7 +27,7 @@ const { data, isLoading, error, refetch, isFetching } = useLibraryQuery(path);
 		:is-fetching="isFetching"
 		:error="error"
 		:refetch="() => refetch()"
-		error-context="Couldn't load this library"
-		empty-message="This library is empty."
+		:error-context="t('views.library.load_error')"
+		:empty-message="t('views.library.empty')"
 	/>
 </template>

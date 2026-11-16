@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useMusicListQuery } from '@/queries/useMusicListQuery';
@@ -25,6 +26,7 @@ import MusicAboutDialog from './MusicAboutDialog.vue';
 const API_PREFIX = /^\/api\/v1\//;
 const LEADING_SLASH = /^\//;
 
+const { t } = useTranslation();
 const route = useRoute();
 const router = useRouter();
 
@@ -83,10 +85,10 @@ const isCurrentList = computed(() => {
 
 const playButtonLabel = computed(() => {
 	if (isCurrentList.value && playbackStore.music.playing.value)
-		return 'Pause';
+		return t('common.pause');
 	if (isCurrentList.value)
-		return 'Resume';
-	return 'Play';
+		return t('views.music.resume');
+	return t('common.play');
 });
 
 function onPlayClick(): void {
@@ -236,21 +238,21 @@ watch(list, (next) => {
 async function startPlayback(trackId: string): Promise<boolean> {
 	const hub = socketStore.musicHub.value;
 	if (!hub || !id.value || !trackId) {
-		startError.value = 'Could not start playback. Music is not connected.';
+		startError.value = t('views.music.start_error_offline');
 		return false;
 	}
 	try {
 		// The server reports a refused start as { ok: false } and does not throw.
 		const result = await hub.invoke('StartPlaybackCommand', type.value, id.value, trackId) as { ok?: boolean } | undefined;
 		if (result?.ok === false) {
-			startError.value = 'Could not start playback.';
+			startError.value = t('views.music.start_error');
 			return false;
 		}
 		startError.value = null;
 		return true;
 	}
 	catch {
-		startError.value = 'Could not start playback.';
+		startError.value = t('views.music.start_error');
 		return false;
 	}
 }
@@ -275,7 +277,7 @@ function trackArtistText(track: MusicTrack): string {
 		v-else-if="error"
 		:error="error as Error"
 		:retry="() => refetch()"
-		context="Couldn't load this list"
+		:context="t('views.music.list_error')"
 	/>
 	<section v-else-if="list" ref="containerEl" class="music-list-screen">
 		<div class="header-col">
@@ -283,7 +285,7 @@ function trackArtistText(track: MusicTrack): string {
 				<img v-if="coverUrl" :src="coverUrl" :alt="list.title ?? ''">
 			</div>
 			<p class="kind">
-				{{ list.type ?? 'Album' }}
+				{{ list.type ?? t('components.music_card_type.album') }}
 			</p>
 			<h1 class="title">
 				{{ list.title }}
@@ -291,7 +293,7 @@ function trackArtistText(track: MusicTrack): string {
 			<p v-if="list.year || trackCount" class="meta">
 				<span v-if="list.year">{{ list.year }}</span>
 				<span v-if="list.year && trackCount">·</span>
-				<span v-if="trackCount">{{ trackCount }} tracks</span>
+				<span v-if="trackCount">{{ trackCount }} {{ t('music.tracks') }}</span>
 				<span v-if="totalDurationText">·</span>
 				<span v-if="totalDurationText">{{ totalDurationText }}</span>
 			</p>
@@ -303,7 +305,7 @@ function trackArtistText(track: MusicTrack): string {
 						type="button"
 						data-focusable
 						tabindex="0"
-						aria-label="Back"
+						:aria-label="t('common.back')"
 						@click.prevent="router.back()"
 					>
 						<MoooomIcon icon="chevronLeft" width="28" height="28" />
@@ -315,7 +317,7 @@ function trackArtistText(track: MusicTrack): string {
 						type="button"
 						data-focusable
 						tabindex="0"
-						aria-label="Like"
+						:aria-label="t('views.music.like')"
 						:aria-pressed="isFavorite"
 						@click.prevent="onLikeClick"
 					>
@@ -328,7 +330,7 @@ function trackArtistText(track: MusicTrack): string {
 						type="button"
 						data-focusable
 						tabindex="0"
-						aria-label="About"
+						:aria-label="t('nav.about')"
 						@click.prevent="aboutOpen = true"
 					>
 						<MoooomIcon icon="infoCircle" width="24" height="24" />
@@ -362,8 +364,8 @@ function trackArtistText(track: MusicTrack): string {
 		<div class="tracks-col nm-no-scrollbar">
 			<header class="tracks-head">
 				<span>#</span>
-				<span>Title</span>
-				<span class="duration">Duration</span>
+				<span>{{ t('common.title') }}</span>
+				<span class="duration">{{ t('common.duration') }}</span>
 			</header>
 			<ol class="tracks">
 				<!-- eslint-disable-next-line vue-a11y/click-events-have-key-events -- useDPad turns Enter into this click -->
