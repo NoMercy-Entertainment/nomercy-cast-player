@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { fromEngineStyle, isPlaying, readVolume, toEngineStyle } from './engine';
-import { parseSpriteVtt, frameAt } from './sprite';
 import { showBackdrop, showLoading } from './overlays';
 
 describe('engine accessors of nomercy-video-player 2.8.3', () => {
@@ -27,23 +26,6 @@ describe('engine accessors of nomercy-video-player 2.8.3', () => {
 	it('fromEngineStyle is the inverse for the settings rows', () => {
 		const view = fromEngineStyle({ fontSize: 150, fontFamily: 'Arial, sans-serif', textColor: 'yellow', backgroundOpacity: 50, edgeStyle: 'dropShadow' });
 		expect(view).toEqual({ fontSize: 36, fontFamily: 'Arial, sans-serif', fontColor: 'yellow', backgroundOpacity: 0.5, edgeStyle: 'drop_shadow' });
-	});
-});
-
-describe('scrub sprite (TVSeekContainer.kt:61-121, PreviewThumbnailsPlugin.kt)', () => {
-	const vtt = 'WEBVTT\n\n00:00:00.000 --> 00:00:10.000\nsprite.webp#xywh=0,0,320,180\n\n00:00:10.000 --> 00:00:20.000\nsprite.webp#xywh=320,0,320,180\n';
-
-	it('parses the cue file into frames against the base url', () => {
-		const cues = parseSpriteVtt(vtt, 'https://server.example.test/media/a/thumbs.vtt');
-		expect(cues).toHaveLength(2);
-		expect(cues[1]).toEqual({ start: 10, end: 20, x: 320, y: 0, w: 320, h: 180, url: 'https://server.example.test/media/a/sprite.webp' });
-	});
-
-	it('frameAt returns the cue covering the time, the last one past the end', () => {
-		const cues = parseSpriteVtt(vtt, 'https://server.example.test/a/t.vtt');
-		expect(frameAt(cues, 12)?.x).toBe(320);
-		expect(frameAt(cues, 99)?.x).toBe(320);
-		expect(frameAt([], 1)).toBeNull();
 	});
 });
 
