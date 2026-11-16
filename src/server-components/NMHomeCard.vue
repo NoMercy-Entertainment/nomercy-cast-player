@@ -25,18 +25,10 @@ const props = defineProps<{
 const { t } = useTranslation();
 const router = useRouter();
 
-const imageSource =
-	(props.data as unknown as { backdrop?: string }).backdrop ??
-	(props.data as unknown as { poster?: string }).poster ??
-	props.data.image;
+const imageSource = props.data.backdrop ?? props.data.poster ?? props.data.image;
 const imageUrl = computed(() => buildImageUrl(imageSource, BACKDROP_SIZE));
 
-const overview = computed(
-	() =>
-		(props.data as unknown as { overview?: string; description?: string }).overview ??
-		props.data.description ??
-		'',
-);
+const overview = computed(() => props.data.overview ?? props.data.description ?? '');
 
 const watchPath = computed(() => {
 	const link = props.data.link;

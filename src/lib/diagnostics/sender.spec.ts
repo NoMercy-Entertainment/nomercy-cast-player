@@ -31,7 +31,7 @@ describe('diagnosticsSender', () => {
 		await diagnosticsSender.confirmSend();
 
 		expect(post).toHaveBeenCalledTimes(1);
-		expect(post.mock.calls[0][1]).toEqual(prepared);
+		expect(post.mock.calls[0]?.[1]).toEqual(prepared);
 		expect(diagnosticsSender.state.value).toBe('sent');
 		expect(diagnosticsSender.pending.value).toBeNull();
 	});

@@ -4,7 +4,7 @@ import type { Router } from 'vue-router';
 const CHUNK_ERROR = /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i;
 const RELOADED_KEY = 'nm-chunk-reload';
 
-export function isChunkLoadError(error: unknown): boolean {
+export function isChunkLoadError(error: object): boolean {
 	return error instanceof Error && CHUNK_ERROR.test(error.message);
 }
 

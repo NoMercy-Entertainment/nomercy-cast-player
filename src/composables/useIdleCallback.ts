@@ -10,26 +10,26 @@ interface IdleHandle {
 	cancel: () => void;
 }
 
+interface OptionalIdleApi {
+	requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+	cancelIdleCallback?: (handle: number) => void;
+}
+
 export function scheduleIdle(
 	callback: () => void,
 	options: { timeout?: number } = {},
 ) {
 	// Some smart-TV embedded WebViews don't expose requestIdleCallback even
 	// though @types/dom declares it as required. Feature-detect on window.
-	const w = window as unknown as Record<string, unknown>;
+	const w: OptionalIdleApi = window;
 
 	if (typeof w.requestIdleCallback === 'function') {
-		const ric = w.requestIdleCallback as (
-			cb: (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void,
-			opts?: { timeout?: number },
-		) => number;
-		const cancel = w.cancelIdleCallback as ((handle: number) => void) | undefined;
-		const id = ric(() => callback(), { timeout: options.timeout ?? 1000 });
+		const id = w.requestIdleCallback(() => callback(), { timeout: options.timeout ?? 1000 });
 
 		return {
 			cancel: () => {
-				if (typeof cancel === 'function') {
-					cancel(id);
+				if (typeof w.cancelIdleCallback === 'function') {
+					w.cancelIdleCallback(id);
 				}
 			},
 		} as const satisfies IdleHandle;

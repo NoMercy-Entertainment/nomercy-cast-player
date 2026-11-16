@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { useRoute } from 'vue-router';
+import type { LocationQueryValue } from 'vue-router';
 import { useTranslation } from 'i18next-vue';
 import { usePlaylistQuery } from '@/queries/usePlaylistQuery';
 import { invalidateAfterPlayback } from '@/lib/queryShim';
@@ -8,6 +9,8 @@ import { playbackStore } from '@/stores/playbackStore';
 import VideoPlayer from '@/players/video/VideoPlayer.vue';
 import Skeleton from '@/components/feedback/Skeleton.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
+
+type QueryValue = LocationQueryValue | LocationQueryValue[] | undefined;
 
 const props = defineProps<{
 	type?: string;
@@ -21,7 +24,7 @@ const type = computed(
 );
 const id = computed(() => props.id ?? String(route.params.id ?? ''));
 const resumeAt = computed(() => {
-	const first = (value: unknown) => Number(Array.isArray(value)
+	const first = (value: QueryValue) => Number(Array.isArray(value)
 		? value[0]
 		: value);
 	const seconds = first(route.query.resume_at);
@@ -69,9 +72,13 @@ const initialItem = computed(() => {
 	const season = Number(queryText('season'));
 	const episode = Number(queryText('episode'));
 
-	if (type.value === 'tv' && Number.isInteger(season) && Number.isInteger(episode) && season >= 0 && episode > 0) {
-		return playlist.value.find((item) => Number(item.season) === season && Number(item.episode) === episode) ??
-			data.value?.item;
+	if (
+		type.value === 'tv' && Number.isInteger(season) && Number.isInteger(episode) &&
+		season >= 0 && episode > 0
+	) {
+		return playlist.value.find(
+			(item) => Number(item.season) === season && Number(item.episode) === episode,
+		) ?? data.value?.item;
 	}
 
 	return data.value?.item;

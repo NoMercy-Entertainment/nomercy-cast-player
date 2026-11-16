@@ -55,7 +55,6 @@ export interface CurrentVideoSnapshot {
 
 export interface ConnectedDeviceSnapshot {
 	device_id: string;
-	[key: string]: unknown;
 }
 
 const connectedMusicDevices = ref<ConnectedDeviceSnapshot[]>([]);

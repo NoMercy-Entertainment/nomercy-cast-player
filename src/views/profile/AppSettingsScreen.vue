@@ -11,7 +11,7 @@ import { diagnosticsSender } from '@/lib/diagnostics/sender';
 /*
  * App settings — mirrors APK preferences/display/tv/AppSettingsScreen.kt:
  *   - Auto-skip chapters toggle (intro / credits)
- *   - Auto theme colours toggle (palette-tinted accent)
+ *   - Auto theme colors toggle (palette-tinted accent)
  *   - Subtitle hints toggle (badge cards with subs available)
  *
  * Settings persist to localStorage via settingsStore. The auto-skip
@@ -187,7 +187,9 @@ useFocusEntry({
 				class="nm-list-row"
 				data-focusable
 				tabindex="0"
-				@click.prevent="settingsStore.autoSkipChapters.value = !settingsStore.autoSkipChapters.value"
+				@click.prevent="
+					settingsStore.autoSkipChapters.value = !settingsStore.autoSkipChapters.value
+				"
 			>
 				<div class="row-text">
 					<p class="row-primary">
@@ -208,7 +210,9 @@ useFocusEntry({
 				class="nm-list-row"
 				data-focusable
 				tabindex="0"
-				@click.prevent="settingsStore.useAutoThemeColors.value = !settingsStore.useAutoThemeColors.value"
+				@click.prevent="
+					settingsStore.useAutoThemeColors.value = !settingsStore.useAutoThemeColors.value
+				"
 			>
 				<div class="row-text">
 					<p class="row-primary">

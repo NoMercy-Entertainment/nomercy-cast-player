@@ -5,6 +5,7 @@ import { useFocusGroup } from '@/composables/useFocusGroup';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { playbackStore } from '@/stores/playbackStore';
+import type { RepeatMode } from '@/stores/playbackStore';
 import { musicSyncBridge } from './syncBridge';
 import { formatSeconds } from '@nomercy-entertainment/nomercy-player-core';
 import { progressPercent, totalLabel } from './transport';
@@ -16,6 +17,11 @@ import { progressPercent, totalLabel } from './transport';
  */
 
 const { t } = useTranslation();
+const REPEAT_AFTER = {
+	off: 'all',
+	all: 'one',
+	one: 'off',
+} as const satisfies Record<RepeatMode, RepeatMode>;
 const containerEl = ref<HTMLElement | null>(null);
 const controlsGroup = useFocusGroup({
 	type: 'horizontal',
@@ -77,14 +83,7 @@ useFocusEntry({
 	group: controlsGroup,
 	el: repeatEl,
 	onAction: () => {
-		const cur = playbackStore.music.repeat.value;
-		const next = cur === 'off'
-			? 'all'
-			: cur === 'all'
-				? 'one'
-				: 'off';
-
-		playbackStore.music.applyRepeat(next);
+		playbackStore.music.applyRepeat(REPEAT_AFTER[playbackStore.music.repeat.value]);
 	},
 });
 

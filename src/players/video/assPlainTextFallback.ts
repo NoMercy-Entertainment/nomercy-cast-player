@@ -11,6 +11,8 @@ export interface AssFallbackOptions {
 }
 
 // The subtitle event names a track; the plugin warning event names an error code.
+type FallbackSubscribe = (event: string, handler: (data?: FallbackEvent) => void) => void;
+
 interface FallbackEvent {
 	track?: number | null;
 	error?: { code?: string };
@@ -75,11 +77,14 @@ async function fetchWithToken(url: string): Promise<string> {
  * run: it reported a failure, or stayed silent past the timeout (a worker 404
  * reports nothing). Returns the detach function.
  */
-export function attachAssPlainTextFallback(player: FallbackPlayer, options: AssFallbackOptions = {}): () => void {
+export function attachAssPlainTextFallback(
+	player: FallbackPlayer,
+	options: AssFallbackOptions = {},
+): () => void {
 	const fetchText = options.fetchText ?? fetchWithToken;
 	const timeoutMs = options.timeoutMs ?? RENDER_TIMEOUT_MS;
-	const on = player.on.bind(player) as (event: string, handler: (data?: FallbackEvent) => void) => void;
-	const off = player.off.bind(player) as (event: string, handler: (data?: FallbackEvent) => void) => void;
+	const on = player.on.bind(player) as FallbackSubscribe;
+	const off = player.off.bind(player) as FallbackSubscribe;
 
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let styledUrl: string | null = null;

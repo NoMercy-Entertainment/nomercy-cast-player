@@ -26,7 +26,7 @@ export type PluginKindValue = typeof PluginKind[keyof typeof PluginKind];
 
 /**
  * What a client does when the user activates a component. Named for the same
- * reason as PluginComponentType: an unrecognised type is a
+ * reason as PluginComponentType: an unrecognized type is a
  * silent no-op on both clients.
  */
 export const PluginActionType = {

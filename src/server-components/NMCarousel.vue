@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import type { ComponentPublicInstance } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
@@ -25,10 +26,14 @@ const containerEl = ref<HTMLElement | null>(null);
 const showAllEl = ref<HTMLElement | null>(null);
 const router = useRouter();
 
-function captureRail(instance: unknown): void {
-	const track = (instance as { trackEl?: HTMLElement | null } | null)?.trackEl;
+function captureRail(instance: ComponentPublicInstance | Element | null): void {
+	const track = instance && 'trackEl' in instance
+		? instance.trackEl
+		: null;
 
-	containerEl.value = track ?? null;
+	containerEl.value = track instanceof HTMLElement
+		? track
+		: null;
 }
 
 useFocusGroup({

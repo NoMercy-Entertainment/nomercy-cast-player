@@ -5,8 +5,10 @@ import type { HubName } from '@/lib/signalr/connection';
 import type { MusicPlayerStateMsg, RefreshLibraryPayload, VideoPlayerStateMsg } from '@/lib/signalr/events';
 import { createRefreshBatcher, invalidateAllLibrary, invalidateFromServer, invalidatePlugins, refreshKeyOf } from '@/lib/queryShim';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
+import type { Thrown } from '@/lib/diagnostics/swallowed';
 import { playbackStore } from './playbackStore';
 import type { ConnectedDeviceSnapshot } from './playbackStore';
 import { authStore } from './authStore';
@@ -45,7 +47,7 @@ let stopRequested = false;
 const videoHubConnectedListeners = new Set<() => void>();
 
 function announceVideoHubConnected(): void {
-	for (const listener of [...videoHubConnectedListeners]) {
+	for (const listener of Array.from(videoHubConnectedListeners)) {
 		listener();
 	}
 }
@@ -65,15 +67,19 @@ const HUB_ORDINAL = {
 	pluginHub: 4,
 } as const satisfies Record<HubName, number>;
 
+function recordHubEvent(code: DiagnosticsCodeValue, name: HubName): void {
+	recordDiagnostic(DiagnosticsCategory.Network, code, HUB_ORDINAL[name], 0, 0, name);
+}
+
 async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 	// stopRequested is mutated by disconnectAll() outside this loop —
 	// ESLint's static analysis can't follow async cross-call mutation.
 	// eslint-disable-next-line no-unmodified-loop-condition
 	while (!stopRequested) {
 		try {
-			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketConnecting, HUB_ORDINAL[name], 0, 0, name);
+			recordHubEvent(DiagnosticsCode.SocketConnecting, name);
 			await hub.start();
-			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
+			recordHubEvent(DiagnosticsCode.SocketOpened, name);
 			console.debug(`[socket] ${name} started`);
 
 			if (name === 'videoHub') {
@@ -82,7 +88,7 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 
 			return;
 		} catch (err) {
-			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name], 0, 0, name);
+			recordHubEvent(DiagnosticsCode.SocketFailed, name);
 			console.warn(`[socket] ${name} start failed, retrying in 5s`, err);
 			connectionState.value = 'reconnecting';
 			await new Promise((r) => window.setTimeout(r, 5_000));
@@ -93,8 +99,8 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 const queueRefresh = createRefreshBatcher(400, invalidateFromServer);
 
 function bindRefreshLibrary(hub: TypedHub, name: HubName): void {
-	hub.on('RefreshLibrary', (...args: unknown[]) => {
-		const serverKey = refreshKeyOf(args[0] as RefreshLibraryPayload | undefined);
+	hub.on('RefreshLibrary', (payload?: RefreshLibraryPayload) => {
+		const serverKey = refreshKeyOf(payload);
 
 		if (serverKey) {
 			console.debug(`[socket] ${name} RefreshLibrary`, serverKey);
@@ -104,9 +110,7 @@ function bindRefreshLibrary(hub: TypedHub, name: HubName): void {
 }
 
 function bindDeviceList(hub: TypedHub): void {
-	hub.on('DeviceListChanged', (...args: unknown[]) => {
-		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];
-
+	hub.on('DeviceListChanged', (devices: ConnectedDeviceSnapshot[] = []) => {
 		playbackStore.devices.applyAccountDevices(devices);
 	});
 }
@@ -127,9 +131,7 @@ let lastAppliedMusicSeq = 0;
 let lastAppliedVideoSeq = 0;
 
 function bindMusicPlayerState(hub: TypedHub): void {
-	hub.on('MusicPlayerState', (...args: unknown[]) => {
-		const payload = args[0] as MusicPlayerStateMsg | undefined;
-
+	hub.on('MusicPlayerState', (payload?: MusicPlayerStateMsg) => {
 		for (const e of payload?.events ?? []) {
 			if (e.type !== 'PlayerStateChanged') continue;
 
@@ -178,9 +180,7 @@ function bindMusicPlayerState(hub: TypedHub): void {
 }
 
 function bindVideoPlayerState(hub: TypedHub): void {
-	hub.on('VideoPlayerState', (...args: unknown[]) => {
-		const payload = args[0] as VideoPlayerStateMsg | undefined;
-
+	hub.on('VideoPlayerState', (payload?: VideoPlayerStateMsg) => {
 		for (const e of payload?.events ?? []) {
 			if (e.type !== 'PlayerStateChanged') continue;
 
@@ -215,9 +215,7 @@ function bindVideoPlayerState(hub: TypedHub): void {
 }
 
 function bindConnectedDevices(hub: TypedHub): void {
-	hub.on('ConnectedDevicesState', (...args: unknown[]) => {
-		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];
-
+	hub.on('ConnectedDevicesState', (devices: ConnectedDeviceSnapshot[] = []) => {
 		playbackStore.music.applyConnectedDevices(devices);
 	});
 }
@@ -231,9 +229,7 @@ function bindConnectedDevices(hub: TypedHub): void {
  * server, and the two would drift.
  */
 function bindPluginMessage(hub: TypedHub): void {
-	hub.on('PluginMessage', (...args: unknown[]) => {
-		const message = args[0] as { pluginId?: string; type?: string } | undefined;
-
+	hub.on('PluginMessage', (message?: { pluginId?: string; type?: string }) => {
 		console.debug(`[socket] pluginHub PluginMessage`, message?.pluginId, message?.type);
 		invalidatePlugins();
 	});
@@ -245,13 +241,13 @@ function bindLifecycle(hub: TypedHub, name: HubName): void {
 	conn.onreconnecting(() => {
 		// A reconnect attempt is its own transition. Recorded as a failure, a
 		// hub that dropped and recovered read as a hub that never came back.
-		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketReconnecting, HUB_ORDINAL[name], 0, 0, name);
+		recordHubEvent(DiagnosticsCode.SocketReconnecting, name);
 		connectionState.value = 'reconnecting';
 		console.debug(`[socket] ${name} reconnecting`);
 	});
 
 	conn.onreconnected(() => {
-		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
+		recordHubEvent(DiagnosticsCode.SocketOpened, name);
 		connectionState.value = 'connected';
 		console.debug(`[socket] ${name} reconnected — invalidating library cache`);
 		invalidateAllLibrary();
@@ -270,7 +266,7 @@ function bindLifecycle(hub: TypedHub, name: HubName): void {
 
 	conn.onclose((err) => {
 		// With forever-retry, onclose only fires after explicit stop().
-		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketClosed, HUB_ORDINAL[name], 0, 0, name);
+		recordHubEvent(DiagnosticsCode.SocketClosed, name);
 		console.debug(`[socket] ${name} closed`, err);
 
 		if (stopRequested) {
@@ -327,7 +323,7 @@ export async function disconnectAll(): Promise<void> {
 	await Promise.all(
 		[videoHub.value, musicHub.value, deviceHub.value, pluginHub.value].map((h) =>
 			h
-				? h.stop().catch((error: unknown) => recordSwallowed('disconnectAll', error))
+				? h.stop().catch((error: Thrown) => recordSwallowed('disconnectAll', error))
 				: Promise.resolve(),
 		),
 	);

@@ -85,9 +85,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 				return null;
 			}
 
-			case 'modal':
-
-			case 'free': {
+			default: {
 				const currentEl = current.el();
 
 				if (!currentEl)

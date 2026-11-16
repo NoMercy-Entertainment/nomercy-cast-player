@@ -5,6 +5,9 @@
  */
 
 import { canDraw } from './registry';
+import type { FocusedCardData } from '@/stores/focusedCardStore';
+
+type CardPalette = NonNullable<FocusedCardData['color_palette']>;
 
 export type ComponentType =
 	| 'NMGrid' |
@@ -49,7 +52,7 @@ export interface ContainerWrapper {
 	more_link_text?: string;
 	context_menu_items?: ContextMenuItem[];
 	url?: string;
-	properties?: Record<string, unknown>;
+	properties?: { columns?: number };
 }
 
 export type NMGridWrapper = ContainerWrapper;
@@ -73,6 +76,13 @@ export interface NMCardWrapper {
 	rating?: { rating: number | string; image?: string };
 	progress?: { time?: number; total?: number };
 	context_menu_items?: ContextMenuItem[];
+	overview?: string;
+	backdrop?: string;
+	poster?: string;
+	color_palette?: CardPalette;
+	colorPalette?: CardPalette;
+	have_items?: number;
+	number_of_items?: number;
 }
 
 /** GroupCardData on the server: a group with no image of its own, drawn from its items' posters. */
@@ -103,6 +113,11 @@ export interface NMMusicCardWrapper {
 	duration?: string;
 	favorite?: boolean;
 	context_menu_items?: ContextMenuItem[];
+	type?: string;
+	tracks?: number;
+	year?: number | string;
+	color_palette?: CardPalette;
+	colorPalette?: CardPalette;
 }
 
 export interface NMMusicHomeCardWrapper extends NMMusicCardWrapper {
@@ -162,10 +177,15 @@ export type ComponentData =
 	NMTrackRowWrapper |
 	PluginSlotWrapper;
 
+/** A card-shaped payload keeps its wrapper under props.data; containers keep it flat. */
+export interface WrappedData {
+	data: ComponentData;
+}
+
 export interface Component {
 	id: string;
 	component: ComponentType;
-	props: ComponentData;
+	props: ComponentData | WrappedData;
 	update?: Update;
 }
 

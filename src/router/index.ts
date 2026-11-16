@@ -250,10 +250,24 @@ router.beforeEach((to) => {
 // say where the viewer was, not only that something broke.
 router.afterEach((to, from) => {
 	if (from.name) {
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenClosed, 0, 0, 0, screenLabel(from));
+		recordDiagnostic(
+			DiagnosticsCategory.Lifecycle,
+			DiagnosticsCode.ScreenClosed,
+			0,
+			0,
+			0,
+			screenLabel(from),
+		);
 	}
 
-	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, screenLabel(to));
+	recordDiagnostic(
+		DiagnosticsCategory.Lifecycle,
+		DiagnosticsCode.ScreenOpened,
+		0,
+		0,
+		0,
+		screenLabel(to),
+	);
 });
 
 export default router;

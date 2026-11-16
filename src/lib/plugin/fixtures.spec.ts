@@ -47,7 +47,7 @@ describe('the shared plugin fixtures', () => {
 			const drawn = entriesForSlot(entries, fixture.kind, fixture.slot);
 
 			expect(drawn, `${fixture.kind}/${fixture.slot}`).toHaveLength(1);
-			expect(drawn[0].route).toBe(fixture.entry.route);
+			expect(drawn[0]?.route).toBe(fixture.entry.route);
 		}
 	});
 

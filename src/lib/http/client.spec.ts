@@ -33,9 +33,9 @@ describe('the receiver http client records every request', () => {
 		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
 
 		expect(completed).toHaveLength(1);
-		expect(completed[0].a).toBe(200);
-		expect(completed[0].b).toBeGreaterThanOrEqual(30);
-		expect(completed[0].label).toBe('GET /api/v1/home');
+		expect(completed[0]?.a).toBe(200);
+		expect(completed[0]?.b).toBeGreaterThanOrEqual(30);
+		expect(completed[0]?.label).toBe('GET /api/v1/home');
 	});
 
 	it('records a one-segment relative route as a route, not as a word', async () => {
@@ -47,7 +47,7 @@ describe('the receiver http client records every request', () => {
 
 		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
 
-		expect(completed[0].label).toBe('POST /Watched');
+		expect(completed[0]?.label).toBe('POST /Watched');
 	});
 
 	it('keeps the query key and removes the query value', async () => {
@@ -57,7 +57,7 @@ describe('the receiver http client records every request', () => {
 
 		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
 
-		expect(completed[0].label).toBe('GET /api/v1/search?query=');
+		expect(completed[0]?.label).toBe('GET /api/v1/search?query=');
 	});
 
 	it('names the failure by the same route shape as the completion beside it', async () => {
@@ -68,8 +68,8 @@ describe('the receiver http client records every request', () => {
 		const failed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestFailed');
 
 		expect(failed).toHaveLength(1);
-		expect(failed[0].a).toBe(500);
-		expect(failed[0].label).toBe('GET /userData/continue');
+		expect(failed[0]?.a).toBe(500);
+		expect(failed[0]?.label).toBe('GET /userData/continue');
 	});
 
 	it('records a status 0 for a request the network never answered', async () => {
@@ -82,7 +82,7 @@ describe('the receiver http client records every request', () => {
 		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
 
 		expect(completed).toHaveLength(1);
-		expect(completed[0].a).toBe(0);
+		expect(completed[0]?.a).toBe(0);
 	});
 
 	it('aborts a request the server never answers, instead of hanging forever', async () => {

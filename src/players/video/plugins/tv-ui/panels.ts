@@ -450,7 +450,8 @@ export function languageDialog(opts: {
 
 // SubtitleDialog.kt: the trailer's picker, the subtitle column of the language dialog on its own.
 export function subtitleDialog(opts: { subtitles: Choice[] }) {
-	const root = el('div', 'tvui-dialog tvui-languages', column('dialog_subtitle_tracks', choiceRows(opts.subtitles)));
+	const rows = choiceRows(opts.subtitles);
+	const root = el('div', 'tvui-dialog tvui-languages', column('dialog_subtitle_tracks', rows));
 
 	return { root, focus: () => focusSelected(root) } as const satisfies Panel;
 }

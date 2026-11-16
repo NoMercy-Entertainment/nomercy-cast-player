@@ -67,10 +67,25 @@ document.addEventListener('visibilitychange', () => {
 	// every "it just stopped" report.
 	const screen = String(router.currentRoute.value.name ?? router.currentRoute.value.path);
 
-	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.VisibilityChanged, 0, 0, 0, `${document.visibilityState} ${screen}`);
+	recordDiagnostic(
+		DiagnosticsCategory.Lifecycle,
+		DiagnosticsCode.VisibilityChanged,
+		0,
+		0,
+		0,
+		`${document.visibilityState} ${screen}`,
+	);
 
 	if (document.visibilityState === 'visible') {
-		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppForegrounded, 0, 0, 0, screen);
+		recordDiagnostic(
+			DiagnosticsCategory.Lifecycle,
+			DiagnosticsCode.AppForegrounded,
+			0,
+			0,
+			0,
+			screen,
+		);
+
 		foreground.visible();
 
 		return;

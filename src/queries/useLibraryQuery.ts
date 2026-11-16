@@ -3,13 +3,11 @@ import { computed } from 'vue';
 import type { Ref } from 'vue';
 import { QueryKeys } from './keys';
 import { queryConfigs } from './configs';
+import { unwrapComponents } from './unwrapComponents';
+import type { ComponentPayload } from './unwrapComponents';
 import { usePageLoadMutationEffect } from './usePageLoadMutationEffect';
 import { apiFetch } from '@/lib/http/client';
 import type { Component } from '@/server-components/types';
-
-interface LibraryResponse {
-	components?: Component[];
-}
 
 const LEADING_SLASH = /^\//;
 
@@ -19,28 +17,12 @@ async function fetchLibrary(path: string): Promise<Component[]> {
 	// or /genres/28. We pass that through unchanged after stripping the
 	// leading slash so it slots after /api/v1/.
 	const cleanPath = path.replace(LEADING_SLASH, '');
-	const response = await apiFetch<unknown>({
+	const response = await apiFetch<ComponentPayload>({
 		path: `/api/v1/${cleanPath}?version=lolomo`,
 		method: 'GET',
 	});
 
-	if (response && typeof response === 'object' && 'data' in response) {
-		const data = (response as { data: unknown }).data;
-
-		if (Array.isArray(data))
-			return data as Component[];
-
-		if (data && typeof data === 'object' && 'components' in data)
-			return (data as LibraryResponse).components ?? [];
-	}
-
-	if (Array.isArray(response))
-		return response as Component[];
-
-	if (response && typeof response === 'object' && 'components' in response)
-		return (response as LibraryResponse).components ?? [];
-
-	return [];
+	return unwrapComponents(response);
 }
 
 export function useLibraryQuery(path: Ref<string>) {

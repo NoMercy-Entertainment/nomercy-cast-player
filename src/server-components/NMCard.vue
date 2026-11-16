@@ -26,28 +26,18 @@ const props = defineProps<{
 const router = useRouter();
 const el = ref<HTMLElement | null>(null);
 
-const wrapperData = computed(() => props.data as unknown as Record<string, unknown>);
-
-const imageSource = computed(() => {
-	const d = wrapperData.value;
-
-	return (
-		(props.data.image as string | undefined) ??
-		(d.poster as string | undefined) ??
-		(d.backdrop as string | undefined)
-	);
-});
+const imageSource = computed(() => props.data.image ?? props.data.poster ?? props.data.backdrop);
 
 const imageUrl = computed(() => buildImageUrl(imageSource.value, props.data.wide
 	? BACKDROP_SIZE
 	: POSTER_SIZE));
 
-const accent = computed(() =>
-	pickPaletteColor((wrapperData.value.color_palette ?? wrapperData.value.colorPalette) as PaletteColors | undefined),
-);
+const accent = computed(() => pickPaletteColor(
+	(props.data.color_palette ?? props.data.colorPalette) as PaletteColors | undefined,
+));
 
 const progressPct = computed(() => {
-	const p = (props.data as unknown as { progress?: { time?: number; total?: number } }).progress;
+	const p = props.data.progress;
 
 	if (!p?.time || !p?.total)
 		return 0;
@@ -74,16 +64,16 @@ useFocusEntry({
 		focusedCardStore.setActive({
 			id: props.id,
 			title: props.data.title,
-			overview: (wrapperData.value.overview as string | undefined),
-			backdrop: (wrapperData.value.backdrop as string | undefined),
-			poster: (wrapperData.value.poster as string | undefined),
-			logo: (wrapperData.value.logo as string | undefined),
+			overview: props.data.overview,
+			backdrop: props.data.backdrop,
+			poster: props.data.poster,
+			logo: props.data.logo,
 			link: props.data.link,
-			year: (wrapperData.value.year as number | undefined),
-			type: (wrapperData.value.type as string | undefined),
-			color_palette: (wrapperData.value.color_palette as never) ?? (wrapperData.value.colorPalette as never),
-			have_items: (wrapperData.value.have_items as number | undefined),
-			number_of_items: (wrapperData.value.number_of_items as number | undefined),
+			year: props.data.year,
+			type: props.data.type,
+			color_palette: props.data.color_palette ?? props.data.colorPalette,
+			have_items: props.data.have_items,
+			number_of_items: props.data.number_of_items,
 		});
 	},
 });

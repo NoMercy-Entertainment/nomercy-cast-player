@@ -12,7 +12,7 @@ import type { NMMusicCardWrapper, Update } from './types';
  * Music card. Mirrors APK NMMusicCard.kt:
  *   - Square cover, scale 1→1.03 on focus, palette-tinted border
  *   - Subtitle row with type label + track count or year
- *   - Letter cards (alphabet jump) render the letter centred at title size
+ *   - Letter cards (alphabet jump) render the letter centered at title size
  *   - Focus publishes to focusedCardStore so the parent hero updates
  */
 
@@ -26,8 +26,7 @@ const { t } = useTranslation();
 const router = useRouter();
 const el = ref<HTMLElement | null>(null);
 
-const wrapperData = computed(() => props.data as unknown as Record<string, unknown>);
-const cardType = computed(() => (wrapperData.value.type as string | undefined) ?? '');
+const cardType = computed(() => props.data.type ?? '');
 const isLetterCard = computed(() => cardType.value === 'letter');
 
 const cover = computed(() =>
@@ -58,13 +57,13 @@ const subtitle = computed(() => {
 	if (isLetterCard.value)
 		return '';
 
-	const tracks = wrapperData.value.tracks as number | undefined;
-	const year = wrapperData.value.year as number | string | undefined;
+	const tracks = props.data.tracks;
+	const year = props.data.year
+		? String(props.data.year)
+		: '';
 	const tail = typeof tracks === 'number'
 		? t('components.track_count', { count: tracks })
-		: (year
-				? String(year)
-				: '');
+		: year;
 
 	if (typeLabel.value && tail)
 		return `${typeLabel.value} • ${tail}`;
@@ -87,8 +86,7 @@ useFocusEntry({
 			poster: props.data.cover,
 			link: props.data.link,
 			type: cardType.value,
-			color_palette: (wrapperData.value.color_palette as never) ??
-				(wrapperData.value.colorPalette as never),
+			color_palette: props.data.color_palette ?? props.data.colorPalette,
 		});
 	},
 });

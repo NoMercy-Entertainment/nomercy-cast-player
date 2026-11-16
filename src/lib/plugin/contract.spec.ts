@@ -31,8 +31,8 @@ describe('what the receiver asks the server for', () => {
 		});
 
 		expect(plugins).toHaveLength(1);
-		expect(plugins[0].name).toBe('Internet Radio');
-		expect(plugins[0].entries[0].route).toBe('/');
+		expect(plugins[0]?.name).toBe('Internet Radio');
+		expect(plugins[0]?.entries[0]?.route).toBe('/');
 	});
 
 	it('keeps the readable plugins when one of them is nonsense', () => {
@@ -42,7 +42,7 @@ describe('what the receiver asks the server for', () => {
 	});
 
 	it('names a plugin by its id when the server sent no name', () => {
-		expect(decodePlacements({ data: [{ id: 'radio' }] })[0].name).toBe('radio');
+		expect(decodePlacements({ data: [{ id: 'radio' }] })[0]?.name).toBe('radio');
 	});
 
 	it('draws nothing rather than throwing when the answer is not a list', () => {
@@ -54,8 +54,8 @@ describe('what the receiver asks the server for', () => {
 		const wrapped = decodeView({ data: { components: [{ id: 'one', component: 'NMCarousel' }] } });
 		const bare = decodeView({ data: [{ id: 'one', component: 'NMCarousel' }] });
 
-		expect(wrapped[0].id).toBe('one');
-		expect(bare[0].id).toBe('one');
+		expect(wrapped[0]?.id).toBe('one');
+		expect(bare[0]?.id).toBe('one');
 	});
 
 	it('draws nothing for a view that carries no components', () => {

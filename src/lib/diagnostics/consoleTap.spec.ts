@@ -18,7 +18,7 @@ describe('the console tap records what the receiver swallows', () => {
 		const caught = diagnosticsRing.snapshot().filter((entry) => entry.code === 'ErrorCaught');
 
 		expect(caught).toHaveLength(1);
-		expect(caught[0].label).toBe('TypeError');
+		expect(caught[0]?.label).toBe('TypeError');
 	});
 
 	it('records a warning the receiver swallowed', () => {

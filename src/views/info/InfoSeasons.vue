@@ -27,7 +27,7 @@ const current = computed(() =>
 );
 const label = computed(() => options.value.find((o) => o.number === current.value?.season_number)?.label ?? '');
 
-const rail = computed<Component>(() => {
+const rail = computed(() => {
 	const season = current.value;
 	const id = `info-seasons-${season?.season_number ?? 0}`;
 	const items = (season?.episodes ?? [])
@@ -48,13 +48,13 @@ const rail = computed<Component>(() => {
 					wide: true,
 				},
 			},
-		}));
+		}) as const satisfies Component);
 
 	return {
 		id,
 		component: 'NMCarousel',
 		props: { id, items },
-	} as unknown as Component;
+	} as const satisfies Component;
 });
 
 const group = useFocusGroup({

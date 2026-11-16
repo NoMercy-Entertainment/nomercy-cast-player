@@ -14,7 +14,7 @@ import HeroRailsView from '@/views/HeroRailsView.vue';
 const LEADING_SLASH = /^\//;
 const { t } = useTranslation();
 const route = useRoute();
-const path = computed(() => route.fullPath.replace(LEADING_SLASH, '').split('?')[0]);
+const path = computed(() => route.fullPath.replace(LEADING_SLASH, '').split('?')[0] ?? '');
 
 const { data, isLoading, error, refetch, isFetching } = useLibraryQuery(path);
 </script>

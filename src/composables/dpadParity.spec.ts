@@ -144,10 +144,10 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 		const cards = cardsOf('r1');
 
 		expect(cards.length).toBe(4);
-		cards[0].focus();
+		cards[0]!.focus();
 		press('ArrowLeft');
 		expect(document.activeElement).toBe(cards[0]);
-		cards[3].focus();
+		cards[3]!.focus();
 		press('ArrowRight');
 		expect(document.activeElement).toBe(cards[3]);
 	});
@@ -156,14 +156,14 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 		await boot([rail('r1', 4), rail('r2', 4)]);
 		const last = cardsOf('r2');
 
-		last[1].focus();
+		last[1]!.focus();
 		press('ArrowDown');
 		expect(document.activeElement).toBe(last[1]);
 	});
 
 	it('dpad.card.up-down: DOWN moves to the row below', async () => {
 		await boot([rail('r1', 4), rail('r2', 4)]);
-		cardsOf('r1')[1].focus();
+		cardsOf('r1')[1]!.focus();
 		press('ArrowDown');
 		expect(cardsOf('r2')).toContain(document.activeElement);
 	});
@@ -173,7 +173,7 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 		const track = document.querySelector<HTMLElement>('[data-rail-id="r2"] .rail-track')!;
 
 		track.scrollLeft = 300;
-		cardsOf('r1')[5].focus();
+		cardsOf('r1')[5]!.focus();
 		press('ArrowDown');
 		const row2 = cardsOf('r2');
 		const expected = row2.findIndex((el) => el.getBoundingClientRect().left >= 0);
@@ -186,7 +186,7 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 		await boot([rail('r1', 10)]);
 		const cards = cardsOf('r1');
 
-		cards[0].focus();
+		cards[0]!.focus();
 		scrollIntoView.mockClear();
 		press('ArrowRight');
 		expect(cards.indexOf(document.activeElement as HTMLElement)).toBe(1);
@@ -213,7 +213,7 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 		const links = Array.from(document.querySelectorAll<HTMLElement>('.nav-link'));
 		const profile = document.querySelector<HTMLElement>('.profile-chip')!;
 
-		links[links.length - 1].focus();
+		links[links.length - 1]!.focus();
 		press('ArrowRight');
 		expect(document.activeElement).toBe(profile);
 		press('ArrowRight');
@@ -252,7 +252,7 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 
 	it('dpad.card.up-down: UP from the first row reaches the top nav (TvRowFocus.kt)', async () => {
 		await boot([rail('r1', 4)]);
-		cardsOf('r1')[0].focus();
+		cardsOf('r1')[0]!.focus();
 		press('ArrowUp');
 		expect(document.activeElement?.closest('.topnav')).not.toBeNull();
 	});

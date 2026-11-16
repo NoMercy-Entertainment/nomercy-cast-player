@@ -14,6 +14,7 @@ import { TMDB_BASE } from '@/lib/images/urls';
 import { playbackStore } from '@/stores/playbackStore';
 import type { PlaylistItem } from '@/queries/usePlaylistQuery';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 const props = defineProps<{
@@ -137,10 +138,18 @@ onMounted(async () => {
 		});
 	}
 
-	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, mediaLabel.value);
+	const recordSource = (code: DiagnosticsCodeValue): void => {
+		recordDiagnostic(DiagnosticsCategory.Playback, code, 0, 0, 0, mediaLabel.value);
+	};
+
+	recordSource(DiagnosticsCode.SourceRequested);
 
 	try {
-		const prepared = await prepareChapterPlaylist(props.playlist ?? [], authStore.accessToken.value, authStore.serverUrl.value);
+		const prepared = await prepareChapterPlaylist(
+			props.playlist ?? [],
+			authStore.accessToken.value,
+			authStore.serverUrl.value,
+		);
 
 		if (unmounted) return;
 
@@ -211,7 +220,7 @@ onMounted(async () => {
 				player.seekToIndex(startIndex + 1));
 		}
 
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, mediaLabel.value);
+		recordSource(DiagnosticsCode.SourceResolved);
 
 		videoSyncBridge.attach(player);
 
@@ -232,7 +241,7 @@ onMounted(async () => {
 			player.once('ready', seekToResume);
 		}
 	} catch (err) {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, mediaLabel.value);
+		recordSource(DiagnosticsCode.SourceFailed);
 		console.error('[video-player] init failed', err);
 		emit('error', i18next.t('player.start_error'));
 	}

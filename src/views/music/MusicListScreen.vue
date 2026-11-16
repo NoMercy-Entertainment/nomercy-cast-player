@@ -41,11 +41,10 @@ const coverUrl = computed(() => buildImageUrl(list.value?.cover ?? null, SQUARE_
 // APK ListScreen pickPaletteColor(palette.cover ?: image ?: backdrop ?: profile)
 // → SetThemeColor for the BigPlayButton + track-row accent.
 watch(list, (next) => {
-	const palette = next?.color_palette as Record<string, unknown> | undefined;
-	const candidate = (palette?.cover ?? palette?.image ?? palette?.backdrop ?? palette?.profile) as
-		Parameters<typeof applyThemeColor>[0];
+	const palette = next?.color_palette;
+	const candidate = palette?.cover ?? palette?.image ?? palette?.backdrop ?? palette?.profile;
 
-	applyThemeColor(candidate);
+	applyThemeColor(candidate as Parameters<typeof applyThemeColor>[0]);
 }, { immediate: true });
 
 onBeforeUnmount(() => {

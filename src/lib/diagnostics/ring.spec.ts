@@ -43,7 +43,7 @@ describe('diagnosticsRing', () => {
 		]);
 
 		expect(entries.map((entry) => entry.atMs)).toEqual([10, 20, 30]);
-		expect(entries[0].category).toBe('Network');
+		expect(entries[0]?.category).toBe('Network');
 	});
 
 	it('an event carries its name', () => {
@@ -51,7 +51,7 @@ describe('diagnosticsRing', () => {
 
 		ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, 'home');
 
-		expect(ring.snapshot()[0].label).toBe('home');
+		expect(ring.snapshot()[0]?.label).toBe('home');
 	});
 
 	it('an event without a name has none', () => {
@@ -59,7 +59,7 @@ describe('diagnosticsRing', () => {
 
 		ring.record(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted);
 
-		expect(ring.snapshot()[0].label).toBeUndefined();
+		expect(ring.snapshot()[0]?.label).toBeUndefined();
 	});
 
 	it('the same name twice is stored once', () => {
@@ -93,8 +93,8 @@ describe('diagnosticsRing', () => {
 
 		expect(entries).toHaveLength(2049);
 		expect(ring.labelCount()).toBe(2048);
-		expect(entries[2047].label).toBe('screen2047');
-		expect(entries[2048].label).toBeUndefined();
+		expect(entries[2047]?.label).toBe('screen2047');
+		expect(entries[2048]?.label).toBeUndefined();
 	});
 
 	it('a private name is removed where it is interned, not by the recorder', () => {
@@ -103,7 +103,7 @@ describe('diagnosticsRing', () => {
 
 		ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, 'The Matrix Reloaded');
 
-		expect(ring.snapshot()[0].label).toBeUndefined();
+		expect(ring.snapshot()[0]?.label).toBeUndefined();
 		expect(ring.labelCount()).toBe(0);
 	});
 });

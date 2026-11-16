@@ -9,8 +9,8 @@ import type { Ref } from 'vue';
  */
 
 interface AutoRetryOptions {
-	error: Ref<unknown>;
-	refetch: () => unknown;
+	error: Ref<Error | null | undefined>;
+	refetch: () => void;
 	intervalMs?: number;
 }
 
@@ -22,7 +22,7 @@ export function useAutoRetry(opts: AutoRetryOptions): void {
 		if (next) {
 			if (timer === null) {
 				timer = window.setInterval(() => {
-					void opts.refetch();
+					opts.refetch();
 				}, interval);
 			}
 		} else if (timer !== null) {

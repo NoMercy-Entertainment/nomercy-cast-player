@@ -8,6 +8,7 @@ import {
 } from '@/server-components/types';
 import type { Component, ContainerWrapper } from '@/server-components/types';
 import type { QueryKey } from './keys';
+import type { ComponentList } from './unwrapComponents';
 
 /**
  * pageLoad section refresh per spec §11.8-§11.13.
@@ -88,7 +89,7 @@ function updateNested(
 
 async function fetchSingleByLink(link: string, replaceId: string): Promise<Component | null> {
 	try {
-		const response = await apiFetch<Component[] | Component | { components: Component[] }>({
+		const response = await apiFetch<Component[] | Component | ComponentList>({
 			path: link.startsWith('/')
 				? link
 				: `/${link}`,
@@ -101,12 +102,8 @@ async function fetchSingleByLink(link: string, replaceId: string): Promise<Compo
 			return response.find((c) => c.id === replaceId) ?? response[0] ?? null;
 		}
 
-		if (
-			response &&
-			typeof response === 'object' &&
-			'components' in (response as Record<string, unknown>)
-		) {
-			const list = (response as { components: Component[] }).components;
+		if ('components' in response && response.components) {
+			const list = response.components;
 
 			return list.find((c) => c.id === replaceId) ?? list[0] ?? null;
 		}

@@ -18,7 +18,7 @@ const props = defineProps<{
 	data: Component[] | undefined;
 	isLoading: boolean;
 	isFetching?: boolean;
-	error?: Error | { message: string } | null | unknown;
+	error?: Error | null;
 	refetch?: () => void;
 	emptyMessage?: string;
 	errorContext?: string;
@@ -35,7 +35,7 @@ useFocusGroup({
 
 const components = computed(() => props.data ?? []);
 const isInitialLoad = computed(() => props.isLoading && !props.data);
-const errVal = computed(() => (props.error as Error | null) ?? null);
+const errVal = computed(() => props.error ?? null);
 </script>
 
 <template>

@@ -14,7 +14,9 @@ const MAX_POLLS = 30;
 
 export function useTrailerQuery(videos: Ref<InfoVideo[] | undefined>) {
 	const candidates = computed(() => trailerCandidates(videos.value));
-	const enabled = computed(() => Boolean(authStore.accessToken.value) && candidates.value.length > 0);
+	const enabled = computed(
+		() => Boolean(authStore.accessToken.value) && candidates.value.length > 0,
+	);
 
 	return useQuery({
 		queryKey: computed(() => QueryKeys.trailer(candidates.value)),

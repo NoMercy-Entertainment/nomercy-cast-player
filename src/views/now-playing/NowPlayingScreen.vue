@@ -16,7 +16,7 @@ import { applyThemeColor } from '@/lib/theme';
 
 /*
  * APK FullPlayerScreenTV: artist backdrop fills the screen, scrim ramps
- * darker on the controls side, palette colour tints the play button,
+ * darker on the controls side, palette color tints the play button,
  * controls auto-hide after 5s of no input. We mirror the same envelope
  * here — backdrop layer → scrim → content grid.
  */

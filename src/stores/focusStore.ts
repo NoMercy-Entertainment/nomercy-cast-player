@@ -51,19 +51,21 @@ function activeGroup(): FocusGroupHandle | null {
 	// A parent counts a child group's card as its own focus; the group holding the card itself wins,
 	// whichever mounted last (a cached chunk mounts the child before the parent).
 	for (let i = stack.length - 1; i >= 0; i--) {
-		if (stack[i].ownsFocused?.())
-			return stack[i];
+		const group = stack[i];
+
+		if (group?.ownsFocused?.())
+			return group;
 	}
 
 	for (let i = stack.length - 1; i >= 0; i--) {
 		const group = stack[i];
 
-		if (group.containsFocused())
+		if (group?.containsFocused())
 			return group;
 	}
 
 	// Fall back to the topmost group when focus is on document.body or
-	// hasn't been initialised yet (first paint).
+	// hasn't been initialized yet (first paint).
 	return stack[stack.length - 1] ?? null;
 }
 

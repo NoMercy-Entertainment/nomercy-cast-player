@@ -30,7 +30,7 @@ const props = withDefaults(defineProps<{
 	data: Component[] | undefined;
 	isLoading: boolean;
 	isFetching?: boolean;
-	error?: unknown;
+	error?: Error | null;
 	refetch: () => void;
 	errorContext: string;
 	emptyMessage: string;
@@ -56,7 +56,7 @@ useNavFocusBridge({ handle: railsGroup, containerEl });
 
 const components = computed<Component[]>(() => props.data ?? []);
 const isInitialLoad = computed(() => props.isLoading && !props.data);
-const errVal = computed(() => (props.error as Error | null) ?? null);
+const errVal = computed(() => props.error ?? null);
 const heroCard = computed(() =>
 	props.hero
 		? focusedCardStore.debouncedCard.value

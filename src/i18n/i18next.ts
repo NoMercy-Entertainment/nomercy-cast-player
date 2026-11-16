@@ -16,7 +16,11 @@ i18next
 	})
 	.then();
 
-const words = import.meta.glob<Record<string, unknown>>('../**/i18n/*.json', { eager: true, import: 'default' });
+interface Words {
+	[key: string]: string | Words;
+}
+
+const words = import.meta.glob<Words>('../**/i18n/*.json', { eager: true, import: 'default' });
 
 for (const [file, bundle] of Object.entries(words)) {
 	const locale = file.slice(file.lastIndexOf('/') + 1, -'.json'.length);

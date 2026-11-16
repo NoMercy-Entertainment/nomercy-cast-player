@@ -67,7 +67,8 @@ const refused = computed(() => {
 
 	return all.filter((plugin) => canSee(plugin.access)).flatMap((plugin) =>
 		visibleEntries(plugin.entries)
-			.filter((entry) => entry.section === kind.value && (entry.slot ?? PluginSlot.Nav) === slotName.value)
+			.filter((entry) => entry.section === kind.value &&
+				(entry.slot ?? PluginSlot.Nav) === slotName.value)
 			.map((entry) => entry.surfaces ?? [])
 			.filter((surfaces) => surfaces.length > 0 && !surfaces.includes('cast'))
 			.map((surfaces) => surfaceRefusal(plugin.name, surfaces)));
@@ -85,7 +86,7 @@ const views = useQuery({
 			// A plugin whose view fails is one empty row, never an empty wall.
 			components: await apiFetch<JsonValue>({ path: viewPath(plugin.id, entry.route), method: 'GET' })
 				.then(decodeView)
-				.catch((error: unknown) => {
+				.catch((error: Error) => {
 					console.error(`[plugin] view failed for ${plugin.id} at ${entry.route}:`, error);
 
 					return [] as Component[];

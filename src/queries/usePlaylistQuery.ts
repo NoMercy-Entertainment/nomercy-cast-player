@@ -5,14 +5,20 @@ import { QueryKeys } from './keys';
 import { queryConfigs } from './configs';
 import { apiFetch } from '@/lib/http/client';
 
+export interface PlaylistTrack {
+	kind?: string;
+	file?: string;
+}
+
 export interface PlaylistItem {
 	id: number | string;
 	title: string;
 	duration?: string | number;
 	videoId?: string;
 	resume_at?: number;
-	// Full shape comes from server; receiver reads only fields it uses.
-	[k: string]: unknown;
+	season?: number | string;
+	episode?: number | string;
+	tracks?: PlaylistTrack[];
 }
 
 export interface PlaylistResponse {

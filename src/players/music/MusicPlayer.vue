@@ -4,6 +4,7 @@ import { musicSyncBridge } from './syncBridge';
 import type { MusicEngineLike } from './syncBridge';
 import { authStore } from '@/stores/authStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
+import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 /**
@@ -47,7 +48,11 @@ async function initEngine(): Promise<void> {
 
 	if (!serverUrl) return;
 
-	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, ENGINE_LABEL);
+	const recordSource = (code: DiagnosticsCodeValue): void => {
+		recordDiagnostic(DiagnosticsCategory.Playback, code, 0, 0, 0, ENGINE_LABEL);
+	};
+
+	recordSource(DiagnosticsCode.SourceRequested);
 
 	try {
 		const mod = await import('@nomercy-entertainment/nomercy-music-player');
@@ -55,7 +60,7 @@ async function initEngine(): Promise<void> {
 		const Ctor: EngineCtor | undefined = Reflect.get(exported, 'default') ?? Reflect.get(exported, 'MusicPlayer');
 
 		if (typeof Ctor !== 'function') {
-			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
+			recordSource(DiagnosticsCode.SourceFailed);
 			console.warn('[music-player] no constructor exported from package');
 
 			return;
@@ -70,10 +75,10 @@ async function initEngine(): Promise<void> {
 
 		created.setAccessToken?.(() => authStore.accessToken.value ?? '');
 		engine = created;
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, ENGINE_LABEL);
+		recordSource(DiagnosticsCode.SourceResolved);
 		musicSyncBridge.attach(created);
 	} catch (err) {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
+		recordSource(DiagnosticsCode.SourceFailed);
 		console.error('[music-player] init failed', err);
 	}
 }

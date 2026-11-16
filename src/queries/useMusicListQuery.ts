@@ -28,14 +28,12 @@ export interface MusicListData {
 	year?: number | string;
 	artists?: string[];
 	tracks?: MusicTrack[];
-	color_palette?: {
-		cover?: {
-			primary?: string;
-			dominant?: string;
-			light?: string;
-			dark?: string;
-		};
-	};
+	color_palette?: Partial<Record<'cover' | 'image' | 'backdrop' | 'profile', {
+		primary?: string;
+		dominant?: string;
+		light?: string;
+		dark?: string;
+	}>>;
 }
 
 interface MusicListEnvelope {

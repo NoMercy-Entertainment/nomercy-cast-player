@@ -46,7 +46,7 @@ export async function prepareChapterPlaylist(
 ): Promise<PlaylistItem[]> {
 	return Promise.all(items.map(async (item) => {
 		const tracks = Array.isArray(item.tracks)
-			? item.tracks as Array<{ kind?: string; file?: string }>
+			? item.tracks
 			: [];
 		const chapter = tracks.find((track) => track.kind === 'chapters' && typeof track.file === 'string');
 

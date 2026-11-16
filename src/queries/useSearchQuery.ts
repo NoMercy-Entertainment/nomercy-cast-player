@@ -3,6 +3,8 @@ import { computed } from 'vue';
 import type { Ref } from 'vue';
 import { QueryKeys } from './keys';
 import { queryConfigs } from './configs';
+import { unwrapComponents } from './unwrapComponents';
+import type { ComponentPayload } from './unwrapComponents';
 import { apiFetch } from '@/lib/http/client';
 import type { Component } from '@/server-components/types';
 
@@ -17,28 +19,12 @@ async function fetchSearch(type: string, query: string): Promise<Component[]> {
 		? 'music/tv'
 		: 'video/tv';
 	const url = `/api/v1/search/${segment}?query=${encodeURIComponent(query)}`;
-	const response = await apiFetch<unknown>({
+	const response = await apiFetch<ComponentPayload>({
 		path: url,
 		method: 'GET',
 	});
 
-	if (response && typeof response === 'object' && 'data' in response) {
-		const data = (response as { data: unknown }).data;
-
-		if (Array.isArray(data))
-			return data as Component[];
-
-		if (data && typeof data === 'object' && 'components' in data)
-			return (data as { components: Component[] }).components ?? [];
-	}
-
-	if (Array.isArray(response))
-		return response as Component[];
-
-	if (response && typeof response === 'object' && 'components' in response)
-		return (response as { components: Component[] }).components ?? [];
-
-	return [];
+	return unwrapComponents(response);
 }
 
 export function useSearchQuery(type: Ref<string>, queryStr: Ref<string>) {

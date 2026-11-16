@@ -13,9 +13,11 @@ export function checkRows(group: string, rows: I18nRow[]): void {
 			expect(readFileSync(srcRoot + file, 'utf8')).not.toContain(raw);
 			expect(i18n.t(key)).toBe(en);
 
-			if (nl) {
-				expect(i18n.t(key, { lng: 'nl' })).toBe(nl);
-			}
+			const dutch = nl
+				? i18n.t(key, { lng: 'nl' })
+				: undefined;
+
+			expect(dutch).toBe(nl);
 		});
 	}
 }

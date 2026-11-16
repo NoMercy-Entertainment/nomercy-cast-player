@@ -27,4 +27,4 @@ export const QueryKeys = {
 	pluginSlot: (kind: string, slot: string) => ['plugins', 'slot', kind, slot] as const,
 } as const;
 
-export type QueryKey = readonly unknown[];
+export type QueryKey = readonly string[];
