@@ -88,13 +88,13 @@
 		},
 		{
 			"file": "src/views/info/InfoScreen.vue",
-			"line": 168,
+			"line": 169,
 			"reason": "Server-provided path can contain multiple segments",
 			"expression": "/api/v1/${cleanLink}/watch-list"
 		},
 		{
 			"file": "src/views/music/MusicListScreen.vue",
-			"line": 132,
+			"line": 133,
 			"reason": "Server-provided path can contain multiple segments",
 			"expression": "/api/v1/${cleanLink}/like"
 		}
