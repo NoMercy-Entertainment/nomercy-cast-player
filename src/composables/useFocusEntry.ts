@@ -1,5 +1,6 @@
 import { inject, onBeforeUnmount, onMounted } from 'vue';
 import type { InjectionKey, Ref } from 'vue';
+import { focusStore } from '@/stores/focusStore';
 import type { FocusGroupHandle } from '@/stores/focusStore';
 
 export interface FocusEntry {
@@ -68,6 +69,7 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 	};
 
 	let unregister: (() => void) | undefined;
+	let unregisterAction: (() => void) | undefined;
 
 	onMounted(() => {
 		if (!group) {
@@ -84,7 +86,12 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 			el.addEventListener('blur', () => opts.onBlur?.());
 			// Enter on a focusable triggers the action handler. Browser fires
 			// 'click' for natively-focusable elements; custom divs need this.
+			if (opts.onAction)
+				unregisterAction = focusStore.registerAction(el, opts.onAction);
 			el.addEventListener('keydown', (event) => {
+				// useDPad already ran this key (the action or a click) and prevented it.
+				if (event.defaultPrevented)
+					return;
 				if (event.key === 'Enter' || event.key === ' ') {
 					event.preventDefault();
 					opts.onAction?.();
@@ -94,6 +101,7 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 	});
 
 	onBeforeUnmount(() => {
+		unregisterAction?.();
 		unregister?.();
 	});
 

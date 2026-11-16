@@ -101,7 +101,7 @@ describe('the receiver asks for a new cast on every screen when the sign-in ends
 		expect(document.activeElement).toBe(button.element);
 		requester.mockClear();
 
-		button.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		button.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
 
 		expect(requester).toHaveBeenCalledTimes(1);
 	});

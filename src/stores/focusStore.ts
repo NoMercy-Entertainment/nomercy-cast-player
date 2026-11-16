@@ -30,6 +30,9 @@ const groupStack = shallowRef<FocusGroupHandle[]>([]);
  */
 const restoration = ref<Map<string, string>>(new Map());
 
+/** Focus-entry action per element, so OK can run it without a click. */
+const actionByEl = new WeakMap<HTMLElement, () => void>();
+
 function activeGroup(): FocusGroupHandle | null {
 	const stack = groupStack.value;
 	if (stack.length === 0)
@@ -74,8 +77,22 @@ function dispatchAction(): boolean {
 	const el = document.activeElement as HTMLElement | null;
 	if (!el || el === document.body)
 		return false;
-	el.click();
+	// A focus entry's action runs once here; a click would run a row's @click too.
+	const action = actionByEl.get(el);
+	if (action)
+		action();
+	else
+		el.click();
 	return true;
+}
+
+/** Bind a focused element to its focus entry's action. Returns the unbind. */
+function registerAction(el: HTMLElement, action: () => void): () => void {
+	actionByEl.set(el, action);
+	return () => {
+		if (actionByEl.get(el) === action)
+			actionByEl.delete(el);
+	};
 }
 
 function dispatchEscape(): boolean {
@@ -105,6 +122,7 @@ export const focusStore = {
 	saveRestoration,
 	consumeRestoration,
 	dispatchAction,
+	registerAction,
 	dispatchEscape,
 	requestFocus,
 };
