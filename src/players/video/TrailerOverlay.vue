@@ -8,7 +8,7 @@ import type { Direction } from './plugins/tv-ui/dom';
 import { keyOf } from './plugins/tv-ui/keys';
 import { bottomBar, seekStrip, subtitleDialog, topBar } from './plugins/tv-ui/panels';
 import type { BottomBarHandle, Choice, Panel, SeekStripHandle } from './plugins/tv-ui/panels';
-import { canEnterSeekMode, cancelSeek, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './plugins/tv-ui/seek';
+import { cancelSeek, canEnterSeekMode, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './plugins/tv-ui/seek';
 import './plugins/tv-ui/style.css';
 import { mountOverlayHost } from './overlayHost';
 import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
@@ -161,13 +161,17 @@ function leaveSeek(commit?: number): void {
 
 	if (!target) return;
 
+	const keep = (): void => undefined;
+	const play = (): void => void target.play();
+	const seekTo = (time: number): void => void target.time(time);
+
 	if (commit === undefined) {
-		cancelSeek(() => undefined, () => void target.play());
+		cancelSeek(keep, play);
 
 		return;
 	}
 
-	commitSeek(commit, (time) => void target.time(time), () => undefined, () => void target.play());
+	commitSeek(commit, seekTo, keep, play);
 }
 
 function closeDialog(): void {
@@ -203,7 +207,12 @@ function openSeek(): void {
 	const index = snapIndex(frames, player.time());
 	const strip = seekStrip(frames, index);
 
-	seek = { strip, frames, index };
+	seek = {
+		strip,
+		frames,
+		index,
+	};
+
 	host.append(strip.root);
 	setControls(true);
 	strip.focus();
@@ -216,17 +225,17 @@ function pickSubtitle(index: number | null): void {
 
 function subtitleChoices(target: NMVideoPlayer): Choice[] {
 	const current = target.subtitle()?.index ?? null;
-	const off: Choice = {
+	const off = {
 		label: t('dialog_subtitle_off'),
 		selected: current === null,
 		onPick: () => pickSubtitle(null),
-	};
+	} as const satisfies Choice;
 
-	const tracks = target.subtitles().map((track, index): Choice => ({
+	const tracks = target.subtitles().map((track, index) => ({
 		label: track.label,
 		selected: current === index,
 		onPick: () => pickSubtitle(index),
-	}));
+	}) as const satisfies Choice);
 
 	return [off, ...tracks];
 }
@@ -432,6 +441,7 @@ onMounted(async () => {
 
 		host = mountOverlayHost(target.container);
 		host.classList.add('tvui-root');
+
 		top = topBar({
 			item: { title: title() },
 			hasNext: false,
