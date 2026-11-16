@@ -114,6 +114,10 @@ useFocusEntry({
 		background var(--motion-fast),
 		box-shadow var(--motion-fast);
 }
+/* Alone in the row, the cards are still loading: keep the room, draw nothing. */
+.show-all:only-child {
+	visibility: hidden;
+}
 .show-all:focus-visible {
 	border-color: var(--color-primary, oklch(0.7 0.2 285));
 	background: rgba(0, 0, 0, 0.75);

@@ -262,7 +262,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 			// — if the parent group decides this is the active sub-group,
 			// it'll call this group's focusFirst via the proxy entry below.
 			if (!parent)
-				handle.focusFirst();
+				focusStore.autoFocus(() => handle.focusFirst());
 		});
 	}
 

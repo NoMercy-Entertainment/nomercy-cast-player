@@ -117,7 +117,26 @@ function requestFocus(key: string): boolean {
 	return false;
 }
 
+let autoFocusing = false;
+
+/** Runs a focus the page made on its own: it must not scroll, only a key press does. */
+function autoFocus(focus: () => boolean): boolean {
+	autoFocusing = true;
+	try {
+		return focus();
+	}
+	finally {
+		autoFocusing = false;
+	}
+}
+
+function isAutoFocus(): boolean {
+	return autoFocusing;
+}
+
 export const focusStore = {
+	autoFocus,
+	isAutoFocus,
 	groupStack,
 	entryChanges,
 	activeGroup,

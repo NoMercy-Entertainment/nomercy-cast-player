@@ -232,7 +232,7 @@
 	gap: 24px;
 	padding: 8px 0 64px;
 	/* APK overlap=72.dp keeps the rails peeking under the hero scrim */
-	margin-top: -72px;
+	margin-top: calc(-1 * var(--hero-rails-overlap));
 	position: relative;
 	z-index: 1;
 	overflow: auto;

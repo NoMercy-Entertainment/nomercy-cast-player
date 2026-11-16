@@ -58,8 +58,10 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 			const el = opts.el.value;
 			if (!el)
 				return;
-			el.focus({ preventScroll: false });
-			el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+			const scroll = !focusStore.isAutoFocus();
+			el.focus({ preventScroll: !scroll });
+			if (scroll)
+				el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 			opts.onFocus?.();
 		},
 		blur: () => {

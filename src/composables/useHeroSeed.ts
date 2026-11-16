@@ -11,8 +11,23 @@ import type { Component } from '@/server-components/types';
  * topnav. Mirrors APK TvHomeScreen.kt's `firstItem` seed.
  */
 
-interface CarouselWrapper {
-	items?: Array<{ component: string; props?: { title?: string; data?: FocusedCardData } }>;
+interface SeedItem {
+	component: string;
+	props?: { title?: string; data?: FocusedCardData; items?: SeedItem[] };
+}
+
+// Home is a lolomo of carousels of cards, so the first card sits two levels down.
+function firstCard(items: SeedItem[]): FocusedCardData | null {
+	for (const item of items) {
+		const data = item.props?.data;
+		if (data && (data.backdrop || data.poster))
+			return data;
+		const nested = item.props?.items;
+		const found = Array.isArray(nested) ? firstCard(nested) : null;
+		if (found)
+			return found;
+	}
+	return null;
 }
 
 export function useHeroSeed(components: Ref<Component[]>): void {
@@ -20,15 +35,12 @@ export function useHeroSeed(components: Ref<Component[]>): void {
 		for (const c of components.value) {
 			if (!c.props || typeof c.props !== 'object')
 				continue;
-			const wrapper = c.props as CarouselWrapper;
-			const items = wrapper.items;
+			const items = (c.props as { items?: SeedItem[] }).items;
 			if (!Array.isArray(items) || items.length === 0)
 				continue;
-			const first = items.find(
-				i => i.props?.data && (i.props.data.backdrop || i.props.data.poster),
-			);
-			if (first?.props?.data)
-				return first.props.data;
+			const found = firstCard(items);
+			if (found)
+				return found;
 		}
 		return null;
 	});
