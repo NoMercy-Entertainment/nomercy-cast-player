@@ -49,6 +49,7 @@ export default antfu(
 			'docs/**',
 			'.archive-v0/**',
 			'public/**',
+			'src/styles/nm-tokens.css',
 		],
 	},
 	{

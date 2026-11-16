@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 
+@import './nm-tokens.css';
 @import './tokens.css';
 @import './tv-safe.css';
 @import './components.css';
@@ -10,7 +11,7 @@
 	--color-text-primary: oklch(0.96 0 0);
 	--color-text-secondary: oklch(0.7 0 0);
 	--color-accent: oklch(0.7 0.18 35);
-	--color-error: #f2b8b5;
+	--color-error: var(--nm-red-11);
 	--radius-card: 6px;
 	--shadow-focus: 0 0 0 4px rgb(255 255 255 / 0.95);
 }
