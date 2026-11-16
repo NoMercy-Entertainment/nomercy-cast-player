@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { ref } from 'vue';
+import { defineComponent, h, ref } from 'vue';
 
 import MusicListScreen from './MusicListScreen.vue';
 import { socketStore } from '@/stores/socketStore';
 import { focusStore } from '@/stores/focusStore';
+import { useDPad } from '@/composables/useDPad';
 
 const push = vi.fn();
 
@@ -108,6 +109,32 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 		expect(push).toHaveBeenCalledWith('/now-playing');
 	});
 
+	it('starts track 2 once when OK is pressed on its row', async () => {
+		const invoke = vi.fn(async () => undefined);
+		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
+		const DPadHost = defineComponent({
+			setup() {
+				useDPad({ back: vi.fn(), currentRoute: { value: { path: '/music/album/alb-1' } } } as never);
+				return () => h('div');
+			},
+		});
+		const dpad = mount(DPadHost);
+
+		wrapper = mount(MusicListScreen, { attachTo: document.body });
+		await flushPromises();
+		document.body.querySelector<HTMLElement>('[aria-label="Play"]')!.focus();
+		pressKey('ArrowDown');
+		pressKey('ArrowDown');
+		expect(document.activeElement).toBe(document.body.querySelectorAll('.track-row')[1]);
+
+		pressKey('Enter');
+		await flushPromises();
+		dpad.unmount();
+
+		expect(invoke).toHaveBeenCalledTimes(1);
+		expect(invoke).toHaveBeenCalledWith('StartPlaybackCommand', 'album', 'alb-1', 'trk-2');
+	});
+
 	it('focuses Play when the list arrives after the screen mounted', async () => {
 		const loaded = listData.value;
 		listData.value = null as unknown as typeof loaded;
@@ -122,6 +149,11 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 		expect(document.activeElement).toBe(document.body.querySelector('[aria-label="Play"]'));
 	});
 });
+
+/** A key press lands on the focused element and bubbles to the window, as on the TV. */
+function pressKey(key: string): void {
+	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+}
 
 function flushPromises(): Promise<void> {
 	return new Promise(resolve => setTimeout(resolve, 0));

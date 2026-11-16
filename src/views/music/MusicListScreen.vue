@@ -270,6 +270,7 @@ function trackArtistText(track: MusicTrack): string {
 				<span class="duration">Duration</span>
 			</header>
 			<ol class="tracks">
+				<!-- eslint-disable-next-line vue-a11y/click-events-have-key-events -- useDPad turns Enter into this click -->
 				<li
 					v-for="(track, index) in list.tracks ?? []"
 					:key="track.id ?? index"
@@ -279,7 +280,6 @@ function trackArtistText(track: MusicTrack): string {
 					tabindex="0"
 					role="button"
 					@click="track.id && onTrackClick(track.id)"
-					@keydown.enter.prevent="track.id && onTrackClick(track.id)"
 				>
 					<span class="track-num">{{ index + 1 }}</span>
 					<div class="track-meta">
