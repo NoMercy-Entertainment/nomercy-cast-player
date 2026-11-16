@@ -4,6 +4,7 @@ import { ref } from 'vue';
 
 import MusicListScreen from './MusicListScreen.vue';
 import { socketStore } from '@/stores/socketStore';
+import { focusStore } from '@/stores/focusStore';
 
 const push = vi.fn();
 
@@ -17,6 +18,7 @@ const listData = ref({
 	title: 'Test Album',
 	tracks: [
 		{ id: 'trk-1', title: 'Track One' },
+		{ id: 'trk-2', title: 'Track Two' },
 	],
 });
 
@@ -65,6 +67,59 @@ describe('pressing Play only opens Now Playing once playback actually starts', (
 		await flushPromises();
 
 		expect(push).toHaveBeenCalledWith('/now-playing');
+	});
+});
+
+describe('the D-pad reaches the track rows from the Play button', () => {
+	let wrapper: ReturnType<typeof mount> | null = null;
+
+	beforeEach(() => {
+		push.mockClear();
+	});
+
+	afterEach(() => {
+		wrapper?.unmount();
+		wrapper = null;
+		socketStore.musicHub.value = null;
+		document.body.innerHTML = '';
+	});
+
+	it('pressing Down from Play focuses track 1, then track 2, and OK plays track 2', async () => {
+		const invoke = vi.fn(async () => undefined);
+		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
+
+		wrapper = mount(MusicListScreen, { attachTo: document.body });
+		await flushPromises();
+		const rows = [...document.body.querySelectorAll<HTMLElement>('.track-row')];
+		expect(rows).toHaveLength(2);
+		document.body.querySelector<HTMLElement>('[aria-label="Play"]')!.focus();
+
+		focusStore.activeGroup()?.handleKey('down');
+		expect(document.activeElement, 'first Down reaches track 1').toBe(rows[0]);
+
+		focusStore.activeGroup()?.handleKey('down');
+		expect(document.activeElement, 'second Down reaches track 2').toBe(rows[1]);
+
+		focusStore.dispatchAction();
+		await flushPromises();
+
+		expect(invoke).toHaveBeenCalledTimes(1);
+		expect(invoke).toHaveBeenCalledWith('StartPlaybackCommand', 'album', 'alb-1', 'trk-2');
+		expect(push).toHaveBeenCalledWith('/now-playing');
+	});
+
+	it('focuses Play when the list arrives after the screen mounted', async () => {
+		const loaded = listData.value;
+		listData.value = null as unknown as typeof loaded;
+
+		wrapper = mount(MusicListScreen, { attachTo: document.body });
+		await flushPromises();
+		expect(document.activeElement).toBe(document.body);
+
+		listData.value = loaded;
+		await flushPromises();
+
+		expect(document.activeElement).toBe(document.body.querySelector('[aria-label="Play"]'));
 	});
 });
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
@@ -132,6 +132,44 @@ function onTrackClick(trackId: string): void {
 			router.push('/now-playing');
 	});
 }
+
+function trackRowEl(index: number): HTMLElement | null {
+	return containerEl.value?.querySelectorAll<HTMLElement>('.track-row')[index] ?? null;
+}
+
+// The rows are a v-for in this component, and useFocusEntry binds one entry
+// per component, so each row registers in the list group directly.
+watch(() => list.value?.tracks ?? [], (tracks, _previous, onCleanup) => {
+	const unregister = tracks.map((track, index) => listGroup.register({
+		key: `music-list-track-${track.id ?? index}`,
+		order: index + 1,
+		enabled: true,
+		el: () => trackRowEl(index),
+		isFocused: () => document.activeElement === trackRowEl(index),
+		focus: () => {
+			const el = trackRowEl(index);
+			el?.focus({ preventScroll: false });
+			el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+		},
+		blur: () => trackRowEl(index)?.blur(),
+		action: () => {
+			if (track.id)
+				onTrackClick(track.id);
+		},
+	}));
+	onCleanup(() => unregister.forEach(off => off()));
+}, { immediate: true });
+
+// The group picks its first focus on mount. A list that loads later has no
+// Play button at that time, so focus it once the list is on screen.
+watch(list, (next) => {
+	if (!next)
+		return;
+	void nextTick(() => {
+		if (document.activeElement === document.body)
+			listGroup.focusByKey('music-list-play');
+	});
+});
 
 async function startPlayback(trackId: string): Promise<boolean> {
 	const hub = socketStore.musicHub.value;
