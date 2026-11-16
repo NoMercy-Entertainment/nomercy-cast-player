@@ -20,11 +20,8 @@ const type = computed(
 const id = computed(() => props.id ?? String(route.params.id ?? ''));
 const resumeAt = computed(() => {
 	const q = route.query.resume_at;
-	if (Array.isArray(q))
-		return Number(q[0]) || undefined;
-	if (typeof q === 'string')
-		return Number(q) || undefined;
-	return undefined;
+	const n = Number(Array.isArray(q) ? q[0] : q);
+	return Number.isFinite(n) && n > 0 ? n : undefined;
 });
 
 function queryText(name: string): string | undefined {

@@ -71,6 +71,31 @@ describe('the watch screen does not go black when there is nothing to play', () 
 	});
 });
 
+describe('the resume time is a finite number above zero', () => {
+	afterEach(() => {
+		routeQuery.value = {};
+	});
+
+	const cases: Array<[string, string, number | undefined]> = [
+		['a plain number', '90', 90],
+		['Infinity', 'Infinity', undefined],
+		['an overflowing exponent', '1e999', undefined],
+		['text', 'abc', undefined],
+		['an empty value', '', undefined],
+		['zero', '0', undefined],
+		['a negative number', '-5', undefined],
+	];
+
+	it.each(cases)('passes the player %s (resume_at=%s) as %s', (_name, value, expected) => {
+		routeQuery.value = { resume_at: value };
+		data.value = { playlist: [{ id: 1 }], item: { id: 1 } };
+		isLoading.value = false;
+		error.value = null;
+		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
+		expect(wrapper.findComponent({ name: 'VideoPlayer' }).props('resumeAt')).toBe(expected);
+	});
+});
+
 describe('every error panel on the watch screen is reachable with the D-pad', () => {
 	afterEach(() => {
 		vi.restoreAllMocks();
