@@ -21,6 +21,9 @@ import MusicAboutDialog from './MusicAboutDialog.vue';
  * column: scrollable track list. Wired to GET /api/v1/music/{type}/{id}.
  */
 
+const API_PREFIX = /^\/api\/v1\//;
+const LEADING_SLASH = /^\//;
+
 const route = useRoute();
 const router = useRouter();
 
@@ -124,9 +127,10 @@ async function onLikeClick(): Promise<void> {
 		return;
 	const before = isFavorite.value;
 	favoriteOverride.value = !before;
+	const cleanLink = link.replace(API_PREFIX, '').replace(LEADING_SLASH, '');
 	try {
 		await apiFetch({
-			path: `${link}/like`,
+			path: `/api/v1/${cleanLink}/like`,
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ value: !before }),

@@ -91,6 +91,12 @@
 			"line": 168,
 			"reason": "Server-provided path can contain multiple segments",
 			"expression": "/api/v1/${cleanLink}/watch-list"
+		},
+		{
+			"file": "src/views/music/MusicListScreen.vue",
+			"line": 132,
+			"reason": "Server-provided path can contain multiple segments",
+			"expression": "/api/v1/${cleanLink}/like"
 		}
 	]
 }

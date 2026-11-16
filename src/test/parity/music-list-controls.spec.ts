@@ -96,7 +96,7 @@ describe('music list controls match ListScreen.kt ControlHeader', () => {
 		icons()[1].click();
 		await flushPromises();
 		expect(apiFetch).toHaveBeenCalledWith(expect.objectContaining({
-			path: '/music/albums/00000000-0000-4000-8000-000000000001/like',
+			path: '/api/v1/music/albums/00000000-0000-4000-8000-000000000001/like',
 			method: 'POST',
 			body: JSON.stringify({ value: true }),
 		}));
