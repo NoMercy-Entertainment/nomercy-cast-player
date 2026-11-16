@@ -86,7 +86,7 @@ useHeroSeed(componentsRef);
 		/>
 		<template v-else>
 			<HomeHero v-if="heroCard" :card="heroCard" />
-			<div class="nm-hero-rails">
+			<div class="nm-hero-rails" :class="{ 'nm-hero-rails--no-hero': !heroCard }">
 				<Resolver
 					v-for="component in components"
 					:key="component.id"

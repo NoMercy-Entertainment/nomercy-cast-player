@@ -112,6 +112,12 @@ describe('the music page never ends blank', () => {
 		expect(wrapper.text()).toContain(EMPTY_MESSAGE);
 	});
 
+	it('lets the rails fill the screen below the nav when no hero art sits above them', async () => {
+		const wrapper = await screen({ data: [carousel('albums', [album('00000000-0000-4000-8000-000000000001')])] });
+
+		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
+	});
+
 	it('shows the error and Try again when the request failed', async () => {
 		const wrapper = await screen({ data: undefined, error: new Error('timeout') });
 

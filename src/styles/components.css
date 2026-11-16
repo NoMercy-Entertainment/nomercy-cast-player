@@ -242,6 +242,12 @@
 .nm-hero-rails::-webkit-scrollbar {
 	display: none;
 }
+/* No hero above (Music has no backdrop art): the rails take the screen below the nav. */
+.nm-hero-rails--no-hero {
+	margin-top: 0;
+	padding-top: calc(var(--topnav-height) + 24px);
+	height: 100%;
+}
 .nm-hero-rails > .rail-section {
 	scroll-margin-top: 120px;
 	scroll-margin-bottom: 80px;
