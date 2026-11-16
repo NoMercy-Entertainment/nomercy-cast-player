@@ -41,7 +41,7 @@ const cover = computed(() =>
 .hero {
 	display: flex;
 	align-items: flex-end;
-	gap: 24px;
+	gap: 16px;
 	width: 100%;
 }
 .art {
@@ -61,7 +61,7 @@ const cover = computed(() =>
 }
 .title {
 	margin: 0;
-	font-size: 40px;
+	font-size: 36px;
 	font-weight: 800;
 	letter-spacing: -0.02em;
 	white-space: nowrap;

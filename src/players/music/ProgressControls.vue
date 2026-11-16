@@ -205,6 +205,10 @@ const pct = computed(() => progressPercent(track.value, time.value));
 	gap: 14px;
 	justify-content: flex-start;
 	align-items: center;
+	height: 90px;
+	padding: 0 32px;
+	background: rgba(0, 0, 0, 0.4);
+	border-radius: 16px;
 }
 .ctrl-btn {
 	width: 60px;
@@ -232,9 +236,10 @@ const pct = computed(() => progressPercent(track.value, time.value));
 	background: oklch(1 0 0 / 0.12);
 }
 .ctrl-play {
-	width: 80px;
-	height: 80px;
-	background: var(--color-primary, var(--color-accent));
+	width: 64px;
+	height: 64px;
+	background: linear-gradient(var(--color-primary, var(--color-accent)), oklch(0.12 0.01 250 / 0.1));
+	box-shadow: 0 12px 12px rgba(0, 0, 0, 0.3);
 	color: oklch(0.18 0.02 35);
 }
 .ctrl-btn:focus-visible {
@@ -243,7 +248,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 	outline: 3px solid #fff;
 }
 .ctrl-play:focus-visible {
-	background: var(--color-primary, var(--color-accent));
+	background: linear-gradient(var(--color-primary, var(--color-accent)), oklch(0.12 0.01 250 / 0.1));
 	box-shadow: 0 0 0 3px #fff;
 }
 </style>

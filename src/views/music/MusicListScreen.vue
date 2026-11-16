@@ -317,12 +317,12 @@ function trackArtistText(track: MusicTrack): string {
 	gap: 16px;
 }
 .cover {
-	width: 280px;
+	width: calc(100% - 60px);
 	aspect-ratio: 1 / 1;
-	border-radius: 18px;
+	border-radius: 12px;
 	overflow: hidden;
 	background: oklch(0.18 0.01 250);
-	box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+	box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
 }
 .cover img {
 	width: 100%;
@@ -331,7 +331,7 @@ function trackArtistText(track: MusicTrack): string {
 }
 .kind {
 	margin: 0;
-	font-size: 11px;
+	font-size: 16px;
 	font-weight: 700;
 	letter-spacing: 0.12em;
 	text-transform: uppercase;
@@ -339,8 +339,8 @@ function trackArtistText(track: MusicTrack): string {
 }
 .title {
 	margin: 0;
-	font-size: 32px;
-	font-weight: 700;
+	font-size: 28px;
+	font-weight: 800;
 	line-height: 1.05;
 	letter-spacing: -0.01em;
 }
@@ -348,7 +348,7 @@ function trackArtistText(track: MusicTrack): string {
 	margin: 0;
 	display: flex;
 	gap: 8px;
-	font-size: 13px;
+	font-size: 14px;
 	color: oklch(0.85 0.005 250);
 }
 /* Music list Play button — palette-tinted instead of white */
@@ -367,6 +367,10 @@ function trackArtistText(track: MusicTrack): string {
 	color: oklch(0.75 0.15 25);
 }
 .tracks-col {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding-top: 16px;
 	overflow-y: auto;
 }
 .tracks-head {
@@ -393,7 +397,8 @@ function trackArtistText(track: MusicTrack): string {
 	display: grid;
 	grid-template-columns: 32px 1fr auto;
 	gap: 16px;
-	padding: 10px 16px;
+	padding: 8px 12px 8px 16px;
+	min-height: 48px;
 	border-radius: 8px;
 	cursor: pointer;
 	transition:
@@ -404,7 +409,7 @@ function trackArtistText(track: MusicTrack): string {
 }
 .track-row:focus-visible {
 	background: rgba(255, 255, 255, 0.05);
-	border-color: var(--color-primary, oklch(0.7 0.2 285));
+	border-color: #fff;
 }
 .track-row.is-playing .track-num {
 	color: var(--color-primary, oklch(0.7 0.2 285));

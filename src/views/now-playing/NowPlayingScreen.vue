@@ -256,7 +256,7 @@ onUnmounted(() => {
 	display: grid;
 	grid-template-columns: 1fr minmax(280px, auto);
 	gap: 48px;
-	padding: 80px var(--tv-safe-padding) 48px;
+	padding: 80px 48px 48px;
 	height: 100%;
 	align-items: end;
 	transition: transform 400ms ease;
