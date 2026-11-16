@@ -3,11 +3,13 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { ResolvedTrailer } from '@/lib/trailers';
 import type { FocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
-import { mountLanguageScreen } from './pluginPanels/LanguageScreen';
-import type { TrackItem } from './pluginPanels/LanguageScreen';
-import { mountPlaybackOSD } from './pluginPanels/PlaybackOSD';
-import type { PlaybackOSDHandle } from './pluginPanels/PlaybackOSD';
-import { mountSeekContainer } from './pluginPanels/SeekContainer';
+import { moveFocus, t } from './plugins/tv-ui/dom';
+import type { Direction } from './plugins/tv-ui/dom';
+import { keyOf } from './plugins/tv-ui/keys';
+import { bottomBar, seekStrip, subtitleDialog, topBar } from './plugins/tv-ui/panels';
+import type { BottomBarHandle, Choice, Panel, SeekStripHandle } from './plugins/tv-ui/panels';
+import { canEnterSeekMode, cancelSeek, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './plugins/tv-ui/seek';
+import './plugins/tv-ui/style.css';
 import { mountOverlayHost } from './overlayHost';
 import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
 import { authStore } from '@/stores/authStore';
@@ -21,10 +23,12 @@ import { screensaverStore } from '@/stores/screensaverStore';
  *   playback store the watch screen reports through;
  * - no pre-screen and no episode picker, because a trailer has neither;
  * - Enter plays and pauses, up and down show the controls, left and right
- *   pause and open the seek bar, the language key opens subtitles;
+ *   pause and open the seek strip, the language key opens subtitles;
  * - controls hide after four seconds while playing;
  * - Back closes an open panel first, and only then the trailer;
  * - the trailer closes itself when it ends.
+ *
+ * The controls are the tv-ui panels, the same ones the watch screen draws.
  */
 
 const props = defineProps<{
@@ -37,6 +41,18 @@ const emit = defineEmits<{ close: [] }>();
 const CONTROLS_TIMEOUT_MS = 4000;
 const LANGUAGE_KEYS = new Set(['ChannelUp', 'MediaTrackNext', 'l', 'L']);
 const TOGGLE_KEYS = new Set(['MediaPlayPause', 'MediaPlay', 'MediaPause']);
+const ARROWS = {
+	ArrowLeft: 'left',
+	ArrowRight: 'right',
+	ArrowUp: 'up',
+	ArrowDown: 'down',
+} as const satisfies Record<string, Direction>;
+
+interface SeekState {
+	strip: SeekStripHandle;
+	frames: number[];
+	index: number;
+}
 
 const rootEl = ref<HTMLElement | null>(null);
 const focusSinkEl = ref<HTMLElement | null>(null);
@@ -44,8 +60,10 @@ const mountId = `nm-trailer-${Math.random().toString(36).slice(2, 10)}`;
 
 let player: NMVideoPlayer | null = null;
 let host: HTMLElement | null = null;
-let osd: PlaybackOSDHandle | null = null;
-let closePanel: (() => void) | null = null;
+let top: Panel | null = null;
+let bottom: BottomBarHandle | null = null;
+let seek: SeekState | null = null;
+let dialog: Panel | null = null;
 let hideTimer: number | null = null;
 let closed = false;
 
@@ -76,90 +94,219 @@ function clearHideTimer(): void {
 	}
 }
 
-function showControls(): void {
-	osd?.setVisible(true);
-	clearHideTimer();
-
-	hideTimer = window.setTimeout(() => {
-		if (closePanel === null && player && !isPaused()) {
-			osd?.setVisible(false);
-		}
-	}, CONTROLS_TIMEOUT_MS);
-}
-
 function isPaused(): boolean {
 	return player?.videoElement?.paused ?? true;
 }
 
-function openPanel(unmount: () => void): void {
-	closePanel?.();
+function panelOpen(): boolean {
+	return seek !== null || dialog !== null;
+}
 
-	closePanel = (): void => {
-		unmount();
-		closePanel = null;
-		// The panel took focus for its own buttons; give it back so Enter
-		// and Back reach the trailer again.
-		focusSinkEl.value?.focus();
-	};
+function updateBar(): void {
+	if (!player) return;
+
+	bottom?.update({
+		playing: !isPaused(),
+		time: player.time(),
+		duration: player.duration(),
+		buffered: 0,
+		override: seek
+			? seek.frames[seek.index]
+			: null,
+		chapters: [],
+	});
+}
+
+function setControls(visible: boolean): void {
+	if (!host || !top || !bottom) return;
+
+	if (!visible) {
+		top.root.remove();
+		bottom.root.remove();
+
+		return;
+	}
+
+	if (!seek) {
+		host.append(top.root);
+	}
+
+	host.append(bottom.root);
+	updateBar();
+}
+
+function showControls(): void {
+	setControls(true);
+	clearHideTimer();
+
+	hideTimer = window.setTimeout(() => {
+		if (!panelOpen() && player && !isPaused()) {
+			setControls(false);
+		}
+	}, CONTROLS_TIMEOUT_MS);
+}
+
+function closeSeek(): void {
+	seek?.strip.root.remove();
+	seek = null;
+	focusSinkEl.value?.focus();
+}
+
+// A commit seeks to the chosen frame; a cancel keeps the position. Both resume playback.
+function leaveSeek(commit?: number): void {
+	const target = player;
+
+	closeSeek();
+	setControls(false);
+
+	if (!target) return;
+
+	if (commit === undefined) {
+		cancelSeek(() => undefined, () => void target.play());
+
+		return;
+	}
+
+	commitSeek(commit, (time) => void target.time(time), () => undefined, () => void target.play());
+}
+
+function closeDialog(): void {
+	dialog?.root.remove();
+	dialog = null;
+	focusSinkEl.value?.focus();
+	showControls();
+}
+
+// Closes the open panel, if any, and says whether there was one.
+function closePanel(): boolean {
+	if (seek) {
+		leaveSeek();
+
+		return true;
+	}
+
+	if (dialog) {
+		closeDialog();
+
+		return true;
+	}
+
+	return false;
 }
 
 function openSeek(): void {
-	if (!player) return;
+	if (!player || !host || !canEnterSeekMode(player.duration())) return;
 
 	player.pause();
-	osd?.setVisible(false);
-	const target = player;
+	top?.root.remove();
+	const frames = frameTimesFor(undefined, player.duration());
+	const index = snapIndex(frames, player.time());
+	const strip = seekStrip(frames, index);
 
-	if (!host) return;
+	seek = { strip, frames, index };
+	host.append(strip.root);
+	setControls(true);
+	strip.focus();
+}
 
-	openPanel(mountSeekContainer({
-		parent: host,
-		getCurrentTime: () => target.time(),
-		getDuration: () => target.duration(),
-		onCommit: (seconds) => {
-			void target.time(seconds);
-			closePanel?.();
-			void target.play();
-		},
-		onCancel: () => {
-			closePanel?.();
-			showControls();
-		},
+function pickSubtitle(index: number | null): void {
+	void player?.subtitle(index);
+	closeDialog();
+}
+
+function subtitleChoices(target: NMVideoPlayer): Choice[] {
+	const current = target.subtitle()?.index ?? null;
+	const off: Choice = {
+		label: t('dialog_subtitle_off'),
+		selected: current === null,
+		onPick: () => pickSubtitle(null),
+	};
+
+	const tracks = target.subtitles().map((track, index): Choice => ({
+		label: track.label,
+		selected: current === index,
+		onPick: () => pickSubtitle(index),
 	}));
+
+	return [off, ...tracks];
 }
 
 function openLanguage(): void {
-	if (!player) return;
+	if (!player || !host || dialog) return;
 
-	const target = player;
+	clearHideTimer();
+	const panel = subtitleDialog({ subtitles: subtitleChoices(player) });
 
-	if (!host) return;
+	dialog = panel;
+	host.append(panel.root);
+	panel.focus();
+}
 
-	const subtitleTracks: TrackItem[] = target.subtitles().map((track, index) => ({
-		id: index,
-		label: track.label,
-	}));
+function seekKey(event: KeyboardEvent): void {
+	if (!seek) return;
 
-	openPanel(mountLanguageScreen({
-		parent: host,
-		audioTracks: [],
-		subtitleTracks,
-		currentSubtitleId: target.subtitle()?.index ?? 'off',
-		onPickAudio: () => {},
-		onPickSubtitle: (id) => void target.subtitle(id === 'off'
-			? null
-			: Number(id)),
-		onExit: () => closePanel?.(),
-	}));
+	const result = seekStripKey(seek.frames, seek.index, keyOf(event));
+
+	if (!result.consumed) return;
+
+	event.preventDefault();
+	seek.index = result.index;
+	seek.strip.select(result.index);
+
+	if (result.commit !== undefined) {
+		leaveSeek(result.commit);
+
+		return;
+	}
+
+	if (result.cancel) {
+		leaveSeek();
+
+		return;
+	}
+
+	updateBar();
+}
+
+function dialogKey(event: KeyboardEvent): void {
+	if (!dialog) return;
+
+	const direction = Object.entries(ARROWS).find(([name]) => name === event.key)?.[1];
+
+	if (direction) {
+		event.preventDefault();
+		moveFocus(dialog.root, direction);
+
+		return;
+	}
+
+	const focused = document.activeElement;
+
+	if (keyOf(event) === 'center' && focused instanceof HTMLElement && dialog.root.contains(focused)) {
+		event.preventDefault();
+		focused.click();
+	}
 }
 
 // Keys the focus system does not route to a modal: arrows are swallowed by a
 // modal group with a focused entry, so they are read here. Enter and Back go
 // through the focus system below.
 function onKey(e: KeyboardEvent): void {
-	if (!player || closePanel !== null) return;
+	if (!player || keyOf(e) === 'back') return;
 
 	screensaverStore.resetIdle();
+
+	if (seek) {
+		seekKey(e);
+
+		return;
+	}
+
+	if (dialog) {
+		dialogKey(e);
+
+		return;
+	}
 
 	if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
 		e.preventDefault();
@@ -198,7 +345,7 @@ const group = useFocusGroup({
 			return true;
 
 		// An open panel closes itself on Back; the trailer waits its turn.
-		if (closePanel === null) {
+		if (!closePanel()) {
 			close();
 		}
 
@@ -210,7 +357,7 @@ const group = useFocusGroup({
 // on the player's container, so the player's own click-to-play handler never
 // fires alongside this one.
 function onSelect(): void {
-	if (!player || closePanel !== null) return;
+	if (!player || panelOpen()) return;
 
 	player.togglePlayback();
 	showControls();
@@ -284,12 +431,17 @@ onMounted(async () => {
 		const target = created;
 
 		host = mountOverlayHost(target.container);
+		host.classList.add('tvui-root');
+		top = topBar({
+			item: { title: title() },
+			hasNext: false,
+			onSettings: openLanguage,
+			onNext: () => undefined,
+		});
 
-		osd = mountPlaybackOSD({
-			parent: host,
-			title: title(),
-			getCurrentTime: () => target.time(),
-			getDuration: () => target.duration(),
+		bottom = bottomBar(() => {
+			target.togglePlayback();
+			showControls();
 		});
 
 		showControls();
@@ -300,16 +452,18 @@ onMounted(async () => {
 		target.on('pause', () => {
 			clearHideTimer();
 
-			// Seeking pauses first; the seek bar replaces the controls rather
+			// Seeking pauses first; the seek strip replaces the controls rather
 			// than stacking on top of them.
-			if (closePanel === null) {
-				osd?.setVisible(true);
+			if (!panelOpen()) {
+				setControls(true);
 			}
 		});
 
 		// Any progress keeps the ambient screensaver away while it plays.
-		target.on('time', () =>
-			screensaverStore.resetIdle());
+		target.on('time', () => {
+			screensaverStore.resetIdle();
+			updateBar();
+		});
 
 		// A single trailer, so ended is the end.
 		target.on('ended', () =>
@@ -327,11 +481,12 @@ onBeforeUnmount(() => {
 	window.removeEventListener('keydown', onKey, true);
 	unregisterFocusSink?.();
 	clearHideTimer();
-	closePanel?.();
-	osd?.dispose();
-	osd = null;
 	host?.remove();
 	host = null;
+	top = null;
+	bottom = null;
+	seek = null;
+	dialog = null;
 	void player?.dispose();
 	player = null;
 	screensaverStore.resetIdle();

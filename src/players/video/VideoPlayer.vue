@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import i18next from '@/i18n/i18next';
 import { videoSyncBridge } from './syncBridge';
-import { TVOverlayPlugin } from './TVOverlayPlugin';
+import { TvUiPlugin } from './plugins/tv-ui';
 import { attachChapterAutoSkip, detachChapterAutoSkip } from './ChapterAutoSkipPlugin';
 import { prepareChapterPlaylist } from './chapterFile';
 import { attachAssPlainTextFallback } from './assPlainTextFallback';
@@ -72,7 +72,6 @@ const router = useRouter();
 const containerEl = ref<HTMLElement | null>(null);
 let engine: NMVideoPlayer | null = null;
 let detachAssFallback: (() => void) | null = null;
-let overlay: TVOverlayPlugin | null = null;
 let unmounted = false;
 
 interface MergeItem { id: string | number; file?: string }
@@ -176,6 +175,12 @@ onMounted(async () => {
 			fallbackFont: '/js/octopus/default.ttf',
 		});
 
+		// A handed-over position starts playback at once, with no pre-screen.
+		player.addPlugin(TvUiPlugin, {
+			skipPreScreen: typeof props.resumeAt === 'number' && props.resumeAt > 0,
+			onExit: () => leaveToPreviousOrHome(router),
+		});
+
 		player.setup({
 			playlist: prepared as never,
 			auth: {
@@ -212,14 +217,6 @@ onMounted(async () => {
 
 		attachChapterAutoSkip(player);
 
-		overlay = new TVOverlayPlugin(player, {
-			skipPreScreen: typeof props.resumeAt === 'number' && props.resumeAt > 0,
-			resumeAt: props.resumeAt,
-			onExit: () => leaveToPreviousOrHome(router),
-		});
-
-		overlay.attach();
-
 		if (typeof props.resumeAt === 'number' && props.resumeAt > 0) {
 			// Seeking before the duration is known is ignored: wait for it.
 			const seekToResume = (): void => {
@@ -243,14 +240,12 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
 	unmounted = true;
-	overlay?.detach();
 	videoSyncBridge.detach();
 	detachChapterAutoSkip();
 	detachAssFallback?.();
 	detachAssFallback = null;
 	void engine?.dispose();
 	engine = null;
-	overlay = null;
 });
 </script>
 
@@ -284,87 +279,5 @@ onBeforeUnmount(() => {
 	white-space: pre-line;
 	pointer-events: none;
 	z-index: 5;
-}
-:global(.panel) {
-	position: absolute;
-	inset: 0;
-	background: oklch(0 0 0 / 0.7);
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	padding: 48px;
-	gap: 32px;
-	z-index: 10;
-}
-:global(.panel-button) {
-	font: inherit;
-	font-weight: 600;
-	font-size: 16px;
-	padding: 14px 24px;
-	background: oklch(1 0 0 / 0.08);
-	color: oklch(1 0 0);
-	border: 0;
-	border-radius: 999px;
-	cursor: pointer;
-	outline: none;
-	transition: background 150ms ease-out;
-}
-:global(.panel-button:focus-visible) {
-	background: oklch(0.7 0.18 35);
-	color: oklch(0.18 0.02 35);
-}
-:global(.panel-button.current) {
-	outline: 2px solid oklch(0.7 0.18 35);
-}
-:global(.pre-screen-title) {
-	margin: 0;
-	font-size: 40px;
-	font-weight: 700;
-}
-:global(.pre-screen-buttons) {
-	display: flex;
-	gap: 16px;
-	flex-wrap: wrap;
-	justify-content: center;
-}
-:global(.episode-list),
-:global(.language-list) {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	width: 720px;
-	max-height: 60vh;
-	overflow-y: auto;
-}
-:global(.lang-section h3) {
-	margin: 24px 0 8px;
-	font-size: 14px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-	color: oklch(1 0 0 / 0.7);
-}
-:global(.seek-container) {
-	inset: auto 0 80px 0;
-	background: linear-gradient(180deg, transparent, oklch(0 0 0 / 0.85));
-	padding: 32px 10%;
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-}
-:global(.seek-time) {
-	color: oklch(1 0 0);
-	font-size: 14px;
-	font-variant-numeric: tabular-nums;
-}
-:global(.seek-bar) {
-	height: 4px;
-	background: oklch(1 0 0 / 0.2);
-	border-radius: 999px;
-	overflow: hidden;
-}
-:global(.seek-fill) {
-	height: 100%;
-	background: oklch(0.7 0.18 35);
 }
 </style>

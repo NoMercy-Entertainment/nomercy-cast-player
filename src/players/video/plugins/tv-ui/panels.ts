@@ -409,6 +409,13 @@ export function episodeDialog(opts: {
 	return { root, focus } as const satisfies Panel;
 }
 
+function focusSelected(root: HTMLElement): void {
+	const target = root.querySelector<HTMLElement>('.tvui-selected') ??
+		root.querySelector<HTMLElement>('[data-focusable]');
+
+	target?.focus();
+}
+
 export function languageDialog(opts: {
 	quality: Choice[];
 	audio: Choice[];
@@ -438,14 +445,14 @@ export function languageDialog(opts: {
 	columns.push(column('section_playback', [skip]));
 	const root = el('div', 'tvui-dialog tvui-languages', ...columns);
 
-	const focus = (): void => {
-		const target = root.querySelector<HTMLElement>('.tvui-selected') ??
-			root.querySelector<HTMLElement>('[data-focusable]');
+	return { root, focus: () => focusSelected(root) } as const satisfies Panel;
+}
 
-		target?.focus();
-	};
+// SubtitleDialog.kt: the trailer's picker, the subtitle column of the language dialog on its own.
+export function subtitleDialog(opts: { subtitles: Choice[] }) {
+	const root = el('div', 'tvui-dialog tvui-languages', column('dialog_subtitle_tracks', choiceRows(opts.subtitles)));
 
-	return { root, focus } as const satisfies Panel;
+	return { root, focus: () => focusSelected(root) } as const satisfies Panel;
 }
 
 export interface SettingsData {

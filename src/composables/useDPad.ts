@@ -26,8 +26,8 @@ const DPAD_KEYS = new Set([
 	'BrowserBack',
 ]);
 
-// The overlay host marks a mounted video player; the panels are listed for a panel mounted without it.
-const PLAYER_SELECTOR = '.tv-overlay-host, .language-screen, .episode-screen, .pre-screen, .seek-container';
+// The tv-ui root marks a mounted video player, the watch screen's and the trailer's.
+const PLAYER_SELECTOR = '.tvui-root';
 
 function isInputFocused(): boolean {
 	const el = document.activeElement;

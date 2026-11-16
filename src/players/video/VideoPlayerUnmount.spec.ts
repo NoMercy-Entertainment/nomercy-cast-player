@@ -30,6 +30,13 @@ vi.mock('@nomercy-entertainment/nomercy-video-player', async () => {
 	return { default: () => ({ setup, addPlugin }), OctopusPlugin: class {} };
 });
 
+// The real plugin imports the mocked player package, which waits here for the test to release it.
+vi.mock('./plugins/tv-ui', () => ({
+	TvUiPlugin: class {
+		static id = 'tv-ui';
+	},
+}));
+
 vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', () => ({
 	SubtitleOverlayPlugin: class {},
 }));
