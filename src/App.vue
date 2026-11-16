@@ -25,6 +25,7 @@ import MusicPlayer from '@/players/music/MusicPlayer.vue';
 
 const { t } = useTranslation();
 const router = useRouter();
+
 useDPad(router);
 
 const inDegraded = computed(() => authStore.receiverState.value === 'DEGRADED');
@@ -39,10 +40,12 @@ onMounted(() => {
 
 	document.addEventListener('visibilitychange', () => {
 		console.debug('[app] visibilitychange', document.visibilityState);
+
 		// Reset idle on resume so the overlay doesn't pop instantly when
 		// cast_shell unsuspends us.
-		if (document.visibilityState === 'visible')
+		if (document.visibilityState === 'visible') {
 			screensaverStore.resetIdle();
+		}
 	});
 });
 </script>

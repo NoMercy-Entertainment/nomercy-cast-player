@@ -20,14 +20,18 @@ export interface SkipChapterPromptHandle {
 	dispose: () => void;
 }
 
-export function mountSkipChapterPrompt(opts: SkipChapterPromptOptions): SkipChapterPromptHandle {
+export function mountSkipChapterPrompt(opts: SkipChapterPromptOptions) {
 	const btn = document.createElement('button');
+
 	btn.type = 'button';
 	btn.className = 'panel-button panel-button-secondary skip-chapter-prompt';
 	btn.dataset.focusable = 'true';
 	btn.tabIndex = 0;
 	btn.textContent = opts.label;
-	btn.addEventListener('click', () => opts.onSkip());
+
+	btn.addEventListener('click', () =>
+		opts.onSkip());
+
 	btn.addEventListener('keydown', (e) => {
 		if (e.key === 'Enter' || e.key === ' ') {
 			e.preventDefault();
@@ -40,5 +44,5 @@ export function mountSkipChapterPrompt(opts: SkipChapterPromptOptions): SkipChap
 	return {
 		focus: () => btn.focus(),
 		dispose: () => btn.remove(),
-	};
+	} as const satisfies SkipChapterPromptHandle;
 }

@@ -12,9 +12,11 @@ const published = join(root, 'public', 'js', 'octopus');
 
 // Bundling vite.config.ts costs seconds on a loaded runner, so it happens once.
 let cached: Plugin | undefined;
+
 beforeAll(async () => {
 	const loaded = await loadConfigFromFile({ command: 'build', mode: 'production' }, join(root, 'vite.config.ts'), root);
-	cached = flatten(loaded?.config.plugins ?? []).find(plugin => plugin.name === 'octopus-worker-copy');
+
+	cached = flatten(loaded?.config.plugins ?? []).find((plugin) => plugin.name === 'octopus-worker-copy');
 }, 60_000);
 
 async function octopusPlugin(): Promise<Plugin | undefined> {
@@ -23,17 +25,21 @@ async function octopusPlugin(): Promise<Plugin | undefined> {
 
 function flatten(list: readonly unknown[]): Plugin[] {
 	const out: Plugin[] = [];
+
 	for (const entry of list) {
-		if (Array.isArray(entry))
+		if (Array.isArray(entry)) {
 			out.push(...flatten(entry));
-		else if (entry && typeof entry === 'object')
+		} else if (entry && typeof entry === 'object') {
 			out.push(entry as Plugin);
+		}
 	}
+
 	return out;
 }
 
 function runConfigHook(plugin: Plugin, mode: string): void {
 	const hook = plugin.config as (config: object, env: { mode: string; command: string }) => void;
+
 	hook({}, { mode, command: 'build' });
 }
 
@@ -42,6 +48,7 @@ describe('the octopus worker copy step', () => {
 		rmSync(published, { recursive: true, force: true });
 
 		const plugin = await octopusPlugin();
+
 		expect(plugin, 'vite.config.ts registers the octopus-worker-copy plugin').toBeDefined();
 		runConfigHook(plugin!, 'production');
 

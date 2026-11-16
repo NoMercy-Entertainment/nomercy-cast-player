@@ -6,12 +6,15 @@ const tokens = { ...decls('styles/nm-tokens.css', ':root'), ...decls('styles/tok
 
 function resolve(value: string | undefined): string | undefined {
 	let v = value;
+
 	for (let i = 0; v && i < 8; i++) {
 		const m = v.match(/^var\((--[\w-]+)\)$/);
-		if (!m)
-			break;
+
+		if (!m) break;
+
 		v = tokens[m[1]];
 	}
+
 	return v;
 }
 

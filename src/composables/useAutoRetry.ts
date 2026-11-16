@@ -25,15 +25,15 @@ export function useAutoRetry(opts: AutoRetryOptions): void {
 					void opts.refetch();
 				}, interval);
 			}
-		}
-		else if (timer !== null) {
+		} else if (timer !== null) {
 			window.clearInterval(timer);
 			timer = null;
 		}
 	});
 
 	onBeforeUnmount(() => {
-		if (timer !== null)
+		if (timer !== null) {
 			window.clearInterval(timer);
+		}
 	});
 }

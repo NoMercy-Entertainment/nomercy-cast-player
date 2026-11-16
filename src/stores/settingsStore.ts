@@ -21,22 +21,24 @@ interface SettingsShape {
 	crashReports: boolean;
 }
 
-const DEFAULTS: SettingsShape = {
+const DEFAULTS = {
 	autoSkipChapters: false,
 	useAutoThemeColors: true,
 	subtitleHints: true,
 	crashReports: false,
-};
+} as const satisfies SettingsShape;
 
-function load(): SettingsShape {
+function load() {
 	try {
 		const raw = localStorage.getItem(STORAGE_KEY);
+
 		if (!raw)
 			return DEFAULTS;
+
 		const parsed = JSON.parse(raw) as Partial<SettingsShape>;
-		return { ...DEFAULTS, ...parsed };
-	}
-	catch {
+
+		return { ...DEFAULTS, ...parsed } as const satisfies SettingsShape;
+	} catch {
 		return DEFAULTS;
 	}
 }
@@ -51,15 +53,15 @@ const crashReports = ref(stored.crashReports === true);
 
 function persist(): void {
 	try {
-		const data: SettingsShape = {
+		const data = {
 			autoSkipChapters: autoSkipChapters.value,
 			useAutoThemeColors: useAutoThemeColors.value,
 			subtitleHints: subtitleHints.value,
 			crashReports: crashReports.value,
-		};
+		} as const satisfies SettingsShape;
+
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-	}
-	catch (error) {
+	} catch (error) {
 		// Quota / serialization errors are non-fatal.
 		recordSwallowed('settingsPersist', error);
 	}
@@ -69,6 +71,7 @@ watch(autoSkipChapters, (next) => {
 	setAutoSkipEnabled(next);
 	persist();
 }, { immediate: true });
+
 watch(useAutoThemeColors, persist);
 watch(subtitleHints, persist);
 watch(crashReports, persist);

@@ -32,13 +32,13 @@ const routes: RouteRecordRaw[] = [
 		path: '/movie/:id/watch',
 		name: 'watch-movie',
 		component: () => import('@/views/watch/WatchScreen.vue'),
-		props: route => ({ type: 'movie', id: route.params.id }),
+		props: (route) => ({ type: 'movie', id: route.params.id }),
 	},
 	{
 		path: '/tv/:id/watch',
 		name: 'watch-tv',
 		component: () => import('@/views/watch/WatchScreen.vue'),
-		props: route => ({ type: 'tv', id: route.params.id }),
+		props: (route) => ({ type: 'tv', id: route.params.id }),
 	},
 	{
 		// Legacy /watch/:type/:id for sender-injected play_video intents
@@ -113,25 +113,25 @@ const routes: RouteRecordRaw[] = [
 				path: 'movie/:id',
 				name: 'info-movie',
 				component: () => import('@/views/info/InfoScreen.vue'),
-				props: route => ({ type: 'movie', id: route.params.id }),
+				props: (route) => ({ type: 'movie', id: route.params.id }),
 			},
 			{
 				path: 'tv/:id',
 				name: 'info-tv',
 				component: () => import('@/views/info/InfoScreen.vue'),
-				props: route => ({ type: 'tv', id: route.params.id }),
+				props: (route) => ({ type: 'tv', id: route.params.id }),
 			},
 			{
 				path: 'special/:id',
 				name: 'info-special',
 				component: () => import('@/views/info/InfoScreen.vue'),
-				props: route => ({ type: 'special', id: route.params.id }),
+				props: (route) => ({ type: 'special', id: route.params.id }),
 			},
 			{
 				path: 'collection/:id',
 				name: 'info-collection',
 				component: () => import('@/views/info/InfoScreen.vue'),
-				props: route => ({ type: 'collection', id: route.params.id }),
+				props: (route) => ({ type: 'collection', id: route.params.id }),
 			},
 			{
 				path: 'person/:id',
@@ -206,6 +206,7 @@ routes.push({
 function screenLabel(route: RouteLocationNormalized): string {
 	const name = String(route.name ?? route.path);
 	const id = route.params.id;
+
 	if (typeof id === 'string' && id.length > 0)
 		return `${name} ${id}`;
 
@@ -223,7 +224,7 @@ export const router = createRouter({
 // The censor drops any capitalised word it was not told about, because it
 // cannot otherwise tell a screen name from a viewer's library. The route table
 // is that vocabulary, declared once by the owner of it.
-allowDiagnosticsWords(router.getRoutes().map(route => String(route.name ?? '')));
+allowDiagnosticsWords(router.getRoutes().map((route) => String(route.name ?? '')));
 
 /**
  * Auth guard per spec §13 Phase 1 + Phase 4 — pre-auth, send to splash.
@@ -234,19 +235,23 @@ allowDiagnosticsWords(router.getRoutes().map(route => String(route.name ?? '')))
 router.beforeEach((to) => {
 	if (to.name === 'sender-required' || to.name === 'splash')
 		return true;
+
 	if (import.meta.env.DEV && to.name === 'dev-focus-playground')
 		return true;
+
 	if (!authStore.ready.value) {
 		return { name: 'splash', replace: true };
 	}
+
 	return true;
 });
 
 // The trail of screens is what turns a fault into a story — a report has to
 // say where the viewer was, not only that something broke.
 router.afterEach((to, from) => {
-	if (from.name)
+	if (from.name) {
 		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenClosed, 0, 0, 0, screenLabel(from));
+	}
 
 	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, screenLabel(to));
 });

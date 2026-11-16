@@ -3,6 +3,7 @@ const STORAGE_KEY = 'nm-cast-device-id-v1';
 function randomId(): string {
 	if (typeof globalThis.crypto?.randomUUID === 'function')
 		return globalThis.crypto.randomUUID();
+
 	return `cast-${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 }
 
@@ -13,13 +14,16 @@ function randomId(): string {
 export function castDeviceId(): string {
 	try {
 		const stored = localStorage.getItem(STORAGE_KEY);
+
 		if (stored)
 			return stored;
+
 		const fresh = randomId();
+
 		localStorage.setItem(STORAGE_KEY, fresh);
+
 		return fresh;
-	}
-	catch {
+	} catch {
 		return randomId();
 	}
 }

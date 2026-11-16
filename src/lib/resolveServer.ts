@@ -41,8 +41,13 @@ export interface ResolvedServer {
 // app_config sends each synced setting as { value, updatedAt }.
 function languageSetting(settings: Record<string, unknown> | undefined, key: string): string | null {
 	const entry = settings?.[key];
-	const value = typeof entry === 'object' && entry !== null ? (entry as { value?: unknown }).value : entry;
-	return typeof value === 'string' && value !== '' ? value : null;
+	const value = typeof entry === 'object' && entry !== null
+		? (entry as { value?: unknown }).value
+		: entry;
+
+	return typeof value === 'string' && value !== ''
+		? value
+		: null;
 }
 
 /**
@@ -60,19 +65,24 @@ export interface NamedServer {
 
 function origin(url: string | undefined): string | null {
 	try {
-		return url ? new URL(url).origin : null;
-	}
-	catch {
+		return url
+			? new URL(url).origin
+			: null;
+	} catch {
 		return null;
 	}
 }
 
 function findNamed(servers: AppConfigServer[], named: NamedServer): AppConfigServer | undefined {
-	const byId = named.server_id ? servers.find(server => server.id === named.server_id) : undefined;
+	const byId = named.server_id
+		? servers.find((server) => server.id === named.server_id)
+		: undefined;
 	const namedOrigin = origin(named.server_url);
+
 	if (byId || !namedOrigin)
 		return byId;
-	return servers.find(server => origin(server.serverBaseUrl) === namedOrigin || origin(server.internal_server_url) === namedOrigin);
+
+	return servers.find((server) => origin(server.serverBaseUrl) === namedOrigin || origin(server.internal_server_url) === namedOrigin);
 }
 
 export type ResolveStep = 'account' | 'server';
@@ -84,6 +94,7 @@ export async function resolveServerFromAppConfig(
 ): Promise<ResolvedServer | null> {
 	onStep('account');
 	const config = await fetchAppConfig(accessToken);
+
 	onStep('server');
 	const servers = config?.servers ?? [];
 	const languages = {
@@ -92,29 +103,43 @@ export async function resolveServerFromAppConfig(
 	};
 
 	const listed = findNamed(servers, named);
+
 	if (listed) {
 		// KMP switches to the named server and never to another one (ServerSelectionLogic.kt:102-107).
 		const route = await reachableRoute(listed);
-		return { serverId: listed.id, serverUrl: route ?? listed.serverBaseUrl, ...languages };
+
+		return {
+			serverId: listed.id,
+			serverUrl: route ?? listed.serverBaseUrl,
+			...languages,
+		};
 	}
+
 	// A named id the account does not have is refused, not played from another library (:104-106).
 	if (named.server_id)
 		return null;
 
 	// No server named: the account's own servers first (KMP restores the saved choice, which a
 	// receiver lacks). Probed together, picked in that order: a dead first server costs no wait.
-	const ordered = [...servers.filter(server => server.is_owner === true), ...servers.filter(server => server.is_owner !== true)];
+	const ordered = [...servers.filter((server) => server.is_owner === true), ...servers.filter((server) => server.is_owner !== true)];
 	const routes = await Promise.all(ordered.map(reachableRoute));
-	const first = routes.findIndex(route => route !== null);
+	const first = routes.findIndex((route) => route !== null);
+
 	if (first === -1)
 		return null;
-	return { serverId: ordered[first].id, serverUrl: routes[first]!, ...languages };
+
+	return {
+		serverId: ordered[first].id,
+		serverUrl: routes[first]!,
+		...languages,
+	};
 }
 
 async function fetchAppConfig(accessToken: string): Promise<AppConfigResponse['data']> {
 	const base = nomercyApiBase(accessToken);
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), AppConfigTimeoutMs);
+
 	try {
 		const res = await fetch(`${base}/v1/app_config`, {
 			headers: {
@@ -123,13 +148,15 @@ async function fetchAppConfig(accessToken: string): Promise<AppConfigResponse['d
 			},
 			signal: controller.signal,
 		});
+
 		if (!res.ok) {
 			console.warn('[app_config] non-OK response', res.status, base);
+
 			return undefined;
 		}
+
 		return ((await res.json()) as AppConfigResponse).data;
-	}
-	finally {
+	} finally {
 		clearTimeout(timer);
 	}
 }
@@ -158,10 +185,13 @@ const TrailingSlash = /\/$/;
  */
 async function preferLocalRoute(server: AppConfigServer): Promise<string> {
 	const internal = server.internal_server_url?.replace(TrailingSlash, '');
+
 	if (!internal || internal === server.serverBaseUrl.replace(TrailingSlash, ''))
 		return server.serverBaseUrl;
 
-	return (await answers(internal, LocalProbeTimeoutMs)) ? internal : server.serverBaseUrl;
+	return (await answers(internal, LocalProbeTimeoutMs))
+		? internal
+		: server.serverBaseUrl;
 }
 
 /** Longer than the LAN probe: this route can cross the tunnel. */
@@ -170,9 +200,13 @@ const RemoteProbeTimeoutMs = 4000;
 /** The route this receiver reaches the server on, or null when it reaches neither. */
 async function reachableRoute(server: AppConfigServer): Promise<string | null> {
 	const route = await preferLocalRoute(server);
+
 	if (route !== server.serverBaseUrl)
 		return route;
-	return (await answers(route.replace(TrailingSlash, ''), RemoteProbeTimeoutMs)) ? route : null;
+
+	return (await answers(route.replace(TrailingSlash, ''), RemoteProbeTimeoutMs))
+		? route
+		: null;
 }
 
 async function answers(base: string, timeoutMs: number): Promise<boolean> {
@@ -186,12 +220,11 @@ async function answers(base: string, timeoutMs: number): Promise<boolean> {
 			signal: controller.signal,
 			credentials: 'omit',
 		});
+
 		return true;
-	}
-	catch {
+	} catch {
 		return false;
-	}
-	finally {
+	} finally {
 		clearTimeout(timer);
 	}
 }

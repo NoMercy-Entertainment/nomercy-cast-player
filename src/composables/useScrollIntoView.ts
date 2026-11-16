@@ -8,18 +8,26 @@ import type { Ref } from 'vue';
  */
 export function useScrollIntoView(
 	containerEl: Ref<HTMLElement | null>,
-): { scrollTo: (el: HTMLElement) => void } {
+) {
 	function scrollTo(el: HTMLElement): void {
 		const container = containerEl.value;
+
 		if (!container) {
-			el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+			el.scrollIntoView({
+				behavior: 'smooth',
+				block: 'nearest',
+				inline: 'center',
+			});
+
 			return;
 		}
+
 		const containerRect = container.getBoundingClientRect();
 		const elRect = el.getBoundingClientRect();
 		const offset = elRect.left - containerRect.left - (containerRect.width - elRect.width) / 2;
+
 		container.scrollBy({ left: offset, behavior: 'smooth' });
 	}
 
-	return { scrollTo };
+	return { scrollTo } as const satisfies { scrollTo: (el: HTMLElement) => void };
 }

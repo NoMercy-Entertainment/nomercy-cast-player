@@ -24,7 +24,11 @@ const props = defineProps<{
 	initialItem?: PlaylistItem;
 	/** The audio and subtitle the handing-off device showed, from the cast intent. */
 	castAudioLanguage?: string;
-	castSubtitle?: { language: string; type?: string; format?: string };
+	castSubtitle?: {
+		language: string;
+		type?: string;
+		format?: string;
+	};
 }>();
 
 const emit = defineEmits<{ error: [message: string] }>();
@@ -34,18 +38,27 @@ const emit = defineEmits<{ error: [message: string] }>();
 function castPickStorage(): VideoPlayerConfig['storage'] {
 	if (!props.castAudioLanguage && !props.castSubtitle)
 		return undefined;
+
 	const values = new Map<string, string>();
-	if (props.castAudioLanguage)
+
+	if (props.castAudioLanguage) {
 		values.set('nmplayer-language-audio', props.castAudioLanguage);
-	if (props.castSubtitle)
+	}
+
+	if (props.castSubtitle) {
 		values.set('nmplayer-language-subtitle', JSON.stringify({ ...props.castSubtitle, explicit: true }));
+	}
+
 	return {
-		get: key => values.get(key) ?? null,
+		get: (key) => values.get(key) ?? null,
 		set: (key, value) => { values.set(key, value); },
 		remove: (key) => { values.delete(key); },
 		getJSON<T>(key: string): T | null {
 			const raw = values.get(key);
-			return raw === undefined ? null : JSON.parse(raw) as T;
+
+			return raw === undefined
+				? null
+				: JSON.parse(raw) as T;
 		},
 		setJSON: (key, value) => { values.set(key, JSON.stringify(value)); },
 	};
@@ -65,39 +78,47 @@ let disposeChapters: (() => void) | null = null;
 
 function mergeLivePlaylist(current: PlaylistItem[], incoming: PlaylistItem[], playingId: string | number): PlaylistItem[] {
 	const merged = [...current];
-	const playingIndex = merged.findIndex(item => String(item.id) === String(playingId));
+	const playingIndex = merged.findIndex((item) => String(item.id) === String(playingId));
+
 	if (playingIndex < 0)
 		return current;
-	const knownIds = new Set(merged.map(item => String(item.id)));
+
+	const knownIds = new Set(merged.map((item) => String(item.id)));
+
 	for (let i = 1; i < incoming.length; i++) {
 		const item = incoming[i]!;
-		if (knownIds.has(String(item.id)) || !item.file)
-			continue;
+
+		if (knownIds.has(String(item.id)) || !item.file) continue;
+
 		const previousId = String(incoming[i - 1]!.id);
-		const previousIndex = merged.findIndex(entry => String(entry.id) === previousId);
-		if (previousIndex < playingIndex)
-			continue;
+		const previousIndex = merged.findIndex((entry) => String(entry.id) === previousId);
+
+		if (previousIndex < playingIndex) continue;
+
 		merged.splice(previousIndex + 1, 0, item);
 		knownIds.add(String(item.id));
 	}
+
 	return merged;
 }
 
 watch(() => props.playlist, (incoming) => {
-	if (props.type !== 'tv' || !incoming || !engine)
-		return;
+	if (props.type !== 'tv' || !incoming || !engine) return;
+
 	const current = engine.queue() as unknown as PlaylistItem[];
 	const playingId = (engine.item() as unknown as PlaylistItem | undefined)?.id;
-	if (playingId === undefined)
-		return;
+
+	if (playingId === undefined) return;
+
 	const merged = mergeLivePlaylist(current, incoming, playingId);
-	if (merged.length > current.length)
+
+	if (merged.length > current.length) {
 		engine.queue(merged as never);
+	}
 });
 
 onMounted(async () => {
-	if (!containerEl.value)
-		return;
+	if (!containerEl.value) return;
 
 	// Update playbackStore eagerly so the WatchScreen can render title /
 	// duration even before the engine has loaded the manifest.
@@ -116,34 +137,46 @@ onMounted(async () => {
 
 	try {
 		const prepared = await prepareChapterPlaylist(props.playlist ?? [], authStore.accessToken.value, authStore.serverUrl.value);
+
 		if (unmounted) {
 			prepared.dispose();
+
 			return;
 		}
+
 		disposeChapters = prepared.dispose;
+
 		// Tag the container element so the package's factory can target it
 		// by ID — its public surface uses string IDs, not direct DOM refs.
-		if (!containerEl.value.id)
+		if (!containerEl.value.id) {
 			containerEl.value.id = `nm-video-${Math.random().toString(36).slice(2, 10)}`;
+		}
 
 		const mod = await import('@nomercy-entertainment/nomercy-video-player');
 		const { SubtitleOverlayPlugin } = await import('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay');
-		if (unmounted)
-			return;
+
+		if (unmounted) return;
+
 		const factory = mod.default;
+
 		if (typeof factory !== 'function') {
 			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, 'video-player package');
 			console.warn('[video-player] no factory exported from package');
 			emit('error', i18next.t('player.start_error'));
+
 			return;
 		}
+
 		const player: NMVideoPlayer = factory(containerEl.value.id);
+
 		// The video-player package bundles the retired 4.1.0 worker; this one is copied from 0.2.x into the receiver origin.
 		player.addPlugin(SubtitleOverlayPlugin);
+
 		player.addPlugin(mod.OctopusPlugin, {
 			workerUrl: '/js/octopus/nomercy-libass-worker.js',
 			fallbackFont: '/js/octopus/default.ttf',
 		});
+
 		player.setup({
 			playlist: prepared.playlist as never,
 			auth: {
@@ -160,15 +193,20 @@ onMounted(async () => {
 			defaultAudioLanguage: authStore.defaultAudioLanguage.value ?? undefined,
 			storage: castPickStorage(),
 		});
+
 		engine = player;
 		detachAssFallback = attachAssPlainTextFallback(player);
 
 		// setup() plays the first queue item. A cast names the item to watch
 		// (episode 5, not episode 1): switch to it once the queue is loaded.
 		// seekToIndex takes a 1-based position, the list index is 0-based.
-		const startIndex = props.playlist?.findIndex(item => item.id === props.initialItem?.id) ?? -1;
-		if (startIndex > 0)
-			player.once('queue', () => player.seekToIndex(startIndex + 1));
+		const startIndex = props.playlist?.findIndex((item) => item.id === props.initialItem?.id) ?? -1;
+
+		if (startIndex > 0) {
+			player.once('queue', () =>
+				player.seekToIndex(startIndex + 1));
+		}
+
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, mediaLabel.value);
 
 		videoSyncBridge.attach(player);
@@ -180,6 +218,7 @@ onMounted(async () => {
 			resumeAt: props.resumeAt,
 			onExit: () => leaveToPreviousOrHome(router),
 		});
+
 		overlay.attach();
 
 		if (typeof props.resumeAt === 'number' && props.resumeAt > 0) {
@@ -187,14 +226,16 @@ onMounted(async () => {
 			const seekToResume = (): void => {
 				if (player.duration() > 0) {
 					player.time(props.resumeAt!);
+
 					return;
 				}
+
 				player.once('time', seekToResume);
 			};
+
 			player.once('ready', seekToResume);
 		}
-	}
-	catch (err) {
+	} catch (err) {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, mediaLabel.value);
 		console.error('[video-player] init failed', err);
 		emit('error', i18next.t('player.start_error'));

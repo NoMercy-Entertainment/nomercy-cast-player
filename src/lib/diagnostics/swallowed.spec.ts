@@ -4,7 +4,7 @@ import { recordSwallowed, swallowedClassName } from './swallowed';
 import { diagnosticsRing } from './sink';
 
 function onlyCaught() {
-	return diagnosticsRing.snapshot().filter(entry => entry.code === 'ErrorCaught');
+	return diagnosticsRing.snapshot().filter((entry) => entry.code === 'ErrorCaught');
 }
 
 describe('a swallowed failure is recorded without its message', () => {

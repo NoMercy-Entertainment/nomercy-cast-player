@@ -21,7 +21,11 @@ export interface PluginFixture {
 	view: {
 		layout: string;
 		refreshInterval: number;
-		components: Array<{ id: string; component: string; props: Record<string, unknown> }>;
+		components: Array<{
+			id: string;
+			component: string;
+			props: Record<string, unknown>;
+		}>;
 	};
 }
 

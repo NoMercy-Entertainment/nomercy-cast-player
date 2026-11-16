@@ -100,8 +100,9 @@ function applyMusicLyricsOpen(open: boolean): void {
 }
 
 function applyMusicFavorite(favorite: boolean): void {
-	if (musicTrack.value)
+	if (musicTrack.value) {
 		musicTrack.value = { ...musicTrack.value, favorite };
+	}
 }
 
 function applyConnectedMusicDevices(devices: ConnectedDeviceSnapshot[]): void {

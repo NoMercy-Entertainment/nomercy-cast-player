@@ -26,43 +26,68 @@ interface FakeEngine {
 	play: () => void;
 	pause: () => void;
 	seek: (seconds: number) => void;
-	playlistItem: () => { id: number; type: string; tmdbId: number };
-	item: () => { id: number; type: string; tmdbId: number };
+	playlistItem: () => {
+		id: number;
+		type: string;
+		tmdbId: number;
+	};
+	item: () => {
+		id: number;
+		type: string;
+		tmdbId: number;
+	};
 	currentTrack: () => { id: number };
 }
 
-function fakeEngine(): FakeEngine {
+function fakeEngine() {
 	const handlers = new Map<string, Array<(...args: unknown[]) => void>>();
 
 	return {
 		on(event, handler) {
 			const list = handlers.get(event) ?? [];
+
 			list.push(handler);
 			handlers.set(event, list);
 		},
 		off(event, handler) {
 			if (!handler) {
 				handlers.delete(event);
+
 				return;
 			}
-			handlers.set(event, (handlers.get(event) ?? []).filter(entry => entry !== handler));
+
+			handlers.set(event, (handlers.get(event) ?? []).filter((entry) => entry !== handler));
 		},
 		emit(event, payload) {
-			for (const handler of [...(handlers.get(event) ?? [])])
+			for (const handler of [...(handlers.get(event) ?? [])]) {
 				handler(payload);
+			}
 		},
 		play: () => {},
 		pause: () => {},
 		seek: () => {},
-		playlistItem: () => ({ id: 1399, type: 'tv', tmdbId: 1399 }),
-		item: () => ({ id: 1399, type: 'tv', tmdbId: 1399 }),
+		playlistItem: () => ({
+			id: 1399,
+			type: 'tv',
+			tmdbId: 1399,
+		}),
+		item: () => ({
+			id: 1399,
+			type: 'tv',
+			tmdbId: 1399,
+		}),
 		currentTrack: () => ({ id: 4821 }),
-	};
+	} as const satisfies FakeEngine;
 }
 
 const DPadHost = defineComponent({
 	setup() {
-		useDPad({ back: () => {}, replace: () => {}, currentRoute: { value: { name: 'home' } } } as never);
+		useDPad({
+			back: () => {},
+			replace: () => {},
+			currentRoute: { value: { name: 'home' } },
+		} as never);
+
 		return () => h('div');
 	},
 });
@@ -87,12 +112,14 @@ describe('the receiver payload, built by the real recorders', () => {
 		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CastSessionStarted, 0, 0, 0, 'cast-session watch-tv');
 
 		// Every request, through the real client.
-		for (const path of ['/api/v1/home', '/api/v1/libraries/8821', 'userData/continue', '/api/v1/search?query=the+matrix'])
+		for (const path of ['/api/v1/home', '/api/v1/libraries/8821', 'userData/continue', '/api/v1/search?query=the+matrix']) {
 			await apiFetch({ path });
+		}
 
 		// Every engine event, through the real bridges.
 		const video = fakeEngine();
 		const music = fakeEngine();
+
 		videoSyncBridge.attach(video as never);
 		musicSyncBridge.attach(music as never);
 
@@ -103,8 +130,7 @@ describe('the receiver payload, built by the real recorders', () => {
 			for (const engine of [video, music]) {
 				try {
 					engine.emit(event, { time: 90 });
-				}
-				catch {
+				} catch {
 					// the recorder already ran
 				}
 			}
@@ -112,12 +138,16 @@ describe('the receiver payload, built by the real recorders', () => {
 
 		// Every key, through the real D-pad composable.
 		const host = mount(DPadHost);
-		for (const code of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'KeyQ'])
+
+		for (const code of ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Escape', 'KeyQ']) {
 			window.dispatchEvent(new KeyboardEvent('keydown', { code, key: code }));
+		}
+
 		host.unmount();
 
 		// Every error the receiver swallows.
 		const fakeConsole = { error: vi.fn(), warn: vi.fn() } as unknown as Console;
+
 		installDiagnosticsConsoleTap(fakeConsole);
 		fakeConsole.warn('[cast] navigate message carried no token');
 		fakeConsole.error('[cast] handshake failed', new TypeError('bad'));

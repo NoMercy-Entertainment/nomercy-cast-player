@@ -18,13 +18,16 @@ export function caughtLabel(args: readonly unknown[]): string | undefined {
 			continue;
 		}
 
-		if (typeof arg === 'string' && parts.length === 0)
+		if (typeof arg === 'string' && parts.length === 0) {
 			parts.push(arg.split(WHITESPACE)[0] ?? '');
+		}
 	}
 
-	const label = parts.filter(part => part.length > 0).join(' ');
+	const label = parts.filter((part) => part.length > 0).join(' ');
 
-	return label.length > 0 ? label : undefined;
+	return label.length > 0
+		? label
+		: undefined;
 }
 
 // Per console, not per module: wrapping the same console twice would record
@@ -38,8 +41,8 @@ const installed = new WeakSet<Console>();
  * See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
  */
 export function installDiagnosticsConsoleTap(target: Console = console): void {
-	if (installed.has(target))
-		return;
+	if (installed.has(target)) return;
+
 	installed.add(target);
 
 	const originalError = target.error.bind(target);

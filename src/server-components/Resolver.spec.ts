@@ -11,12 +11,16 @@ vi.mock('vue-router', () => ({
 }));
 
 function labels(): Array<string | undefined> {
-	return diagnosticsRing.snapshot().map(entry => entry.label);
+	return diagnosticsRing.snapshot().map((entry) => entry.label);
 }
 
 describe('a component type the receiver cannot draw', () => {
 	it('records the type once it is asked to draw it', () => {
-		const component = { id: 'x', component: 'NMFutureCard', props: {} } as unknown as Component;
+		const component = {
+			id: 'x',
+			component: 'NMFutureCard',
+			props: {},
+		} as unknown as Component;
 
 		mount(Resolver, { props: { component } });
 
@@ -25,10 +29,14 @@ describe('a component type the receiver cannot draw', () => {
 
 	it('records nothing for a type it draws (positive control)', async () => {
 		const before = labels().length;
-		const component = { id: 'y', component: 'NMText', props: { id: 'y', text: 'Hi' } } as unknown as Component;
+		const component = {
+			id: 'y',
+			component: 'NMText',
+			props: { id: 'y', text: 'Hi' },
+		} as unknown as Component;
 
 		mount(Resolver, { props: { component } });
 
-		expect(labels().slice(before).filter(label => label?.startsWith('unknownComponent'))).toEqual([]);
+		expect(labels().slice(before).filter((label) => label?.startsWith('unknownComponent'))).toEqual([]);
 	});
 });

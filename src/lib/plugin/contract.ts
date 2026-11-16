@@ -60,13 +60,19 @@ export function decodePlacements(payload: unknown): CastPluginDescriptor[] {
 		if (typeof record.id !== 'string' || record.id.length === 0)
 			return [];
 
-		const entries = Array.isArray(record.nav_entries) ? record.nav_entries : [];
+		const entries = Array.isArray(record.nav_entries)
+			? record.nav_entries
+			: [];
 
 		return [{
 			id: record.id,
-			name: typeof record.name === 'string' ? record.name : record.id,
-			access: typeof record.access === 'string' ? record.access : undefined,
-			entries: entries.filter(entry => entry && typeof entry === 'object') as CastNavEntry[],
+			name: typeof record.name === 'string'
+				? record.name
+				: record.id,
+			access: typeof record.access === 'string'
+				? record.access
+				: undefined,
+			entries: entries.filter((entry) => entry && typeof entry === 'object') as CastNavEntry[],
 		}];
 	});
 }

@@ -25,6 +25,7 @@ const { t } = useTranslation();
 const router = useRouter();
 
 const containerEl = ref<HTMLElement | null>(null);
+
 useFocusGroup({
 	type: 'vertical',
 	restorationKey: 'now-playing',
@@ -47,16 +48,21 @@ const lyricsOpen = playbackStore.music.lyricsOpen;
 
 const backdropUrl = computed(() => {
 	const t = track.value;
+
 	if (!t)
 		return null;
+
 	const path = t.backdrop ?? t.cover ?? null;
+
 	if (!path)
 		return null;
+
 	return buildImageUrl(path, { width: 1920 });
 });
 
 watch(track, (next) => {
 	const palette = next?.color_palette;
+
 	applyThemeColor(palette?.cover ?? palette?.image ?? palette?.backdrop ?? null);
 }, { immediate: true });
 
@@ -68,15 +74,18 @@ useFocusEntry({
 		leaveToPreviousOrHome(router);
 	},
 });
+
 useFocusEntry({
 	key: 'np-like',
 	group: utilityGroup,
 	el: likeEl,
 	onAction: () => {
 		const next = !track.value?.favorite;
+
 		playbackStore.music.applyFavorite(next);
 	},
 });
+
 useFocusEntry({
 	key: 'np-lyrics',
 	group: utilityGroup,
@@ -88,22 +97,30 @@ useFocusEntry({
 
 const idleHide = ref(false);
 let idleTimer: number | null = null;
+
 function bumpIdle(): void {
 	idleHide.value = false;
-	if (idleTimer !== null)
+
+	if (idleTimer !== null) {
 		window.clearTimeout(idleTimer);
+	}
+
 	idleTimer = window.setTimeout(() => {
 		idleHide.value = true;
 	}, 5000);
 }
+
 onMounted(() => {
 	bumpIdle();
 	window.addEventListener('keydown', bumpIdle);
 	window.addEventListener('mousemove', bumpIdle);
 });
+
 onUnmounted(() => {
-	if (idleTimer !== null)
+	if (idleTimer !== null) {
 		window.clearTimeout(idleTimer);
+	}
+
 	window.removeEventListener('keydown', bumpIdle);
 	window.removeEventListener('mousemove', bumpIdle);
 });

@@ -32,16 +32,21 @@ useFocusEntry({
 	onAction: () => {
 		if (isCurrentTrack.value) {
 			const engine = musicSyncBridge.current();
+
 			if (engine) {
-				if (playbackStore.music.playing.value)
+				if (playbackStore.music.playing.value) {
 					engine.pause();
-				else
+				} else {
 					engine.play();
+				}
+
 				return;
 			}
 		}
-		if (props.data.link)
+
+		if (props.data.link) {
 			router.push(props.data.link);
+		}
 	},
 });
 </script>

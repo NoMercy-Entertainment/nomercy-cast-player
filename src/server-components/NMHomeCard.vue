@@ -25,24 +25,28 @@ const props = defineProps<{
 const { t } = useTranslation();
 const router = useRouter();
 
-const imageSource
-	= (props.data as unknown as { backdrop?: string }).backdrop
-		?? (props.data as unknown as { poster?: string }).poster
-		?? props.data.image;
+const imageSource =
+	(props.data as unknown as { backdrop?: string }).backdrop ??
+	(props.data as unknown as { poster?: string }).poster ??
+	props.data.image;
 const imageUrl = computed(() => buildImageUrl(imageSource, BACKDROP_SIZE));
 
 const overview = computed(
 	() =>
-		(props.data as unknown as { overview?: string; description?: string }).overview
-		?? props.data.description
-		?? '',
+		(props.data as unknown as { overview?: string; description?: string }).overview ??
+		props.data.description ??
+		'',
 );
 
 const watchPath = computed(() => {
 	const link = props.data.link;
+
 	if (!link)
 		return null;
-	return link.endsWith('/watch') ? link : `${link}/watch`;
+
+	return link.endsWith('/watch')
+		? link
+		: `${link}/watch`;
 });
 
 const detailsPath = computed(() => props.data.link ?? null);
@@ -62,8 +66,9 @@ useFocusEntry({
 	group: actionsGroup,
 	el: watchEl,
 	onAction: () => {
-		if (watchPath.value)
+		if (watchPath.value) {
 			router.push(watchPath.value);
+		}
 	},
 });
 
@@ -72,8 +77,9 @@ useFocusEntry({
 	group: actionsGroup,
 	el: detailsEl,
 	onAction: () => {
-		if (detailsPath.value)
+		if (detailsPath.value) {
 			router.push(detailsPath.value);
+		}
 	},
 });
 </script>

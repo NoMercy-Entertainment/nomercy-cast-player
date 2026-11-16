@@ -16,6 +16,7 @@ function installFakeCast(): Map<string, Listener> {
 		getApplicationData: vi.fn(),
 		start: vi.fn(),
 	};
+
 	vi.stubGlobal('cast', {
 		framework: {
 			CastReceiverContext: { getInstance: () => context },
@@ -23,6 +24,7 @@ function installFakeCast(): Map<string, Listener> {
 			system: { MessageType: { JSON: 'JSON' } },
 		},
 	});
+
 	return listeners;
 }
 
@@ -47,7 +49,9 @@ describe('the cast handshake never leaves the TV on the splash', () => {
 		vi.stubGlobal('fetch', vi.fn(async () => {
 			throw new TypeError('Failed to fetch');
 		}));
+
 		const listeners = installFakeCast();
+
 		bootCastReceiver({} as never);
 
 		sendNavigate(listeners);
@@ -57,10 +61,14 @@ describe('the cast handshake never leaves the TV on the splash', () => {
 
 	it('shows the recast screen when the app_config request never answers', async () => {
 		vi.useFakeTimers();
+
 		vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
-			init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+			init?.signal?.addEventListener('abort', () =>
+				reject(new DOMException('aborted', 'AbortError')));
 		})));
+
 		const listeners = installFakeCast();
+
 		bootCastReceiver({} as never);
 
 		sendNavigate(listeners);
@@ -77,6 +85,7 @@ describe('closing the receiver from the splash screen', () => {
 
 	it('shuts the cast application down instead of leaving the TV stuck on the page', () => {
 		const stop = vi.fn();
+
 		vi.stubGlobal('cast', {
 			framework: {
 				CastReceiverContext: { getInstance: () => ({ stop }) },
@@ -102,9 +111,10 @@ describe('the receiver tracks attached senders through the CAF system events', (
 			addCustomMessageListener: vi.fn(),
 			sendCustomMessage: vi.fn(),
 			getApplicationData: vi.fn(),
-			getSenders: () => senders.map(id => ({ id })),
+			getSenders: () => senders.map((id) => ({ id })),
 			start: vi.fn(),
 		};
+
 		vi.stubGlobal('cast', {
 			framework: {
 				CastReceiverContext: { getInstance: () => context },
@@ -112,7 +122,9 @@ describe('the receiver tracks attached senders through the CAF system events', (
 				system: { MessageType: { JSON: 'JSON' } },
 			},
 		});
+
 		bootCastReceiver({} as never);
+
 		return events;
 	}
 

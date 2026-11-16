@@ -13,12 +13,14 @@ const { data: me } = useMeQuery();
 const displayName = computed(() => {
 	if (me.value?.name)
 		return me.value.name;
+
 	const claims = authStore.userClaims.value;
+
 	return (
-		(claims?.display_name as string)
-		?? (claims?.preferred_username as string)
-		?? (claims?.given_name as string)
-		?? t('layout.profile_chip.you')
+		(claims?.display_name as string) ??
+		(claims?.preferred_username as string) ??
+		(claims?.given_name as string) ??
+		t('layout.profile_chip.you')
 	);
 });
 
@@ -27,7 +29,7 @@ const WHITESPACE = /\s+/;
 const initials = computed(() => {
 	return displayName.value
 		.split(WHITESPACE)
-		.map(s => s[0])
+		.map((s) => s[0])
 		.filter(Boolean)
 		.slice(0, 2)
 		.join('')
@@ -40,17 +42,21 @@ const avatarUrl = computed(() => {
 	// no avatar: the initials fallback below covers it.
 	if (me.value?.avatarUrl)
 		return me.value.avatarUrl;
+
 	const claims = authStore.userClaims.value;
-	const claimAvatar
-		= (claims?.picture as string | undefined)
-			?? (claims?.avatar_url as string | undefined)
-			?? (claims?.avatarUrl as string | undefined);
+	const claimAvatar =
+		(claims?.picture as string | undefined) ??
+		(claims?.avatar_url as string | undefined) ??
+		(claims?.avatarUrl as string | undefined);
+
 	if (claimAvatar && typeof claimAvatar === 'string' && claimAvatar.length > 0)
 		return claimAvatar;
+
 	return null;
 });
 
 const el = ref<HTMLElement | null>(null);
+
 useFocusEntry({
 	key: 'nav-profile',
 	el,

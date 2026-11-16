@@ -52,6 +52,7 @@ describe('pressing Play only opens Now Playing once playback actually starts', (
 		socketStore.musicHub.value = null;
 
 		const wrapper = screen();
+
 		await wrapper.find('[aria-label="Play"]').trigger('click');
 		await flushPromises();
 
@@ -59,10 +60,16 @@ describe('pressing Play only opens Now Playing once playback actually starts', (
 	});
 
 	it('stays on the list and shows an error when the server answers ok: false', async () => {
-		const invoke = vi.fn(async () => ({ ok: false, error_code: 'invalid_input', message: 'no' }));
+		const invoke = vi.fn(async () => ({
+			ok: false,
+			error_code: 'invalid_input',
+			message: 'no',
+		}));
+
 		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
 
 		const wrapper = screen();
+
 		await wrapper.findAll('.track-row')[1]!.trigger('click');
 		await flushPromises();
 
@@ -73,9 +80,11 @@ describe('pressing Play only opens Now Playing once playback actually starts', (
 
 	it('the Play button still starts track 1 when the server answers ok: true', async () => {
 		const invoke = vi.fn(async () => ({ ok: true }));
+
 		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
 
 		const wrapper = screen();
+
 		await wrapper.find('[aria-label="Play"]').trigger('click');
 		await flushPromises();
 
@@ -89,6 +98,7 @@ describe('pressing Play only opens Now Playing once playback actually starts', (
 		} as unknown as typeof socketStore.musicHub.value;
 
 		const wrapper = screen();
+
 		await wrapper.find('[aria-label="Play"]').trigger('click');
 		await flushPromises();
 
@@ -112,11 +122,13 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 
 	it('pressing Down from Play focuses track 1, then track 2, and OK plays track 2', async () => {
 		const invoke = vi.fn(async () => undefined);
+
 		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
 
 		wrapper = mount(MusicListScreen, { attachTo: document.body });
 		await flushPromises();
 		const rows = [...document.body.querySelectorAll<HTMLElement>('.track-row')];
+
 		expect(rows).toHaveLength(2);
 		document.body.querySelector<HTMLElement>('[aria-label="Play"]')!.focus();
 
@@ -136,10 +148,12 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 
 	it('starts track 2 once when OK is pressed on its row', async () => {
 		const invoke = vi.fn(async () => undefined);
+
 		socketStore.musicHub.value = { invoke } as unknown as typeof socketStore.musicHub.value;
 		const DPadHost = defineComponent({
 			setup() {
 				useDPad({ back: vi.fn(), currentRoute: { value: { path: '/music/album/alb-1' } } } as never);
+
 				return () => h('div');
 			},
 		});
@@ -162,6 +176,7 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 
 	it('focuses Play when the list arrives after the screen mounted', async () => {
 		const loaded = listData.value;
+
 		listData.value = null as unknown as typeof loaded;
 
 		wrapper = mount(MusicListScreen, { attachTo: document.body });
@@ -177,9 +192,13 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 
 /** A key press lands on the focused element and bubbles to the window, as on the TV. */
 function pressKey(key: string): void {
-	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', {
+		key,
+		bubbles: true,
+		cancelable: true,
+	}));
 }
 
 function flushPromises(): Promise<void> {
-	return new Promise(resolve => setTimeout(resolve, 0));
+	return new Promise((resolve) => setTimeout(resolve, 0));
 }

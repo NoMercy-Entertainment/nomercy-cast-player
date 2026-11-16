@@ -23,6 +23,7 @@ const group = useFocusGroup({
 	onEscape: (dir) => {
 		if (dir === 'up')
 			return focusTopnav();
+
 		return dir !== 'right';
 	},
 });
@@ -32,8 +33,9 @@ const releases: Array<() => void> = [];
 onMounted(() => {
 	props.items.forEach((item, index) => {
 		const el = itemEls.value[index];
-		if (!el)
-			return;
+
+		if (!el) return;
+
 		const entry: FocusEntry = {
 			key: `category-${item.key}`,
 			order: index,
@@ -44,11 +46,12 @@ onMounted(() => {
 			blur: () => el.blur(),
 			action: () => emit('select', item.key),
 		};
+
 		releases.push(group.register(entry));
 	});
 });
 
-onBeforeUnmount(() => releases.forEach(release => release()));
+onBeforeUnmount(() => releases.forEach((release) => release()));
 
 defineExpose({ focusSelected: () => group.focusByKey(`category-${props.selected}`) });
 </script>

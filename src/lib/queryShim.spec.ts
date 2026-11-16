@@ -22,7 +22,8 @@ describe('refreshLibrary batching', () => {
 	it('flushes every distinct key once, 400 ms after the last one', () => {
 		vi.useFakeTimers();
 		const flushed: string[][] = [];
-		const push = createRefreshBatcher(400, key => flushed.push([...key]));
+		const push = createRefreshBatcher(400, (key) =>
+			flushed.push([...key]));
 
 		push(['tv', '1']);
 		vi.advanceTimersByTime(300);
@@ -45,6 +46,7 @@ describe('live TV playlist invalidation', () => {
 
 	it('refetches playlists after a socket reconnect', () => {
 		const invalidateQueries = vi.fn();
+
 		registerQueryClientGetter(() => ({ invalidateQueries }) as unknown as QueryClient);
 
 		invalidateAllLibrary();

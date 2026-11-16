@@ -20,26 +20,28 @@ const open = ref(false);
 const chipEl = ref<HTMLElement | null>(null);
 
 const options = computed(() =>
-	props.seasons.map(s => ({ number: s.season_number ?? 0, label: `${s.season_number ?? 0} - ${s.title ?? ''}` })),
+	props.seasons.map((s) => ({ number: s.season_number ?? 0, label: `${s.season_number ?? 0} - ${s.title ?? ''}` })),
 );
 const current = computed(() =>
-	props.seasons.find(s => s.season_number === selected.value) ?? props.seasons[0],
+	props.seasons.find((s) => s.season_number === selected.value) ?? props.seasons[0],
 );
-const label = computed(() => options.value.find(o => o.number === current.value?.season_number)?.label ?? '');
+const label = computed(() => options.value.find((o) => o.number === current.value?.season_number)?.label ?? '');
 
 const rail = computed<Component>(() => {
 	const season = current.value;
 	const id = `info-seasons-${season?.season_number ?? 0}`;
 	const items = (season?.episodes ?? [])
-		.filter(e => e.link)
-		.map(e => ({
+		.filter((e) => e.link)
+		.map((e) => ({
 			id: `episode-${e.id}`,
 			component: 'NMCard',
 			props: {
 				id: `episode-${e.id}`,
 				data: {
 					id: String(e.id),
-					title: e.episode_number != null ? `${e.episode_number}. ${e.title ?? ''}` : (e.title ?? ''),
+					title: e.episode_number != null
+						? `${e.episode_number}. ${e.title ?? ''}`
+						: (e.title ?? ''),
 					image: e.still ?? undefined,
 					link: e.link,
 					type: 'episode',
@@ -47,13 +49,21 @@ const rail = computed<Component>(() => {
 				},
 			},
 		}));
-	return { id, component: 'NMCarousel', props: { id, items } } as unknown as Component;
+
+	return {
+		id,
+		component: 'NMCarousel',
+		props: { id, items },
+	} as unknown as Component;
 });
 
 const group = useFocusGroup({
 	type: 'vertical',
 	// The rail registers first as a proxy entry, so the chip takes order -1 to stay above it.
-	onEscape: dir => (dir === 'right' ? group.handleKey('down') : false),
+	onEscape: (dir) =>
+		dir === 'right'
+			? group.handleKey('down')
+			: false,
 });
 
 useFocusEntry({

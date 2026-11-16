@@ -4,9 +4,24 @@ import { mountEpisodeScreen } from './EpisodeScreen';
 import type { EpisodeItem } from './EpisodeScreen';
 
 const episodes: EpisodeItem[] = [
-	{ id: 1, season: 1, episode: 1, title: 'One' },
-	{ id: 2, season: 1, episode: 2, title: 'Two' },
-	{ id: 3, season: 2, episode: 1, title: 'Three' },
+	{
+		id: 1,
+		season: 1,
+		episode: 1,
+		title: 'One',
+	},
+	{
+		id: 2,
+		season: 1,
+		episode: 2,
+		title: 'Two',
+	},
+	{
+		id: 3,
+		season: 2,
+		episode: 1,
+		title: 'Three',
+	},
 ];
 
 describe('the episode picker keeps focus where the D-pad put it', () => {
@@ -28,6 +43,7 @@ describe('the episode picker keeps focus where the D-pad put it', () => {
 			onPick: vi.fn(),
 			onExit: vi.fn(),
 		});
+
 		return document.body;
 	}
 
@@ -44,6 +60,7 @@ describe('the episode picker keeps focus where the D-pad put it', () => {
 	it('moves focus into the episodes on ArrowRight', () => {
 		const root = mount();
 		const season2 = root.querySelector<HTMLElement>('[data-season-number="2"]')!;
+
 		season2.focus();
 
 		season2.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));

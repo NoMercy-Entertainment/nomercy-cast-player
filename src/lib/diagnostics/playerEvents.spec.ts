@@ -4,29 +4,33 @@ import { ALL_PLAYER_EVENTS, attachEngineDiagnostics } from './playerEvents';
 import type { DiagnosticsEngine } from './playerEvents';
 import { diagnosticsRing } from './sink';
 
-function fakeEngine(): { engine: DiagnosticsEngine; emit: (event: string, payload?: unknown) => void } {
+function fakeEngine() {
 	const handlers = new Map<string, Array<(...args: unknown[]) => void>>();
 
 	return {
 		engine: {
 			on(event, handler) {
 				const list = handlers.get(event) ?? [];
+
 				list.push(handler);
 				handlers.set(event, list);
 			},
 			off(event, handler) {
 				if (!handler) {
 					handlers.delete(event);
+
 					return;
 				}
-				handlers.set(event, (handlers.get(event) ?? []).filter(entry => entry !== handler));
+
+				handlers.set(event, (handlers.get(event) ?? []).filter((entry) => entry !== handler));
 			},
 		},
 		emit: (event, payload) => {
-			for (const handler of [...(handlers.get(event) ?? [])])
+			for (const handler of [...(handlers.get(event) ?? [])]) {
 				handler(payload);
+			}
 		},
-	};
+	} as const satisfies { engine: DiagnosticsEngine; emit: (event: string, payload?: unknown) => void };
 }
 
 describe('the receiver subscribes to every engine event', () => {
@@ -44,13 +48,14 @@ describe('the receiver subscribes to every engine event', () => {
 
 	it('records seams the old four-event list never carried', () => {
 		const { engine, emit } = fakeEngine();
+
 		attachEngineDiagnostics(engine, () => 'tv-1399', []);
 
 		emit('seeked', { time: 90 });
 		emit('qualityState', { level: 4 });
 		emit('subtitle', { lang: 'eng' });
 
-		expect(diagnosticsRing.snapshot().map(entry => `${entry.code} ${entry.label}`)).toEqual([
+		expect(diagnosticsRing.snapshot().map((entry) => `${entry.code} ${entry.label}`)).toEqual([
 			'PlayerEvent seeked tv-1399',
 			'PlayerEvent qualityState tv-1399',
 			'InputAction subtitle eng tv-1399',
@@ -59,6 +64,7 @@ describe('the receiver subscribes to every engine event', () => {
 
 	it('puts a number the payload carried into field b', () => {
 		const { engine, emit } = fakeEngine();
+
 		attachEngineDiagnostics(engine, () => undefined, []);
 
 		emit('seeked', { time: 90 });
@@ -71,7 +77,7 @@ describe('the receiver subscribes to every engine event', () => {
 		const unsubs: Array<() => void> = [];
 
 		attachEngineDiagnostics(engine, () => undefined, unsubs);
-		unsubs.forEach(unsub => unsub());
+		unsubs.forEach((unsub) => unsub());
 		diagnosticsRing.clear();
 
 		emit('stalled');

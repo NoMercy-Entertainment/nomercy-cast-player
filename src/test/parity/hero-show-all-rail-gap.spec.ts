@@ -19,11 +19,13 @@ describe('home hero and rail match the KMP TV app (Arc measure of 7118323)', () 
 
 	it('the hero crossfades in place, never out then in (VideoMusicHeroSection.kt:124-127)', () => {
 		const t = readFileSync(resolve(__dirname, '../../views/home/HomeHero.vue'), 'utf8');
+
 		expect(t).not.toContain('out-in');
 	});
 
 	it('the rail track keeps the ring room outside the card box, cards start at the KMP y (TvHomeAdapter.kt:525-534)', () => {
 		const t = decls('components/rails/HorizontalRail.vue', '.rail-track');
+
 		expect(t.padding).toBe('2px 40px');
 		expect(t.margin).toBe('-2px 0');
 		expect(decls('components/feedback/Skeleton.vue', '.skeleton-track').margin).toBe('-2px 0');

@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 // Cards sit side by side like app-web's NMContainer; nested sections stack.
-const stacksSections = computed(() => props.data.items?.some(item => CONTAINER_TYPES.has(item.component)) ?? false);
+const stacksSections = computed(() => props.data.items?.some((item) => CONTAINER_TYPES.has(item.component)) ?? false);
 </script>
 
 <template>

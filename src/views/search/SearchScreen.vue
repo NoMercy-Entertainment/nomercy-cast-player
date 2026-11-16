@@ -15,7 +15,10 @@ const screenGroup = useFocusGroup({
 	type: 'horizontal',
 	restorationKey: 'search-screen',
 	containerEl,
-	onEscape: dir => (dir === 'up' ? focusTopnav() : false),
+	onEscape: (dir) =>
+		dir === 'up'
+			? focusTopnav()
+			: false,
 });
 
 useNavFocusBridge({ handle: screenGroup, containerEl });
@@ -25,27 +28,36 @@ const debouncedQuery = ref('');
 const mode = ref<'video' | 'music'>('video');
 
 let debounceTimer: number | null = null;
+
 watch(queryStr, (val) => {
-	if (debounceTimer !== null)
+	if (debounceTimer !== null) {
 		window.clearTimeout(debounceTimer);
+	}
+
 	debounceTimer = window.setTimeout(() => {
 		debouncedQuery.value = val;
 	}, 250);
 });
 
-const queryType = computed(() => mode.value === 'music' ? 'music' : 'all');
+const queryType = computed(() =>
+	mode.value === 'music'
+		? 'music'
+		: 'all');
 const { data, isLoading, isFetching, error, refetch } = useSearchQuery(queryType, debouncedQuery);
 const components = computed(() => data.value ?? []);
 
 function appendLetter(l: string): void {
 	queryStr.value += l;
 }
+
 function backspace(): void {
 	queryStr.value = queryStr.value.slice(0, -1);
 }
+
 function space(): void {
 	queryStr.value += ' ';
 }
+
 function setMode(next: 'video' | 'music'): void {
 	mode.value = next;
 }

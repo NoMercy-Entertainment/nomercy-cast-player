@@ -6,6 +6,7 @@ const CSS = 'styles/components.css';
 describe('hero matches VideoMusicHeroSection.kt', () => {
 	it('hero.container: bottom aligned, pad 40/16/12, gap 12, 200 ms crossfade (:107-108,:124-127)', () => {
 		const c = decls('views/home/HomeHero.vue', '.content');
+
 		expect(c.padding).toBe('0 16px 12px 40px');
 		expect(c['justify-content']).toBe('flex-end');
 		expect(c.gap).toBe('12px');
@@ -24,6 +25,7 @@ describe('hero matches VideoMusicHeroSection.kt', () => {
 
 	it('hero.overview: 14sp Medium lh 20, 5 lines on home and info (:98,:187-193)', () => {
 		const o = decls(CSS, '.nm-hero-overview');
+
 		expect(o['font-size']).toBe('14px');
 		expect(o['font-weight']).toBe('500');
 		expect(o['line-height']).toBe('20px');
@@ -35,6 +37,7 @@ describe('hero matches VideoMusicHeroSection.kt', () => {
 describe('info header follows the hero (InfoScreen.kt:213,260)', () => {
 	it('info.header: 264 high hero row, 60 % wide, bottom aligned', () => {
 		const r = decls('views/info/InfoScreen.vue', '.hero-row');
+
 		expect(r.height).toBe('var(--hero-height)');
 		expect(r.width).toBe('60%');
 		expect(r.padding).toBe('0 16px 12px 40px');

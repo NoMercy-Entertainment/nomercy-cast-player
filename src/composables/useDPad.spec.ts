@@ -11,21 +11,33 @@ import { mountSeekContainer } from '@/players/video/pluginPanels/SeekContainer';
 import { TVOverlayPlugin } from '@/players/video/TVOverlayPlugin';
 
 const back = vi.fn();
-const router = { back, replace: vi.fn(), currentRoute: { value: { path: '/watch/1' } } };
+const router = {
+	back,
+	replace: vi.fn(),
+	currentRoute: { value: { path: '/watch/1' } },
+};
+
 // A page before this one in the receiver, so leaving goes back.
 window.history.replaceState({ back: '/title' }, '');
 
 const Host = defineComponent({
 	setup() {
 		useDPad(router as never);
+
 		return () => h('div');
 	},
 });
 
 function pressBack(key: string): void {
 	const target = document.querySelector<HTMLElement>('[data-focusable], button') ?? document.body;
+
 	target.focus();
-	target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+
+	target.dispatchEvent(new KeyboardEvent('keydown', {
+		key,
+		bubbles: true,
+		cancelable: true,
+	}));
 }
 
 describe('back keys with a player panel open', () => {
@@ -59,7 +71,12 @@ describe('back keys with a player panel open', () => {
 		} as never)],
 		['episode', () => mountEpisodeScreen({
 			parent,
-			episodes: [{ id: 1, title: 'Episode A', season: 1, episode: 1 }],
+			episodes: [{
+				id: 1,
+				title: 'Episode A',
+				season: 1,
+				episode: 1,
+			}],
 			onPick: () => {},
 			onExit,
 		} as never)],
@@ -87,12 +104,12 @@ describe('back keys with a player panel open', () => {
 		for (const key of ['Escape', 'Back', 'GoBack']) {
 			it(`${key} closes the ${name} panel and stays on the route`, () => {
 				const unmount = mountPanel();
+
 				try {
 					pressBack(key);
 					expect(onExit).toHaveBeenCalledTimes(1);
 					expect(back).not.toHaveBeenCalled();
-				}
-				finally {
+				} finally {
 					unmount();
 				}
 			});
@@ -108,7 +125,9 @@ describe('back keys with a player panel open', () => {
 // The 2.x player has no overlay element, only the container it mounts into.
 function fakePlayer() {
 	const container = document.createElement('div');
+
 	document.body.append(container);
+
 	return {
 		container,
 		on: vi.fn(),

@@ -57,13 +57,18 @@ const typeLabel = computed(() => {
 const subtitle = computed(() => {
 	if (isLetterCard.value)
 		return '';
+
 	const tracks = wrapperData.value.tracks as number | undefined;
 	const year = wrapperData.value.year as number | string | undefined;
 	const tail = typeof tracks === 'number'
 		? t('components.track_count', { count: tracks })
-		: (year ? String(year) : '');
+		: (year
+				? String(year)
+				: '');
+
 	if (typeLabel.value && tail)
 		return `${typeLabel.value} • ${tail}`;
+
 	return typeLabel.value || tail;
 });
 
@@ -71,8 +76,9 @@ useFocusEntry({
 	key: props.id,
 	el,
 	onAction: () => {
-		if (props.data.link)
+		if (props.data.link) {
 			router.push(props.data.link);
+		}
 	},
 	onFocus: () => {
 		focusedCardStore.setActive({
@@ -81,8 +87,8 @@ useFocusEntry({
 			poster: props.data.cover,
 			link: props.data.link,
 			type: cardType.value,
-			color_palette: (wrapperData.value.color_palette as never)
-				?? (wrapperData.value.colorPalette as never),
+			color_palette: (wrapperData.value.color_palette as never) ??
+				(wrapperData.value.colorPalette as never),
 		});
 	},
 });

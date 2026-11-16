@@ -24,19 +24,49 @@ function card(id: string): Component {
 		props: {
 			id,
 			title: 'Show',
-			data: { id, title: 'Show', overview: 'A short overview.', backdrop: '/backdrop.jpg', poster: '/poster.jpg', link: '/tv/1' },
+			data: {
+				id,
+				title: 'Show',
+				overview: 'A short overview.',
+				backdrop: '/backdrop.jpg',
+				poster: '/poster.jpg',
+				link: '/tv/1',
+			},
 		},
 	} as unknown as Component;
 }
 
 // The answer of /api/v1/home/tv: one lolomo whose items are carousels of cards.
 function homeAnswer(): Component[] {
-	const rail = { id: 'action', component: 'NMCarousel', props: { id: 'action', title: 'Action', more_link: '/genres/1', items: [card('00000000-0000-4000-8000-000000000001'), card('00000000-0000-4000-8000-000000000003')] } };
-	return [{ id: 'home', component: 'NMLolomo', props: { id: 'home', items: [rail] } }] as unknown as Component[];
+	const rail = {
+		id: 'action',
+		component: 'NMCarousel',
+		props: {
+			id: 'action',
+			title: 'Action',
+			more_link: '/genres/1',
+			items: [card('00000000-0000-4000-8000-000000000001'), card('00000000-0000-4000-8000-000000000003')],
+		},
+	};
+
+	return [{
+		id: 'home',
+		component: 'NMLolomo',
+		props: { id: 'home', items: [rail] },
+	}] as unknown as Component[];
 }
 
 function album(id: string): Component {
-	return { id, component: 'NMMusicCard', props: { id, data: { id, title: 'Album', type: 'album', cover: null } } } as unknown as Component;
+	return {
+		id,
+		component: 'NMMusicCard',
+		props: { id, data: {
+			id,
+			title: 'Album',
+			type: 'album',
+			cover: null,
+		} },
+	} as unknown as Component;
 }
 
 function mountScreen(data: Component[]): ReturnType<typeof mount> {
@@ -65,6 +95,7 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 
 	it('draws the hero in the first frame that shows the rails, before any card has focus', async () => {
 		const wrapper = mountScreen(homeAnswer());
+
 		await nextTick();
 
 		expect(wrapper.find('.nm-hero-rails-screen > .hero').exists()).toBe(true);
@@ -73,7 +104,16 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 	});
 
 	it('leaves no hero space above a page without hero art (Music, positive control)', async () => {
-		const wrapper = mountScreen([{ id: 'albums', component: 'NMCarousel', props: { id: 'albums', title: 'Albums', items: [album('00000000-0000-4000-8000-000000000002')] } }] as unknown as Component[]);
+		const wrapper = mountScreen([{
+			id: 'albums',
+			component: 'NMCarousel',
+			props: {
+				id: 'albums',
+				title: 'Albums',
+				items: [album('00000000-0000-4000-8000-000000000002')],
+			},
+		}] as unknown as Component[]);
+
 		await nextTick();
 
 		expect(wrapper.find('.nm-hero-rails-screen > .hero').exists()).toBe(false);
@@ -82,13 +122,27 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 
 	it('draws no hero on a page that says it has none, also when a card seeds or takes focus (Music)', async () => {
 		const wrapper = mount(HeroRailsView, {
-			props: { restorationKey: 'layout-no-hero', data: homeAnswer(), isLoading: false, refetch: vi.fn(), errorContext: 'x', emptyMessage: 'x', hero: false },
+			props: {
+				restorationKey: 'layout-no-hero',
+				data: homeAnswer(),
+				isLoading: false,
+				refetch: vi.fn(),
+				errorContext: 'x',
+				emptyMessage: 'x',
+				hero: false,
+			},
 		});
+
 		await nextTick();
 		expect(wrapper.find('.nm-hero-rails-screen > .hero').exists()).toBe(false);
 		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
 
-		focusedCardStore.seed({ id: '00000000-0000-4000-8000-000000000004', title: 'Album', poster: '/poster.jpg' });
+		focusedCardStore.seed({
+			id: '00000000-0000-4000-8000-000000000004',
+			title: 'Album',
+			poster: '/poster.jpg',
+		});
+
 		await nextTick();
 		expect(wrapper.find('.nm-hero-rails-screen > .hero').exists()).toBe(false);
 		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
@@ -96,8 +150,16 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 
 	it('keeps the hero room and its rail overlap while the first load draws skeleton rails', async () => {
 		const wrapper = mount(HeroRailsView, {
-			props: { restorationKey: 'layout-loading', data: undefined, isLoading: true, refetch: vi.fn(), errorContext: 'x', emptyMessage: 'x' },
+			props: {
+				restorationKey: 'layout-loading',
+				data: undefined,
+				isLoading: true,
+				refetch: vi.fn(),
+				errorContext: 'x',
+				emptyMessage: 'x',
+			},
 		});
+
 		await nextTick();
 		expect(wrapper.find('.nm-hero-rails-screen > .nm-hero-room + .nm-hero-rails').exists()).toBe(true);
 		expect(wrapper.find('.nm-hero-rails').classes()).not.toContain('nm-hero-rails--no-hero');
@@ -108,8 +170,17 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 
 	it('keeps no hero room while a page without a hero loads', async () => {
 		const wrapper = mount(HeroRailsView, {
-			props: { restorationKey: 'layout-loading-no-hero', data: undefined, isLoading: true, refetch: vi.fn(), errorContext: 'x', emptyMessage: 'x', hero: false },
+			props: {
+				restorationKey: 'layout-loading-no-hero',
+				data: undefined,
+				isLoading: true,
+				refetch: vi.fn(),
+				errorContext: 'x',
+				emptyMessage: 'x',
+				hero: false,
+			},
 		});
+
 		await nextTick();
 		expect(wrapper.find('.nm-hero-room').exists()).toBe(false);
 		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
@@ -125,11 +196,20 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 
 	it('does not scroll the rails for the first focus the page makes, but does for a key press', async () => {
 		const scroll = vi.fn();
+
 		Element.prototype.scrollIntoView = scroll;
 		const wrapper = mount(HeroRailsView, {
 			attachTo: document.body,
-			props: { restorationKey: `first-scroll-${Math.random()}`, data: homeAnswer(), isLoading: false, refetch: vi.fn(), errorContext: 'x', emptyMessage: 'x' },
+			props: {
+				restorationKey: `first-scroll-${Math.random()}`,
+				data: homeAnswer(),
+				isLoading: false,
+				refetch: vi.fn(),
+				errorContext: 'x',
+				emptyMessage: 'x',
+			},
 		});
+
 		await flushPromises();
 		await vi.dynamicImportSettled();
 		await flushPromises();
@@ -139,7 +219,8 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 
 		const { focusStore: store } = await import('@/stores/focusStore');
 		// The rail's own group moves right; the page group above it only moves up and down.
-		const moved = [...store.groupStack.value].reverse().some(group => group.containsFocused() && group.handleKey('right'));
+		const moved = [...store.groupStack.value].reverse().some((group) => group.containsFocused() && group.handleKey('right'));
+
 		expect(moved).toBe(true);
 		expect(scroll).toHaveBeenCalledTimes(1);
 		wrapper.unmount();

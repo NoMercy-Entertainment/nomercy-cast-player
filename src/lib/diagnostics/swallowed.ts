@@ -18,7 +18,9 @@ export function swallowedClassName(error: unknown): string {
 
 	const name = (error as { constructor?: { name?: unknown } }).constructor?.name;
 
-	return typeof name === 'string' && name.length > 0 ? name : NON_ERROR;
+	return typeof name === 'string' && name.length > 0
+		? name
+		: NON_ERROR;
 }
 
 /**

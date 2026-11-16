@@ -14,7 +14,15 @@ describe('an NMLolomo component from the server', () => {
 						id: 'lolomo1',
 						title: 'For You',
 						items: [
-							{ id: 'row1', component: 'NMCarousel', props: { id: 'row1', title: 'Row', items: [] } },
+							{
+								id: 'row1',
+								component: 'NMCarousel',
+								props: {
+									id: 'row1',
+									title: 'Row',
+									items: [],
+								},
+							},
 						],
 					},
 				},

@@ -27,6 +27,7 @@ const router = useRouter();
 
 function captureRail(instance: unknown): void {
 	const track = (instance as { trackEl?: HTMLElement | null } | null)?.trackEl;
+
 	containerEl.value = track ?? null;
 }
 
@@ -40,8 +41,9 @@ useFocusEntry({
 	key: `${props.id}-show-all`,
 	el: showAllEl,
 	onAction: () => {
-		if (props.data.more_link)
+		if (props.data.more_link) {
 			router.push(props.data.more_link);
+		}
 	},
 });
 </script>

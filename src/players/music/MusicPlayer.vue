@@ -26,34 +26,39 @@ let engine: { dispose?: () => void } | null = null;
 let stoppedByUnmount = false;
 
 async function initEngine(): Promise<void> {
-	if (engine || stoppedByUnmount)
-		return;
+	if (engine || stoppedByUnmount) return;
+
 	const serverUrl = authStore.serverUrl.value;
-	if (!serverUrl)
-		return;
+
+	if (!serverUrl) return;
+
 	recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, ENGINE_LABEL);
+
 	try {
 		const mod = await import('@nomercy-entertainment/nomercy-music-player');
-		const Ctor
-			= (mod as { default?: new (opts: unknown) => unknown }).default
-				?? (mod as { MusicPlayer?: new (opts: unknown) => unknown }).MusicPlayer;
+		const Ctor =
+			(mod as { default?: new (opts: unknown) => unknown }).default ??
+			(mod as { MusicPlayer?: new (opts: unknown) => unknown }).MusicPlayer;
+
 		if (typeof Ctor !== 'function') {
 			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
 			console.warn('[music-player] no constructor exported from package');
+
 			return;
 		}
+
 		const created = new Ctor({
 			siteTitle: 'NoMercy',
 			baseUrl: serverUrl,
 			expose: false,
 			disableAutoPlayback: false,
 		}) as { dispose?: () => void; setAccessToken?: (t: string | (() => string)) => void };
+
 		created.setAccessToken?.(() => authStore.accessToken.value ?? '');
 		engine = created;
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, ENGINE_LABEL);
 		musicSyncBridge.attach(engine as never);
-	}
-	catch (err) {
+	} catch (err) {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
 		console.error('[music-player] init failed', err);
 	}
@@ -62,8 +67,9 @@ async function initEngine(): Promise<void> {
 watch(
 	() => authStore.ready.value,
 	(ready) => {
-		if (ready)
+		if (ready) {
 			void initEngine();
+		}
 	},
 	{ immediate: true },
 );

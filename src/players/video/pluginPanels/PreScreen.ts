@@ -34,12 +34,14 @@ export interface PreScreenOptions {
 
 export function mountPreScreen(opts: PreScreenOptions): () => void {
 	const root = document.createElement('div');
+
 	root.className = 'panel pre-screen';
 	root.setAttribute('role', 'dialog');
 	root.setAttribute('aria-label', i18next.t('player.pre_screen_aria'));
 
 	if (opts.backdropUrl) {
 		const backdrop = document.createElement('img');
+
 		backdrop.className = 'pre-screen-backdrop';
 		backdrop.src = opts.backdropUrl;
 		backdrop.alt = '';
@@ -47,50 +49,70 @@ export function mountPreScreen(opts: PreScreenOptions): () => void {
 		root.append(backdrop);
 
 		const scrim = document.createElement('div');
+
 		scrim.className = 'pre-screen-scrim';
 		root.append(scrim);
 	}
 
 	const content = document.createElement('div');
+
 	content.className = 'pre-screen-content';
 
 	const subtitle = opts.subtitle?.trim();
+
 	if (subtitle) {
 		const subtitleEl = document.createElement('p');
+
 		subtitleEl.className = 'pre-screen-subtitle';
 		subtitleEl.textContent = subtitle;
 		content.append(subtitleEl);
 	}
 
 	const title = document.createElement('h1');
+
 	title.textContent = opts.title;
 	title.className = 'pre-screen-title';
 	content.append(title);
 
 	const overview = opts.overview?.trim();
+
 	if (overview) {
 		const overviewEl = document.createElement('p');
+
 		overviewEl.className = 'pre-screen-overview';
 		overviewEl.textContent = overview;
 		content.append(overviewEl);
 	}
 
 	const buttonRow = document.createElement('div');
+
 	buttonRow.className = 'pre-screen-buttons';
 
 	const resumeFrom = opts.resumeFromMs ?? 0;
-	const playLabel = resumeFrom > 0 ? i18next.t('player.resume_from', { time: formatTime(resumeFrom) }) : i18next.t('common.play');
-	const playBtn = makeButton(playLabel, 'primary', () => opts.onPlay());
+	const playLabel = resumeFrom > 0
+		? i18next.t('player.resume_from', { time: formatTime(resumeFrom) })
+		: i18next.t('common.play');
+	const playBtn = makeButton(playLabel, 'primary', () =>
+		opts.onPlay());
+
 	buttonRow.append(playBtn);
 
 	if (resumeFrom > 0) {
-		const restartBtn = makeButton(i18next.t('player.restart'), 'secondary', () => opts.onRestart());
+		const restartBtn = makeButton(i18next.t('player.restart'), 'secondary', () =>
+			opts.onRestart());
+
 		buttonRow.append(restartBtn);
 	}
-	if (opts.showEpisodes)
-		buttonRow.append(makeButton(i18next.t('cast_remote.episodes'), 'secondary', () => opts.onShowEpisodes()));
-	if (opts.showLanguages)
-		buttonRow.append(makeButton(i18next.t('player.audio_and_subtitles'), 'secondary', () => opts.onShowLanguages()));
+
+	if (opts.showEpisodes) {
+		buttonRow.append(makeButton(i18next.t('cast_remote.episodes'), 'secondary', () =>
+			opts.onShowEpisodes()));
+	}
+
+	if (opts.showLanguages) {
+		buttonRow.append(makeButton(i18next.t('player.audio_and_subtitles'), 'secondary', () =>
+			opts.onShowLanguages()));
+	}
 
 	content.append(buttonRow);
 	root.append(content);
@@ -104,6 +126,7 @@ export function mountPreScreen(opts: PreScreenOptions): () => void {
 			opts.onExit();
 		}
 	};
+
 	root.addEventListener('keydown', onKey, true);
 
 	dispatchOptionAction(root, buttonRow, 'horizontal');
@@ -120,12 +143,16 @@ function makeButton(
 	onClick: () => void,
 ): HTMLButtonElement {
 	const b = document.createElement('button');
+
 	b.type = 'button';
 	b.className = `panel-button panel-button-${variant}`;
 	b.dataset.focusable = 'true';
 	b.tabIndex = 0;
 	b.textContent = label;
-	b.addEventListener('click', () => onClick());
+
+	b.addEventListener('click', () =>
+		onClick());
+
 	return b;
 }
 
@@ -134,7 +161,9 @@ function formatTime(ms: number): string {
 	const h = Math.floor(seconds / 3600);
 	const m = Math.floor((seconds % 3600) / 60);
 	const s = seconds % 60;
+
 	if (h > 0)
 		return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
 	return `${m}:${s.toString().padStart(2, '0')}`;
 }

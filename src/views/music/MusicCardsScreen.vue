@@ -9,8 +9,10 @@ const { t } = useTranslation();
 const route = useRoute();
 const path = computed(() => {
 	const matched = route.params.pathMatch;
+
 	if (Array.isArray(matched))
 		return matched.join('/');
+
 	return matched ?? '';
 });
 

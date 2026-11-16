@@ -8,8 +8,10 @@ describe('unfinished routes', () => {
 	beforeAll(async () => {
 		for (const record of router.resolve('/').matched) {
 			const load = record.components?.default;
-			if (typeof load === 'function')
+
+			if (typeof load === 'function') {
 				await (load as () => Promise<unknown>)();
+			}
 		}
 	}, 30_000);
 

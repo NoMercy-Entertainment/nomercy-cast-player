@@ -59,9 +59,9 @@ function isNavigatePayload(data: unknown): data is NavigatePayload {
 // A token with no route is the sender's answer to {renew: true}: it swaps
 // the token and must never navigate.
 function isTokenUpdate(data: unknown): data is { token: string } {
-	return typeof data === 'object' && data !== null
-		&& typeof (data as { token?: unknown }).token === 'string'
-		&& (data as { route?: unknown }).route === undefined;
+	return typeof data === 'object' && data !== null &&
+		typeof (data as { token?: unknown }).token === 'string' &&
+		(data as { route?: unknown }).route === undefined;
 }
 
 export function attachMessageBus(ctx: ReceiverContextLike): void {
@@ -70,88 +70,106 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 	ctx.addCustomMessageListener(NAMESPACE_GENERAL, (event) => {
 		if (isControlRequest(event.data)) {
 			void answerControl(event.data.control, videoSyncBridge.current() as unknown as ControlEngine | null)
-				.then(control => ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { control }))
+				.then((control) => ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { control }))
 				.catch((err: unknown) => console.warn('[cast] control answer failed', err));
+
 			return;
 		}
+
 		if ((event.data as { diagnostics?: unknown } | null)?.diagnostics === true) {
 			try {
 				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { diagnostics: buildDiagnosticsAnswer() });
-			}
-			catch (err) {
+			} catch (err) {
 				console.warn('[cast] diagnostics answer failed', err);
 			}
+
 			return;
 		}
+
 		lastSenderId = event.senderId;
+
 		if (isLaunchMessage(event.data)) {
 			try {
 				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { ack: true, launch: true });
-			}
-			catch (err) {
+			} catch (err) {
 				console.warn('[cast] launch ack send failed', err);
 			}
-			for (const fn of launchHandlers) fn(event.data.launch);
+
+			for (const fn of launchHandlers) {
+				fn(event.data.launch);
+			}
+
 			return;
 		}
+
 		if (isTokenUpdate(event.data)) {
-			for (const fn of tokenHandlers) fn(event.data.token);
+			for (const fn of tokenHandlers) {
+				fn(event.data.token);
+			}
+
 			return;
 		}
+
 		if (!isNavigatePayload(event.data)) {
 			console.debug('[cast] message on NAMESPACE_GENERAL did not parse as {route, token}', event.data);
+
 			return;
 		}
+
 		const payload = event.data;
+
 		try {
 			ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { ack: true, route: payload.route });
-		}
-		catch (err) {
+		} catch (err) {
 			console.warn('[cast] ack send failed', err);
 		}
-		for (const fn of navigateHandlers) fn(payload);
+
+		for (const fn of navigateHandlers) {
+			fn(payload);
+		}
 	});
 }
 
 export function onSenderNavigate(handler: NavigateHandler): () => void {
 	navigateHandlers.push(handler);
+
 	return () => {
-		navigateHandlers = navigateHandlers.filter(h => h !== handler);
+		navigateHandlers = navigateHandlers.filter((h) => h !== handler);
 	};
 }
 
 export function onServerLaunch(handler: LaunchHandler): () => void {
 	launchHandlers.push(handler);
+
 	return () => {
-		launchHandlers = launchHandlers.filter(h => h !== handler);
+		launchHandlers = launchHandlers.filter((h) => h !== handler);
 	};
 }
 
 export function onSenderToken(handler: TokenHandler): () => void {
 	tokenHandlers.push(handler);
+
 	return () => {
-		tokenHandlers = tokenHandlers.filter(h => h !== handler);
+		tokenHandlers = tokenHandlers.filter((h) => h !== handler);
 	};
 }
 
 export function requestTokenRenewal(): void {
-	if (!context || !lastSenderId)
-		return;
+	if (!context || !lastSenderId) return;
+
 	try {
 		context.sendCustomMessage(NAMESPACE_GENERAL, lastSenderId, { renew: true });
-	}
-	catch (err) {
+	} catch (err) {
 		console.warn('[cast] token renewal request failed', err);
 	}
 }
 
 export function broadcastStatus(payload: Record<string, unknown>): void {
-	if (!context || !lastSenderId)
-		return;
+	if (!context || !lastSenderId) return;
+
 	try {
 		context.sendCustomMessage(NAMESPACE_STATUS, lastSenderId, payload);
-	}
-	catch (err) {
+	} catch (err) {
 		console.warn('[cast] status broadcast failed', err);
 	}
 }

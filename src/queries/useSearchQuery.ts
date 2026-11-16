@@ -9,26 +9,35 @@ import type { Component } from '@/server-components/types';
 async function fetchSearch(type: string, query: string): Promise<Component[]> {
 	if (query.trim().length < 3)
 		return [];
+
 	// APK splits search into /search/video/tv and /search/music/tv. We collapse
 	// "all", "movies", "tv shows" into the video endpoint; "music" hits its
 	// own endpoint. Each takes ?query= (not ?q=).
-	const segment = type === 'music' ? 'music/tv' : 'video/tv';
+	const segment = type === 'music'
+		? 'music/tv'
+		: 'video/tv';
 	const url = `/api/v1/search/${segment}?query=${encodeURIComponent(query)}`;
 	const response = await apiFetch<unknown>({
 		path: url,
 		method: 'GET',
 	});
+
 	if (response && typeof response === 'object' && 'data' in response) {
 		const data = (response as { data: unknown }).data;
+
 		if (Array.isArray(data))
 			return data as Component[];
+
 		if (data && typeof data === 'object' && 'components' in data)
 			return (data as { components: Component[] }).components ?? [];
 	}
+
 	if (Array.isArray(response))
 		return response as Component[];
+
 	if (response && typeof response === 'object' && 'components' in response)
 		return (response as { components: Component[] }).components ?? [];
+
 	return [];
 }
 

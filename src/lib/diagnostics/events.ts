@@ -21,8 +21,8 @@ export const DiagnosticsCategory = {
 	Input: 4,
 } as const;
 
-export type DiagnosticsCategoryValue
-	= (typeof DiagnosticsCategory)[keyof typeof DiagnosticsCategory];
+export type DiagnosticsCategoryValue =
+	(typeof DiagnosticsCategory)[keyof typeof DiagnosticsCategory];
 
 export const DIAGNOSTICS_CODES = [
 	'PlayPressed',

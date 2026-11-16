@@ -59,12 +59,23 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 		isFocused: () => document.activeElement === opts.el.value,
 		focus: () => {
 			const el = opts.el.value;
-			if (!el)
-				return;
+
+			if (!el) return;
+
 			const scroll = !focusStore.isAutoFocus();
+
 			el.focus({ preventScroll: !scroll });
-			if (scroll)
-				el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: group?.type === 'horizontal' ? 'start' : 'center' });
+
+			if (scroll) {
+				el.scrollIntoView({
+					behavior: 'smooth',
+					block: 'nearest',
+					inline: group?.type === 'horizontal'
+						? 'start'
+						: 'center',
+				});
+			}
+
 			opts.onFocus?.();
 		},
 		blur: () => {
@@ -80,24 +91,33 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 	onMounted(() => {
 		if (!group) {
 			console.warn(`[focus] useFocusEntry("${opts.key}") used outside FocusGroup`);
+
 			return;
 		}
+
 		unregister = group.register(entry);
 		// Wire native focus/blur events so the entry's onFocus/onBlur callbacks
 		// fire whether the focus came from D-pad traversal or from a stray
 		// mouse interaction during dev/QA.
 		const el = opts.el.value;
+
 		if (el) {
-			el.addEventListener('focus', () => opts.onFocus?.());
-			el.addEventListener('blur', () => opts.onBlur?.());
+			el.addEventListener('focus', () =>
+				opts.onFocus?.());
+
+			el.addEventListener('blur', () =>
+				opts.onBlur?.());
+
 			// Enter on a focusable triggers the action handler. Browser fires
 			// 'click' for natively-focusable elements; custom divs need this.
-			if (opts.onAction)
+			if (opts.onAction) {
 				unregisterAction = focusStore.registerAction(el, opts.onAction);
+			}
+
 			el.addEventListener('keydown', (event) => {
 				// useDPad already ran this key (the action or a click) and prevented it.
-				if (event.defaultPrevented)
-					return;
+				if (event.defaultPrevented) return;
+
 				if (event.key === 'Enter' || event.key === ' ') {
 					event.preventDefault();
 					opts.onAction?.();

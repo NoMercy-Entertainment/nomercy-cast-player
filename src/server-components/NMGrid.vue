@@ -30,8 +30,9 @@ useFocusEntry({
 	key: `${props.id}-more`,
 	el: moreLinkEl,
 	onAction: () => {
-		if (props.data.more_link)
+		if (props.data.more_link) {
 			router.push(props.data.more_link);
+		}
 	},
 });
 </script>

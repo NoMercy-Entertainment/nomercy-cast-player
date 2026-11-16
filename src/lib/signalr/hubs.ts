@@ -22,9 +22,11 @@ export class TypedHub {
 	}
 
 	off(event: string, handler?: (...args: unknown[]) => void): void {
-		if (handler)
+		if (handler) {
 			this.conn.off(event, handler);
-		else this.conn.off(event);
+		} else {
+			this.conn.off(event);
+		}
 	}
 
 	get state(): string {

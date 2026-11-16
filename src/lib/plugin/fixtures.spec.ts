@@ -5,7 +5,7 @@ import type { CastNavEntry } from './slots';
 import { pluginFixtures } from './fixtures.generated';
 import { entriesForSlot, isRenderable } from './slots';
 
-const entries: CastNavEntry[] = pluginFixtures.fixtures.map(fixture => fixture.entry);
+const entries: CastNavEntry[] = pluginFixtures.fixtures.map((fixture) => fixture.entry);
 
 /**
  * The one fixture set every client renders, on the receiver.
@@ -20,8 +20,8 @@ describe('the shared plugin fixtures', () => {
 	// asked whether each half behaves, so the halves are pinned here.
 	it('draws exactly the slots a television has a place for', () => {
 		const drawn = pluginFixtures.fixtures
-			.filter(fixture => isRenderable(fixture.kind, fixture.slot))
-			.map(fixture => `${fixture.kind}/${fixture.slot}`)
+			.filter((fixture) => isRenderable(fixture.kind, fixture.slot))
+			.map((fixture) => `${fixture.kind}/${fixture.slot}`)
 			.sort();
 
 		expect(drawn).toEqual([
@@ -37,7 +37,7 @@ describe('the shared plugin fixtures', () => {
 	});
 
 	it('draws every slot the receiver claims to render', () => {
-		const renderable = pluginFixtures.fixtures.filter(fixture =>
+		const renderable = pluginFixtures.fixtures.filter((fixture) =>
 			isRenderable(fixture.kind, fixture.slot),
 		);
 
@@ -56,13 +56,14 @@ describe('the shared plugin fixtures', () => {
 	// that nobody can reach.
 	it('draws nothing for a slot it does not claim', () => {
 		const rest = pluginFixtures.fixtures.filter(
-			fixture => !isRenderable(fixture.kind, fixture.slot),
+			(fixture) => !isRenderable(fixture.kind, fixture.slot),
 		);
 
 		expect(rest.length).toBeGreaterThan(0);
 
-		for (const fixture of rest)
+		for (const fixture of rest) {
 			expect(entriesForSlot(entries, fixture.kind, fixture.slot)).toHaveLength(0);
+		}
 	});
 
 	// The renderable list is written here rather than generated, so a slot
@@ -70,24 +71,25 @@ describe('the shared plugin fixtures', () => {
 	// exists and a screen reserving space for nothing.
 	it('claims no slot the contract does not declare', () => {
 		const declared = new Set(
-			pluginFixtures.fixtures.map(fixture => `${fixture.kind}/${fixture.slot}`),
+			pluginFixtures.fixtures.map((fixture) => `${fixture.kind}/${fixture.slot}`),
 		);
 
 		for (const fixture of pluginFixtures.fixtures) {
-			if (isRenderable(fixture.kind, fixture.slot))
+			if (isRenderable(fixture.kind, fixture.slot)) {
 				expect(declared.has(`${fixture.kind}/${fixture.slot}`)).toBe(true);
+			}
 		}
 	});
 
 	it('answers every drawn placement with components the receiver renders', () => {
 		for (const fixture of pluginFixtures.fixtures) {
-			if (!isRenderable(fixture.kind, fixture.slot))
-				continue;
+			if (!isRenderable(fixture.kind, fixture.slot)) continue;
 
 			expect(fixture.view.components.length, `${fixture.kind}/${fixture.slot}`).toBeGreaterThan(0);
 
-			for (const component of fixture.view.components)
+			for (const component of fixture.view.components) {
 				expect(component.component).toMatch(/^NM[A-Z]/);
+			}
 		}
 	});
 });

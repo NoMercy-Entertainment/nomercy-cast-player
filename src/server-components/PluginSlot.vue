@@ -49,10 +49,10 @@ const placed = computed(() => {
 	const all: CastPluginDescriptor[] = placements.data.value ?? [];
 
 	return all
-		.filter(plugin => canSee(plugin.access))
-		.flatMap(plugin =>
+		.filter((plugin) => canSee(plugin.access))
+		.flatMap((plugin) =>
 			entriesForSlot(visibleEntries(plugin.entries), kind.value, slotName.value)
-				.map(entry => ({ plugin, entry })));
+				.map((entry) => ({ plugin, entry })));
 });
 
 /**
@@ -64,18 +64,18 @@ const placed = computed(() => {
 const refused = computed(() => {
 	const all: CastPluginDescriptor[] = placements.data.value ?? [];
 
-	return all.filter(plugin => canSee(plugin.access)).flatMap(plugin =>
+	return all.filter((plugin) => canSee(plugin.access)).flatMap((plugin) =>
 		visibleEntries(plugin.entries)
-			.filter(entry => entry.section === kind.value && (entry.slot ?? PluginSlot.Nav) === slotName.value)
-			.map(entry => entry.surfaces ?? [])
-			.filter(surfaces => surfaces.length > 0 && !surfaces.includes('cast'))
-			.map(surfaces => surfaceRefusal(plugin.name, surfaces)));
+			.filter((entry) => entry.section === kind.value && (entry.slot ?? PluginSlot.Nav) === slotName.value)
+			.map((entry) => entry.surfaces ?? [])
+			.filter((surfaces) => surfaces.length > 0 && !surfaces.includes('cast'))
+			.map((surfaces) => surfaceRefusal(plugin.name, surfaces)));
 });
 
 const views = useQuery({
 	queryKey: computed(() => [
 		...QueryKeys.pluginSlot(kind.value, slotName.value),
-		placed.value.map(one => `${one.plugin.id}${one.entry.route}`).join(','),
+		placed.value.map((one) => `${one.plugin.id}${one.entry.route}`).join(','),
 	]),
 	enabled: computed(() => placed.value.length > 0),
 	queryFn: async () => {
@@ -86,6 +86,7 @@ const views = useQuery({
 				.then(decodeView)
 				.catch((error: unknown) => {
 					console.error(`[plugin] view failed for ${plugin.id} at ${entry.route}:`, error);
+
 					return [] as Component[];
 				}),
 		})));
@@ -93,14 +94,15 @@ const views = useQuery({
 	...queryConfigs.standard,
 });
 
-const drawn = computed(() => (views.data.value ?? []).filter(one => one.components.length > 0));
+const drawn = computed(() => (views.data.value ?? []).filter((one) => one.components.length > 0));
 
 // Warned wherever it happens, not inside the view fetch: a slot whose every
 // placement was refused fetches nothing at all, and that is the case an author
 // most needs to read.
 watchEffect(() => {
-	for (const refusal of refused.value)
+	for (const refusal of refused.value) {
 		console.warn(`[plugin] ${refusal.code}: ${refusal.why} ${refusal.fix}`);
+	}
 });
 </script>
 

@@ -17,7 +17,12 @@ defineExpose({ currentImage });
 <template>
 	<div class="backdrop">
 		<div v-if="!hasImage" class="brand-gradient" />
-		<img v-else :src="currentImage!" alt="" class="art" decoding="async">
+		<img v-else
+			:src="currentImage!"
+			alt=""
+			class="art"
+			decoding="async"
+		>
 		<div class="scrim" />
 	</div>
 </template>

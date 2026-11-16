@@ -7,7 +7,11 @@ import { createForegroundWatch, invalidateAfterPlayback, mapServerKey, registerQ
 
 describe('query layer matches QueryClient.kt', () => {
 	it('cfg.homeContent: 5 / 10 min, no refetch on mount (:1291-1305)', () => {
-		expect(queryConfigs.homeContent).toEqual({ staleTime: 300_000, gcTime: 600_000, refetchOnMount: false });
+		expect(queryConfigs.homeContent).toEqual({
+			staleTime: 300_000,
+			gcTime: 600_000,
+			refetchOnMount: false,
+		});
 	});
 
 	it('default.retry: no retry (:104-110)', () => {
@@ -30,6 +34,7 @@ describe('query layer matches QueryClient.kt', () => {
 		const refresh = vi.fn();
 		const sweep = vi.fn();
 		const watch = createForegroundWatch(refresh, sweep, () => now);
+
 		watch.hidden();
 		now = 9_999;
 		watch.visible();
@@ -45,11 +50,13 @@ describe('query layer matches QueryClient.kt', () => {
 	it('trig.leavePlayer: exact home and libraries, only after playback (WatchScreen.kt:705-716)', () => {
 		const client = new QueryClient();
 		const spy = vi.spyOn(client, 'invalidateQueries');
+
 		registerQueryClientGetter(() => client);
 		invalidateAfterPlayback(false);
 		expect(spy).not.toHaveBeenCalled();
 		invalidateAfterPlayback(true);
-		expect(spy.mock.calls.map(c => c[0])).toEqual([
+
+		expect(spy.mock.calls.map((c) => c[0])).toEqual([
 			{ queryKey: ['home'], exact: true },
 			{ queryKey: ['libraries'], exact: true },
 		]);
@@ -57,6 +64,7 @@ describe('query layer matches QueryClient.kt', () => {
 
 	it('the person and server-info queries use the standard times, home uses homeContent', async () => {
 		const read = async (file: string): Promise<string> => (await import('node:fs')).readFileSync(`${process.cwd()}/src/queries/${file}`, 'utf8');
+
 		expect(await read('usePersonQuery.ts')).toContain('...queryConfigs.standard');
 		expect(await read('useServerInfoQuery.ts')).toContain('...queryConfigs.standard');
 		expect(await read('useHomeQuery.ts')).toContain('...queryConfigs.homeContent');

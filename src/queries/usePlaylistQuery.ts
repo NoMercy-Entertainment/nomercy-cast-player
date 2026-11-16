@@ -21,9 +21,10 @@ export interface PlaylistResponse {
 }
 
 // The media server answers /watch with a bare array of playable items (TvShowsController.Watch).
-export function toPlaylistResponse(body: PlaylistItem[] | PlaylistResponse): PlaylistResponse {
+export function toPlaylistResponse(body: PlaylistItem[] | PlaylistResponse) {
 	if (Array.isArray(body))
-		return { item: body[0], playlist: body };
+		return { item: body[0], playlist: body } as const satisfies PlaylistResponse;
+
 	return body;
 }
 
@@ -32,6 +33,7 @@ async function fetchPlaylist(type: string, id: string): Promise<PlaylistResponse
 		path: `/api/v1/${type}/${id}/watch`,
 		method: 'GET',
 	});
+
 	return toPlaylistResponse(body);
 }
 

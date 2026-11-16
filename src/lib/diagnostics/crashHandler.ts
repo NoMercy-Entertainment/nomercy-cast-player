@@ -37,9 +37,12 @@ const faults: PendingCrash[] = [];
 // Stays on the device. Only a sender that asks for diagnostics reads it, so it
 // is cut to what finds the line: no query strings, which carry tokens.
 function keepFault(reason: unknown): void {
-	if (faults.length >= MAX_FAULTS)
-		return;
-	const error = reason instanceof Error ? reason : null;
+	if (faults.length >= MAX_FAULTS) return;
+
+	const error = reason instanceof Error
+		? reason
+		: null;
+
 	faults.push({
 		name: faultName(reason),
 		message: (error?.message ?? String(reason)).replace(QUERY_STRING, '').slice(0, MAX_MESSAGE),
@@ -54,22 +57,24 @@ export function pendingCrashes(): readonly PendingCrash[] {
 
 // Off means a crash report prepared earlier is deleted, never sent later.
 function dropSavedCrashReport(): void {
-	if (diagnosticsSender.pending.value?.kind === 'crash')
+	if (diagnosticsSender.pending.value?.kind === 'crash') {
 		diagnosticsSender.discard();
+	}
 }
 
 async function upload(reason: unknown): Promise<void> {
 	if (!settingsStore.crashReports.value) {
 		dropSavedCrashReport();
+
 		return;
 	}
 
-	if (uploaded)
-		return;
+	if (uploaded) return;
 
 	const token = authStore.accessToken.value;
-	if (!token)
-		return;
+
+	if (!token) return;
+
 	uploaded = true;
 
 	const payload = buildDiagnosticsReport({
@@ -79,13 +84,13 @@ async function upload(reason: unknown): Promise<void> {
 		entries: diagnosticsRing.snapshot(),
 		recorded: diagnosticsRing.recorded(),
 	});
+
 	// A message or stack can hold a title, a URL or a token: the upload is automatic, so only the class leaves.
 	payload.body = `${payload.body}\n\ncrash\n${faultName(reason)}`;
 
 	try {
 		await postDiagnosticsReport(token, payload);
-	}
-	catch (err) {
+	} catch (err) {
 		console.warn('[diagnostics] crash upload failed', err);
 	}
 }
@@ -96,11 +101,13 @@ async function upload(reason: unknown): Promise<void> {
  * the console and any other listener exactly as it did before.
  */
 export function installCrashHandlers(): void {
-	if (!settingsStore.crashReports.value)
+	if (!settingsStore.crashReports.value) {
 		dropSavedCrashReport();
+	}
 
 	window.addEventListener('error', (event: ErrorEvent) => {
 		const reason = event.error ?? event.message;
+
 		keepFault(reason);
 		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.CrashReportPending, 0, 0, 0, faultName(reason));
 		void upload(reason);
@@ -108,6 +115,7 @@ export function installCrashHandlers(): void {
 
 	window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
 		keepFault(event.reason);
+
 		recordDiagnostic(
 			DiagnosticsCategory.Lifecycle,
 			DiagnosticsCode.CrashReportPending,
@@ -116,6 +124,7 @@ export function installCrashHandlers(): void {
 			0,
 			faultName(event.reason),
 		);
+
 		void upload(event.reason);
 	});
 }

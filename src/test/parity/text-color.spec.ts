@@ -7,12 +7,15 @@ const own = decls('styles/tokens.css', ':root');
 /** The computed value of a color declaration: var() chains followed through the token files. */
 function resolve(value: string | undefined): string | undefined {
 	let v = value;
+
 	for (let i = 0; v && i < 8; i++) {
 		const m = v.match(/^var\((--[\w-]+)\)$/);
-		if (!m)
-			break;
+
+		if (!m) break;
+
 		v = own[m[1]] ?? nm[m[1]];
 	}
+
 	return v;
 }
 

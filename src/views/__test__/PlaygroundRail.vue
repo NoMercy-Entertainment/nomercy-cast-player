@@ -9,6 +9,7 @@ const props = defineProps<{
 }>();
 
 const railEl = ref<HTMLElement | null>(null);
+
 useFocusGroup({
 	type: 'horizontal',
 	restorationKey: `playground-${props.rowId}`,

@@ -10,6 +10,7 @@ defineProps<{
 }>();
 
 const { t } = useTranslation();
+
 // The panel owns its focus group, so its action takes D-pad focus on every screen.
 useFocusGroup({ type: 'vertical', initialFocusKey: 'error-retry' });
 </script>

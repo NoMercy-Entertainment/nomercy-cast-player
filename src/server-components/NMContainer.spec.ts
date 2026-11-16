@@ -14,25 +14,38 @@ Element.prototype.scrollIntoView = vi.fn();
 
 function homeCard(n: number): Component {
 	const id = `00000000-0000-4000-8000-00000000010${n}`;
+
 	return {
 		id,
 		component: 'NMMusicHomeCard',
 		props: {
 			id,
-			data: { id, name: `Artist ${n}`, type: 'artist', cover: `https://example.com/cover-${n}.jpg`, link: `/music/artists/${id}` },
+			data: {
+				id,
+				name: `Artist ${n}`,
+				type: 'artist',
+				cover: `https://example.com/cover-${n}.jpg`,
+				link: `/music/artists/${id}`,
+			},
 		},
 	} as unknown as Component;
 }
 
 function container(id: string, items: Component[]): Component {
-	return { id, component: 'NMContainer', props: { id, items } } as unknown as Component;
+	return {
+		id,
+		component: 'NMContainer',
+		props: { id, items },
+	} as unknown as Component;
 }
 
 async function draw(component: Component): Promise<ReturnType<typeof mount>> {
 	const wrapper = mount(Resolver, { props: { component } });
+
 	await flushPromises();
 	await vi.dynamicImportSettled();
 	await flushPromises();
+
 	return wrapper;
 }
 
@@ -43,13 +56,16 @@ describe('the Music favorites container', () => {
 		const wrapper = await draw(favorites);
 
 		const row = wrapper.find('.container-row');
+
 		expect(row.exists()).toBe(true);
 		expect(row.findAll('.music-home-card')).toHaveLength(3);
-		expect(row.findAll('img').map(img => img.attributes('src'))).toEqual([
+
+		expect(row.findAll('img').map((img) => img.attributes('src'))).toEqual([
 			'https://example.com/cover-1.jpg',
 			'https://example.com/cover-2.jpg',
 			'https://example.com/cover-3.jpg',
 		]);
+
 		expect(row.text()).toContain('Artist 2');
 	});
 
@@ -70,7 +86,16 @@ describe('the Music favorites container', () => {
 			props: {
 				id: 'albums',
 				title: 'Albums',
-				items: [{ id, component: 'NMMusicCard', props: { id, data: { id, title: 'Album', type: 'album', cover: null } } }],
+				items: [{
+					id,
+					component: 'NMMusicCard',
+					props: { id, data: {
+						id,
+						title: 'Album',
+						type: 'album',
+						cover: null,
+					} },
+				}],
 			},
 		} as unknown as Component;
 

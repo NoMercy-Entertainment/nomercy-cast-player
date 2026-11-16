@@ -7,7 +7,7 @@ const ROOT = process.env.ICON_SRC_DIR ?? path.resolve(__dirname, '../..');
 const RESOURCES = path.resolve(__dirname, '../../../resources');
 const source = (file: string) => fs.readFileSync(path.join(ROOT, file), 'utf8');
 
-const sprite = Object.assign({}, ...['mooooom-icons.svg', 'player-icons.svg'].map(f => parseSprite(fs.readFileSync(path.join(RESOURCES, f), 'utf8'))));
+const sprite = Object.assign({}, ...['mooooom-icons.svg', 'player-icons.svg'].map((f) => parseSprite(fs.readFileSync(path.join(RESOURCES, f), 'utf8'))));
 
 // Icon names KMP uses at the same spot. The web sprite names the KMP FilmMedia "film".
 const spots = {
@@ -30,6 +30,7 @@ describe('receiver icons', () => {
 			const text = source(file);
 
 			expect(text).toContain('<MoooomIcon');
+
 			for (const name of names) {
 				expect(text, name).toMatch(new RegExp(`['"]${name}['"]`));
 				expect(sprite[name], name).toBeDefined();

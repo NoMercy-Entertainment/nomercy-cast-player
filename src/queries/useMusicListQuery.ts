@@ -29,7 +29,12 @@ export interface MusicListData {
 	artists?: string[];
 	tracks?: MusicTrack[];
 	color_palette?: {
-		cover?: { primary?: string; dominant?: string; light?: string; dark?: string };
+		cover?: {
+			primary?: string;
+			dominant?: string;
+			light?: string;
+			dark?: string;
+		};
 	};
 }
 
@@ -43,8 +48,10 @@ async function fetchMusicList(type: string, id: string): Promise<MusicListData> 
 		path: `/api/v1/music/${type}/${id}`,
 		method: 'GET',
 	});
+
 	if (response && typeof response === 'object' && 'data' in response && response.data)
 		return response.data;
+
 	return response as MusicListData;
 }
 

@@ -17,8 +17,10 @@ i18next
 	.then();
 
 const words = import.meta.glob<Record<string, unknown>>('../**/i18n/*.json', { eager: true, import: 'default' });
+
 for (const [file, bundle] of Object.entries(words)) {
 	const locale = file.slice(file.lastIndexOf('/') + 1, -'.json'.length);
+
 	i18next.addResourceBundle(locale, 'translation', bundle, true, true);
 }
 

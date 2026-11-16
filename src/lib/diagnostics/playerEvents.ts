@@ -8,7 +8,7 @@ import { recordDiagnostic } from './sink';
 // nomercy-player-core/dist/types/events.d.ts, nomercy-video-player and
 // nomercy-music-player. See
 // specs/nomercy-app-kmp/diagnostics-capture-everything.md.
-export const ALL_PLAYER_EVENTS: readonly string[] = [
+export const ALL_PLAYER_EVENTS = [
 	'beforeSetup',
 	'setupStart',
 	'configResolved',
@@ -133,7 +133,7 @@ export const ALL_PLAYER_EVENTS: readonly string[] = [
 	'crossfadePrevented',
 	'crossfadeStart',
 	'crossfadeComplete',
-];
+] as const satisfies readonly string[];
 
 // `time` is the per-frame playback clock, not an event: at sixty a second it
 // would empty a 2000-slot ring in half a minute and bury everything else.
@@ -188,11 +188,13 @@ const WORD_KEYS = ['reason', 'to', 'method', 'lang', 'code', 'name'] as const;
 /** The one word that explains the line, where the payload carries one. */
 export function payloadWord(payload: unknown): string | undefined {
 	const record = payload as Record<string, unknown> | null | undefined;
+
 	if (!record || typeof record !== 'object')
 		return undefined;
 
 	for (const key of WORD_KEYS) {
 		const value = record[key];
+
 		if (typeof value === 'string' && value.length > 0)
 			return value;
 	}
@@ -209,10 +211,14 @@ export function numericField(payload: unknown): number {
 	if (typeof payload === 'number' && Number.isFinite(payload))
 		return Math.round(payload);
 
-	if (typeof payload === 'boolean')
-		return payload ? 1 : 0;
+	if (typeof payload === 'boolean') {
+		return payload
+			? 1
+			: 0;
+	}
 
 	const record = payload as Record<string, unknown> | null | undefined;
+
 	if (!record || typeof record !== 'object')
 		return 0;
 
@@ -243,18 +249,21 @@ export function attachEngineDiagnostics(
 	let subscribed = 0;
 
 	for (const event of ALL_PLAYER_EVENTS) {
-		if (EXCLUDED_EVENTS.has(event))
-			continue;
+		if (EXCLUDED_EVENTS.has(event)) continue;
 
 		subscribed += 1;
 
 		const handler = (...args: unknown[]): void => {
 			const payload = args[0];
 			const coded = CODED_EVENTS[event];
-			const category = coded ? coded[0] : DiagnosticsCategory.Playback;
-			const code = coded ? coded[1] : DiagnosticsCode.PlayerEvent;
+			const category = coded
+				? coded[0]
+				: DiagnosticsCategory.Playback;
+			const code = coded
+				? coded[1]
+				: DiagnosticsCode.PlayerEvent;
 			const parts = [event, payloadWord(payload), mediaLabel()];
-			const label = parts.filter(part => part !== undefined).join(' ');
+			const label = parts.filter((part) => part !== undefined).join(' ');
 
 			recordDiagnostic(category, code, 0, numericField(payload), 0, label);
 		};

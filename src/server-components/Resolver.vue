@@ -17,15 +17,16 @@ defineProps<{
 
 function normaliseData(props: unknown): any {
 	if (
-		props
-		&& typeof props === 'object'
-		&& 'data' in props
-		&& (props as { data: unknown }).data
-		&& typeof (props as { data: unknown }).data === 'object'
-		&& !Array.isArray((props as { data: unknown }).data)
+		props &&
+		typeof props === 'object' &&
+		'data' in props &&
+		(props as { data: unknown }).data &&
+		typeof (props as { data: unknown }).data === 'object' &&
+		!Array.isArray((props as { data: unknown }).data)
 	) {
 		return (props as { data: unknown }).data;
 	}
+
 	return props;
 }
 </script>

@@ -47,12 +47,14 @@ const ready = computed(
 const expiresAtMs = computed(() => {
 	if (!accessToken.value)
 		return null;
+
 	return getJwtExpiryMs(accessToken.value);
 });
 
 const userClaims = computed(() => {
 	if (!accessToken.value)
 		return null;
+
 	return decodeJwt(accessToken.value);
 });
 
@@ -61,18 +63,21 @@ function scheduleRefresh(): void {
 		window.clearTimeout(refreshTimer);
 		refreshTimer = null;
 	}
+
 	const exp = expiresAtMs.value;
-	if (exp === null)
-		return;
+
+	if (exp === null) return;
 
 	// Fire 30s before expiry. Floor at 5s to avoid tight loops if a token
 	// arrives already near-expired.
 	const msUntilRefresh = Math.max(exp - Date.now() - 30_000, 5_000);
+
 	refreshTimer = window.setTimeout(() => {
-		if (refreshToken.value)
+		if (refreshToken.value) {
 			void runRefresh();
-		else
+		} else {
 			requestRenewal();
+		}
 	}, msUntilRefresh);
 }
 
@@ -90,14 +95,19 @@ function requestRenewal(): void {
 	renewalRequired.value = true;
 	renewalRequester?.();
 	const msLeft = (expiresAtMs.value ?? 0) - Date.now();
+
 	if (msLeft <= 0) {
 		castAgainRequired.value = true;
+
 		return;
 	}
+
 	renewalReplyTimer = window.setTimeout(() => {
 		renewalReplyTimer = null;
-		if (renewalRequired.value)
+
+		if (renewalRequired.value) {
 			requestRenewal();
+		}
 	}, Math.min(RENEWAL_REPLY_TIMEOUT_MS, msLeft));
 }
 
@@ -117,15 +127,19 @@ function setRenewalRequester(requester: () => void): void {
 function acceptRenewedToken(token: string): boolean {
 	if (accessToken.value === null || userId.value === null)
 		return false;
+
 	if (isJwtExpired(token))
 		return false;
+
 	if (decodeJwt(token)?.sub !== userId.value)
 		return false;
+
 	clearRenewalReplyTimer();
 	accessToken.value = token;
 	renewalRequired.value = false;
 	castAgainRequired.value = false;
 	scheduleRefresh();
+
 	return true;
 }
 
@@ -135,18 +149,22 @@ async function runRefresh(): Promise<void> {
 		if (accessToken.value !== null) {
 			castAgainRequired.value = true;
 			requestRenewal();
+
 			return;
 		}
+
 		receiverState.value = 'DEGRADED';
+
 		return;
 	}
+
 	try {
 		const result = await refreshCastSession(refreshToken.value);
+
 		accessToken.value = result.access_token;
 		refreshToken.value = result.refresh_token;
 		scheduleRefresh();
-	}
-	catch (err) {
+	} catch (err) {
 		console.error('[auth] refresh failed', err);
 		receiverState.value = 'DEGRADED';
 	}
@@ -165,7 +183,9 @@ async function runRefresh(): Promise<void> {
 function consumeRealHandshake(token: string, server: ResolvedServer): boolean {
 	if (isJwtExpired(token))
 		return false;
+
 	const claims = decodeJwt(token);
+
 	clearRenewalReplyTimer();
 	accessToken.value = token;
 	refreshToken.value = null;
@@ -179,6 +199,7 @@ function consumeRealHandshake(token: string, server: ResolvedServer): boolean {
 	defaultAudioLanguage.value = server.defaultAudioLanguage;
 	receiverState.value = 'AUTHED';
 	scheduleRefresh();
+
 	return true;
 }
 
@@ -187,6 +208,7 @@ function clear(): void {
 		window.clearTimeout(refreshTimer);
 		refreshTimer = null;
 	}
+
 	clearRenewalReplyTimer();
 	accessToken.value = null;
 	refreshToken.value = null;

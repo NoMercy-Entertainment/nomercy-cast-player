@@ -14,15 +14,28 @@ Element.prototype.scrollIntoView = vi.fn();
 
 const EMPTY_MESSAGE = 'No music yet. Add a music library to get started.';
 
-function carousel(id: string, items: Component[]): Component {
-	return { id, component: 'NMCarousel', props: { id, title: id, items } };
+function carousel(id: string, items: Component[]) {
+	return {
+		id,
+		component: 'NMCarousel',
+		props: {
+			id,
+			title: id,
+			items,
+		},
+	} as const satisfies Component;
 }
 
 function album(id: string): Component {
 	return {
 		id,
 		component: 'NMMusicCard',
-		props: { id, data: { id, title: 'Album', type: 'album', cover: null } },
+		props: { id, data: {
+			id,
+			title: 'Album',
+			type: 'album',
+			cover: null,
+		} },
 	} as unknown as Component;
 }
 
@@ -56,9 +69,11 @@ async function screen(overrides: Record<string, unknown>): Promise<ReturnType<ty
 			...overrides,
 		},
 	});
+
 	await flushPromises();
 	await vi.dynamicImportSettled();
 	await flushPromises();
+
 	return wrapper;
 }
 
@@ -79,7 +94,11 @@ describe('the music page never ends blank', () => {
 	});
 
 	it('shows the empty message when the only rail holds a type the receiver cannot draw', async () => {
-		const unknown = { id: 'x', component: 'NMFutureCard', props: { id: 'x', data: {} } } as unknown as Component;
+		const unknown = {
+			id: 'x',
+			component: 'NMFutureCard',
+			props: { id: 'x', data: {} },
+		} as unknown as Component;
 
 		const wrapper = await screen({ data: [carousel('future', [unknown])] });
 
@@ -88,7 +107,11 @@ describe('the music page never ends blank', () => {
 
 	it('shows the empty message when every rail in the answer has no items', async () => {
 		const empty = [
-			{ id: 'favorites', component: 'NMContainer', props: { id: 'favorites', items: [] } },
+			{
+				id: 'favorites',
+				component: 'NMContainer',
+				props: { id: 'favorites', items: [] },
+			},
 			carousel('favorite-artists', []),
 			carousel('albums', []),
 		] as Component[];
@@ -119,12 +142,19 @@ describe('the music page never ends blank', () => {
 	});
 
 	it('draws the loading rails inside the rails box, each with a title bar and a row of cards', async () => {
-		const wrapper = await screen({ data: undefined, isLoading: true, skeletonCount: 2, hero: false });
+		const wrapper = await screen({
+			data: undefined,
+			isLoading: true,
+			skeletonCount: 2,
+			hero: false,
+		});
 
 		const placeholders = wrapper.findAll('.skeleton');
+
 		expect(placeholders).toHaveLength(2);
 		expect(wrapper.findAll('.nm-hero-rails .skeleton')).toHaveLength(2);
 		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
+
 		for (const placeholder of placeholders) {
 			expect(placeholder.find('.skeleton-title').exists()).toBe(true);
 			expect(placeholder.findAll('.skeleton-item').length).toBeGreaterThan(1);
@@ -159,7 +189,9 @@ describe('a page opened by the sender gets its first focus', () => {
 				emptyMessage: EMPTY_MESSAGE,
 			},
 		});
+
 		await flushPromises();
+
 		return wrapper;
 	}
 
@@ -179,15 +211,18 @@ describe('a page opened by the sender gets its first focus', () => {
 
 	it('focuses the first card when the answer is there at mount (positive control)', async () => {
 		const wrapper = await mountAttached(rails(), false);
+
 		await settle();
 
 		const first = wrapper.find('[data-rail-id="albums"] [data-focusable]').element;
+
 		expect(document.activeElement).toBe(first);
 		wrapper.unmount();
 	});
 
 	it('focuses the first card when the answer arrives after mount', async () => {
 		const wrapper = await mountAttached(undefined, true);
+
 		await settle();
 		expect(document.activeElement).toBe(document.body);
 
@@ -195,6 +230,7 @@ describe('a page opened by the sender gets its first focus', () => {
 		await settle();
 
 		const first = wrapper.find('[data-rail-id="albums"] [data-focusable]').element;
+
 		expect(document.activeElement).toBe(first);
 		wrapper.unmount();
 	});
@@ -212,6 +248,7 @@ describe('a page opened by the sender gets its first focus', () => {
 				emptyMessage: EMPTY_MESSAGE,
 			},
 		});
+
 		await settle();
 		(document.activeElement as HTMLElement | null)?.blur();
 
@@ -219,30 +256,37 @@ describe('a page opened by the sender gets its first focus', () => {
 		await settle();
 
 		const first = wrapper.find('[data-rail-id="albums"] [data-focusable]').element;
+
 		expect(document.activeElement).toBe(first);
 		wrapper.unmount();
 	});
 
 	it('moves focus down to the next rail when the first rail has no Show All', async () => {
 		const wrapper = await mountAttached(undefined, true);
+
 		await wrapper.setProps({ data: rails(), isLoading: false });
 		await settle();
 
 		const { focusStore } = await import('@/stores/focusStore');
+
 		expect(focusStore.activeGroup()?.handleKey('down')).toBe(true);
 		const next = wrapper.find('[data-rail-id="more"] [data-focusable]').element;
+
 		expect(document.activeElement).toBe(next);
 		wrapper.unmount();
 	});
 
 	it('moves focus on from the first card with a key', async () => {
 		const wrapper = await mountAttached(undefined, true);
+
 		await wrapper.setProps({ data: rails(), isLoading: false });
 		await settle();
 
 		const { focusStore } = await import('@/stores/focusStore');
+
 		expect(focusStore.activeGroup()?.handleKey('right')).toBe(true);
 		const cards = wrapper.findAll('[data-rail-id="albums"] [data-focusable]');
+
 		expect(document.activeElement).toBe(cards[1].element);
 		wrapper.unmount();
 	});

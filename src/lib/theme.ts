@@ -17,10 +17,12 @@ export type Palette = PaletteColors | null | undefined;
 export function applyThemeColor(palette: Palette): void {
 	const root = document.documentElement;
 	const color = pickPaletteColor(palette);
-	if (color)
+
+	if (color) {
 		root.style.setProperty('--color-primary', color);
-	else
+	} else {
 		root.style.removeProperty('--color-primary');
+	}
 }
 
 export function clearThemeColor(): void {

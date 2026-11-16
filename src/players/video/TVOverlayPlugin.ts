@@ -72,24 +72,48 @@ export class TVOverlayPlugin {
 
 	attach(): void {
 		this.host = mountOverlayHost(this.player.container);
-		if (!this.opts.skipPreScreen)
-			this.showPreScreen();
 
-		this.bind('back', () => this.handleBack());
-		this.bind('show-language-screen', () => this.showLanguageScreen());
-		this.bind('show-episode-screen', () => this.showEpisodeScreen());
-		this.bind('pause', () => this.maybeShowPreScreen());
+		if (!this.opts.skipPreScreen) {
+			this.showPreScreen();
+		}
+
+		this.bind('back', () =>
+			this.handleBack());
+
+		this.bind('show-language-screen', () =>
+			this.showLanguageScreen());
+
+		this.bind('show-episode-screen', () =>
+			this.showEpisodeScreen());
+
+		this.bind('pause', () =>
+			this.maybeShowPreScreen());
+
 		this.bind('play', () => {
 			this.closeAllPanels();
 			this.ensureOSD();
 		});
-		this.bind('item', () => this.refreshOSD());
-		this.bind('active', showing => this.osd?.setVisible(Boolean(showing)));
+
+		this.bind('item', () =>
+			this.refreshOSD());
+
+		this.bind('active', (showing) =>
+			this.osd?.setVisible(Boolean(showing)));
+
 		this.bind('chapter-skip-available', (chapter) => {
-			this.showSkipPrompt(chapter as { type?: string; endTime?: number; startTime?: number } | null);
+			this.showSkipPrompt(chapter as {
+				type?: string;
+				endTime?: number;
+				startTime?: number;
+			} | null);
 		});
-		this.bind('chapter-skip-clear', () => this.clearSkipPrompt());
-		this.bind('time', () => this.updateNextEpisode());
+
+		this.bind('chapter-skip-clear', () =>
+			this.clearSkipPrompt());
+
+		this.bind('time', () =>
+			this.updateNextEpisode());
+
 		this.bind('item', () => {
 			this.advancedItem = null;
 			this.clearNextPrompt();
@@ -102,8 +126,8 @@ export class TVOverlayPlugin {
 	}
 
 	private onShortcut = (e: KeyboardEvent): void => {
-		if (this.currentPanel !== null)
-			return;
+		if (this.currentPanel !== null) return;
+
 		switch (e.key) {
 			case 'ArrowLeft':
 			case 'ArrowRight':
@@ -145,27 +169,39 @@ export class TVOverlayPlugin {
 		this.skipPrompt = null;
 		this.clearNextPrompt();
 		document.removeEventListener('keydown', this.onShortcut, true);
+
 		for (const { event, handler } of this.boundHandlers) {
 			(this.player as unknown as LooseBus).off(event, handler);
 		}
+
 		this.boundHandlers = [];
 		this.host?.remove();
 		this.host = null;
 	}
 
-	private showSkipPrompt(chapter: { type?: string; endTime?: number; startTime?: number } | null): void {
+	private showSkipPrompt(chapter: {
+		type?: string;
+		endTime?: number;
+		startTime?: number;
+	} | null): void {
 		const host = this.overlayHost();
-		if (!host || !chapter)
-			return;
+
+		if (!host || !chapter) return;
+
 		this.clearSkipPrompt();
-		const label = chapter.type === 'credits' ? i18next.t('player.skip_credits') : i18next.t('player.skip_intro');
+		const label = chapter.type === 'credits'
+			? i18next.t('player.skip_credits')
+			: i18next.t('player.skip_intro');
+
 		this.skipPrompt = mountSkipChapterPrompt({
 			parent: host,
 			label,
 			onSkip: () => {
 				this.clearSkipPrompt();
-				if (typeof chapter.endTime === 'number')
+
+				if (typeof chapter.endTime === 'number') {
 					void this.player.time(chapter.endTime);
+				}
 			},
 		});
 	}
@@ -186,21 +222,27 @@ export class TVOverlayPlugin {
 	private updateNextEpisode(): void {
 		const item = this.currentItem();
 		const items = this.queueItems();
-		const index = this.player.index?.() ?? items.findIndex(entry => entry.id === item?.id);
+		const index = this.player.index?.() ?? items.findIndex((entry) => entry.id === item?.id);
 		const hasNext = Boolean(item && index >= 0 && index < items.length - 1 && this.player.next);
 		const action = decideSkipAction(this.playerCurrentTime(), segmentsForItem(item), hasNext);
+
 		if (action === 'advance') {
 			this.clearNextPrompt();
+
 			if (item && this.advancedItem !== item.id) {
 				this.advancedItem = item.id;
 				void this.player.next?.();
 			}
+
 			return;
 		}
+
 		if (action !== 'next-button') {
 			this.clearNextPrompt();
+
 			return;
 		}
+
 		if (!this.nextPrompt && this.overlayHost()) {
 			this.nextPrompt = mountSkipChapterPrompt({
 				parent: this.overlayHost()!,
@@ -240,7 +282,7 @@ export class TVOverlayPlugin {
 	}
 
 	private playerQualityLevels(): TrackItem[] {
-		return (this.player.qualityLevels?.() ?? []).map(level => ({ id: level.index, label: level.label }));
+		return (this.player.qualityLevels?.() ?? []).map((level) => ({ id: level.index, label: level.label }));
 	}
 
 	private playerCurrentAudioId(): string | number | null {
@@ -253,7 +295,10 @@ export class TVOverlayPlugin {
 
 	private playerCurrentQualityId(): string | number {
 		const current = this.player.quality?.();
-		return typeof current === 'object' && current !== null ? current.index : -1;
+
+		return typeof current === 'object' && current !== null
+			? current.index
+			: -1;
 	}
 
 	private playerSetAudioTrack(id: string | number): void {
@@ -261,18 +306,24 @@ export class TVOverlayPlugin {
 	}
 
 	private playerSetSubtitleTrack(id: string | number): void {
-		void this.player.subtitle?.(id === 'off' ? null : Number(id));
+		void this.player.subtitle?.(id === 'off'
+			? null
+			: Number(id));
 	}
 
 	private playerSetQuality(id: string | number): void {
-		this.player.quality?.(Number(id) < 0 ? 'auto' : Number(id));
+		this.player.quality?.(Number(id) < 0
+			? 'auto'
+			: Number(id));
 	}
 
 	private ensureOSD(): void {
 		const host = this.overlayHost();
-		if (!host || this.osd)
-			return;
+
+		if (!host || this.osd) return;
+
 		const item = this.currentItem();
+
 		this.osd = mountPlaybackOSD({
 			parent: host,
 			title: item?.title ?? '',
@@ -284,13 +335,15 @@ export class TVOverlayPlugin {
 	}
 
 	private refreshOSD(): void {
-		if (!this.osd)
-			return;
+		if (!this.osd) return;
+
 		const item = this.currentItem();
+
 		this.osd.setTitle({
 			title: item?.title ?? '',
 			subtitle: item?.subtitle ?? null,
 		});
+
 		this.osd.setChapters(this.playerChapters());
 	}
 
@@ -306,28 +359,33 @@ export class TVOverlayPlugin {
 	// A panel that cannot open leaves a line in the diagnostics: a TV has no DevTools.
 	private openPanel(name: NonNullable<TVOverlayPlugin['currentPanel']>, mount: (host: HTMLElement) => () => void): void {
 		const host = this.overlayHost();
+
 		if (!host) {
 			recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.WarningLogged, 0, 0, 0, `${name} noHost`);
+
 			return;
 		}
+
 		this.closeAllPanels();
 		this.currentPanel = name;
+
 		try {
 			this.unmount = mount(host);
 			recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, `panel ${name}`);
-		}
-		catch (error) {
+		} catch (error) {
 			this.closeAllPanels();
 			recordSwallowed(name, error);
 		}
 	}
 
 	private showPreScreen(): void {
-		this.openPanel('pre', host => this.mountPre(host));
+		this.openPanel('pre', (host) =>
+			this.mountPre(host));
 	}
 
 	private mountPre(host: HTMLElement): () => void {
 		const item = this.currentItem();
+
 		return mountPreScreen({
 			parent: host,
 			title: item?.title ?? i18next.t('music.player.now_playing'),
@@ -353,72 +411,76 @@ export class TVOverlayPlugin {
 	}
 
 	private showEpisodeScreen(): void {
-		this.openPanel('episode', host => mountEpisodeScreen({
-			parent: host,
-			episodes: this.queueItems(),
-			currentId: this.currentItem()?.id,
-			currentTimeMs: Math.round(this.playerCurrentTime() * 1000),
-			onPick: (item) => {
-				this.closeAllPanels();
-				this.player.item(item.id);
-			},
-			onExit: () => this.showPreScreen(),
-		}));
+		this.openPanel('episode', (host) =>
+			mountEpisodeScreen({
+				parent: host,
+				episodes: this.queueItems(),
+				currentId: this.currentItem()?.id,
+				currentTimeMs: Math.round(this.playerCurrentTime() * 1000),
+				onPick: (item) => {
+					this.closeAllPanels();
+					this.player.item(item.id);
+				},
+				onExit: () => this.showPreScreen(),
+			}));
 	}
 
 	private showLanguageScreen(): void {
 		const canSetQuality = Boolean(this.player.quality);
-		this.openPanel('language', host => mountLanguageScreen({
-			parent: host,
-			audioTracks: this.playerAudioTracks(),
-			subtitleTracks: this.playerSubtitleTracks(),
-			qualityLevels: this.playerQualityLevels(),
-			currentAudioId: this.playerCurrentAudioId(),
-			currentSubtitleId: this.playerCurrentSubtitleId(),
-			currentQualityId: this.playerCurrentQualityId(),
-			autoQualityLabel: null,
-			autoSkipChapters: settingsStore.autoSkipChapters.value,
-			onPickAudio: id => this.playerSetAudioTrack(id),
-			onPickSubtitle: id => this.playerSetSubtitleTrack(id),
-			onPickQuality: canSetQuality ? id => this.playerSetQuality(id) : undefined,
-			onToggleAutoSkip: (next) => {
-				settingsStore.autoSkipChapters.value = next;
-			},
-			onExit: () => this.showPreScreen(),
-		}));
+
+		this.openPanel('language', (host) =>
+			mountLanguageScreen({
+				parent: host,
+				audioTracks: this.playerAudioTracks(),
+				subtitleTracks: this.playerSubtitleTracks(),
+				qualityLevels: this.playerQualityLevels(),
+				currentAudioId: this.playerCurrentAudioId(),
+				currentSubtitleId: this.playerCurrentSubtitleId(),
+				currentQualityId: this.playerCurrentQualityId(),
+				autoQualityLabel: null,
+				autoSkipChapters: settingsStore.autoSkipChapters.value,
+				onPickAudio: (id) => this.playerSetAudioTrack(id),
+				onPickSubtitle: (id) => this.playerSetSubtitleTrack(id),
+				onPickQuality: canSetQuality
+					? (id) => this.playerSetQuality(id)
+					: undefined,
+				onToggleAutoSkip: (next) => {
+					settingsStore.autoSkipChapters.value = next;
+				},
+				onExit: () => this.showPreScreen(),
+			}));
 	}
 
 	showSeekContainer(): void {
-		if (this.currentPanel === 'seek')
-			return;
-		this.openPanel('seek', host => mountSeekContainer({
-			parent: host,
-			getCurrentTime: () => this.playerCurrentTime(),
-			getDuration: () => this.playerDuration(),
-			onCommit: (seconds) => {
-				void this.player.time(seconds);
-				this.closeAllPanels();
-			},
-			onCancel: () => this.closeAllPanels(),
-		}));
+		if (this.currentPanel === 'seek') return;
+
+		this.openPanel('seek', (host) =>
+			mountSeekContainer({
+				parent: host,
+				getCurrentTime: () => this.playerCurrentTime(),
+				getDuration: () => this.playerDuration(),
+				onCommit: (seconds) => {
+					void this.player.time(seconds);
+					this.closeAllPanels();
+				},
+				onCancel: () => this.closeAllPanels(),
+			}));
 	}
 
 	private maybeShowPreScreen(): void {
-		if (this.currentPanel === null)
+		if (this.currentPanel === null) {
 			this.showPreScreen();
+		}
 	}
 
 	private handleBack(): void {
 		if (this.currentPanel === 'episode' || this.currentPanel === 'language') {
 			this.showPreScreen();
-		}
-		else if (this.currentPanel === 'seek') {
+		} else if (this.currentPanel === 'seek') {
 			this.closeAllPanels();
-		}
-		else if (this.currentPanel === 'pre') {
+		} else if (this.currentPanel === 'pre') {
 			this.opts.onExit?.();
-		}
-		else {
+		} else {
 			void this.player.pause();
 			this.showPreScreen();
 		}
@@ -427,11 +489,11 @@ export class TVOverlayPlugin {
 	private closeAllPanels(): void {
 		try {
 			this.unmount?.();
-		}
-		catch (error) {
+		} catch (error) {
 			// best-effort
 			recordSwallowed('tvOverlayCloseAllPanels', error);
 		}
+
 		this.unmount = null;
 		this.currentPanel = null;
 	}

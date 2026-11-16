@@ -26,7 +26,7 @@ vi.mock('@/lib/signalr/connection', () => ({
 	}),
 }));
 
-vi.mock('@/lib/queryShim', async importActual => ({
+vi.mock('@/lib/queryShim', async (importActual) => ({
 	...(await importActual<typeof import('@/lib/queryShim')>()),
 	invalidateAllLibrary: vi.fn(),
 	invalidateFromServer: vi.fn(),
@@ -49,7 +49,8 @@ describe('socket transitions are recorded per hub', () => {
 	it('records the attempt before each hub opens, so a slow connect is visible', async () => {
 		await socketStore.connectAll();
 
-		const codes = diagnosticsRing.snapshot().map(entry => `${entry.code} ${entry.label}`);
+		const codes = diagnosticsRing.snapshot().map((entry) => `${entry.code} ${entry.label}`);
+
 		expect(codes).toContain('SocketConnecting videoHub');
 		expect(codes).toContain('SocketOpened videoHub');
 		expect(codes).toContain('SocketConnecting musicHub');
@@ -60,25 +61,27 @@ describe('socket transitions are recorded per hub', () => {
 		await socketStore.connectAll();
 		diagnosticsRing.clear();
 
-		reconnecting.forEach(callback => callback());
+		reconnecting.forEach((callback) => callback());
 
 		const entries = diagnosticsRing.snapshot();
-		expect(entries.map(entry => entry.code)).toEqual([
+
+		expect(entries.map((entry) => entry.code)).toEqual([
 			'SocketReconnecting',
 			'SocketReconnecting',
 			'SocketReconnecting',
 			'SocketReconnecting',
 		]);
-		expect(entries.map(entry => entry.label)).toEqual(['videoHub', 'musicHub', 'deviceHub', 'pluginHub']);
+
+		expect(entries.map((entry) => entry.label)).toEqual(['videoHub', 'musicHub', 'deviceHub', 'pluginHub']);
 	});
 
 	it('records the recovery that follows a reconnect', async () => {
 		await socketStore.connectAll();
 		diagnosticsRing.clear();
 
-		reconnected.forEach(callback => callback());
+		reconnected.forEach((callback) => callback());
 
-		expect(diagnosticsRing.snapshot().map(entry => entry.code)).toEqual([
+		expect(diagnosticsRing.snapshot().map((entry) => entry.code)).toEqual([
 			'SocketOpened',
 			'SocketOpened',
 			'SocketOpened',
@@ -90,9 +93,9 @@ describe('socket transitions are recorded per hub', () => {
 		await socketStore.connectAll();
 		diagnosticsRing.clear();
 
-		closed.forEach(callback => callback());
+		closed.forEach((callback) => callback());
 
-		expect(diagnosticsRing.snapshot().map(entry => entry.label)).toEqual([
+		expect(diagnosticsRing.snapshot().map((entry) => entry.label)).toEqual([
 			'videoHub',
 			'musicHub',
 			'deviceHub',
@@ -113,7 +116,7 @@ describe('socket transitions are recorded per hub', () => {
 		await socketStore.connectAll();
 		invalidatePlugins.mockClear();
 
-		reconnected.forEach(callback => callback());
+		reconnected.forEach((callback) => callback());
 
 		// Once, for the plugin hub. Every push sent while the socket was down is
 		// gone, and the other three hubs have nothing to say about plugins.

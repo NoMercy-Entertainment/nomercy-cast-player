@@ -12,8 +12,10 @@ const props = defineProps<{
 const { t } = useTranslation();
 
 // A type name is server vocabulary; anything else stays out of the report.
-if (/^NM[A-Za-z0-9]{1,40}$/.test(props.type))
+if (/^NM[A-Za-z0-9]{1,40}$/.test(props.type)) {
 	allowDiagnosticsWords([props.type]);
+}
+
 recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.WarningLogged, 0, 0, 0, `unknownComponent ${props.type}`);
 
 if (import.meta.env.DEV) {

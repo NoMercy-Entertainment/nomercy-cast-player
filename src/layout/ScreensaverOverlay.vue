@@ -8,8 +8,10 @@ const active = screensaverStore.active;
 
 const ambientArt = computed(() => {
 	const t = playbackStore.music.track.value;
+
 	if (!t?.cover)
 		return null;
+
 	return buildImageUrl(t.cover, { width: 1280, height: 1280 });
 });
 </script>

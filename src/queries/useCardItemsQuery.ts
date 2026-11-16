@@ -8,11 +8,15 @@ import type { Component } from '@/server-components/types';
 
 async function fetchCardItems(link: string): Promise<Component[]> {
 	const response = await apiFetch<{ components?: Component[] } | Component[]>({
-		path: link.startsWith('/') ? link : `/${link}`,
+		path: link.startsWith('/')
+			? link
+			: `/${link}`,
 		method: 'GET',
 	});
+
 	if (Array.isArray(response))
 		return response;
+
 	return response.components ?? [];
 }
 

@@ -4,6 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 // The first Intl.DisplayNames took 12.4 s on the CI runner (28 ms locally), so
 // it is built here with its own limit instead of inside the 5 s test.
 let TrailerOverlay: typeof import('./TrailerOverlay.vue').default;
+
 beforeAll(async () => {
 	new Intl.DisplayNames(['en'], { type: 'language', fallback: 'code' }).of('en');
 	TrailerOverlay = (await import('./TrailerOverlay.vue')).default;
@@ -28,6 +29,7 @@ const player = {
 	togglePlayback: vi.fn(),
 	dispose: vi.fn(async () => {}),
 };
+
 addPlugin.mockReturnValue(player);
 setup.mockReturnValue(player);
 
@@ -35,6 +37,7 @@ vi.mock('@nomercy-entertainment/nomercy-video-player', () => ({
 	default: () => player,
 	OctopusPlugin: class {},
 }));
+
 vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', () => ({
 	SubtitleOverlayPlugin: class {},
 }));
@@ -53,10 +56,12 @@ describe('the trailer on the receiver', () => {
 			},
 			global: { stubs: { Teleport: true } },
 		});
+
 		await flushPromises();
 
 		const config = setup.mock.calls[0]![0] as { playlist: Array<Record<string, unknown>> };
 		const item = config.playlist[0]!;
+
 		expect(item.url).toBe('https://example.invalid/trailer.mp4');
 		expect(item).toHaveProperty('poster');
 		expect(item).not.toHaveProperty('file');
@@ -70,11 +75,17 @@ describe('the trailer on the receiver', () => {
 	it('mounts the controls in a host inside the player container, which has no overlay element in 2.x', async () => {
 		const wrapper = mount(TrailerOverlay, {
 			props: {
-				trailer: { videoId: 'placeholder-video', title: 'Trailer', url: 'https://example.invalid/trailer.mp4', subtitles: [] },
+				trailer: {
+					videoId: 'placeholder-video',
+					title: 'Trailer',
+					url: 'https://example.invalid/trailer.mp4',
+					subtitles: [],
+				},
 				fallbackTitle: 'Fallback',
 			},
 			global: { stubs: { Teleport: true } },
 		});
+
 		await flushPromises();
 
 		expect(container.querySelector('.tv-overlay-host .playback-osd, .tv-overlay-host')).not.toBeNull();

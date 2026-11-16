@@ -2,8 +2,8 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { videoSyncBridge } from './syncBridge';
 
-const { finishImport, importPending, importStarted, startImport, setup, addPlugin, overlayAttach }
-	= vi.hoisted(() => {
+const { finishImport, importPending, importStarted, startImport, setup, addPlugin, overlayAttach } =
+	vi.hoisted(() => {
 		let finishImport!: () => void;
 		let startImport!: () => void;
 		const importPending = new Promise<void>((resolve) => {
@@ -12,6 +12,7 @@ const { finishImport, importPending, importStarted, startImport, setup, addPlugi
 		const importStarted = new Promise<void>((resolve) => {
 			startImport = resolve;
 		});
+
 		return {
 			finishImport,
 			importPending,
@@ -26,8 +27,10 @@ const { finishImport, importPending, importStarted, startImport, setup, addPlugi
 vi.mock('@nomercy-entertainment/nomercy-video-player', async () => {
 	startImport();
 	await importPending;
+
 	return { default: () => ({ setup, addPlugin }), OctopusPlugin: class {} };
 });
+
 vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', () => ({
 	SubtitleOverlayPlugin: class {},
 }));
@@ -46,6 +49,7 @@ describe('videoPlayer unmount during import', () => {
 		const initError = vi.spyOn(console, 'error').mockImplementation(() => {});
 		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
 		const wrapper = mount(VideoPlayer, { props: { type: 'movie', id: '1' } });
+
 		await importStarted;
 		wrapper.unmount();
 

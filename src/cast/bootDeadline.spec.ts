@@ -18,6 +18,7 @@ const NeverSettles = new Promise<Response>(() => {});
 
 function jwt(): string {
 	const part = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+
 	return `${part({ alg: 'none' })}.${part({ sub: '00000000-0000-4000-8000-000000000009', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
 }
 
@@ -26,14 +27,16 @@ function installFakeCast(): MessageListener[] {
 	const context = {
 		addEventListener: vi.fn(),
 		addCustomMessageListener: (ns: string, fn: MessageListener) => {
-			if (ns === NAMESPACE_GENERAL)
+			if (ns === NAMESPACE_GENERAL) {
 				listeners.push(fn);
+			}
 		},
 		sendCustomMessage: vi.fn(),
 		getApplicationData: vi.fn(),
 		getSenders: () => [],
 		start: vi.fn(),
 	};
+
 	vi.stubGlobal('cast', {
 		framework: {
 			CastReceiverContext: { getInstance: () => context },
@@ -41,6 +44,7 @@ function installFakeCast(): MessageListener[] {
 			system: { MessageType: { JSON: 'JSON' } },
 		},
 	});
+
 	return listeners;
 }
 
@@ -49,10 +53,13 @@ function stubNetwork(servers: object[], reachable: () => string[], hung: string[
 	vi.stubGlobal('fetch', vi.fn((url: string) => {
 		if (url.endsWith('/v1/app_config'))
 			return Promise.resolve(new Response(JSON.stringify({ data: { servers } }), { status: 200 }));
-		if (hung.some(base => url.startsWith(base)))
+
+		if (hung.some((base) => url.startsWith(base)))
 			return NeverSettles;
-		if (reachable().some(base => url.startsWith(base)))
+
+		if (reachable().some((base) => url.startsWith(base)))
 			return Promise.resolve(new Response('{}', { status: 200 }));
+
 		return Promise.reject(new TypeError('Failed to fetch'));
 	}));
 }
@@ -63,7 +70,14 @@ const LaunchData = {
 	server_id: Server.id,
 	server_url: Server.serverBaseUrl,
 	device_id: '00000000-0000-4000-8000-000000000003',
-	intent: { type: 'play_video', media_type: 'tv', media_id: '74204', season: 1, episode: 1, resume_at: 12 },
+	intent: {
+		type: 'play_video',
+		media_type: 'tv',
+		media_id: '74204',
+		season: 1,
+		episode: 1,
+		resume_at: 12,
+	},
 };
 
 /** The media server wakes the TV: CAF `ready`, then a launch message with the token and server. */
@@ -73,18 +87,27 @@ function launchFromServer(): ReturnType<typeof vi.fn> {
 	const messages: MessageListener[] = [];
 	const context = {
 		addEventListener: (type: string, fn: () => void) => {
-			if (type === 'ready')
+			if (type === 'ready') {
 				ready.push(fn);
+			}
 		},
 		addCustomMessageListener: (ns: string, fn: MessageListener) => {
-			if (ns === NAMESPACE_GENERAL)
+			if (ns === NAMESPACE_GENERAL) {
 				messages.push(fn);
+			}
 		},
 		sendCustomMessage: vi.fn(),
-		getApplicationData: () => ({ id: 'x', name: 'x', sessionId: 1, launchingSenderId: 'sender-0', namespaces: [] }),
+		getApplicationData: () => ({
+			id: 'x',
+			name: 'x',
+			sessionId: 1,
+			launchingSenderId: 'sender-0',
+			namespaces: [],
+		}),
 		getSenders: () => [],
 		start: vi.fn(),
 	};
+
 	vi.stubGlobal('cast', {
 		framework: {
 			CastReceiverContext: { getInstance: () => context },
@@ -92,28 +115,49 @@ function launchFromServer(): ReturnType<typeof vi.fn> {
 			system: { MessageType: { JSON: 'JSON' } },
 		},
 	});
+
 	bootCastReceiver({ push } as never);
-	for (const fn of ready)
+
+	for (const fn of ready) {
 		fn();
-	for (const fn of messages)
+	}
+
+	for (const fn of messages) {
 		fn({ senderId: 'sender-0', data: { launch: { ...LaunchData, access_token: jwt() } } });
+	}
+
 	return push;
 }
 
 /** The dev hatch: a mock session in sessionStorage, no CAF SDK. */
 function mockCast(serverUrl?: string): ReturnType<typeof vi.fn> {
 	const push = vi.fn(async () => {});
-	window.sessionStorage.setItem('nm_cast_mock', JSON.stringify({ token: jwt(), route: WatchRoute, serverUrl }));
+
+	window.sessionStorage.setItem('nm_cast_mock', JSON.stringify({
+		token: jwt(),
+		route: WatchRoute,
+		serverUrl,
+	}));
+
 	bootCastReceiver({ push } as never);
+
 	return push;
 }
 
 function castFromPhone(server: { server_id?: string } = {}): ReturnType<typeof vi.fn> {
 	const push = vi.fn(async () => {});
 	const listeners = installFakeCast();
+
 	bootCastReceiver({ push } as never);
-	for (const fn of listeners)
-		fn({ senderId: 'sender-1', data: { route: WatchRoute, token: jwt(), ...server } });
+
+	for (const fn of listeners) {
+		fn({ senderId: 'sender-1', data: {
+			route: WatchRoute,
+			token: jwt(),
+			...server,
+		} });
+	}
+
 	return push;
 }
 
@@ -192,9 +236,14 @@ describe('a stuck boot ends on the error screen, never an endless splash', () =>
 
 	it('try again reruns the boot with the same payload and reaches the route', async () => {
 		let up = false;
-		stubNetwork([Server], () => (up ? [Server.serverBaseUrl] : []), [Server.serverBaseUrl]);
+
+		stubNetwork([Server], () =>
+			up
+				? [Server.serverBaseUrl]
+				: [], [Server.serverBaseUrl]);
 
 		const push = castFromPhone({ server_id: Server.id });
+
 		await vi.advanceTimersByTimeAsync(15_500);
 		expect(authStore.bootError.value).not.toBeNull();
 
@@ -232,6 +281,7 @@ describe('a stuck boot ends on the error screen, never an endless splash', () =>
 		vi.mocked(socketStore.connectAll).mockImplementationOnce(() => new Promise<void>(() => {}));
 
 		const push = launchFromServer();
+
 		await vi.advanceTimersByTimeAsync(15_500);
 		expect(authStore.bootError.value).not.toBeNull();
 

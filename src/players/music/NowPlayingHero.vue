@@ -13,14 +13,21 @@ import FallbackPoster from '@/components/cards/FallbackPoster.vue';
 
 const track = playbackStore.music.track;
 const cover = computed(() =>
-	track.value?.cover ? buildImageUrl(track.value.cover, { width: 800, height: 800 }) : null,
+	track.value?.cover
+		? buildImageUrl(track.value.cover, { width: 800, height: 800 })
+		: null,
 );
 </script>
 
 <template>
 	<div class="hero">
 		<div class="art">
-			<img v-if="cover" class="nm-cover-top" :src="cover" :alt="track?.name ?? ''" decoding="async">
+			<img v-if="cover"
+				class="nm-cover-top"
+				:src="cover"
+				:alt="track?.name ?? ''"
+				decoding="async"
+			>
 			<FallbackPoster v-else :title="track?.name" />
 		</div>
 		<div class="meta">

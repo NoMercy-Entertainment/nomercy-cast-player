@@ -41,9 +41,11 @@ describe('the profile screen avatar for a user known only by email', () => {
 describe('profile sign-out', () => {
 	it('disconnects every hub before clearing auth and navigating away', async () => {
 		let finishDisconnect!: () => void;
+
 		disconnectAll.mockImplementationOnce(() => new Promise<void>((resolve) => {
 			finishDisconnect = resolve;
 		}));
+
 		const clear = vi.spyOn(authStore, 'clear');
 		const wrapper = mount(ProfileScreen, {
 			global: { stubs: { SetupBackdrop: true } },
@@ -56,10 +58,12 @@ describe('profile sign-out', () => {
 		expect(push).not.toHaveBeenCalled();
 
 		finishDisconnect();
+
 		await vi.waitFor(() => {
 			expect(clear).toHaveBeenCalledOnce();
 			expect(push).toHaveBeenCalledWith('/splash');
 		});
+
 		clear.mockRestore();
 	});
 });

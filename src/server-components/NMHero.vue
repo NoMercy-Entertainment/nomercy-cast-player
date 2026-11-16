@@ -20,14 +20,20 @@ useFocusEntry({
 	key: props.id,
 	el,
 	onAction: () => {
-		if (props.data.link)
+		if (props.data.link) {
 			router.push(props.data.link);
+		}
 	},
 });
 </script>
 
 <template>
-	<section ref="el" class="hero nm-focus-scale-sm" data-focusable tabindex="0" role="button">
+	<section ref="el"
+		class="hero nm-focus-scale-sm"
+		data-focusable
+		tabindex="0"
+		role="button"
+	>
 		<div class="art nm-focus-ring">
 			<img
 				v-if="imageUrl"

@@ -21,26 +21,44 @@ const type = computed(
 );
 const id = computed(() => props.id ?? String(route.params.id ?? ''));
 const resumeAt = computed(() => {
-	const first = (value: unknown) => Number(Array.isArray(value) ? value[0] : value);
+	const first = (value: unknown) => Number(Array.isArray(value)
+		? value[0]
+		: value);
 	const seconds = first(route.query.resume_at);
+
 	if (Number.isFinite(seconds) && seconds > 0)
 		return seconds;
+
 	// The phone's route carries `position` in milliseconds (app-kmp PhoneCastSenderImpl.kt castRoute positionMs).
 	const milliseconds = first(route.query.position);
-	return Number.isFinite(milliseconds) && milliseconds > 0 ? milliseconds / 1000 : undefined;
+
+	return Number.isFinite(milliseconds) && milliseconds > 0
+		? milliseconds / 1000
+		: undefined;
 });
 
 function queryText(name: string): string | undefined {
 	const q = route.query[name];
-	const value = Array.isArray(q) ? q[0] : q;
-	return typeof value === 'string' && value !== '' ? value : undefined;
+	const value = Array.isArray(q)
+		? q[0]
+		: q;
+
+	return typeof value === 'string' && value !== ''
+		? value
+		: undefined;
 }
+
 // The audio and subtitle the handing-off device showed, from the cast intent.
 const castAudioLanguage = computed(() => queryText('audio'));
 const castSubtitle = computed(() => {
 	const language = queryText('subtitle');
+
 	return language
-		? { language, type: queryText('subtitleType'), format: queryText('subtitleFormat') }
+		? {
+				language,
+				type: queryText('subtitleType'),
+				format: queryText('subtitleFormat'),
+			}
 		: undefined;
 });
 
@@ -50,10 +68,12 @@ const playlist = computed(() => data.value?.playlist ?? []);
 const initialItem = computed(() => {
 	const season = Number(queryText('season'));
 	const episode = Number(queryText('episode'));
+
 	if (type.value === 'tv' && Number.isInteger(season) && Number.isInteger(episode) && season >= 0 && episode > 0) {
-		return playlist.value.find(item => Number(item.season) === season && Number(item.episode) === episode)
-			?? data.value?.item;
+		return playlist.value.find((item) => Number(item.season) === season && Number(item.episode) === episode) ??
+			data.value?.item;
 	}
+
 	return data.value?.item;
 });
 

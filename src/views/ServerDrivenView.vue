@@ -26,6 +26,7 @@ const props = defineProps<{
 
 const { t } = useTranslation();
 const containerEl = ref<HTMLElement | null>(null);
+
 useFocusGroup({
 	type: 'vertical',
 	restorationKey: props.restorationKey,

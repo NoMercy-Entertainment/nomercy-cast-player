@@ -3,7 +3,7 @@ import { buildDiagnosticsReport } from './payload';
 import type { DeviceFacts } from './deviceFacts';
 import type { DiagnosticsEntry } from './events';
 
-const FACTS: DeviceFacts = {
+const FACTS = {
 	appVersion: '1.0.0-alpha.0',
 	model: 'Chromecast Ultra',
 	abi: 'armv7l',
@@ -11,11 +11,25 @@ const FACTS: DeviceFacts = {
 	heapCeilingMb: 384,
 	heapUsedMb: 210,
 	threads: 0,
-};
+} as const satisfies DeviceFacts;
 
 const ENTRIES: DiagnosticsEntry[] = [
-	{ atMs: 1000, category: 'Playback', code: 'SourceRequested', a: 0, b: 0, c: 0 },
-	{ atMs: 1250, category: 'Playback', code: 'SourceFailed', a: 404, b: 0, c: 0 },
+	{
+		atMs: 1000,
+		category: 'Playback',
+		code: 'SourceRequested',
+		a: 0,
+		b: 0,
+		c: 0,
+	},
+	{
+		atMs: 1250,
+		category: 'Playback',
+		code: 'SourceFailed',
+		a: 404,
+		b: 0,
+		c: 0,
+	},
 ];
 
 // Every key the contract names, spelled the way nomercy-tv reads it.
@@ -59,7 +73,11 @@ describe('buildDiagnosticsReport', () => {
 		const payload = buildDiagnosticsReport({
 			deviceId: 'cast-abc',
 			kind: 'manual',
-			facts: { ...FACTS, heapCeilingMb: 0, heapUsedMb: 0 },
+			facts: {
+				...FACTS,
+				heapCeilingMb: 0,
+				heapUsedMb: 0,
+			},
 			entries: ENTRIES,
 			recorded: 2,
 		});

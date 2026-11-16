@@ -24,6 +24,7 @@ defineProps<{
 }>();
 
 const { t } = useTranslation();
+
 useFocusGroup({ type: 'modal', initialFocusKey: 'cast-again-retry' });
 </script>
 

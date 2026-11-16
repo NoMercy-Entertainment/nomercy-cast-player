@@ -27,7 +27,10 @@ export function useTrailerQuery(videos: Ref<InfoVideo[] | undefined>) {
 		refetchInterval: (query) => {
 			if (query.state.data?.state !== 'processing')
 				return false;
-			return query.state.dataUpdateCount < MAX_POLLS ? POLL_INTERVAL_MS : false;
+
+			return query.state.dataUpdateCount < MAX_POLLS
+				? POLL_INTERVAL_MS
+				: false;
 		},
 	});
 }

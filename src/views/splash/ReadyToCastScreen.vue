@@ -24,6 +24,7 @@ useFocusGroup({
 	type: 'modal',
 	onEscape: () => {
 		closeCastSession();
+
 		return true;
 	},
 });
@@ -34,7 +35,9 @@ const status = computed(() => {
 	switch (authStore.receiverState.value) {
 		case 'LOADING':
 			// With no sender there is nothing to connect to yet.
-			return connectedSenders.value === 0 ? t('views.splash.ready') : t('views.splash.connecting');
+			return connectedSenders.value === 0
+				? t('views.splash.ready')
+				: t('views.splash.connecting');
 		case 'AUTHED':
 			return t('views.splash.connecting_server');
 		case 'CONNECTING':
@@ -50,8 +53,10 @@ const status = computed(() => {
 
 const userName = computed(() => {
 	const claims = authStore.userClaims.value;
+
 	if (!claims)
 		return '';
+
 	return (claims.display_name as string) ?? (claims.preferred_username as string) ?? '';
 });
 

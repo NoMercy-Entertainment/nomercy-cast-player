@@ -16,8 +16,8 @@ useFocusEntry({
 	key: props.focusKey,
 	el,
 	onAction: () => {
-		if (props.disabled)
-			return;
+		if (props.disabled) return;
+
 		emit('action');
 	},
 });
@@ -27,7 +27,8 @@ useFocusEntry({
 	<button
 		ref="el"
 		type="button"
-		class="fb" :class="[`fb-${variant ?? 'primary'}`, { 'fb-disabled': disabled }]"
+		class="fb"
+		:class="[`fb-${variant ?? 'primary'}`, { 'fb-disabled': disabled }]"
 		:disabled="disabled"
 		data-focusable
 	>

@@ -10,50 +10,76 @@ export const TMDB_BASE = 'https://image.tmdb.org/t/p';
 function pickTmdbSize(width: number | undefined): string {
 	if (!width)
 		return 'original';
+
 	if (width <= 200)
 		return 'w185';
+
 	if (width <= 320)
 		return 'w300';
+
 	if (width <= 400)
 		return 'w342';
+
 	if (width <= 600)
 		return 'w500';
+
 	if (width <= 800)
 		return 'w780';
+
 	return 'original';
 }
 
 export function buildImageUrl(
 	path: string | null | undefined,
-	options: { width?: number; height?: number; quality?: number } = {},
+	options: {
+		width?: number;
+		height?: number;
+		quality?: number;
+	} = {},
 ): string | null {
 	if (!path)
 		return null;
+
 	if (ABSOLUTE_URL.test(path))
 		return path;
 
 	// The server's own files (music covers, artist art) live under /images/, like app-web's imageUrl.ts.
 	if (path.startsWith(SERVER_IMAGES)) {
 		const server = authStore.serverUrl.value?.replace(TRAILING_SLASH, '');
-		return server ? `${server}${path}` : null;
+
+		return server
+			? `${server}${path}`
+			: null;
 	}
 
 	// TMDB-shaped paths — go straight to TMDB; the server doesn't proxy them.
 	if (TMDB_IMAGE_EXT.test(path)) {
-		return `${TMDB_BASE}/${pickTmdbSize(options.width)}${path.startsWith('/') ? path : `/${path}`}`;
+		return `${TMDB_BASE}/${pickTmdbSize(options.width)}${path.startsWith('/')
+			? path
+			: `/${path}`}`;
 	}
 
 	const base = authStore.serverUrl.value?.replace(TRAILING_SLASH, '') ?? '';
+
 	if (!base)
 		return null;
 
-	const url = new URL(`${base}/api/v1/images${path.startsWith('/') ? path : `/${path}`}`);
-	if (options.width)
+	const url = new URL(`${base}/api/v1/images${path.startsWith('/')
+		? path
+		: `/${path}`}`);
+
+	if (options.width) {
 		url.searchParams.set('w', String(options.width));
-	if (options.height)
+	}
+
+	if (options.height) {
 		url.searchParams.set('h', String(options.height));
-	if (options.quality)
+	}
+
+	if (options.quality) {
 		url.searchParams.set('q', String(options.quality));
+	}
+
 	return url.toString();
 }
 
@@ -65,6 +91,7 @@ const luminosityCache = new Map<string, number>();
 
 export function fastLuminosity(c: string): number {
 	const cached = luminosityCache.get(c);
+
 	if (cached !== undefined)
 		return cached;
 
@@ -76,22 +103,26 @@ export function fastLuminosity(c: string): number {
 			? `${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`
 			: c.substring(1, 7);
 		const n = Number.parseInt(hex, 16);
+
 		r = (n >> 16) & 0xFF;
 		g = (n >> 8) & 0xFF;
 		b = n & 0xFF;
-	}
-	else {
+	} else {
 		// RGB string: extract numbers directly
 		const m = c.match(/(\d+)/g);
+
 		if (!m)
 			return 0;
+
 		r = +m[0];
 		g = +m[1];
 		b = +m[2];
 	}
 
 	const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
 	luminosityCache.set(c, lum);
+
 	return lum;
 }
 
@@ -125,8 +156,10 @@ export function pickPaletteColor(color_palette?: PaletteColors | null | undefine
 
 	const cacheKey = `${dark},${light}`;
 	let cache = paletteCache.get(color_palette);
+
 	if (cache) {
 		const cached = cache.get(cacheKey);
+
 		if (cached !== undefined)
 			return cached;
 	}
@@ -138,12 +171,13 @@ export function pickPaletteColor(color_palette?: PaletteColors | null | undefine
 		color_palette.lightVibrant,
 		color_palette.darkMuted,
 		color_palette.lightMuted,
-	].find(c => inRange(c, dark, light)) ?? '';
+	].find((c) => inRange(c, dark, light)) ?? '';
 
 	if (!cache) {
 		cache = new Map();
 		paletteCache.set(color_palette, cache);
 	}
+
 	cache.set(cacheKey, result);
 
 	return result;

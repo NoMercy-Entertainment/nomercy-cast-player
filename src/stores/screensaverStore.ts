@@ -27,9 +27,10 @@ function clearTimer(): void {
 function resetIdle(): void {
 	active.value = false;
 	clearTimer();
+
 	idleTimer = window.setTimeout(() => {
-		if (playbackStore.video.playing.value)
-			return;
+		if (playbackStore.video.playing.value) return;
+
 		active.value = true;
 	}, IDLE_TIMEOUT_MS);
 }

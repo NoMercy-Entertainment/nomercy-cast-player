@@ -39,8 +39,8 @@ export function bootCastReceiver(router: Router): void {
 				CastReceiverOptions: new () => Record<string, unknown>;
 				system: { MessageType: { JSON: string } };
 			};
-		}
-		| undefined;
+		} |
+		undefined;
 
 	// Dev-only escape hatch — set sessionStorage["nm_cast_mock"] to
 	// {token, route, serverUrl?} before navigating to the receiver and we'll
@@ -52,17 +52,32 @@ export function bootCastReceiver(router: Router): void {
 	// this branch is dormant unless someone opted in.
 	try {
 		const raw = window.sessionStorage.getItem('nm_cast_mock');
+
 		document.body.dataset.mockHasRaw = String(Boolean(raw));
+
 		if (raw) {
-			const mock = JSON.parse(raw) as { token: string; route: string; serverUrl?: string };
+			const mock = JSON.parse(raw) as {
+				token: string;
+				route: string;
+				serverUrl?: string;
+			};
+
 			document.body.dataset.mockParsed = 'yes';
+
 			runBoot({
 				token: mock.token,
 				resolve: async (onStep) => {
 					const server = mock.serverUrl
-						? { serverId: 'mock', serverUrl: mock.serverUrl, defaultSubtitleLanguage: null, defaultAudioLanguage: null }
+						? {
+								serverId: 'mock',
+								serverUrl: mock.serverUrl,
+								defaultSubtitleLanguage: null,
+								defaultAudioLanguage: null,
+							}
 						: await resolveServerFromAppConfig(mock.token, {}, onStep);
+
 					document.body.dataset.mockHasServer = String(Boolean(server));
+
 					return server;
 				},
 				open: async () => {
@@ -70,16 +85,17 @@ export function bootCastReceiver(router: Router): void {
 					document.body.dataset.mockDispatched = 'yes';
 				},
 			});
+
 			return;
 		}
-	}
-	catch (err) {
+	} catch (err) {
 		document.body.dataset.mockError = (err as Error).message;
 		console.error('[cast] mock auth hydration failed', err);
 	}
 
 	if (!castGlobal?.framework) {
 		console.warn('[cast] CAF SDK not loaded — running in non-cast preview mode');
+
 		return;
 	}
 
@@ -100,10 +116,12 @@ export function bootCastReceiver(router: Router): void {
 	};
 
 	const options = new castGlobal.framework.CastReceiverOptions();
+
 	options.disableIdleTimeout = true;
 	options.skipPlayersLoad = true;
+
 	options.customNamespaces = Object.fromEntries(
-		ALL_CUSTOM_NAMESPACES.map(ns => [ns, 'JSON']),
+		ALL_CUSTOM_NAMESPACES.map((ns) => [ns, 'JSON']),
 	);
 
 	attachMessageBus(context);
@@ -116,8 +134,10 @@ export function bootCastReceiver(router: Router): void {
 	onSenderNavigate((payload) => {
 		if (!payload.token) {
 			console.warn('[cast] navigate message carried no token');
+
 			return;
 		}
+
 		// A session start is its own transition, not a foreground: the receiver
 		// was already running when the sender arrived.
 		recordDiagnostic(
@@ -128,37 +148,45 @@ export function bootCastReceiver(router: Router): void {
 			0,
 			`cast-session ${payload.route}`,
 		);
+
 		runNavigateBoot(payload, router);
 	});
 
 	authStore.setRenewalRequester(requestTokenRenewal);
+
 	onSenderToken((token) => {
-		if (!authStore.acceptRenewedToken(token))
+		if (!authStore.acceptRenewedToken(token)) {
 			console.warn('[cast] renewed token refused');
+		}
 	});
 
 	// CAF fires the enum values (cast.framework.system.EventType), never the enum names.
 	const countSenders = (): void => {
 		connectedSenders.value = context.getSenders().length;
 	};
+
 	context.addEventListener('senderconnected', countSenders);
 	context.addEventListener('senderdisconnected', countSenders);
 
 	// 'ready' fires only when the Cast platform answers. A plain browser never gets it and
 	// fires 'shutdown' on every failed reconnect, which must not end the screen there.
 	let platformReady = false;
+
 	context.addEventListener('ready', () => {
 		platformReady = true;
 	});
+
 	onServerLaunch((data) => {
 		const launch = readLaunchCustomData(data);
-		if (launch)
+
+		if (launch) {
 			startFromLaunch(launch, router);
+		}
 	});
 
 	context.addEventListener('shutdown', () => {
-		if (!platformReady)
-			return;
+		if (!platformReady) return;
+
 		recordDiagnostic(
 			DiagnosticsCategory.Lifecycle,
 			DiagnosticsCode.CastSessionEnded,
@@ -167,6 +195,7 @@ export function bootCastReceiver(router: Router): void {
 			0,
 			'cast-session shutdown',
 		);
+
 		void socketStore.disconnectAll();
 		authStore.clear();
 	});
@@ -183,30 +212,36 @@ export function bootCastReceiver(router: Router): void {
  */
 export function closeCastSession(): void {
 	const castGlobal = (globalThis as { cast?: unknown }).cast as
-		| { framework?: { CastReceiverContext: { getInstance: () => { stop: () => void } } } }
-		| undefined;
+		| { framework?: { CastReceiverContext: { getInstance: () => { stop: () => void } } } } |
+		undefined;
 	const context = castGlobal?.framework?.CastReceiverContext.getInstance();
+
 	if (context) {
 		context.stop();
+
 		return;
 	}
+
 	window.close();
 }
 
 // A server waking a TV with no phone sends NoMercy.Setup.Cast.LaunchCustomData, maybe as JSON text.
 export function readLaunchCustomData(data: unknown): LaunchCustomData | null {
 	let raw = data;
+
 	if (typeof raw === 'string') {
 		try {
 			raw = JSON.parse(raw);
-		}
-		catch {
+		} catch {
 			return null;
 		}
 	}
+
 	const launch = raw as Partial<LaunchCustomData> | null | undefined;
+
 	if (!launch?.access_token || !launch.server_url || !launch.intent)
 		return null;
+
 	return launch as LaunchCustomData;
 }
 
@@ -218,6 +253,7 @@ function startFromLaunch(launch: LaunchCustomData, router: Router): void {
 		defaultSubtitleLanguage: null,
 		defaultAudioLanguage: null,
 	};
+
 	runBoot({
 		token: launch.access_token,
 		resolve: async () => server,
@@ -244,7 +280,7 @@ interface BootPlan {
 function runNavigateBoot(payload: NavigatePayload, router: Router): void {
 	runBoot({
 		token: payload.token!,
-		resolve: onStep => resolveServerFromAppConfig(payload.token!, payload, onStep),
+		resolve: (onStep) => resolveServerFromAppConfig(payload.token!, payload, onStep),
 		open: () => router.push(payload.route),
 	});
 }
@@ -255,15 +291,19 @@ function runBoot(plan: BootPlan): void {
 	const run = ++bootRun;
 	const current = (): boolean => run === bootRun;
 	let step: keyof typeof BootStepReasons = 'account';
+
 	authStore.bootError.value = null;
 	authStore.receiverState.value = 'LOADING';
 
 	const timer = setTimeout(() => {
-		if (!current())
-			return;
+		if (!current()) return;
+
 		bootRun++;
-		if (step === 'connect')
+
+		if (step === 'connect') {
 			void socketStore.disconnectAll();
+		}
+
 		console.warn('[cast] boot passed its deadline at step', step);
 		authStore.bootError.value = BootStepReasons[step]();
 	}, BootDeadlineMs);
@@ -271,44 +311,54 @@ function runBoot(plan: BootPlan): void {
 	void (async () => {
 		let server: Awaited<ReturnType<typeof resolveServerFromAppConfig>>;
 		let threw = false;
+
 		try {
 			server = await plan.resolve((next) => {
-				if (current())
+				if (current()) {
 					step = next;
+				}
 			});
-		}
-		catch (err) {
+		} catch (err) {
 			console.warn('[cast] app_config request failed', err);
 			server = null;
 			threw = true;
 		}
-		if (!current())
-			return;
+
+		if (!current()) return;
+
 		if (!server) {
 			clearTimeout(timer);
 			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.RequestFailed, 0, 0, 0, 'app_config');
 			console.warn('[cast] app_config resolution failed');
-			if (threw)
+
+			if (threw) {
 				authStore.receiverState.value = 'DEGRADED';
-			else
+			} else {
 				authStore.bootError.value = BootStepReasons.server();
+			}
+
 			return;
 		}
+
 		if (!authStore.consumeRealHandshake(plan.token, server)) {
 			clearTimeout(timer);
 			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.RequestFailed, 0, 0, 0, 'cast-handshake token');
 			console.warn('[cast] token expired or malformed at handshake time');
 			authStore.receiverState.value = 'DEGRADED';
+
 			return;
 		}
+
 		step = 'connect';
 		authStore.receiverState.value = 'CONNECTING';
+
 		void socketStore.connectAll().then(() => {
-			if (!current())
-				return;
+			if (!current()) return;
+
 			clearTimeout(timer);
 			authStore.receiverState.value = 'READY';
 		});
+
 		await plan.open();
 	})();
 }

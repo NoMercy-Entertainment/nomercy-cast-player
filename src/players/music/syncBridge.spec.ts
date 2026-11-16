@@ -16,11 +16,12 @@ function fakeEngine() {
 			handlers.set(event, [...(handlers.get(event) ?? []), handler]);
 		},
 		off(event: string, handler?: (...args: unknown[]) => void) {
-			handlers.set(event, (handlers.get(event) ?? []).filter(entry => handler && entry !== handler));
+			handlers.set(event, (handlers.get(event) ?? []).filter((entry) => handler && entry !== handler));
 		},
 		emit(event: string, payload?: unknown) {
-			for (const handler of [...(handlers.get(event) ?? [])])
+			for (const handler of [...(handlers.get(event) ?? [])]) {
 				handler(payload);
+			}
 		},
 		play: () => {},
 		pause: () => {},
@@ -45,11 +46,13 @@ describe('musicSyncBridge outbound calls', () => {
 	beforeEach(() => {
 		invoke.mockClear();
 		hubHandlers.clear();
+
 		socketStore.musicHub.value = {
 			invoke,
 			on: (event: string, handler: (...args: unknown[]) => void) => hubHandlers.set(event, handler),
 			off: () => {},
 		} as never;
+
 		engine = fakeEngine();
 		musicSyncBridge.attach(engine as never);
 	});
@@ -112,6 +115,7 @@ describe('musicSyncBridge outbound calls', () => {
 	// plays at its own entry, not at a sibling device's.
 	it('applies its own device_volumes entry from the state envelope', () => {
 		const state = { device_volumes: { [castDeviceId()]: 35, 'phone-1': 80 } };
+
 		hubHandlers.get('MusicPlayerState')?.({ events: [{ type: 'PlayerStateChanged', event: { state } }] });
 
 		expect(engine.volume).toHaveBeenCalledExactlyOnceWith(35);

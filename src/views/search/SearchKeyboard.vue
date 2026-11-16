@@ -28,6 +28,7 @@ const emit = defineEmits<{
 
 const { t } = useTranslation();
 const containerEl = ref<HTMLElement | null>(null);
+
 // 'free' spatial nav instead of 'grid' — the utility row has 4 keys
 // covering 6 logical columns (Space + Backspace each span 2 cells), so
 // the index-based grid math walked DOWN from "Space" to letter "C"

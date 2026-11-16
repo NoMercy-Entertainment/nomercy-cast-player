@@ -11,6 +11,7 @@ import { settingsStore } from '@/stores/settingsStore';
 
 vi.mock('@/lib/diagnostics/sender', async () => {
 	const { ref: makeRef } = await import('vue');
+
 	return {
 		diagnosticsSender: {
 			state: makeRef('idle'),
@@ -26,11 +27,16 @@ vi.mock('@/lib/diagnostics/sender', async () => {
 	};
 });
 
-const router = { back: vi.fn(), replace: vi.fn(), currentRoute: { value: { path: '/profile' } } };
+const router = {
+	back: vi.fn(),
+	replace: vi.fn(),
+	currentRoute: { value: { path: '/profile' } },
+};
 
 const Host = defineComponent({
 	setup() {
 		useDPad(router as never);
+
 		return () => h('div');
 	},
 });
@@ -41,8 +47,19 @@ const ActionOnly = defineComponent({
 	setup(props) {
 		const el = ref<HTMLElement | null>(null);
 		const group = useFocusGroup({ type: 'vertical' });
-		useFocusEntry({ key: 'only-action', group, el, onAction: () => props.onRun() });
-		return () => h('button', { 'ref': el, 'data-focusable': '', 'tabindex': 0 }, 'action');
+
+		useFocusEntry({
+			key: 'only-action',
+			group,
+			el,
+			onAction: () => props.onRun(),
+		});
+
+		return () => h('button', {
+			ref: el,
+			'data-focusable': '',
+			tabindex: 0,
+		}, 'action');
 	},
 });
 
@@ -51,14 +68,24 @@ const ClickOnly = defineComponent({
 	props: { onRun: { type: Function, required: true } },
 	setup(props) {
 		useFocusGroup({ type: 'vertical' });
-		return () => h('button', { 'data-focusable': '', 'tabindex': 0, 'onClick': () => props.onRun() }, 'click');
+
+		return () => h('button', {
+			'data-focusable': '',
+			tabindex: 0,
+			onClick: () => props.onRun(),
+		}, 'click');
 	},
 });
 
 // Like a real remote, the key goes to the focused element and bubbles up to window.
 function pressOk(): void {
 	const target = document.activeElement ?? document.body;
-	target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+
+	target.dispatchEvent(new KeyboardEvent('keydown', {
+		key: 'Enter',
+		bubbles: true,
+		cancelable: true,
+	}));
 }
 
 describe('oK runs the focused action once', () => {
@@ -82,11 +109,13 @@ describe('oK runs the focused action once', () => {
 			attachTo: document.body,
 			global: { stubs: { RouterLink: true, teleport: true } },
 		});
+
 		return screen;
 	}
 
 	function focusRow(wrapper: VueWrapper, text: string): void {
-		const row = wrapper.findAll('button').find(b => b.text().includes(text));
+		const row = wrapper.findAll('button').find((b) => b.text().includes(text));
+
 		expect(row).toBeDefined();
 		(row!.element as HTMLElement).focus();
 		expect(document.activeElement).toBe(row!.element);
@@ -115,6 +144,7 @@ describe('oK runs the focused action once', () => {
 	it('control: an element with only an action runs it once', () => {
 		const run = vi.fn();
 		const wrapper = mount(ActionOnly, { attachTo: document.body, props: { onRun: run } });
+
 		wrapper.find('button').element.focus();
 
 		pressOk();
@@ -125,6 +155,7 @@ describe('oK runs the focused action once', () => {
 	it('control: an element with only a click handler runs it once', () => {
 		const run = vi.fn();
 		const wrapper = mount(ClickOnly, { attachTo: document.body, props: { onRun: run } });
+
 		wrapper.find('button').element.focus();
 
 		pressOk();

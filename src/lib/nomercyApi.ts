@@ -28,13 +28,15 @@ const AUTH_HOSTNAME_PREFIX = /^auth/;
 function deriveFromIssuer(accessToken: string): string | null {
 	const payload = decodeJwt(accessToken);
 	const iss = payload?.iss;
+
 	if (typeof iss !== 'string' || iss.length === 0)
 		return null;
+
 	try {
 		const u = new URL(iss);
+
 		return `${u.protocol}//${u.hostname.replace(AUTH_HOSTNAME_PREFIX, 'api')}`;
-	}
-	catch {
+	} catch {
 		return null;
 	}
 }
@@ -42,11 +44,14 @@ function deriveFromIssuer(accessToken: string): string | null {
 export function nomercyApiBase(accessToken: string | null): string {
 	if (ENV_BASE)
 		return ENV_BASE;
+
 	if (accessToken) {
 		const fromIss = deriveFromIssuer(accessToken);
+
 		if (fromIss)
 			return fromIss;
 	}
+
 	return STATIC_FALLBACK;
 }
 
@@ -72,6 +77,7 @@ interface SaasResponse<T> {
 export async function fetchSaasUser(accessToken: string): Promise<SaasUser | null> {
 	if (!accessToken)
 		return null;
+
 	const base = nomercyApiBase(accessToken);
 	const res = await fetch(`${base}/v1/me`, {
 		headers: {
@@ -79,17 +85,24 @@ export async function fetchSaasUser(accessToken: string): Promise<SaasUser | nul
 			Accept: 'application/json',
 		},
 	});
+
 	if (!res.ok) {
 		console.warn('[saas/me] non-OK response', res.status, base);
+
 		return null;
 	}
+
 	const body = (await res.json()) as SaasResponse<SaasUser> | SaasUser;
+
 	if (body && typeof body === 'object' && 'status' in body) {
 		const env = body as SaasResponse<SaasUser>;
+
 		if (env.status !== 'ok')
 			return null;
+
 		return env.data;
 	}
+
 	return body as SaasUser;
 }
 
@@ -101,13 +114,15 @@ export async function postDiagnosticsReport(
 	const res = await fetch(`${base}/v1/diagnostics/reports`, {
 		method: 'POST',
 		headers: {
-			'Authorization': `Bearer ${accessToken}`,
-			'Accept': 'application/json',
+			Authorization: `Bearer ${accessToken}`,
+			Accept: 'application/json',
 			'Content-Type': 'application/json',
 		},
 		body: JSON.stringify(payload),
 	});
+
 	if (!res.ok)
 		throw new Error(`diagnostics upload failed with ${res.status}`);
+
 	return (await res.json()) as DiagnosticsReportResponse;
 }

@@ -23,13 +23,15 @@ describe('the receiver http client records every request', () => {
 		// failure line can show. See
 		// specs/nomercy-app-kmp/diagnostics-capture-everything.md.
 		vi.stubGlobal('fetch', vi.fn(async () => {
-			await new Promise(resolve => setTimeout(resolve, 40));
+			await new Promise((resolve) => setTimeout(resolve, 40));
+
 			return jsonResponse(200);
 		}));
 
 		await apiFetch({ path: '/api/v1/home' });
 
-		const completed = diagnosticsRing.snapshot().filter(entry => entry.code === 'RequestCompleted');
+		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
+
 		expect(completed).toHaveLength(1);
 		expect(completed[0].a).toBe(200);
 		expect(completed[0].b).toBeGreaterThanOrEqual(30);
@@ -43,7 +45,8 @@ describe('the receiver http client records every request', () => {
 
 		await apiFetch({ path: 'Watched', method: 'POST' });
 
-		const completed = diagnosticsRing.snapshot().filter(entry => entry.code === 'RequestCompleted');
+		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
+
 		expect(completed[0].label).toBe('POST /Watched');
 	});
 
@@ -52,7 +55,8 @@ describe('the receiver http client records every request', () => {
 
 		await apiFetch({ path: '/api/v1/search?query=the+matrix' });
 
-		const completed = diagnosticsRing.snapshot().filter(entry => entry.code === 'RequestCompleted');
+		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
+
 		expect(completed[0].label).toBe('GET /api/v1/search?query=');
 	});
 
@@ -61,7 +65,8 @@ describe('the receiver http client records every request', () => {
 
 		await expect(apiFetch({ path: 'userData/continue' })).rejects.toBeTruthy();
 
-		const failed = diagnosticsRing.snapshot().filter(entry => entry.code === 'RequestFailed');
+		const failed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestFailed');
+
 		expect(failed).toHaveLength(1);
 		expect(failed[0].a).toBe(500);
 		expect(failed[0].label).toBe('GET /userData/continue');
@@ -74,7 +79,8 @@ describe('the receiver http client records every request', () => {
 
 		await expect(apiFetch({ path: '/api/v1/home' })).rejects.toBeTruthy();
 
-		const completed = diagnosticsRing.snapshot().filter(entry => entry.code === 'RequestCompleted');
+		const completed = diagnosticsRing.snapshot().filter((entry) => entry.code === 'RequestCompleted');
+
 		expect(completed).toHaveLength(1);
 		expect(completed[0].a).toBe(0);
 	});
@@ -91,20 +97,24 @@ describe('the receiver http client records every request', () => {
 
 	it('still sends and still obeys the caller abort on a TV browser without AbortSignal.any or AbortSignal.timeout', async () => {
 		const { any, timeout } = AbortSignal;
+
 		Object.assign(AbortSignal, { any: undefined, timeout: undefined });
+
 		try {
 			vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(200)));
 			await expect(apiFetch({ path: '/api/v1/home', signal: new AbortController().signal })).resolves.toBeTruthy();
 
 			vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
-				init?.signal?.addEventListener('abort', () => reject(new DOMException('The operation was aborted.', 'AbortError')));
+				init?.signal?.addEventListener('abort', () =>
+					reject(new DOMException('The operation was aborted.', 'AbortError')));
 			})));
+
 			const caller = new AbortController();
 			const pending = apiFetch({ path: '/api/v1/home', signal: caller.signal });
+
 			caller.abort();
 			await expect(pending).rejects.toBeTruthy();
-		}
-		finally {
+		} finally {
 			Object.assign(AbortSignal, { any, timeout });
 		}
 	});

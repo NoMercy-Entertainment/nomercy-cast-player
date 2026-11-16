@@ -30,14 +30,17 @@ const wrapperData = computed(() => props.data as unknown as Record<string, unkno
 
 const imageSource = computed(() => {
 	const d = wrapperData.value;
+
 	return (
-		(props.data.image as string | undefined)
-		?? (d.poster as string | undefined)
-		?? (d.backdrop as string | undefined)
+		(props.data.image as string | undefined) ??
+		(d.poster as string | undefined) ??
+		(d.backdrop as string | undefined)
 	);
 });
 
-const imageUrl = computed(() => buildImageUrl(imageSource.value, props.data.wide ? BACKDROP_SIZE : POSTER_SIZE));
+const imageUrl = computed(() => buildImageUrl(imageSource.value, props.data.wide
+	? BACKDROP_SIZE
+	: POSTER_SIZE));
 
 const accent = computed(() =>
 	pickPaletteColor((wrapperData.value.color_palette ?? wrapperData.value.colorPalette) as PaletteColors | undefined),
@@ -45,8 +48,10 @@ const accent = computed(() =>
 
 const progressPct = computed(() => {
 	const p = (props.data as unknown as { progress?: { time?: number; total?: number } }).progress;
+
 	if (!p?.time || !p?.total)
 		return 0;
+
 	return Math.min(100, (p.time / p.total) * 100);
 });
 
@@ -59,8 +64,9 @@ useFocusEntry({
 	key: props.id,
 	el,
 	onAction: () => {
-		if (props.data.link)
+		if (props.data.link) {
 			router.push(props.data.link);
+		}
 	},
 	onFocus: () => {
 		// Publish to the home hero — mirrors APK activeCardState updates

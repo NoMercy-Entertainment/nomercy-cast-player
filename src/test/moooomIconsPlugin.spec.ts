@@ -26,6 +26,7 @@ describe('moooomIcons plugin', () => {
 			fill: 'var(--fill-color, none)',
 			body: '<path stroke="currentColor" stroke-width="var(--stroke-width,1.5)" d="M1 1h2"/>',
 		});
+
 		expect(icons.beta?.viewBox).toBe('0 0 19 18');
 	});
 
@@ -40,13 +41,14 @@ describe('moooomIcons plugin', () => {
 	it('reads every symbol of both shipped sprites', () => {
 		for (const file of ['mooooom-icons.svg', 'player-icons.svg']) {
 			const sprite = fs.readFileSync(path.join(RESOURCES, file), 'utf8');
+
 			expect(Object.keys(parseSprite(sprite)).length, file).toBe(sprite.split('<symbol ').length - 1);
 		}
 	});
 
 	it('finds an icon the receiver sources name inside the sprites', () => {
-		const sprites = ['mooooom-icons.svg', 'player-icons.svg'].map(file => fs.readFileSync(path.join(RESOURCES, file), 'utf8'));
-		const known = new Set(sprites.flatMap(sprite => Object.keys(parseSprite(sprite))));
+		const sprites = ['mooooom-icons.svg', 'player-icons.svg'].map((file) => fs.readFileSync(path.join(RESOURCES, file), 'utf8'));
+		const known = new Set(sprites.flatMap((sprite) => Object.keys(parseSprite(sprite))));
 		const used = collectIconNames(scanSourceDir(SRC_DIR), known);
 
 		expect(used.has('film')).toBe(true);

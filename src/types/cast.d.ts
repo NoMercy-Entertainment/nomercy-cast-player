@@ -22,37 +22,37 @@ export interface LaunchCustomData {
 	};
 }
 
-export type CastIntent
-	= | { type: 'idle' }
-		| { type: 'navigate'; route: string }
-		| {
-			type: 'play_video';
-			media_type: 'movie' | 'tv';
-			media_id: string;
-			season?: number;
-			episode?: number;
-			resume_at?: number;
-			/** The audio and subtitle the handing-off device was playing. */
-			audio_language?: string;
-			subtitle_language?: string;
-			subtitle_type?: string;
-			subtitle_codec?: string;
-		}
-		| {
-			type: 'play_music';
-			list_type: string;
-			list_id: string;
-			track_id?: string;
-			resume_at?: number;
-		};
+export type CastIntent =
+	| { type: 'idle' } |
+	{ type: 'navigate'; route: string } |
+	{
+		type: 'play_video';
+		media_type: 'movie' | 'tv';
+		media_id: string;
+		season?: number;
+		episode?: number;
+		resume_at?: number;
+		/** The audio and subtitle the handing-off device was playing. */
+		audio_language?: string;
+		subtitle_language?: string;
+		subtitle_type?: string;
+		subtitle_codec?: string;
+	} |
+	{
+		type: 'play_music';
+		list_type: string;
+		list_id: string;
+		track_id?: string;
+		resume_at?: number;
+	};
 
 /**
  * Receiver lifecycle states per spec §8.5.
  */
-export type ReceiverState
-	= | 'LOADING'
-		| 'AUTHED'
-		| 'CONNECTING'
-		| 'READY'
-		| 'DEGRADED'
-		| 'TEARDOWN';
+export type ReceiverState =
+	| 'LOADING' |
+	'AUTHED' |
+	'CONNECTING' |
+	'READY' |
+	'DEGRADED' |
+	'TEARDOWN';

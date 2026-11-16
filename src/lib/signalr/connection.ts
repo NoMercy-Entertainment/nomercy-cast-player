@@ -20,22 +20,28 @@ export type HubName = 'videoHub' | 'musicHub' | 'deviceHub' | 'pluginHub';
  * permanent disconnect is not. Ramp 0 → 30s over the first ~minute, then
  * steady at 30s indefinitely.
  */
-const foreverRetry: IRetryPolicy = {
+const foreverRetry = {
 	nextRetryDelayInMilliseconds(ctx: RetryContext): number {
 		const elapsed = ctx.elapsedMilliseconds;
+
 		if (elapsed < 1_000)
 			return 0;
+
 		if (elapsed < 5_000)
 			return 1_000;
+
 		if (elapsed < 15_000)
 			return 2_000;
+
 		if (elapsed < 30_000)
 			return 5_000;
+
 		if (elapsed < 60_000)
 			return 10_000;
+
 		return 30_000;
 	},
-};
+} as const satisfies IRetryPolicy;
 
 /**
  * Build a hub connection bound to the current cast session.
@@ -51,9 +57,11 @@ const CLIENT_TYPE = 'tv';
 
 export function buildHub(name: HubName): HubConnection {
 	const baseUrl = authStore.serverUrl.value;
+
 	if (!baseUrl) {
 		throw new Error(`buildHub("${name}") called before authStore.serverUrl is populated`);
 	}
+
 	const identity = new URLSearchParams({
 		client_id: castDeviceId(),
 		client_name: CLIENT_NAME,

@@ -13,7 +13,12 @@ const push = vi.hoisted(() => vi.fn());
 
 vi.mock('vue-router', () => ({
 	useRoute: () => ({ path: '/', params: {} }),
-	useRouter: () => ({ push, back: vi.fn(), replace: vi.fn(), currentRoute: { value: { path: '/' } } }),
+	useRouter: () => ({
+		push,
+		back: vi.fn(),
+		replace: vi.fn(),
+		currentRoute: { value: { path: '/' } },
+	}),
 }));
 
 vi.mock('@/queries/useMeQuery', () => ({
@@ -21,6 +26,7 @@ vi.mock('@/queries/useMeQuery', () => ({
 }));
 
 const scrollIntoView = vi.fn();
+
 Element.prototype.scrollIntoView = scrollIntoView;
 
 const CARD_WIDTH = 118;
@@ -30,28 +36,56 @@ const CARD_PITCH = 126;
 function layOutRails(): void {
 	vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
 		const track = this.closest('.rail-track') as HTMLElement | null;
+
 		if (this.classList.contains('rail-track'))
 			return new DOMRect(0, 0, 960, 200);
+
 		if (!track || !this.hasAttribute('data-focusable'))
 			return new DOMRect(0, 0, 0, 0);
+
 		const index = Array.from(track.children).indexOf(this);
+
 		return new DOMRect(40 + index * CARD_PITCH - track.scrollLeft, 0, CARD_WIDTH, 177);
 	});
 }
 
 function album(id: string): Component {
-	return { id, component: 'NMMusicCard', props: { id, data: { id, title: id, type: 'album', cover: null } } } as unknown as Component;
+	return {
+		id,
+		component: 'NMMusicCard',
+		props: { id, data: {
+			id,
+			title: id,
+			type: 'album',
+			cover: null,
+		} },
+	} as unknown as Component;
 }
 
-function rail(id: string, count: number): Component {
-	const items = Array.from({ length: count }, (_, i) => album(`${id}-${i}`));
-	return { id, component: 'NMCarousel', props: { id, title: id, items } };
+function rail(id: string, count: number) {
+	const items = Array.from({ length: count }, (_, i) =>
+		album(`${id}-${i}`));
+
+	return {
+		id,
+		component: 'NMCarousel',
+		props: {
+			id,
+			title: id,
+			items,
+		},
+	} as const satisfies Component;
 }
 
 const Host = defineComponent({
 	props: { rails: { type: Array, required: true } },
 	setup(props) {
-		useDPad({ back: vi.fn(), replace: vi.fn(), currentRoute: { value: { path: '/' } } } as never);
+		useDPad({
+			back: vi.fn(),
+			replace: vi.fn(),
+			currentRoute: { value: { path: '/' } },
+		} as never);
+
 		return () => h('div', [h(TopNavBar), h(HeroRailsView, {
 			restorationKey: 'dpad-parity',
 			data: props.rails as Component[],
@@ -64,15 +98,20 @@ const Host = defineComponent({
 });
 
 function press(key: string): void {
-	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', {
+		key,
+		bubbles: true,
+		cancelable: true,
+	}));
 }
 
 function cardIds(): string[] {
-	return Array.from(document.querySelectorAll<HTMLElement>('.rail-track [data-focusable]')).map(el => el.dataset.cardId ?? el.id);
+	return Array.from(document.querySelectorAll<HTMLElement>('.rail-track [data-focusable]')).map((el) => el.dataset.cardId ?? el.id);
 }
 
 function focusedLabel(): string {
 	const el = document.activeElement as HTMLElement | null;
+
 	return el?.getAttribute('aria-label') ?? el?.dataset.focusKey ?? el?.textContent?.trim() ?? '';
 }
 
@@ -84,7 +123,7 @@ async function boot(rails: Component[]): Promise<void> {
 	await flushPromises();
 	await vi.dynamicImportSettled();
 	await flushPromises();
-	await new Promise(resolve => setTimeout(resolve, 0));
+	await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 function cardsOf(railId: string): HTMLElement[] {
@@ -92,6 +131,7 @@ function cardsOf(railId: string): HTMLElement[] {
 }
 
 beforeEach(() => scrollIntoView.mockClear());
+
 afterEach(() => {
 	wrapper?.unmount();
 	vi.restoreAllMocks();
@@ -102,6 +142,7 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 	it('dpad.card.ends: LEFT on the first card and RIGHT on the last card keep focus (:358-382)', async () => {
 		await boot([rail('r1', 4), rail('r2', 4)]);
 		const cards = cardsOf('r1');
+
 		expect(cards.length).toBe(4);
 		cards[0].focus();
 		press('ArrowLeft');
@@ -114,6 +155,7 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 	it('dpad.card.up-down: DOWN on the last row keeps focus (:399-420)', async () => {
 		await boot([rail('r1', 4), rail('r2', 4)]);
 		const last = cardsOf('r2');
+
 		last[1].focus();
 		press('ArrowDown');
 		expect(document.activeElement).toBe(last[1]);
@@ -129,11 +171,13 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 	it('dpad.row.target-card: a row change lands on the first completely visible card of the row (TvRowFocus.kt)', async () => {
 		await boot([rail('r1', 10), rail('r2', 10)]);
 		const track = document.querySelector<HTMLElement>('[data-rail-id="r2"] .rail-track')!;
+
 		track.scrollLeft = 300;
 		cardsOf('r1')[5].focus();
 		press('ArrowDown');
 		const row2 = cardsOf('r2');
-		const expected = row2.findIndex(el => el.getBoundingClientRect().left >= 0);
+		const expected = row2.findIndex((el) => el.getBoundingClientRect().left >= 0);
+
 		expect(expected).toBeGreaterThan(0);
 		expect(document.activeElement).toBe(row2[expected]);
 	});
@@ -141,6 +185,7 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 	it('dpad.card.left-right: the focused card scrolls to the row start (TvCardViewHolder.kt:355-397)', async () => {
 		await boot([rail('r1', 10)]);
 		const cards = cardsOf('r1');
+
 		cards[0].focus();
 		scrollIntoView.mockClear();
 		press('ArrowRight');
@@ -157,6 +202,7 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 	it('dpad.nav.left-end: LEFT on Home keeps focus (:193-201)', async () => {
 		await boot([rail('r1', 4)]);
 		const home = document.querySelector<HTMLElement>('.nav-link')!;
+
 		home.focus();
 		press('ArrowLeft');
 		expect(document.activeElement).toBe(home);
@@ -166,6 +212,7 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 		await boot([rail('r1', 4)]);
 		const links = Array.from(document.querySelectorAll<HTMLElement>('.nav-link'));
 		const profile = document.querySelector<HTMLElement>('.profile-chip')!;
+
 		links[links.length - 1].focus();
 		press('ArrowRight');
 		expect(document.activeElement).toBe(profile);
@@ -179,9 +226,16 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 		await boot([rail('r1', 4)]);
 		push.mockClear();
 		document.querySelector<HTMLElement>('.nav-link')!.focus();
+
 		const down = (repeat: boolean): void => {
-			document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', repeat, bubbles: true, cancelable: true }));
+			document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', {
+				key: 'Enter',
+				repeat,
+				bubbles: true,
+				cancelable: true,
+			}));
 		};
+
 		down(true);
 		down(true);
 		expect(push).not.toHaveBeenCalled();

@@ -164,6 +164,7 @@ export const PluginLiveAction = {
 } as const;
 
 export type PluginLiveActionValue = typeof PluginLiveAction[keyof typeof PluginLiveAction];
+
 /**
  * Which slots each kind offers.
  * A screen reserves the space before any plugin is seen, so the grouping has

@@ -22,6 +22,7 @@ const category = ref('display');
 const categories = ref<InstanceType<typeof SettingsCategories> | null>(null);
 
 const panesGroup = useFocusGroup({ type: 'horizontal', restorationKey: 'settings-panes' });
+
 useNavFocusBridge(panesGroup);
 </script>
 

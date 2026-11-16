@@ -21,8 +21,10 @@ const group = useFocusGroup({
 	type: 'modal',
 	autoFocus: false,
 	onEscape: (dir) => {
-		if (dir === 'back')
+		if (dir === 'back') {
 			emit('close');
+		}
+
 		return true;
 	},
 });
@@ -31,8 +33,9 @@ const releases: Array<() => void> = [];
 
 onMounted(() => {
 	const el = bodyEl.value;
-	if (!el)
-		return;
+
+	if (!el) return;
+
 	const entry: FocusEntry = {
 		key: 'music-about-body',
 		order: 0,
@@ -43,12 +46,13 @@ onMounted(() => {
 		blur: () => el.blur(),
 		action: () => emit('close'),
 	};
+
 	releases.push(group.register(entry));
 	releases.push(focusStore.registerAction(el, entry.action));
 	void nextTick(() => el.focus());
 });
 
-onBeforeUnmount(() => releases.forEach(release => release()));
+onBeforeUnmount(() => releases.forEach((release) => release()));
 </script>
 
 <template>

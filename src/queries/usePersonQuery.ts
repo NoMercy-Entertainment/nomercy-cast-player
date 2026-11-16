@@ -12,8 +12,10 @@ async function fetchPerson(id: string): Promise<Component[]> {
 		path: `/api/v1/person/${id}`,
 		method: 'GET',
 	});
+
 	if (Array.isArray(response))
 		return response;
+
 	return response.components ?? [];
 }
 

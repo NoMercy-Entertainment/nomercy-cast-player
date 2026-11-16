@@ -12,8 +12,10 @@ export function checkRows(group: string, rows: I18nRow[]): void {
 		it(`${group}: ${file} reads ${key} instead of "${raw}"`, () => {
 			expect(readFileSync(srcRoot + file, 'utf8')).not.toContain(raw);
 			expect(i18n.t(key)).toBe(en);
-			if (nl)
+
+			if (nl) {
 				expect(i18n.t(key, { lng: 'nl' })).toBe(nl);
+			}
 		});
 	}
 }

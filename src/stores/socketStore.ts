@@ -25,12 +25,12 @@ import { authStore } from './authStore';
  * - DEGRADED is owned by authStore; SignalR-only failures never trigger it
  */
 
-export type ConnectionState
-	= | 'idle'
-		| 'connecting'
-		| 'connected'
-		| 'reconnecting'
-		| 'failed';
+export type ConnectionState =
+	| 'idle' |
+	'connecting' |
+	'connected' |
+	'reconnecting' |
+	'failed';
 
 const connectionState = ref<ConnectionState>('idle');
 
@@ -45,23 +45,25 @@ let stopRequested = false;
 const videoHubConnectedListeners = new Set<() => void>();
 
 function announceVideoHubConnected(): void {
-	for (const listener of [...videoHubConnectedListeners])
+	for (const listener of [...videoHubConnectedListeners]) {
 		listener();
+	}
 }
 
 function onVideoHubConnected(listener: () => void): () => void {
 	videoHubConnectedListeners.add(listener);
+
 	return () => videoHubConnectedListeners.delete(listener);
 }
 
 // The `a` field on a socket event, so a report says which hub without the
 // reader having to parse text.
-const HUB_ORDINAL: Record<HubName, number> = {
+const HUB_ORDINAL = {
 	videoHub: 1,
 	musicHub: 2,
 	deviceHub: 3,
 	pluginHub: 4,
-};
+} as const satisfies Record<HubName, number>;
 
 async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 	// stopRequested is mutated by disconnectAll() outside this loop —
@@ -73,15 +75,17 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 			await hub.start();
 			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
 			console.debug(`[socket] ${name} started`);
-			if (name === 'videoHub')
+
+			if (name === 'videoHub') {
 				announceVideoHubConnected();
+			}
+
 			return;
-		}
-		catch (err) {
+		} catch (err) {
 			recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketFailed, HUB_ORDINAL[name], 0, 0, name);
 			console.warn(`[socket] ${name} start failed, retrying in 5s`, err);
 			connectionState.value = 'reconnecting';
-			await new Promise(r => window.setTimeout(r, 5_000));
+			await new Promise((r) => window.setTimeout(r, 5_000));
 		}
 	}
 }
@@ -91,6 +95,7 @@ const queueRefresh = createRefreshBatcher(400, invalidateFromServer);
 function bindRefreshLibrary(hub: TypedHub, name: HubName): void {
 	hub.on('RefreshLibrary', (...args: unknown[]) => {
 		const serverKey = refreshKeyOf(args[0] as RefreshLibraryPayload | undefined);
+
 		if (serverKey) {
 			console.debug(`[socket] ${name} RefreshLibrary`, serverKey);
 			queueRefresh(serverKey);
@@ -101,6 +106,7 @@ function bindRefreshLibrary(hub: TypedHub, name: HubName): void {
 function bindDeviceList(hub: TypedHub): void {
 	hub.on('DeviceListChanged', (...args: unknown[]) => {
 		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];
+
 		playbackStore.devices.applyAccountDevices(devices);
 	});
 }
@@ -123,23 +129,26 @@ let lastAppliedVideoSeq = 0;
 function bindMusicPlayerState(hub: TypedHub): void {
 	hub.on('MusicPlayerState', (...args: unknown[]) => {
 		const payload = args[0] as MusicPlayerStateMsg | undefined;
+
 		for (const e of payload?.events ?? []) {
-			if (e.type !== 'PlayerStateChanged')
-				continue;
+			if (e.type !== 'PlayerStateChanged') continue;
+
 			const state = e.event.state;
-			if (!state)
-				continue;
-			if (state.seq && state.seq <= lastAppliedMusicSeq)
-				continue;
-			if (state.seq)
+
+			if (!state) continue;
+
+			if (state.seq && state.seq <= lastAppliedMusicSeq) continue;
+
+			if (state.seq) {
 				lastAppliedMusicSeq = state.seq;
+			}
 
 			if (state.item) {
 				playbackStore.music.applyTrack(
 					{
 						id: String(state.item.id),
 						name: state.item.name,
-						artist: state.item.artist_track?.map(a => a.name).filter(Boolean).join(', '),
+						artist: state.item.artist_track?.map((a) => a.name).filter(Boolean).join(', '),
 						cover: state.item.cover,
 						favorite: false,
 						plugin_id: state.item.plugin_id ?? null,
@@ -148,14 +157,22 @@ function bindMusicPlayerState(hub: TypedHub): void {
 					playbackStore.music.queue.value,
 				);
 			}
-			if (typeof state.is_playing === 'boolean')
+
+			if (typeof state.is_playing === 'boolean') {
 				playbackStore.music.applyPlayState(state.is_playing);
-			if (typeof state.progress_ms === 'number')
+			}
+
+			if (typeof state.progress_ms === 'number') {
 				playbackStore.music.applyTime(state.progress_ms);
-			if (state.shuffle_state !== undefined)
+			}
+
+			if (state.shuffle_state !== undefined) {
 				playbackStore.music.applyShuffle(state.shuffle_state);
-			if (state.repeat_state !== undefined)
+			}
+
+			if (state.repeat_state !== undefined) {
 				playbackStore.music.applyRepeat(state.repeat_state);
+			}
 		}
 	});
 }
@@ -163,16 +180,19 @@ function bindMusicPlayerState(hub: TypedHub): void {
 function bindVideoPlayerState(hub: TypedHub): void {
 	hub.on('VideoPlayerState', (...args: unknown[]) => {
 		const payload = args[0] as VideoPlayerStateMsg | undefined;
+
 		for (const e of payload?.events ?? []) {
-			if (e.type !== 'PlayerStateChanged')
-				continue;
+			if (e.type !== 'PlayerStateChanged') continue;
+
 			const state = e.event.state;
-			if (!state)
-				continue;
-			if (state.seq && state.seq <= lastAppliedVideoSeq)
-				continue;
-			if (state.seq)
+
+			if (!state) continue;
+
+			if (state.seq && state.seq <= lastAppliedVideoSeq) continue;
+
+			if (state.seq) {
 				lastAppliedVideoSeq = state.seq;
+			}
 
 			if (state.item) {
 				playbackStore.video.applyState({
@@ -182,10 +202,14 @@ function bindVideoPlayerState(hub: TypedHub): void {
 					duration_ms: state.duration_ms,
 				});
 			}
-			if (typeof state.is_playing === 'boolean')
+
+			if (typeof state.is_playing === 'boolean') {
 				playbackStore.video.applyPlayState(state.is_playing);
-			if (typeof state.progress_ms === 'number')
+			}
+
+			if (typeof state.progress_ms === 'number') {
 				playbackStore.video.applyTime(state.progress_ms);
+			}
 		}
 	});
 }
@@ -193,6 +217,7 @@ function bindVideoPlayerState(hub: TypedHub): void {
 function bindConnectedDevices(hub: TypedHub): void {
 	hub.on('ConnectedDevicesState', (...args: unknown[]) => {
 		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];
+
 		playbackStore.music.applyConnectedDevices(devices);
 	});
 }
@@ -208,6 +233,7 @@ function bindConnectedDevices(hub: TypedHub): void {
 function bindPluginMessage(hub: TypedHub): void {
 	hub.on('PluginMessage', (...args: unknown[]) => {
 		const message = args[0] as { pluginId?: string; type?: string } | undefined;
+
 		console.debug(`[socket] pluginHub PluginMessage`, message?.pluginId, message?.type);
 		invalidatePlugins();
 	});
@@ -215,6 +241,7 @@ function bindPluginMessage(hub: TypedHub): void {
 
 function bindLifecycle(hub: TypedHub, name: HubName): void {
 	const conn = hub.raw();
+
 	conn.onreconnecting(() => {
 		// A reconnect attempt is its own transition. Recorded as a failure, a
 		// hub that dropped and recovered read as a hub that never came back.
@@ -222,33 +249,43 @@ function bindLifecycle(hub: TypedHub, name: HubName): void {
 		connectionState.value = 'reconnecting';
 		console.debug(`[socket] ${name} reconnecting`);
 	});
+
 	conn.onreconnected(() => {
 		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketOpened, HUB_ORDINAL[name], 0, 0, name);
 		connectionState.value = 'connected';
 		console.debug(`[socket] ${name} reconnected — invalidating library cache`);
 		invalidateAllLibrary();
-		if (name === 'videoHub')
+
+		if (name === 'videoHub') {
 			announceVideoHubConnected();
+		}
+
 		// Every PluginMessage sent while the socket was down is gone. The wall
 		// re-reads rather than waiting for the next push, which for a plugin
 		// that pushes once an hour is an hour of a row nobody may see any more.
-		if (name === 'pluginHub')
+		if (name === 'pluginHub') {
 			invalidatePlugins();
+		}
 	});
+
 	conn.onclose((err) => {
 		// With forever-retry, onclose only fires after explicit stop().
 		recordDiagnostic(DiagnosticsCategory.Network, DiagnosticsCode.SocketClosed, HUB_ORDINAL[name], 0, 0, name);
 		console.debug(`[socket] ${name} closed`, err);
-		if (stopRequested)
+
+		if (stopRequested) {
 			connectionState.value = 'idle';
+		}
 	});
 }
 
 export async function connectAll(): Promise<void> {
 	if (!authStore.serverUrl.value || !authStore.accessToken.value) {
 		console.warn('[socket] connectAll called without auth — skipping');
+
 		return;
 	}
+
 	stopRequested = false;
 	connectionState.value = 'connecting';
 
@@ -286,11 +323,15 @@ export async function connectAll(): Promise<void> {
 
 export async function disconnectAll(): Promise<void> {
 	stopRequested = true;
+
 	await Promise.all(
-		[videoHub.value, musicHub.value, deviceHub.value, pluginHub.value].map(h =>
-			h ? h.stop().catch((error: unknown) => recordSwallowed('disconnectAll', error)) : Promise.resolve(),
+		[videoHub.value, musicHub.value, deviceHub.value, pluginHub.value].map((h) =>
+			h
+				? h.stop().catch((error: unknown) => recordSwallowed('disconnectAll', error))
+				: Promise.resolve(),
 		),
 	);
+
 	videoHub.value = null;
 	musicHub.value = null;
 	deviceHub.value = null;

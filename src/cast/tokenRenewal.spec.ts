@@ -34,14 +34,17 @@ describe('the receiver asks the sender for a fresh token before it expires', () 
 	/** A running cast whose token has 60 s left, with the renewal request already sent. */
 	function castUntilRenewalIsDue(): string {
 		const current = token('made-up-user', nowSeconds() + 60);
+
 		expect(authStore.consumeRealHandshake(current, server)).toBe(true);
 		fromSender({});
 		vi.advanceTimersByTime(30_000);
+
 		return current;
 	}
 
 	beforeAll(() => {
 		window.sessionStorage.removeItem('nm_cast_mock');
+
 		vi.stubGlobal('cast', {
 			framework: {
 				CastReceiverContext: {
@@ -57,6 +60,7 @@ describe('the receiver asks the sender for a fresh token before it expires', () 
 				system: { MessageType: { JSON: 'JSON' } },
 			},
 		});
+
 		bootCastReceiver({ push: vi.fn() } as never);
 		onSenderNavigate(navigate);
 	});
@@ -66,9 +70,11 @@ describe('the receiver asks the sender for a fresh token before it expires', () 
 		vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
 		vi.spyOn(console, 'warn').mockImplementation(() => {});
 		vi.spyOn(console, 'debug').mockImplementation(() => {});
+
 		vi.stubGlobal('fetch', vi.fn(async () => {
 			throw new TypeError('Failed to fetch');
 		}));
+
 		sendCustomMessage.mockClear();
 		navigate.mockClear();
 	});

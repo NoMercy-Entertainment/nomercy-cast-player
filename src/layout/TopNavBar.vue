@@ -36,8 +36,11 @@ useFocusGroup({
 	onEscape: (dir) => {
 		if (dir !== 'down')
 			return false;
+
 		const ev = new CustomEvent('cast-receiver:nav-down', {});
+
 		window.dispatchEvent(ev);
+
 		return true;
 	},
 });

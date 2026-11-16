@@ -31,9 +31,12 @@ const PLAYER_SELECTOR = '.tv-overlay-host, .language-screen, .episode-screen, .p
 
 function isInputFocused(): boolean {
 	const el = document.activeElement;
+
 	if (!el)
 		return false;
+
 	const tag = el.tagName;
+
 	return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable;
 }
 
@@ -42,12 +45,13 @@ export function useDPad(router: Router): void {
 		// Every key, bound or not. A remote button the receiver never learned
 		// is invisible to a report that only records the nine it handles.
 		// See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
-		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.KeyPressed, e.repeat ? 1 : 0, 0, 0, e.code || e.key);
+		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.KeyPressed, e.repeat
+			? 1
+			: 0, 0, 0, e.code || e.key);
 
-		if (!DPAD_KEYS.has(e.key))
-			return;
-		if (isInputFocused())
-			return;
+		if (!DPAD_KEYS.has(e.key)) return;
+
+		if (isInputFocused()) return;
 
 		// Any D-pad press resets the idle timer — and if the screensaver is
 		// active, the first press dismisses it without consuming the input
@@ -55,9 +59,12 @@ export function useDPad(router: Router): void {
 		// immediately and the user's next intent (the same key, repeated)
 		// moves focus naturally.
 		const wasScreensaverActive = screensaverStore.active.value;
+
 		screensaverStore.resetIdle();
+
 		if (wasScreensaverActive) {
 			e.preventDefault();
+
 			return;
 		}
 
@@ -83,7 +90,10 @@ export function useDPad(router: Router): void {
 				break;
 			case 'Enter':
 				// TvNavigationBar.kt:331-336: a held OK never re-navigates from the nav bar.
-				handled = e.repeat && document.activeElement?.closest('.topnav') ? true : focusStore.dispatchAction();
+				handled = e.repeat && document.activeElement?.closest('.topnav')
+					? true
+					: focusStore.dispatchAction();
+
 				break;
 			case 'Escape':
 			case 'Back':
@@ -93,8 +103,9 @@ export function useDPad(router: Router): void {
 				break;
 		}
 
-		if (handled)
+		if (handled) {
 			e.preventDefault();
+		}
 	}
 
 	onMounted(() => window.addEventListener('keydown', handler, { capture: true }));
@@ -104,20 +115,26 @@ export function useDPad(router: Router): void {
 function handleBack(router: Router): boolean {
 	// Modal on top? Close it via dispatchEscape.
 	const top = focusStore.activeGroup();
+
 	if (top?.type === 'modal') {
 		return focusStore.dispatchEscape();
 	}
+
 	// A player owns its own back key: it closes a panel, pauses on the pre-screen, or leaves.
 	if (document.querySelector(PLAYER_SELECTOR))
 		return false;
+
 	// Otherwise router back. At root we let cast_shell decide (which
 	// typically does nothing).
 	if (router.currentRoute.value.path !== '/') {
-		if (router.currentRoute.value.path === '/splash')
+		if (router.currentRoute.value.path === '/splash') {
 			router.back();
-		else
+		} else {
 			leaveToPreviousOrHome(router);
+		}
+
 		return true;
 	}
+
 	return false;
 }

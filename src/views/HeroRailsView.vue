@@ -46,27 +46,38 @@ const railsGroup = useFocusGroup({
 	type: 'vertical',
 	restorationKey: props.restorationKey,
 	containerEl,
-	onEscape: dir => (dir === 'up' ? focusTopnav() : false),
+	onEscape: (dir) =>
+		dir === 'up'
+			? focusTopnav()
+			: false,
 });
+
 useNavFocusBridge({ handle: railsGroup, containerEl });
 
 const components = computed<Component[]>(() => props.data ?? []);
 const isInitialLoad = computed(() => props.isLoading && !props.data);
 const errVal = computed(() => (props.error as Error | null) ?? null);
-const heroCard = computed(() => (props.hero ? focusedCardStore.debouncedCard.value : null));
+const heroCard = computed(() =>
+	props.hero
+		? focusedCardStore.debouncedCard.value
+		: null);
 const skeletonRailCount = computed(() => props.skeletonCount ?? 3);
 
 const errorRef = toRef(props, 'error');
+
 useAutoRetry({ error: errorRef, refetch: () => props.refetch() });
 
 // useHeroSeed expects a ref of components; wrap props.data in a watch
 // that funnels into a ref so it picks up reactivity.
 const componentsRef = ref<Component[]>([]);
+
 watch(components, (next) => {
 	componentsRef.value = next;
 }, { immediate: true });
-if (props.hero)
+
+if (props.hero) {
 	useHeroSeed(componentsRef);
+}
 </script>
 
 <template>

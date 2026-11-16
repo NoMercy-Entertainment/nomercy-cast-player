@@ -25,15 +25,21 @@ const cover = computed(() => buildImageUrl(props.data.item_posters?.[0]?.src, SQ
 
 const count = computed(() => {
 	const items = props.data.have_items;
-	return typeof items === 'number' ? `${items} ${items === 1 ? 'item' : 'items'}` : '';
+
+	return typeof items === 'number'
+		? `${items} ${items === 1
+			? 'item'
+			: 'items'}`
+		: '';
 });
 
 useFocusEntry({
 	key: props.id,
 	el,
 	onAction: () => {
-		if (props.data.link)
+		if (props.data.link) {
 			router.push(props.data.link);
+		}
 	},
 });
 </script>

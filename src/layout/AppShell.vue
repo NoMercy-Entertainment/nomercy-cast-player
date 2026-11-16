@@ -23,9 +23,13 @@ const HIDE_NAV_ROUTES = new Set([
 ]);
 
 const showNav = computed(() => {
-	const name = typeof route.name === 'string' ? route.name : '';
+	const name = typeof route.name === 'string'
+		? route.name
+		: '';
+
 	if (!name)
 		return true;
+
 	return !HIDE_NAV_ROUTES.has(name);
 });
 </script>

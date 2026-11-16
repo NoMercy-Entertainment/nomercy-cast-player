@@ -11,6 +11,7 @@ const props = defineProps<{
 }>();
 
 const containerEl = ref<HTMLElement | null>(null);
+
 useFocusGroup({
 	type: 'vertical',
 	restorationKey: `list-${props.id}`,

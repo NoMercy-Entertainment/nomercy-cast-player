@@ -19,6 +19,7 @@ function merged(locale: string): Set<string> {
 describe('dutch words', () => {
 	it('has Dutch text for every English key', () => {
 		const nl = merged('nl');
-		expect([...merged('en')].filter(key => !nl.has(key))).toEqual([]);
+
+		expect([...merged('en')].filter((key) => !nl.has(key))).toEqual([]);
 	});
 });

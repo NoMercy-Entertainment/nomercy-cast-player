@@ -48,8 +48,10 @@ const info = computed(() => data.value ?? null);
 // gradients pick up the movie's poster palette.
 watch(info, (next) => {
 	const palette = next?.color_palette;
+
 	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
 }, { immediate: true });
+
 onBeforeUnmount(() => {
 	clearThemeColor();
 });
@@ -62,9 +64,13 @@ const logoUrl = computed(() => buildImageUrl(info.value?.logo ?? null, { width: 
 
 const watchPath = computed(() => {
 	const link = info.value?.link;
+
 	if (!link)
 		return null;
-	return link.endsWith('/watch') ? link : `${link}/watch`;
+
+	return link.endsWith('/watch')
+		? link
+		: `${link}/watch`;
 });
 
 // Metadata listing a trailer is not a trailer. The button waits until the
@@ -73,20 +79,32 @@ const watchPath = computed(() => {
 const trailerLookup = useTrailerQuery(computed(() => info.value?.videos));
 const readyTrailer = computed(() => {
 	const result = trailerLookup.data.value;
-	return result?.state === 'available' ? result.trailer : null;
+
+	return result?.state === 'available'
+		? result.trailer
+		: null;
 });
 const trailerOpen = ref(false);
 
 const watchlistLabel = computed(() =>
-	info.value?.watchlist ? t('components.buttons.remove_from_watchlist') : t('components.buttons.add_to_watchlist'),
+	info.value?.watchlist
+		? t('components.buttons.remove_from_watchlist')
+		: t('components.buttons.add_to_watchlist'),
 );
 
-const yearText = computed(() => (info.value?.year ? String(info.value.year) : ''));
+const yearText = computed(() =>
+	info.value?.year
+		? String(info.value.year)
+		: '');
 const durationText = computed(() => {
 	const d = info.value?.duration;
+
 	if (typeof d === 'number')
 		return t('views.info.minutes', { count: Math.round(d / 60) });
-	return d ? String(d) : '';
+
+	return d
+		? String(d)
+		: '';
 });
 const ratingText = computed(() =>
 	typeof info.value?.voteAverage === 'number'
@@ -99,7 +117,10 @@ const actionsGroup = useFocusGroup({
 	type: 'vertical',
 	restorationKey: 'info-actions',
 	containerEl: actionsEl,
-	onEscape: dir => (dir === 'up' ? focusTopnav() : false),
+	onEscape: (dir) =>
+		dir === 'up'
+			? focusTopnav()
+			: false,
 });
 
 useNavFocusBridge(actionsGroup);
@@ -114,8 +135,9 @@ useFocusEntry({
 	enabled: computed(() => watchPath.value !== null),
 	el: watchEl,
 	onAction: () => {
-		if (watchPath.value)
+		if (watchPath.value) {
 			router.push(watchPath.value);
+		}
 	},
 });
 
@@ -131,8 +153,9 @@ useFocusEntry({
 // is after this screen mounted, so the focus entry's own Enter listener was
 // never attached to it; the remote's Enter reaches it as a click instead.
 function openTrailer(): void {
-	if (readyTrailer.value)
+	if (readyTrailer.value) {
 		trailerOpen.value = true;
+	}
 }
 
 function closeTrailer(): void {
@@ -153,8 +176,8 @@ useFocusEntry({
 });
 
 async function toggleWatchlist(): Promise<void> {
-	if (isPostingWatchlist.value || !info.value?.link)
-		return;
+	if (isPostingWatchlist.value || !info.value?.link) return;
+
 	isPostingWatchlist.value = true;
 	const link = info.value.link;
 	const newValue = !info.value.watchlist;
@@ -163,26 +186,27 @@ async function toggleWatchlist(): Promise<void> {
 	queryClient.setQueryData<InfoData>(queryKey, (prev) => {
 		if (!prev)
 			return prev;
+
 		return { ...prev, watchlist: newValue };
 	});
 
 	try {
 		const cleanLink = link.replace(API_PREFIX, '').replace(LEADING_SLASH, '');
+
 		await apiFetch<{ status?: string }>({
 			path: `/api/v1/${cleanLink}/watch-list`,
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ add: newValue }),
 		});
-	}
-	catch {
+	} catch {
 		queryClient.setQueryData<InfoData>(queryKey, (prev) => {
 			if (!prev)
 				return prev;
+
 			return { ...prev, watchlist: !newValue };
 		});
-	}
-	finally {
+	} finally {
 		isPostingWatchlist.value = false;
 	}
 }

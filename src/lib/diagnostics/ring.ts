@@ -73,10 +73,12 @@ export class DiagnosticsRing {
 	// Beyond the cap a new name is dropped rather than growing the table forever.
 	private intern(raw: string | undefined): number {
 		const label = censorLabel(raw);
+
 		if (!label)
 			return NO_LABEL;
 
 		const existing = this.labelIndex.get(label);
+
 		if (existing !== undefined)
 			return existing;
 
@@ -85,6 +87,7 @@ export class DiagnosticsRing {
 
 		this.labels.push(label);
 		const index = this.labels.length - 1;
+
 		this.labelIndex.set(label, index);
 
 		return index;
@@ -98,12 +101,15 @@ export class DiagnosticsRing {
 	/** Oldest surviving event first. */
 	snapshot(): DiagnosticsEntry[] {
 		const held = Math.min(this.written, this.capacity);
-		const oldest = this.written <= this.capacity ? 0 : this.written - this.capacity;
+		const oldest = this.written <= this.capacity
+			? 0
+			: this.written - this.capacity;
 		const entries: DiagnosticsEntry[] = [];
 
 		for (let offset = 0; offset < held; offset += 1) {
 			const slot = (oldest + offset) % this.capacity;
 			const labelId = this.labelIds[slot];
+
 			entries.push({
 				atMs: this.atMs[slot],
 				category: DIAGNOSTICS_CATEGORIES[this.categories[slot]],
@@ -111,7 +117,9 @@ export class DiagnosticsRing {
 				a: this.fieldA[slot],
 				b: this.fieldB[slot],
 				c: this.fieldC[slot],
-				label: labelId === NO_LABEL ? undefined : this.labels[labelId],
+				label: labelId === NO_LABEL
+					? undefined
+					: this.labels[labelId],
 			});
 		}
 

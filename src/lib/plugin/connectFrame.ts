@@ -31,5 +31,5 @@ export function playableItems<T extends ConnectItem>(
 	items: T[],
 	access: Record<string, string>,
 ): T[] {
-	return items.filter(item => mayPlay(item.plugin_id, access));
+	return items.filter((item) => mayPlay(item.plugin_id, access));
 }

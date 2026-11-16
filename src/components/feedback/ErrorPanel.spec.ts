@@ -20,9 +20,11 @@ describe('the error panel action works with the D-pad wherever the panel is show
 			props: { error: { message: 'made-up failure' }, retry },
 			attachTo: document.body,
 		});
+
 		await nextTick();
 
 		const button = wrapper.find('button').element;
+
 		expect(warn.mock.calls.flat().join(' ')).not.toContain('used outside FocusGroup');
 		expect(document.activeElement).toBe(button);
 

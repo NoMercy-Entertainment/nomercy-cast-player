@@ -9,6 +9,7 @@ import { authStore } from '@/stores/authStore';
  */
 export function useMeQuery() {
 	const enabled = computed(() => Boolean(authStore.accessToken.value));
+
 	return useQuery({
 		queryKey: ['me'],
 		queryFn: () => fetchSaasUser(authStore.accessToken.value ?? ''),

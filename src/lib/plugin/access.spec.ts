@@ -24,6 +24,6 @@ describe('what the sender\'s account may see on the television', () => {
 			{ id: 'c', access: 'shared' },
 		];
 
-		expect(visibleEntries(entries).map(one => one.id)).toEqual(['a', 'c']);
+		expect(visibleEntries(entries).map((one) => one.id)).toEqual(['a', 'c']);
 	});
 });

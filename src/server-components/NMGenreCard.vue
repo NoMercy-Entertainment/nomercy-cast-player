@@ -19,8 +19,9 @@ useFocusEntry({
 	key: props.id,
 	el,
 	onAction: () => {
-		if (props.data.link)
+		if (props.data.link) {
 			router.push(props.data.link);
+		}
 	},
 });
 </script>

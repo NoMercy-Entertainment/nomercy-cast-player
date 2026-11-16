@@ -34,28 +34,36 @@ interface BridgeArg {
 }
 
 export function useNavFocusBridge(arg: FocusGroupHandle | BridgeArg): void {
-	const handle = 'handleKey' in arg ? arg : arg.handle;
-	const containerRef = 'handleKey' in arg ? null : (arg.containerEl ?? null);
+	const handle = 'handleKey' in arg
+		? arg
+		: arg.handle;
+	const containerRef = 'handleKey' in arg
+		? null
+		: (arg.containerEl ?? null);
 
 	const focusFirstFocusable = (): boolean => {
 		const container = containerRef?.value ?? document;
 		const el = container.querySelector<HTMLElement>('[data-focusable]:not([disabled])');
+
 		if (el) {
 			el.focus();
+
 			return true;
 		}
+
 		return false;
 	};
 
 	const onNavDown = (): void => {
-		if (handle?.focusFirst())
-			return;
+		if (handle?.focusFirst()) return;
+
 		focusFirstFocusable();
 	};
 
 	onMounted(() => {
 		window.addEventListener('cast-receiver:nav-down', onNavDown);
 	});
+
 	onBeforeUnmount(() => {
 		window.removeEventListener('cast-receiver:nav-down', onNavDown);
 	});
@@ -66,5 +74,6 @@ export function focusTopnav(): boolean {
 		if (focusStore.requestFocus(key))
 			return true;
 	}
+
 	return false;
 }

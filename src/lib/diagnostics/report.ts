@@ -5,14 +5,19 @@ function heapLine(facts: DeviceFacts): string {
 	const heap = facts.heapCeilingMb > 0
 		? `${facts.heapUsedMb}MB of ${facts.heapCeilingMb}MB`
 		: 'unavailable';
-	const threads = facts.threads > 0 ? `${facts.threads} threads` : 'threads unavailable';
+	const threads = facts.threads > 0
+		? `${facts.threads} threads`
+		: 'threads unavailable';
+
 	return `heap ${heap}, ${threads}`;
 }
 
 function line(entry: DiagnosticsEntry, startMs: number): string {
 	const offset = Math.round(entry.atMs - startMs);
-	const fields = [entry.a, entry.b, entry.c].filter(value => value !== 0).join(' ');
-	const name = entry.label ? ` ${entry.label}` : '';
+	const fields = [entry.a, entry.b, entry.c].filter((value) => value !== 0).join(' ');
+	const name = entry.label
+		? ` ${entry.label}`
+		: '';
 
 	return `+${offset}ms ${entry.category} ${entry.code}${name} ${fields}`.trimEnd();
 }
@@ -30,7 +35,9 @@ export function renderDiagnosticsReport(
 		`events ${entries.length} held, ${dropped} dropped`,
 		'',
 	];
-	const startMs = entries.length > 0 ? entries[0].atMs : 0;
+	const startMs = entries.length > 0
+		? entries[0].atMs
+		: 0;
 
-	return [...header, ...entries.map(entry => line(entry, startMs))].join('\n');
+	return [...header, ...entries.map((entry) => line(entry, startMs))].join('\n');
 }

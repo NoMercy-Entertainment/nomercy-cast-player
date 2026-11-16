@@ -14,10 +14,12 @@ let _client: QueryClient | null = null;
 
 export function setQueryClient(client: QueryClient): void {
 	_client = client;
+
 	registerQueryClientGetter(() => {
 		if (!_client) {
 			throw new Error('QueryClient not initialized — call setQueryClient first');
 		}
+
 		return _client;
 	});
 }
@@ -26,6 +28,7 @@ export function getQueryClient(): QueryClient {
 	if (!_client) {
 		throw new Error('QueryClient not initialized — call setQueryClient first');
 	}
+
 	return _client;
 }
 

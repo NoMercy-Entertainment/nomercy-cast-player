@@ -5,8 +5,18 @@ import { toPlaylistResponse } from './usePlaylistQuery';
 // The media server's GET /api/v1/{type}/{id}/watch answers with a bare array of
 // VideoPlaylistResponseDto (TvShowsController.Watch), one entry per playable episode.
 const episodes = [
-	{ id: 'a', title: 'Beginner', season: 1, episode: 1 },
-	{ id: 'b', title: 'Challenger', season: 1, episode: 2 },
+	{
+		id: 'a',
+		title: 'Beginner',
+		season: 1,
+		episode: 1,
+	},
+	{
+		id: 'b',
+		title: 'Challenger',
+		season: 1,
+		episode: 2,
+	},
 ];
 
 describe('the watch answer the media server sends', () => {

@@ -8,7 +8,7 @@ const { overlayOptions } = vi.hoisted(() => ({
 
 vi.mock('@nomercy-entertainment/nomercy-video-player', () => ({
 	default: () => {
-		const player: Record<string, unknown> = {
+		const player = {
 			addPlugin: () => player,
 			setup: () => player,
 			on: () => {},
@@ -16,14 +16,17 @@ vi.mock('@nomercy-entertainment/nomercy-video-player', () => ({
 			once: () => {},
 			duration: () => 0,
 			dispose: async () => {},
-		};
+		} as const satisfies Record<string, unknown>;
+
 		return player;
 	},
 	OctopusPlugin: class {},
 }));
+
 vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', () => ({
 	SubtitleOverlayPlugin: class {},
 }));
+
 vi.mock('./TVOverlayPlugin', () => ({
 	TVOverlayPlugin: class {
 		constructor(_player: unknown, options: { onExit: () => void }) {
@@ -50,18 +53,24 @@ async function leaveFrom(path: string[]) {
 			{ path: '/movie/:id/watch', component: page },
 		],
 	});
-	for (const step of path)
+
+	for (const step of path) {
 		await router.push(step);
+	}
+
 	const VideoPlayer = (await import('./VideoPlayer.vue')).default;
 	const wrapper = mount(VideoPlayer, {
 		props: { type: 'movie', id: '1' },
 		global: { plugins: [router] },
 	});
+
 	await flushPromises();
 	overlayOptions[0]!.onExit();
-	await new Promise(resolve => setTimeout(resolve, 100));
+	await new Promise((resolve) => setTimeout(resolve, 100));
 	const landed = router.currentRoute.value.path;
+
 	wrapper.unmount();
+
 	return landed;
 }
 

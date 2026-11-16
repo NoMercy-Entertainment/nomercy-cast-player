@@ -52,8 +52,9 @@ const allowedWords = new Set<string>();
 export function allowDiagnosticsWords(words: Iterable<string>): void {
 	for (const word of words) {
 		for (const part of String(word).split(WHITESPACE)) {
-			if (part.length > 0)
+			if (part.length > 0) {
 				allowedWords.add(part);
+			}
 		}
 	}
 }
@@ -65,10 +66,12 @@ export function resetDiagnosticsWords(): void {
 
 function censorQueryPair(pair: string): string {
 	const equals = pair.indexOf('=');
+
 	if (equals < 0)
 		return pair;
 
 	const key = pair.slice(0, equals);
+
 	if (SHAPE_ONLY_QUERY_KEYS.has(key.toLowerCase()))
 		return pair;
 
@@ -81,13 +84,17 @@ function censorUrl(raw: string): string {
 
 	if (scheme >= 0) {
 		const afterHost = rest.indexOf('/', scheme + 3);
-		rest = afterHost >= 0 ? rest.slice(afterHost) : '/';
+
+		rest = afterHost >= 0
+			? rest.slice(afterHost)
+			: '/';
 	}
 
 	if (HOME_PATH.test(rest) || MEDIA_FILE.test(rest))
 		return '';
 
 	const question = rest.indexOf('?');
+
 	if (question < 0)
 		return rest;
 
@@ -149,7 +156,7 @@ export function censorLabel(label: string | undefined): string | undefined {
 		.trim()
 		.split(WHITESPACE)
 		.map(censorPart)
-		.filter(part => part.length > 0);
+		.filter((part) => part.length > 0);
 
 	if (kept.length === 0)
 		return undefined;

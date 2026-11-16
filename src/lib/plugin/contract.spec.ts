@@ -21,7 +21,12 @@ describe('what the receiver asks the server for', () => {
 				id: 'radio',
 				name: 'Internet Radio',
 				access: 'owned',
-				nav_entries: [{ section: 'music', label: 'Stations', route: '/', slot: 'home-row' }],
+				nav_entries: [{
+					section: 'music',
+					label: 'Stations',
+					route: '/',
+					slot: 'home-row',
+				}],
 			}],
 		});
 
@@ -33,7 +38,7 @@ describe('what the receiver asks the server for', () => {
 	it('keeps the readable plugins when one of them is nonsense', () => {
 		const plugins = decodePlacements({ data: [{ nav_entries: [] }, { id: 'radio' }] });
 
-		expect(plugins.map(one => one.id)).toEqual(['radio']);
+		expect(plugins.map((one) => one.id)).toEqual(['radio']);
 	});
 
 	it('names a plugin by its id when the server sent no name', () => {

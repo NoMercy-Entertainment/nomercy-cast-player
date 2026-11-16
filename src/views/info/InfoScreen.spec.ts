@@ -18,10 +18,12 @@ describe('the Info screen watchlist button on a cold load', () => {
 
 	it('toggles the watchlist on a fresh (uncached) load when clicked', async () => {
 		let resolveInfo!: (value: unknown) => void;
+
 		apiFetch.mockImplementation(({ path }: { path: string }) => {
 			if (path.includes('/watch-list')) {
 				return Promise.resolve({ status: 'ok' });
 			}
+
 			return new Promise((resolve) => {
 				resolveInfo = resolve;
 			});
@@ -44,12 +46,14 @@ describe('the Info screen watchlist button on a cold load', () => {
 				watchlist: false,
 			},
 		});
+
 		await vi.waitFor(() => expect(wrapper.text()).toContain('Add to watchlist'));
 
 		await wrapper.get('.nm-pill-secondary').trigger('click');
-		await vi.waitFor(() => expect(apiFetch.mock.calls.some(call => (call[0] as { path: string }).path.includes('/watch-list'))).toBe(true));
+		await vi.waitFor(() => expect(apiFetch.mock.calls.some((call) => (call[0] as { path: string }).path.includes('/watch-list'))).toBe(true));
 
-		const watchlistCall = apiFetch.mock.calls.find(call => (call[0] as { path: string }).path.includes('/watch-list'));
+		const watchlistCall = apiFetch.mock.calls.find((call) => (call[0] as { path: string }).path.includes('/watch-list'));
+
 		expect(JSON.parse((watchlistCall![0] as { body: string }).body)).toEqual({ add: true });
 	});
 });

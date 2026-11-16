@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { collectDeviceFacts } from './deviceFacts';
 import { renderDiagnosticsReport } from './report';
 
-const CAST_UA = 'Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) '
-	+ 'Chrome/120.0.0.0 Safari/537.36 CrKey/1.56.500000';
+const CAST_UA = 'Mozilla/5.0 (X11; Linux armv7l) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+	'Chrome/120.0.0.0 Safari/537.36 CrKey/1.56.500000';
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -31,6 +31,7 @@ describe('collectDeviceFacts', () => {
 
 	it('reports heap figures when the engine exposes them', () => {
 		vi.stubGlobal('navigator', { userAgent: CAST_UA });
+
 		vi.stubGlobal('performance', {
 			now: () => 0,
 			memory: {

@@ -12,7 +12,9 @@ type Listener = (event: { senderId?: string; data: unknown }) => void;
 function fakeContext() {
 	const listeners = new Map<string, Listener>();
 	const sendCustomMessage = vi.fn();
+
 	attachMessageBus({ addCustomMessageListener: (ns, fn) => listeners.set(ns, fn), sendCustomMessage });
+
 	return { ask: (data: unknown) => listeners.get(NAMESPACE_GENERAL)!({ senderId: 'probe', data }), sendCustomMessage };
 }
 
@@ -31,11 +33,18 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 
 		expect(sendCustomMessage).toHaveBeenCalledTimes(1);
 		const [ns, sender, answer] = sendCustomMessage.mock.calls[0]!;
+
 		expect(ns).toBe(NAMESPACE_GENERAL);
 		expect(sender).toBe('probe');
 		expect(answer.diagnostics.route).toBe(window.location.pathname);
 		expect(answer.diagnostics.videos).toHaveLength(1);
-		expect(answer.diagnostics.videos[0]).toEqual(expect.objectContaining({ paused: true, currentTime: 0, error: null }));
+
+		expect(answer.diagnostics.videos[0]).toEqual(expect.objectContaining({
+			paused: true,
+			currentTime: 0,
+			error: null,
+		}));
+
 		expect(Object.keys(answer.diagnostics.codecs)).toEqual(expect.arrayContaining(['video/mp4; codecs="hvc1.2.4.L120.B0"', 'video/mp4; codecs="avc1.640028"']));
 		expect(answer.diagnostics.events.at(-1)).toEqual(expect.objectContaining({ code: 'SourceRequested' }));
 	});
@@ -46,7 +55,11 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 
 		ask({ diagnostics: true });
 
-		expect(sendCustomMessage.mock.calls[0]![2].diagnostics.osd).toEqual({ visible: true, elapsed: '2:04', remaining: '-21:58' });
+		expect(sendCustomMessage.mock.calls[0]![2].diagnostics.osd).toEqual({
+			visible: true,
+			elapsed: '2:04',
+			remaining: '-21:58',
+		});
 	});
 
 	it('reports no overlay when the player has none mounted', () => {
@@ -69,7 +82,10 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 	it('names the pending crash: class, message and the first 5 stack lines, without a query string', () => {
 		installCrashHandlers();
 		const error = new TypeError('cannot read x of https://example.com/api?access_token=secret-placeholder-token');
-		error.stack = ['TypeError: cannot read x', ...Array.from({ length: 8 }, (_, i) => `    at frame${i} (https://example.com/assets/app.js?v=secret-placeholder-token:1:${i})`)].join('\n');
+
+		error.stack = ['TypeError: cannot read x', ...Array.from({ length: 8 }, (_, i) =>
+			`    at frame${i} (https://example.com/assets/app.js?v=secret-placeholder-token:1:${i})`)].join('\n');
+
 		window.dispatchEvent(new ErrorEvent('error', { error }));
 		const { ask, sendCustomMessage } = fakeContext();
 
@@ -77,6 +93,7 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 
 		const answer = sendCustomMessage.mock.calls[0]![2];
 		const crash = answer.diagnostics.crashes.at(-1);
+
 		expect(crash.name).toBe('TypeError');
 		expect(crash.message).toContain('cannot read x');
 		expect(crash.stack.split('\n')).toHaveLength(5);
@@ -93,14 +110,23 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 			'<div class="panel pre-screen" style="opacity: 0; z-index: 3"><div class="pre-screen-buttons"><button>Play</button></div></div>',
 			'<div class="nm-hero-rails-screen" style="display: none"></div>',
 		].join('');
+
 		const { ask, sendCustomMessage } = fakeContext();
 
 		ask({ diagnostics: true });
 
 		const layers = sendCustomMessage.mock.calls[0]![2].diagnostics.layers;
+
 		expect(layers['.playback-osd'].count).toBe(2);
 		expect(layers['.playback-osd'].items.map((item: { zIndex: string }) => item.zIndex)).toEqual(['5', '7']);
-		expect(layers['.pre-screen'].items[0]).toEqual(expect.objectContaining({ className: 'panel pre-screen', opacity: '0', zIndex: '3', children: 1 }));
+
+		expect(layers['.pre-screen'].items[0]).toEqual(expect.objectContaining({
+			className: 'panel pre-screen',
+			opacity: '0',
+			zIndex: '3',
+			children: 1,
+		}));
+
 		expect(layers['.pre-screen-buttons button'].count).toBe(1);
 		expect(layers['.nm-hero-rails-screen'].items[0].display).toBe('none');
 		expect(layers['.empty-state'].count).toBe(0);

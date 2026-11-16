@@ -44,24 +44,35 @@ watch(list, (next) => {
 	const palette = next?.color_palette as Record<string, unknown> | undefined;
 	const candidate = (palette?.cover ?? palette?.image ?? palette?.backdrop ?? palette?.profile) as
 		Parameters<typeof applyThemeColor>[0];
+
 	applyThemeColor(candidate);
 }, { immediate: true });
+
 onBeforeUnmount(() => {
 	clearThemeColor();
 });
 
 const trackCount = computed(() => list.value?.tracks?.length ?? 0);
 const totalDurationText = computed(() => {
-	const total
-		= list.value?.tracks?.reduce((acc, t) => {
-			const d = typeof t.duration === 'number' ? t.duration : Number(t.duration ?? 0);
-			return acc + (Number.isFinite(d) ? d : 0);
+	const total =
+		list.value?.tracks?.reduce((acc, t) => {
+			const d = typeof t.duration === 'number'
+				? t.duration
+				: Number(t.duration ?? 0);
+
+			return acc + (Number.isFinite(d)
+				? d
+				: 0);
 		}, 0) ?? 0;
+
 	if (total <= 0)
 		return '';
+
 	const mins = Math.round(total / 60);
+
 	if (mins < 60)
 		return `${mins} min`;
+
 	return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 });
 
@@ -78,16 +89,20 @@ const startError = ref<string | null>(null);
 
 const isCurrentList = computed(() => {
 	const current = playbackStore.music.track.value;
+
 	if (!current || !list.value)
 		return false;
-	return (list.value.tracks ?? []).some(t => t.id === current.id);
+
+	return (list.value.tracks ?? []).some((t) => t.id === current.id);
 });
 
 const playButtonLabel = computed(() => {
 	if (isCurrentList.value && playbackStore.music.playing.value)
 		return t('common.pause');
+
 	if (isCurrentList.value)
 		return t('views.music.resume');
+
 	return t('common.play');
 });
 
@@ -96,21 +111,28 @@ function onPlayClick(): void {
 	// play/pause. Otherwise start the list from the first track.
 	if (isCurrentList.value) {
 		const engine = musicSyncBridge.current();
+
 		if (engine) {
-			if (playbackStore.music.playing.value)
+			if (playbackStore.music.playing.value) {
 				engine.pause();
-			else
+			} else {
 				engine.play();
+			}
+
 			router.push('/now-playing');
+
 			return;
 		}
 	}
+
 	const first = list.value?.tracks?.[0];
-	if (!first?.id)
-		return;
+
+	if (!first?.id) return;
+
 	void startPlayback(first.id).then((started) => {
-		if (started)
+		if (started) {
 			router.push('/now-playing');
+		}
 	});
 }
 
@@ -126,11 +148,14 @@ const isFavorite = computed(() => favoriteOverride.value ?? list.value?.favorite
 
 async function onLikeClick(): Promise<void> {
 	const link = list.value?.link;
-	if (!link)
-		return;
+
+	if (!link) return;
+
 	const before = isFavorite.value;
+
 	favoriteOverride.value = !before;
 	const cleanLink = link.replace(API_PREFIX, '').replace(LEADING_SLASH, '');
+
 	try {
 		await apiFetch({
 			path: `/api/v1/${cleanLink}/like`,
@@ -138,8 +163,7 @@ async function onLikeClick(): Promise<void> {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ value: !before }),
 		});
-	}
-	catch {
+	} catch {
 		favoriteOverride.value = before;
 	}
 }
@@ -152,6 +176,7 @@ useFocusEntry({
 	el: backEl,
 	onAction: () => router.back(),
 });
+
 useFocusEntry({
 	key: 'music-list-like',
 	group: listGroup,
@@ -159,6 +184,7 @@ useFocusEntry({
 	el: likeEl,
 	onAction: () => void onLikeClick(),
 });
+
 useFocusEntry({
 	key: 'music-list-about',
 	group: listGroup,
@@ -180,20 +206,27 @@ function onTrackClick(trackId: string): void {
 	// APK toggles play/pause when clicking the currently-playing track,
 	// otherwise starts a new playback session.
 	const current = playbackStore.music.track.value;
+
 	if (current?.id === trackId) {
 		const engine = musicSyncBridge.current();
+
 		if (engine) {
-			if (playbackStore.music.playing.value)
+			if (playbackStore.music.playing.value) {
 				engine.pause();
-			else
+			} else {
 				engine.play();
+			}
 		}
+
 		router.push('/now-playing');
+
 		return;
 	}
+
 	void startPlayback(trackId).then((started) => {
-		if (started)
+		if (started) {
 			router.push('/now-playing');
+		}
 	});
 }
 
@@ -212,62 +245,83 @@ watch(() => list.value?.tracks ?? [], (tracks, _previous, onCleanup) => {
 		isFocused: () => document.activeElement === trackRowEl(index),
 		focus: () => {
 			const el = trackRowEl(index);
+
 			el?.focus({ preventScroll: false });
-			el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+			el?.scrollIntoView({
+				behavior: 'smooth',
+				block: 'nearest',
+				inline: 'center',
+			});
 		},
 		blur: () => trackRowEl(index)?.blur(),
 		action: () => {
-			if (track.id)
+			if (track.id) {
 				onTrackClick(track.id);
+			}
 		},
 	}));
-	onCleanup(() => unregister.forEach(off => off()));
+
+	onCleanup(() => unregister.forEach((off) => off()));
 }, { immediate: true });
 
 // The group picks its first focus on mount. A list that loads later has no
 // Play button at that time, so focus it once the list is on screen.
 watch(list, (next) => {
-	if (!next)
-		return;
+	if (!next) return;
+
 	void nextTick(() => {
-		if (document.activeElement === document.body)
+		if (document.activeElement === document.body) {
 			listGroup.focusByKey('music-list-play');
+		}
 	});
 });
 
 async function startPlayback(trackId: string): Promise<boolean> {
 	const hub = socketStore.musicHub.value;
+
 	if (!hub || !id.value || !trackId) {
 		startError.value = t('views.music.start_error_offline');
+
 		return false;
 	}
+
 	try {
 		// The server reports a refused start as { ok: false } and does not throw.
 		const result = await hub.invoke('StartPlaybackCommand', type.value, id.value, trackId) as { ok?: boolean } | undefined;
+
 		if (result?.ok === false) {
 			startError.value = t('views.music.start_error');
+
 			return false;
 		}
+
 		startError.value = null;
+
 		return true;
-	}
-	catch {
+	} catch {
 		startError.value = t('views.music.start_error');
+
 		return false;
 	}
 }
 
 function formatDuration(d: number | string | undefined): string {
-	const seconds = typeof d === 'number' ? d : Number(d ?? 0);
+	const seconds = typeof d === 'number'
+		? d
+		: Number(d ?? 0);
+
 	if (!Number.isFinite(seconds) || seconds <= 0)
 		return '';
+
 	const m = Math.floor(seconds / 60);
 	const s = Math.floor(seconds % 60);
+
 	return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function trackArtistText(track: MusicTrack): string {
-	return (track.artist_track ?? []).map(a => a.name ?? '').filter(Boolean).join(', ');
+	return (track.artist_track ?? []).map((a) => a.name ?? '').filter(Boolean).join(', ');
 }
 </script>
 

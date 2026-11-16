@@ -14,9 +14,24 @@ export interface FocusedCardData {
 	have_items?: number;
 	number_of_items?: number;
 	color_palette?: {
-		backdrop?: { dominant?: string; light?: string; dark?: string; primary?: string };
-		poster?: { dominant?: string; light?: string; dark?: string; primary?: string };
-		logo?: { dominant?: string; light?: string; dark?: string; primary?: string };
+		backdrop?: {
+			dominant?: string;
+			light?: string;
+			dark?: string;
+			primary?: string;
+		};
+		poster?: {
+			dominant?: string;
+			light?: string;
+			dark?: string;
+			primary?: string;
+		};
+		logo?: {
+			dominant?: string;
+			light?: string;
+			dark?: string;
+			primary?: string;
+		};
 	};
 }
 
@@ -29,6 +44,7 @@ let lastNavDir: 'horizontal' | 'vertical' = 'horizontal';
 
 function applyPalette(card: FocusedCardData | null): void {
 	const palette = card?.color_palette;
+
 	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
 }
 
@@ -37,7 +53,11 @@ watch(_activeCard, (next) => {
 		window.clearTimeout(pending);
 		pending = null;
 	}
-	const delay = lastNavDir === 'vertical' ? VERTICAL_DEBOUNCE_MS : HORIZONTAL_DEBOUNCE_MS;
+
+	const delay = lastNavDir === 'vertical'
+		? VERTICAL_DEBOUNCE_MS
+		: HORIZONTAL_DEBOUNCE_MS;
+
 	pending = window.setTimeout(() => {
 		_debouncedCard.value = next;
 		applyPalette(next);

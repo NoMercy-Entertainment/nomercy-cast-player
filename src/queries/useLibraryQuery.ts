@@ -23,17 +23,23 @@ async function fetchLibrary(path: string): Promise<Component[]> {
 		path: `/api/v1/${cleanPath}?version=lolomo`,
 		method: 'GET',
 	});
+
 	if (response && typeof response === 'object' && 'data' in response) {
 		const data = (response as { data: unknown }).data;
+
 		if (Array.isArray(data))
 			return data as Component[];
+
 		if (data && typeof data === 'object' && 'components' in data)
 			return (data as LibraryResponse).components ?? [];
 	}
+
 	if (Array.isArray(response))
 		return response as Component[];
+
 	if (response && typeof response === 'object' && 'components' in response)
 		return (response as LibraryResponse).components ?? [];
+
 	return [];
 }
 

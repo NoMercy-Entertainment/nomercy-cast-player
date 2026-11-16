@@ -82,8 +82,10 @@ async function fetchInfo(type: string, id: string): Promise<InfoData> {
 		path: `/api/v1/${type}/${id}`,
 		method: 'GET',
 	});
+
 	if (response && typeof response === 'object' && 'data' in response && response.data)
 		return response.data;
+
 	return response as InfoData;
 }
 

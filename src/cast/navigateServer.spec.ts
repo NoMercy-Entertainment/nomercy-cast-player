@@ -16,6 +16,7 @@ const WatchRoute = '/tv/60808/watch?cast=true&position=0';
 
 function jwt(): string {
 	const part = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+
 	return `${part({ alg: 'none' })}.${part({ sub: '00000000-0000-4000-8000-000000000009', exp: Math.floor(Date.now() / 1000) + 3600 })}.sig`;
 }
 
@@ -24,14 +25,16 @@ function installFakeCast(): MessageListener[] {
 	const context = {
 		addEventListener: vi.fn(),
 		addCustomMessageListener: (ns: string, fn: MessageListener) => {
-			if (ns === NAMESPACE_GENERAL)
+			if (ns === NAMESPACE_GENERAL) {
 				listeners.push(fn);
+			}
 		},
 		sendCustomMessage: vi.fn(),
 		getApplicationData: vi.fn(),
 		getSenders: () => [],
 		start: vi.fn(),
 	};
+
 	vi.stubGlobal('cast', {
 		framework: {
 			CastReceiverContext: { getInstance: () => context },
@@ -39,6 +42,7 @@ function installFakeCast(): MessageListener[] {
 			system: { MessageType: { JSON: 'JSON' } },
 		},
 	});
+
 	return listeners;
 }
 
@@ -47,8 +51,10 @@ function stubNetwork(reachable: string[]): void {
 	vi.stubGlobal('fetch', vi.fn(async (url: string) => {
 		if (url.endsWith('/v1/app_config'))
 			return new Response(JSON.stringify({ data: { servers: [FirstServer, SecondServer] } }), { status: 200 });
-		if (reachable.some(base => url.startsWith(base)))
+
+		if (reachable.some((base) => url.startsWith(base)))
 			return new Response('{}', { status: 200 });
+
 		throw new TypeError('Failed to fetch');
 	}));
 }
@@ -57,9 +63,17 @@ function stubNetwork(reachable: string[]): void {
 async function castFromPhone(server: { server_id?: string; server_url?: string }): Promise<ReturnType<typeof vi.fn>> {
 	const push = vi.fn(async () => {});
 	const listeners = installFakeCast();
+
 	bootCastReceiver({ push } as never);
-	for (const fn of listeners)
-		fn({ senderId: 'sender-1', data: { route: WatchRoute, token: jwt(), ...server } });
+
+	for (const fn of listeners) {
+		fn({ senderId: 'sender-1', data: {
+			route: WatchRoute,
+			token: jwt(),
+			...server,
+		} });
+	}
+
 	return push;
 }
 
@@ -110,6 +124,7 @@ describe('a cast from the phone plays from the right media server (cast-player#6
 		vi.stubGlobal('fetch', vi.fn(async (url: string) => {
 			if (url.endsWith('/v1/app_config'))
 				throw new TypeError('Failed to fetch');
+
 			return new Response('{}', { status: 200 });
 		}));
 

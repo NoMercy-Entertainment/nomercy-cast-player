@@ -10,6 +10,7 @@ Element.prototype.scrollIntoView = vi.fn();
 function fakePlayer() {
 	const handlers = new Map<string, Array<(data?: unknown) => void>>();
 	const container = document.createElement('div');
+
 	document.body.append(container);
 
 	return {
@@ -18,12 +19,13 @@ function fakePlayer() {
 			handlers.set(event, [...(handlers.get(event) ?? []), handler]);
 		},
 		off(event: string, handler?: (data?: unknown) => void) {
-			handlers.set(event, (handlers.get(event) ?? []).filter(entry => handler && entry !== handler));
+			handlers.set(event, (handlers.get(event) ?? []).filter((entry) => handler && entry !== handler));
 		},
 		// Synchronous dispatch, same as the real player's CustomEvent-backed emit.
 		emit: vi.fn((event: string, payload?: unknown) => {
-			for (const handler of [...(handlers.get(event) ?? [])])
+			for (const handler of [...(handlers.get(event) ?? [])]) {
 				handler(payload);
+			}
 		}),
 		play: vi.fn(),
 		pause: vi.fn(),
@@ -49,6 +51,7 @@ describe('back on the pre-screen exits once, without recursing', () => {
 	it('calls the exit path exactly once and does not overflow the stack', () => {
 		const player = fakePlayer();
 		const onExit = vi.fn();
+
 		plugin = new TVOverlayPlugin(player as never, { onExit });
 		plugin.attach();
 
@@ -62,9 +65,11 @@ describe('the overlay host', () => {
 	it('mounts the panels in a host inside the player container and removes it on detach', () => {
 		const player = fakePlayer();
 		const plugin = new TVOverlayPlugin(player as never, {});
+
 		plugin.attach();
 
 		const host = player.container.querySelector('.tv-overlay-host');
+
 		expect(host).not.toBeNull();
 		expect(host!.querySelector('.pre-screen')).not.toBeNull();
 
@@ -78,10 +83,26 @@ describe('server credits on the overlay', () => {
 	it('offers the next episode before an epilogue and advances at content end', () => {
 		const player = fakePlayer();
 		const next = vi.fn();
-		const item = { id: 'a', title: 'A', skip_segments: [{ type: 'Credits', credits_start: 80, content_end: 110 }] };
+		const item = {
+			id: 'a',
+			title: 'A',
+			skip_segments: [{
+				type: 'Credits',
+				credits_start: 80,
+				content_end: 110,
+			}],
+		};
 		let position = 79;
-		const castPlayer = { ...player, next, time: () => position, queue: () => [item, { id: 'b', title: 'B' }], item: () => item, index: () => 0 };
+		const castPlayer = {
+			...player,
+			next,
+			time: () => position,
+			queue: () => [item, { id: 'b', title: 'B' }],
+			item: () => item,
+			index: () => 0,
+		};
 		const plugin = new TVOverlayPlugin(castPlayer as never, { skipPreScreen: true });
+
 		plugin.attach();
 		player.emit('time');
 		expect(player.container.textContent).not.toContain('Next episode');
@@ -140,12 +161,14 @@ describe('picking subtitles in the language panel', () => {
 
 	it('turns subtitles off with null, which the 2.x player takes instead of -1', () => {
 		const player = fakePlayer();
+
 		player.subtitles.mockReturnValue([{ id: 'sub-a', label: 'English' }] as never);
 		plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true });
 		plugin.attach();
 
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
-		const off = [...document.querySelectorAll<HTMLElement>('.language-screen button')].find(button => button.textContent === 'Off');
+		const off = [...document.querySelectorAll<HTMLElement>('.language-screen button')].find((button) => button.textContent === 'Off');
+
 		expect(off).toBeDefined();
 		off!.click();
 
@@ -154,12 +177,14 @@ describe('picking subtitles in the language panel', () => {
 
 	it('picks a subtitle by its list position, because 2.x track ids are strings', () => {
 		const player = fakePlayer();
+
 		player.subtitles.mockReturnValue([{ id: 'sub-a', label: 'English' }, { id: 'sub-b', label: 'Dutch' }] as never);
 		plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true });
 		plugin.attach();
 
 		document.dispatchEvent(new KeyboardEvent('keydown', { key: 'l', bubbles: true }));
-		const dutch = [...document.querySelectorAll<HTMLElement>('.language-screen button')].find(button => button.textContent === 'Dutch');
+		const dutch = [...document.querySelectorAll<HTMLElement>('.language-screen button')].find((button) => button.textContent === 'Dutch');
+
 		dutch!.click();
 
 		expect(player.subtitle).toHaveBeenCalledWith(1);
@@ -168,14 +193,20 @@ describe('picking subtitles in the language panel', () => {
 
 describe('back after a resume launch', () => {
 	const item = { id: 'a', title: 'Manner Movie' };
-	const buttons = () => [...document.querySelectorAll('.pre-screen-buttons button')].map(button => button.textContent);
+	const buttons = () => [...document.querySelectorAll('.pre-screen-buttons button')].map((button) => button.textContent);
 
 	function resumedPlayer(time: number) {
 		const player = fakePlayer();
+
 		player.time.mockReturnValue(time);
 		player.audioTracks.mockReturnValue([{ label: 'English' }] as never);
 		player.subtitles.mockReturnValue([{ label: 'English' }] as never);
-		return { ...player, item: () => item, queue: () => [item] };
+
+		return {
+			...player,
+			item: () => item,
+			queue: () => [item],
+		};
 	}
 
 	afterEach(() => {
@@ -185,6 +216,7 @@ describe('back after a resume launch', () => {
 	it('pauses and shows the title, Restart and the language button', () => {
 		const player = resumedPlayer(2576.282);
 		const plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true, resumeAt: 2576.282 });
+
 		plugin.attach();
 		player.emit('play');
 
@@ -202,17 +234,26 @@ describe('back after a resume launch', () => {
 		const second = { id: 'b', title: 'Second Episode' };
 		const player = { ...resumedPlayer(2576.282), queue: () => [item, second] };
 		const onExit = vi.fn();
-		const plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true, resumeAt: 2576.282, onExit });
+		const plugin = new TVOverlayPlugin(player as never, {
+			skipPreScreen: true,
+			resumeAt: 2576.282,
+			onExit,
+		});
+
 		plugin.attach();
 		player.emit('play');
 		player.emit('back');
 
 		const button = [...document.querySelectorAll<HTMLButtonElement>('.pre-screen-buttons button')]
-			.find(entry => entry.textContent === label);
+			.find((entry) => entry.textContent === label);
+
 		expect(button).toBeDefined();
 		button!.click();
-		const panel = label === 'Episodes' ? 'panel episode' : 'panel language';
-		expect(diagnosticsRing.snapshot().map(entry => entry.label)).toContain(panel);
+		const panel = label === 'Episodes'
+			? 'panel episode'
+			: 'panel language';
+
+		expect(diagnosticsRing.snapshot().map((entry) => entry.label)).toContain(panel);
 		expect(document.querySelector('.pre-screen-title')).toBeNull();
 
 		player.emit('back');
@@ -225,6 +266,7 @@ describe('back after a resume launch', () => {
 	it('opens a launch without a resume position on Play and the title, without Restart', () => {
 		const player = resumedPlayer(0);
 		const plugin = new TVOverlayPlugin(player as never, {});
+
 		plugin.attach();
 
 		expect(document.querySelector('.pre-screen-title')?.textContent).toBe('Manner Movie');
@@ -240,7 +282,7 @@ describe('the overlay says why a panel did not appear (a TV has no DevTools)', (
 	});
 
 	function labels(): Array<string | undefined> {
-		return diagnosticsRing.snapshot().map(entry => entry.label);
+		return diagnosticsRing.snapshot().map((entry) => entry.label);
 	}
 
 	it('records a panel that mounted, by its name', () => {
@@ -254,6 +296,7 @@ describe('the overlay says why a panel did not appear (a TV has no DevTools)', (
 
 	it('records a panel that could not open because the overlay host is gone', () => {
 		const plugin = new TVOverlayPlugin(fakePlayer() as never, { skipPreScreen: true });
+
 		plugin.attach();
 		(plugin as unknown as { host: HTMLElement | null }).host = null;
 
@@ -267,8 +310,13 @@ describe('the overlay says why a panel did not appear (a TV has no DevTools)', (
 		const queue = vi.fn(() => {
 			throw new TypeError('boom');
 		});
-		const player = { ...fakePlayer(), queue, item: () => ({ id: 1, title: 'Made up' }) };
+		const player = {
+			...fakePlayer(),
+			queue,
+			item: () => ({ id: 1, title: 'Made up' }),
+		};
 		const plugin = new TVOverlayPlugin(player as never, { skipPreScreen: true });
+
 		plugin.attach();
 
 		expect(() => player.emit('back')).not.toThrow();

@@ -8,6 +8,7 @@ import { decls } from '../cssDecl';
 
 vi.mock('@/lib/diagnostics/sender', async () => {
 	const { ref } = await import('vue');
+
 	return {
 		diagnosticsSender: {
 			state: ref('idle'),
@@ -29,21 +30,37 @@ let wrapper: VueWrapper;
 async function boot(): Promise<void> {
 	const Host = defineComponent({
 		setup() {
-			useDPad({ back: vi.fn(), replace: vi.fn(), currentRoute: { value: { path: '/profile/settings' } } } as never);
+			useDPad({
+				back: vi.fn(),
+				replace: vi.fn(),
+				currentRoute: { value: { path: '/profile/settings' } },
+			} as never);
+
 			return () => h(SettingsPanes);
 		},
 	});
-	wrapper = mount(Host, { attachTo: document.body, global: { stubs: { RouterLink: true, teleport: true, SetupBackdrop: true } } });
+
+	wrapper = mount(Host, { attachTo: document.body, global: { stubs: {
+		RouterLink: true,
+		teleport: true,
+		SetupBackdrop: true,
+	} } });
+
 	await flushPromises();
 }
 
 function press(key: string): void {
-	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+	(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', {
+		key,
+		bubbles: true,
+		cancelable: true,
+	}));
 }
 
 const cats = (): HTMLElement[] => Array.from(document.querySelectorAll<HTMLElement>('.category-item'));
+
 function row(text: string): HTMLElement | undefined {
-	return Array.from(document.querySelectorAll<HTMLElement>('.settings-right button')).find(b => b.textContent?.includes(text));
+	return Array.from(document.querySelectorAll<HTMLElement>('.settings-right button')).find((b) => b.textContent?.includes(text));
 }
 
 afterEach(() => {
@@ -54,8 +71,10 @@ afterEach(() => {
 describe('settings two-pane layout matches AppSettingsScreen.kt', () => {
 	it('settings.layout: left pane 320 wide with 32 end pad, right pane takes the rest (:258-333)', () => {
 		const l = decls(`${P}SettingsPanes.vue`, '.settings-left');
+
 		expect([l.width, l['padding-right'], l['box-sizing']]).toEqual(['320px', '32px', 'content-box']);
 		const p = decls(`${P}SettingsPanes.vue`, '.settings-panes');
+
 		expect(p.display).toBe('flex');
 		expect(decls(`${P}SettingsPanes.vue`, '.settings-right').flex).toBe('1');
 	});
@@ -68,6 +87,7 @@ describe('settings two-pane layout matches AppSettingsScreen.kt', () => {
 	it('settings.category: pad 14/20, r10, selected fill .25, focused .45, 3 px ring (:528-554)', () => {
 		const f = `${P}SettingsCategories.vue`;
 		const c = decls(f, '.category-item');
+
 		expect([c.padding, c['border-radius']]).toEqual(['14px 20px', '10px']);
 		expect(decls(f, '.category-item.selected::before').opacity).toBe('0.25');
 		expect(decls(f, '.category-item.selected:focus-visible::before').opacity).toBe('0.45');
@@ -78,8 +98,8 @@ describe('settings two-pane layout matches AppSettingsScreen.kt', () => {
 describe('settings categories behave like the KMP TV menu', () => {
 	it('lists display, playback and privacy, the first one open', async () => {
 		await boot();
-		expect(cats().map(c => c.textContent?.trim())).toEqual(['Display', 'Playback', 'Privacy']);
-		expect(cats().map(c => c.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
+		expect(cats().map((c) => c.textContent?.trim())).toEqual(['Display', 'Playback', 'Privacy']);
+		expect(cats().map((c) => c.getAttribute('aria-selected'))).toEqual(['true', 'false', 'false']);
 	});
 
 	it('shows only the open category rows', async () => {

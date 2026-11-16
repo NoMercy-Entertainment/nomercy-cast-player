@@ -35,41 +35,54 @@ useFocusEntry({
 	el: shuffleEl,
 	onAction: () => {
 		const next = !playbackStore.music.shuffle.value;
+
 		playbackStore.music.applyShuffle(next);
 	},
 });
+
 useFocusEntry({
 	key: 'np-prev',
 	group: controlsGroup,
 	el: prevEl,
 	onAction: () => musicSyncBridge.current()?.previous(),
 });
+
 useFocusEntry({
 	key: 'np-play',
 	group: controlsGroup,
 	el: playEl,
 	onAction: () => {
 		const e = musicSyncBridge.current();
-		if (!e)
-			return;
-		if (playbackStore.music.playing.value)
+
+		if (!e) return;
+
+		if (playbackStore.music.playing.value) {
 			e.pause();
-		else e.play();
+		} else {
+			e.play();
+		}
 	},
 });
+
 useFocusEntry({
 	key: 'np-next',
 	group: controlsGroup,
 	el: nextEl,
 	onAction: () => musicSyncBridge.current()?.next(),
 });
+
 useFocusEntry({
 	key: 'np-repeat',
 	group: controlsGroup,
 	el: repeatEl,
 	onAction: () => {
 		const cur = playbackStore.music.repeat.value;
-		const next = cur === 'off' ? 'all' : cur === 'all' ? 'one' : 'off';
+		const next = cur === 'off'
+			? 'all'
+			: cur === 'all'
+				? 'one'
+				: 'off';
+
 		playbackStore.music.applyRepeat(next);
 	},
 });
@@ -84,7 +97,11 @@ const repeatLabel = computed(() => ({
 	all: t('music.player.repeat_all'),
 	one: t('music.player.repeat_one'),
 }));
-const repeatIcon = { off: 'nmRepeatHalftone', all: 'nmRepeat', one: 'nmRepeatone' } as const satisfies Record<'off' | 'all' | 'one', string>;
+const repeatIcon = {
+	off: 'nmRepeatHalftone',
+	all: 'nmRepeat',
+	one: 'nmRepeatone',
+} as const satisfies Record<'off' | 'all' | 'one', string>;
 const totalText = computed(() => totalLabel(track.value));
 const pct = computed(() => progressPercent(track.value, time.value));
 </script>

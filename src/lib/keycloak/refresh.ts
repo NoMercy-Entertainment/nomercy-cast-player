@@ -1,7 +1,7 @@
 const CAST_RECEIVER_CLIENT_ID = 'nomercy-cast-receiver';
 
-const DEFAULT_KEYCLOAK_URL
-	= import.meta.env.VITE_DEFAULT_AUTH_BASE_URL ?? 'https://auth.nomercy.tv/realms/NoMercyTV';
+const DEFAULT_KEYCLOAK_URL =
+	import.meta.env.VITE_DEFAULT_AUTH_BASE_URL ?? 'https://auth.nomercy.tv/realms/NoMercyTV';
 
 export interface RefreshResult {
 	access_token: string;
@@ -49,6 +49,7 @@ export async function refreshCastSession(
 	});
 
 	const text = await response.text();
+
 	if (!response.ok) {
 		throw new KeycloakRefreshError(
 			`Refresh failed: HTTP ${response.status}`,
@@ -58,8 +59,10 @@ export async function refreshCastSession(
 	}
 
 	const json = JSON.parse(text) as RefreshResult;
+
 	if (!json.access_token || !json.refresh_token) {
 		throw new KeycloakRefreshError('Refresh response missing tokens', response.status, text);
 	}
+
 	return json;
 }

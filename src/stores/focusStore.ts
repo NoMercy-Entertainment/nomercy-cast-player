@@ -40,8 +40,10 @@ const actionByEl = new WeakMap<HTMLElement, () => void>();
 
 function activeGroup(): FocusGroupHandle | null {
 	const stack = groupStack.value;
+
 	if (stack.length === 0)
 		return null;
+
 	// Prefer the group that owns the currently-focused element. Multiple
 	// nested groups push onto the stack (page → rails → carousels), so the
 	// LAST mounted group isn't always the right key handler. Walk top-down
@@ -52,11 +54,14 @@ function activeGroup(): FocusGroupHandle | null {
 		if (stack[i].ownsFocused?.())
 			return stack[i];
 	}
+
 	for (let i = stack.length - 1; i >= 0; i--) {
 		const group = stack[i];
+
 		if (group.containsFocused())
 			return group;
 	}
+
 	// Fall back to the topmost group when focus is on document.body or
 	// hasn't been initialised yet (first paint).
 	return stack[stack.length - 1] ?? null;
@@ -67,7 +72,7 @@ function pushGroup(group: FocusGroupHandle): void {
 }
 
 function popGroup(group: FocusGroupHandle): void {
-	groupStack.value = groupStack.value.filter(g => g !== group);
+	groupStack.value = groupStack.value.filter((g) => g !== group);
 }
 
 function saveRestoration(key: string, entryKey: string): void {
@@ -86,29 +91,39 @@ function consumeRestoration(key: string): string | undefined {
  */
 function dispatchAction(): boolean {
 	const el = document.activeElement as HTMLElement | null;
+
 	if (!el || el === document.body)
 		return false;
+
 	// A focus entry's action runs once here; a click would run a row's @click too.
 	const action = actionByEl.get(el);
-	if (action)
+
+	if (action) {
 		action();
-	else
+	} else {
 		el.click();
+	}
+
 	return true;
 }
 
 /** Bind a focused element to its focus entry's action. Returns the unbind. */
 function registerAction(el: HTMLElement, action: () => void): () => void {
 	actionByEl.set(el, action);
+
 	return () => {
-		if (actionByEl.get(el) === action)
+		if (actionByEl.get(el) === action) {
 			actionByEl.delete(el);
+		}
 	};
 }
 
 function dispatchEscape(): boolean {
 	const top = activeGroup();
-	return top ? top.dispatchEscape() : false;
+
+	return top
+		? top.dispatchEscape()
+		: false;
 }
 
 /**
@@ -122,6 +137,7 @@ function requestFocus(key: string): boolean {
 			return g.focusByKey(key);
 		}
 	}
+
 	return false;
 }
 
@@ -130,10 +146,10 @@ let autoFocusing = false;
 /** Runs a focus the page made on its own: it must not scroll, only a key press does. */
 function autoFocus(focus: () => boolean): boolean {
 	autoFocusing = true;
+
 	try {
 		return focus();
-	}
-	finally {
+	} finally {
 		autoFocusing = false;
 	}
 }

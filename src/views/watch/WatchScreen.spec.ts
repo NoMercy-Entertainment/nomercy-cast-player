@@ -43,12 +43,37 @@ vi.mock('@/players/video/VideoPlayer.vue', () => ({
 
 describe('the watch screen does not go black when there is nothing to play', () => {
 	it('starts the requested episode before applying the resume position', () => {
-		routeQuery.value = { season: '1', episode: '3', resume_at: '90' };
-		data.value = { playlist: [{ id: 1, season: 1, episode: 1 }, { id: 3, season: 1, episode: 3 }], item: { id: 1, season: 1, episode: 1 } };
+		routeQuery.value = {
+			season: '1',
+			episode: '3',
+			resume_at: '90',
+		};
+
+		data.value = { playlist: [{
+			id: 1,
+			season: 1,
+			episode: 1,
+		}, {
+			id: 3,
+			season: 1,
+			episode: 3,
+		}], item: {
+			id: 1,
+			season: 1,
+			episode: 1,
+		} };
+
 		const wrapper = mount(WatchScreen, { props: { type: 'tv', id: '42' } });
-		expect(wrapper.findComponent({ name: 'VideoPlayer' }).props()).toMatchObject({ initialItem: { id: 3, season: 1, episode: 3 }, resumeAt: 90 });
+
+		expect(wrapper.findComponent({ name: 'VideoPlayer' }).props()).toMatchObject({ initialItem: {
+			id: 3,
+			season: 1,
+			episode: 3,
+		}, resumeAt: 90 });
+
 		routeQuery.value = {};
 	});
+
 	it('shows an error panel instead of a blank screen when the playlist has no item', () => {
 		data.value = { playlist: [] };
 		isLoading.value = false;
@@ -65,6 +90,7 @@ describe('the watch screen does not go black when there is nothing to play', () 
 		error.value = null;
 
 		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
+
 		await nextTick();
 
 		expect(wrapper.text()).toContain('could not start');
@@ -92,6 +118,7 @@ describe('the resume time is a finite number above zero', () => {
 		isLoading.value = false;
 		error.value = null;
 		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
+
 		expect(wrapper.findComponent({ name: 'VideoPlayer' }).props('resumeAt')).toBe(expected);
 	});
 });
@@ -107,6 +134,7 @@ describe('the position a phone sends in the watch route', () => {
 		isLoading.value = false;
 		error.value = null;
 		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
+
 		return wrapper.findComponent({ name: 'VideoPlayer' }).props('resumeAt');
 	};
 
@@ -127,18 +155,32 @@ describe('every error panel on the watch screen is reachable with the D-pad', ()
 	});
 
 	const panels = [
-		{ name: 'load error', playlist: undefined, failure: new Error('made-up failure') },
-		{ name: 'player error', playlist: { playlist: [{ id: 1 }], item: { id: 1, title: 'Test' } }, failure: null },
-		{ name: 'nothing to play', playlist: { playlist: [] }, failure: null },
+		{
+			name: 'load error',
+			playlist: undefined,
+			failure: new Error('made-up failure'),
+		},
+		{
+			name: 'player error',
+			playlist: { playlist: [{ id: 1 }], item: { id: 1, title: 'Test' } },
+			failure: null,
+		},
+		{
+			name: 'nothing to play',
+			playlist: { playlist: [] },
+			failure: null,
+		},
 	];
 
 	it.each(panels)('focuses "Try again" on the $name panel without a focus warning', async ({ playlist, failure }) => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
 		data.value = playlist;
 		error.value = failure;
 		isLoading.value = false;
 
 		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' }, attachTo: document.body });
+
 		await nextTick();
 		await nextTick();
 

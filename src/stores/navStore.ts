@@ -13,6 +13,7 @@ const lastIntent = ref<CastIntent | null>(null);
 
 export function dispatchInitialIntent(intent: CastIntent, router: Router): void {
 	lastIntent.value = intent;
+
 	switch (intent.type) {
 		case 'play_video':
 			// Match the APK route shape: /{type}/{id}/watch when type is
@@ -27,26 +28,43 @@ export function dispatchInitialIntent(intent: CastIntent, router: Router): void 
 				// The audio and subtitle the phone showed travel with the position,
 				// with the same query names the TV app's watch route uses.
 				const query: Record<string, string> = {};
-				if (intent.season !== undefined)
+
+				if (intent.season !== undefined) {
 					query.season = String(intent.season);
-				if (intent.episode !== undefined)
+				}
+
+				if (intent.episode !== undefined) {
 					query.episode = String(intent.episode);
-				if (intent.resume_at)
+				}
+
+				if (intent.resume_at) {
 					query.resume_at = String(intent.resume_at);
-				if (intent.audio_language)
+				}
+
+				if (intent.audio_language) {
 					query.audio = intent.audio_language;
+				}
+
 				if (intent.subtitle_language) {
 					query.subtitle = intent.subtitle_language;
-					if (intent.subtitle_type)
+
+					if (intent.subtitle_type) {
 						query.subtitleType = intent.subtitle_type;
-					if (intent.subtitle_codec)
+					}
+
+					if (intent.subtitle_codec) {
 						query.subtitleFormat = intent.subtitle_codec;
+					}
 				}
+
 				void router.push({
 					path,
-					query: Object.keys(query).length > 0 ? query : undefined,
+					query: Object.keys(query).length > 0
+						? query
+						: undefined,
 				});
 			}
+
 			break;
 		case 'play_music':
 			// Music player route lands in Phase 8.
@@ -55,10 +73,15 @@ export function dispatchInitialIntent(intent: CastIntent, router: Router): void 
 				query: {
 					list_type: intent.list_type,
 					list_id: intent.list_id,
-					...(intent.track_id ? { track_id: intent.track_id } : {}),
-					...(intent.resume_at ? { resume_at: String(intent.resume_at) } : {}),
+					...(intent.track_id
+						? { track_id: intent.track_id }
+						: {}),
+					...(intent.resume_at
+						? { resume_at: String(intent.resume_at) }
+						: {}),
 				},
 			});
+
 			break;
 		case 'navigate':
 			void router.push(intent.route);

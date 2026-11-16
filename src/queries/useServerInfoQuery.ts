@@ -29,8 +29,10 @@ async function fetchServerInfo(): Promise<ServerInfo | null> {
 		path: '/api/v1/setup/server-info',
 		method: 'GET',
 	});
+
 	if (response && typeof response === 'object' && 'data' in response && response.data)
 		return response.data;
+
 	return (response as ServerInfo) ?? null;
 }
 

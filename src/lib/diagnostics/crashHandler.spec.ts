@@ -11,11 +11,20 @@ async function start(optIn: boolean) {
 	const { settingsStore } = await import('@/stores/settingsStore');
 	const { diagnosticsSender } = await import('./sender');
 	const fetch = vi.fn<Fetch>(async () => new Response('{}', { status: 200 }));
+
 	vi.stubGlobal('fetch', fetch);
 	authStore.accessToken.value = 'token-for-tests';
-	if (optIn)
+
+	if (optIn) {
 		settingsStore.crashReports.value = true;
-	return { installCrashHandlers, authStore, diagnosticsSender, fetch };
+	}
+
+	return {
+		installCrashHandlers,
+		authStore,
+		diagnosticsSender,
+		fetch,
+	};
 }
 
 function crash(error: Error): void {
@@ -23,7 +32,7 @@ function crash(error: Error): void {
 }
 
 async function settle(): Promise<void> {
-	await new Promise(resolve => setTimeout(resolve, 20));
+	await new Promise((resolve) => setTimeout(resolve, 20));
 }
 
 beforeEach(() => {
@@ -36,10 +45,12 @@ afterEach(() => {
 
 it('uploads nothing while the crash-report choice is off or absent', async () => {
 	const { installCrashHandlers, fetch } = await start(false);
+
 	installCrashHandlers();
 
 	crash(new Error('crash with the choice off'));
 	const rejection = new Event('unhandledrejection') as PromiseRejectionEvent;
+
 	Object.defineProperty(rejection, 'reason', { value: new Error('rejection with the choice off') });
 	window.dispatchEvent(rejection);
 	await settle();
@@ -49,6 +60,7 @@ it('uploads nothing while the crash-report choice is off or absent', async () =>
 
 it('deletes a saved crash report while the choice is off, and keeps a manual one', async () => {
 	const { installCrashHandlers, diagnosticsSender, fetch } = await start(false);
+
 	diagnosticsSender.prepare('crash');
 	installCrashHandlers();
 	expect(diagnosticsSender.pending.value).toBeNull();
@@ -68,6 +80,7 @@ it('deletes a saved crash report while the choice is off, and keeps a manual one
 
 it('uploads once per session while the choice is on, only when signed in', async () => {
 	const { installCrashHandlers, authStore, fetch } = await start(true);
+
 	authStore.accessToken.value = null;
 	installCrashHandlers();
 
@@ -78,6 +91,7 @@ it('uploads once per session while the choice is on, only when signed in', async
 	authStore.accessToken.value = 'token-for-tests';
 	crash(new Error('after auth'));
 	await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+
 	expect(fetch).toHaveBeenCalledWith(
 		expect.stringContaining('/v1/diagnostics/reports'),
 		expect.objectContaining({ method: 'POST' }),
@@ -90,12 +104,14 @@ it('uploads once per session while the choice is on, only when signed in', async
 
 it('sends the error class only, never its message or stack', async () => {
 	const { installCrashHandlers, fetch } = await start(true);
+
 	installCrashHandlers();
 
 	crash(new TypeError('Example Title eyJplaceholder'));
 	await vi.waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 
 	const sent = String(fetch.mock.calls[0]![1]?.body);
+
 	expect(sent).toContain('TypeError');
 	expect(sent).not.toContain('Example Title');
 	expect(sent).not.toContain('eyJ');

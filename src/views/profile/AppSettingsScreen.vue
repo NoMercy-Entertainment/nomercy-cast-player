@@ -30,16 +30,20 @@ const settingsGroup = useFocusGroup({
 	onEscape: (dir) => {
 		if (dir === 'up')
 			return focusTopnav();
+
 		if (dir === 'left' && props.category !== undefined) {
 			emit('escapeLeft');
+
 			return true;
 		}
+
 		return false;
 	},
 });
 
-if (props.category === undefined)
+if (props.category === undefined) {
 	useNavFocusBridge(settingsGroup);
+}
 
 const shows = (key: string): boolean => props.category === undefined || props.category === key;
 const inDisplay = computed(() => shows('display'));
@@ -101,15 +105,20 @@ const pendingReport = diagnosticsSender.pending;
 const sendState = diagnosticsSender.state;
 const hasPending = computed(() => pendingReport.value !== null);
 const previewText = computed(() =>
-	pendingReport.value ? JSON.stringify(pendingReport.value, null, 2) : '',
+	pendingReport.value
+		? JSON.stringify(pendingReport.value, null, 2)
+		: '',
 );
 const diagnosticsStatus = computed(() => {
 	if (sendState.value === 'sending')
 		return t('views.profile.diag_sending');
+
 	if (sendState.value === 'sent')
 		return t('views.profile.diag_sent', { id: diagnosticsSender.lastReportId.value });
+
 	if (sendState.value === 'failed')
 		return t('views.profile.diag_failed', { error: diagnosticsSender.lastError.value });
+
 	return t('views.profile.diag_idle');
 });
 
@@ -135,10 +144,14 @@ useFocusEntry({
 	el: previewEl,
 	onAction: () => {
 		const el = previewEl.value;
-		if (!el)
-			return;
+
+		if (!el) return;
+
 		const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 1;
-		el.scrollTop = atEnd ? 0 : el.scrollTop + Math.round(el.clientHeight * 0.9);
+
+		el.scrollTop = atEnd
+			? 0
+			: el.scrollTop + Math.round(el.clientHeight * 0.9);
 	},
 });
 

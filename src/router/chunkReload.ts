@@ -13,11 +13,11 @@ interface ChunkReloadDeps {
 	storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 }
 
-function browserDeps(): ChunkReloadDeps {
+function browserDeps() {
 	return {
-		reload: path => window.location.assign(path),
+		reload: (path) => window.location.assign(path),
 		storage: window.sessionStorage,
-	};
+	} as const satisfies ChunkReloadDeps;
 }
 
 /**
@@ -27,15 +27,17 @@ function browserDeps(): ChunkReloadDeps {
  */
 export function installChunkReload(router: Router, deps: ChunkReloadDeps = browserDeps()): void {
 	router.onError((error, to) => {
-		if (!isChunkLoadError(error))
-			return;
-		if (deps.storage.getItem(RELOADED_KEY) === to.fullPath)
-			return;
+		if (!isChunkLoadError(error)) return;
+
+		if (deps.storage.getItem(RELOADED_KEY) === to.fullPath) return;
+
 		deps.storage.setItem(RELOADED_KEY, to.fullPath);
 		deps.reload(to.fullPath);
 	});
+
 	router.afterEach((to, _from, failure) => {
-		if (!failure && deps.storage.getItem(RELOADED_KEY) === to.fullPath)
+		if (!failure && deps.storage.getItem(RELOADED_KEY) === to.fullPath) {
 			deps.storage.removeItem(RELOADED_KEY);
+		}
 	});
 }

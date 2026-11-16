@@ -10,6 +10,7 @@ import PlaygroundRail from './PlaygroundRail.vue';
  */
 
 const containerEl = ref<HTMLElement | null>(null);
+
 useFocusGroup({
 	type: 'vertical',
 	restorationKey: 'focus-playground-root',
@@ -18,6 +19,7 @@ useFocusGroup({
 });
 
 const log = ref<string[]>([]);
+
 function pushLog(line: string): void {
 	log.value = [line, ...log.value].slice(0, 6);
 }

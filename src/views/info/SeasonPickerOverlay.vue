@@ -25,8 +25,10 @@ const group = useFocusGroup({
 	type: 'modal',
 	autoFocus: false,
 	onEscape: (dir) => {
-		if (dir === 'back')
+		if (dir === 'back') {
 			emit('close');
+		}
+
 		return true;
 	},
 });
@@ -37,8 +39,9 @@ const releases: Array<() => void> = [];
 onMounted(() => {
 	props.options.forEach((option, index) => {
 		const el = rowEls.value[index];
-		if (!el)
-			return;
+
+		if (!el) return;
+
 		const entry: FocusEntry = {
 			key: `season-${option.number}`,
 			order: index,
@@ -52,16 +55,19 @@ onMounted(() => {
 			blur: () => el.blur(),
 			action: () => emit('select', option.number),
 		};
+
 		releases.push(group.register(entry));
 		releases.push(focusStore.registerAction(el, entry.action));
 	});
+
 	void nextTick(() => {
-		const current = props.options.findIndex(o => o.number === props.selected);
+		const current = props.options.findIndex((o) => o.number === props.selected);
+
 		rowEls.value[Math.max(current, 0)]?.focus();
 	});
 });
 
-onBeforeUnmount(() => releases.forEach(release => release()));
+onBeforeUnmount(() => releases.forEach((release) => release()));
 </script>
 
 <template>

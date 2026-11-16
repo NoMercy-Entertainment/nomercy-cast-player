@@ -11,12 +11,14 @@ vi.mock('@microsoft/signalr', () => {
 	const builder = {
 		withUrl: (...args: unknown[]) => {
 			withUrl(...args);
+
 			return builder;
 		},
 		withAutomaticReconnect: () => builder,
 		configureLogging: () => builder,
 		build: () => ({}),
 	};
+
 	return {
 		HttpTransportType: { WebSockets: 1 },
 		LogLevel: { Warning: 3 },
@@ -39,6 +41,7 @@ describe('buildHub identifies the receiver to the server', () => {
 		buildHub(name);
 
 		const url = new URL(withUrl.mock.calls[0]![0] as string);
+
 		expect(url.origin + url.pathname).toBe(`https://media.example.test/${name}`);
 		expect(url.searchParams.get('client_id')).toBe(castDeviceId());
 		expect(url.searchParams.get('client_name')).toBeTruthy();

@@ -6,6 +6,7 @@ defineProps<{
 }>();
 
 const trackEl = ref<HTMLElement | null>(null);
+
 defineExpose({ trackEl });
 </script>
 

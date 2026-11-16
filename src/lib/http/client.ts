@@ -35,9 +35,13 @@ const TRAILING_SLASH = /\/$/;
 
 function buildUrl(path: string): string {
 	const base = authStore.serverUrl.value?.replace(TRAILING_SLASH, '') ?? '';
+
 	if (!base)
 		throw new HttpError('serverUrl not available', 0, '');
-	return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+
+	return `${base}${path.startsWith('/')
+		? path
+		: `/${path}`}`;
 }
 
 /**
@@ -47,18 +51,24 @@ function buildUrl(path: string): string {
  * as the route it is.
  */
 export function requestLabel(opts: FetchOptions): string {
-	const route = opts.path.startsWith('/') ? opts.path : `/${opts.path}`;
+	const route = opts.path.startsWith('/')
+		? opts.path
+		: `/${opts.path}`;
 
 	return `${(opts.method ?? 'GET').toUpperCase()} ${route}`;
 }
 
 async function singleAttempt(opts: FetchOptions): Promise<Response> {
 	const headers = new Headers(opts.headers ?? {});
+
 	headers.set('Accept', 'application/json');
+
 	if (!opts.skipAuth) {
 		const token = authStore.accessToken.value;
-		if (token)
+
+		if (token) {
 			headers.set('Authorization', `Bearer ${token}`);
+		}
 	}
 
 	// Every request, not only the failures. A request that succeeded slowly is
@@ -70,11 +80,16 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 	const { signal, clear } = withTimeout(opts.signal, 15_000);
 
 	try {
-		const response = await fetch(buildUrl(opts.path), { ...opts, headers, signal });
+		const response = await fetch(buildUrl(opts.path), {
+			...opts,
+			headers,
+			signal,
+		});
+
 		recordCompleted(opts, response.status, startedAt);
+
 		return response;
-	}
-	catch (error) {
+	} catch (error) {
 		clear();
 		recordCompleted(opts, 0, startedAt);
 		throw error;
@@ -84,20 +99,24 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 // AbortSignal.any and AbortSignal.timeout are missing on older Cast firmware
 // browsers, so the timeout is a plain controller that also follows the caller.
 // On success the timer keeps running: it also ends a body that stalls mid-read.
-function withTimeout(callerSignal: AbortSignal | null | undefined, ms: number): { signal: AbortSignal; clear: () => void } {
+function withTimeout(callerSignal: AbortSignal | null | undefined, ms: number) {
 	const controller = new AbortController();
 	const abort = (): void => controller.abort();
 	const timer = setTimeout(abort, ms);
-	if (callerSignal?.aborted)
+
+	if (callerSignal?.aborted) {
 		abort();
+	}
+
 	callerSignal?.addEventListener('abort', abort, { once: true });
+
 	return {
 		signal: controller.signal,
 		clear: () => {
 			clearTimeout(timer);
 			callerSignal?.removeEventListener('abort', abort);
 		},
-	};
+	} as const satisfies { signal: AbortSignal; clear: () => void };
 }
 
 function recordCompleted(opts: FetchOptions, status: number, startedAt: number): void {
@@ -118,6 +137,7 @@ export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
 		// First 401: token may have rotated mid-flight, immediate retry with
 		// freshest accessToken value reads from authStore.
 		response = await singleAttempt(opts);
+
 		if (response.status === 401) {
 			// Second 401: trigger refresh, then one more retry. After this we
 			// give up — refresh loop will mark DEGRADED if the refresh itself
@@ -128,6 +148,7 @@ export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
 	}
 
 	const text = await response.text();
+
 	if (!response.ok) {
 		recordDiagnostic(
 			DiagnosticsCategory.Network,
@@ -137,14 +158,16 @@ export async function apiFetch<T = unknown>(opts: FetchOptions): Promise<T> {
 			0,
 			requestLabel(opts),
 		);
+
 		throw new HttpError(`HTTP ${response.status} on ${opts.path}`, response.status, text);
 	}
+
 	if (!text)
 		return undefined as unknown as T;
+
 	try {
 		return JSON.parse(text) as T;
-	}
-	catch {
+	} catch {
 		return text as unknown as T;
 	}
 }

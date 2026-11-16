@@ -30,24 +30,27 @@ interface CastDeviceCapabilities {
  */
 function readCastModel(): string {
 	const framework = (globalThis as { cast?: { framework?: unknown } }).cast?.framework as
-		| { CastReceiverContext?: { getInstance: () => { getDeviceCapabilities?: () => unknown } } }
-		| undefined;
+		| { CastReceiverContext?: { getInstance: () => { getDeviceCapabilities?: () => unknown } } } |
+		undefined;
 
 	try {
 		const capabilities = framework?.CastReceiverContext
 			?.getInstance()
 			?.getDeviceCapabilities?.() as CastDeviceCapabilities | undefined;
 		const model = capabilities?.model ?? capabilities?.device_model;
+
 		if (typeof model === 'string' && model.length > 0)
 			return model;
-	}
-	catch (error) {
+	} catch (error) {
 		// A partially loaded SDK must not cost us the rest of the report.
 		recordSwallowed('readCastModel', error);
 	}
 
 	const build = CAST_BUILD.exec(userAgent());
-	return build ? `CrKey ${build[1]}` : UNKNOWN_FACT;
+
+	return build
+		? `CrKey ${build[1]}`
+		: UNKNOWN_FACT;
 }
 
 function userAgent(): string {
@@ -58,7 +61,10 @@ function readAbi(): string {
 	const platform = PLATFORM_TOKEN.exec(userAgent())?.[1] ?? '';
 	const architecture = platform.split(';').at(-1)?.trim() ?? '';
 	const withoutOs = architecture.replace(LINUX_PREFIX, '').trim();
-	return withoutOs.length > 0 ? withoutOs : UNKNOWN_FACT;
+
+	return withoutOs.length > 0
+		? withoutOs
+		: UNKNOWN_FACT;
 }
 
 function readPlatformVersion(): string {
@@ -68,6 +74,7 @@ function readPlatformVersion(): string {
 function toMb(bytes: number | undefined): number {
 	if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes <= 0)
 		return 0;
+
 	return Math.round(bytes / BYTES_PER_MB);
 }
 
@@ -75,7 +82,9 @@ export function collectDeviceFacts(): DeviceFacts {
 	const memory = globalThis.performance?.memory;
 
 	return {
-		appVersion: typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : UNKNOWN_FACT,
+		appVersion: typeof __APP_VERSION__ === 'string'
+			? __APP_VERSION__
+			: UNKNOWN_FACT,
 		model: readCastModel(),
 		abi: readAbi(),
 		platformVersion: readPlatformVersion(),

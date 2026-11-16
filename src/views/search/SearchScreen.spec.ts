@@ -29,14 +29,17 @@ describe('search when the search request fails', () => {
 	it('shows an error instead of claiming there are no results', async () => {
 		const wrapper = mount(SearchScreen);
 
-		for (const letter of ['f', 'a', 'i', 'l'])
+		for (const letter of ['f', 'a', 'i', 'l']) {
 			wrapper.findComponent(SearchKeyboard).vm.$emit('type', letter);
+		}
+
 		await wrapper.vm.$nextTick();
 
 		vi.advanceTimersByTime(300);
 		await wrapper.vm.$nextTick();
 
 		const text = wrapper.text();
+
 		expect(text).not.toContain('No results');
 		expect(text).toContain('Network request failed');
 	});

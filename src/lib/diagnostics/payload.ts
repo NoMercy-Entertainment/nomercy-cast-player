@@ -39,7 +39,7 @@ export interface BuildReportInput {
  * The only place a payload is built, so the preview the user approves can never
  * say something different from what leaves the device.
  */
-export function buildDiagnosticsReport(input: BuildReportInput): DiagnosticsReportRequest {
+export function buildDiagnosticsReport(input: BuildReportInput) {
 	const held = input.entries.length;
 	const dropped = Math.max(input.recorded - held, 0);
 
@@ -56,5 +56,5 @@ export function buildDiagnosticsReport(input: BuildReportInput): DiagnosticsRepo
 		events_held: held,
 		events_dropped: dropped,
 		body: renderDiagnosticsReport(input.facts, input.entries, dropped),
-	};
+	} as const satisfies DiagnosticsReportRequest;
 }

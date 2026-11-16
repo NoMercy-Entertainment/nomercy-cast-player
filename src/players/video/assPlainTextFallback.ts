@@ -17,22 +17,31 @@ const RENDER_ERROR = 'plugin:octopus/render-error';
 
 function clock(value: string): number {
 	const [hours, minutes, seconds] = value.trim().split(':');
+
 	return Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
 }
 
 // Dialogue lines only; override blocks like {\an8\b1} and drawing commands go.
 export function parseAssPlainText(source: string): AssCue[] {
 	const cues: AssCue[] = [];
+
 	for (const line of source.replace(/\r/g, '').split('\n')) {
-		if (!line.startsWith('Dialogue:'))
-			continue;
+		if (!line.startsWith('Dialogue:')) continue;
+
 		const fields = line.slice('Dialogue:'.length).split(',');
 		const text = fields.slice(9).join(',').replace(/\{[^}]*\}/g, '').replace(/\\N/gi, '\n').replace(/\\h/g, ' ').trim();
 		const start = clock(fields[1] ?? '');
 		const end = clock(fields[2] ?? '');
-		if (text && Number.isFinite(start) && Number.isFinite(end) && end > start)
-			cues.push({ start, end, text });
+
+		if (text && Number.isFinite(start) && Number.isFinite(end) && end > start) {
+			cues.push({
+				start,
+				end,
+				text,
+			});
+		}
 	}
+
 	return cues;
 }
 
@@ -44,9 +53,13 @@ function isStyled(url: string): boolean {
 
 async function fetchWithToken(url: string): Promise<string> {
 	const token = authStore.accessToken.value;
-	const response = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+	const response = await fetch(url, { headers: token
+		? { Authorization: `Bearer ${token}` }
+		: {} });
+
 	if (!response.ok)
 		throw new Error(`subtitle fetch ${response.status}`);
+
 	return response.text();
 }
 
@@ -68,8 +81,10 @@ export function attachAssPlainTextFallback(player: FallbackPlayer, options: AssF
 	let epoch = 0;
 
 	function clearTimer(): void {
-		if (timer !== null)
+		if (timer !== null) {
 			clearTimeout(timer);
+		}
+
 		timer = null;
 	}
 
@@ -81,29 +96,32 @@ export function attachAssPlainTextFallback(player: FallbackPlayer, options: AssF
 
 	function paint(): void {
 		const now = player.time();
-		const cue = cues.filter(entry => now >= entry.start && now < entry.end).map(entry => entry.text).join('\n');
-		if (!box)
-			return;
+		const cue = cues.filter((entry) => now >= entry.start && now < entry.end).map((entry) => entry.text).join('\n');
+
+		if (!box) return;
+
 		box.textContent = cue;
 	}
 
 	async function activate(): Promise<void> {
 		clearTimer();
-		if (!styledUrl || box)
-			return;
+
+		if (!styledUrl || box) return;
+
 		const mine = epoch;
+
 		try {
 			const parsed = parseAssPlainText(await fetchText(styledUrl));
-			if (mine !== epoch)
-				return;
+
+			if (mine !== epoch) return;
+
 			cues = parsed;
 			box = document.createElement('div');
 			box.className = 'ass-plain-text';
 			box.setAttribute('aria-live', 'off');
 			player.container.append(box);
 			paint();
-		}
-		catch (error) {
+		} catch (error) {
 			recordSwallowed('assPlainTextFallback', error);
 		}
 	}
@@ -114,19 +132,25 @@ export function attachAssPlainTextFallback(player: FallbackPlayer, options: AssF
 		clearText();
 		styledUrl = null;
 		const track = (data as { track?: number | null } | undefined)?.track;
-		if (typeof track !== 'number' || track < 0)
-			return;
+
+		if (typeof track !== 'number' || track < 0) return;
+
 		const url = player.subtitles()[track]?.url;
-		if (!url || !isStyled(url))
-			return;
+
+		if (!url || !isStyled(url)) return;
+
 		styledUrl = url;
 		timer = setTimeout(() => void activate(), timeoutMs);
 	};
+
 	const onReady = (): void => clearTimer();
+
 	const onWarning = (data?: unknown): void => {
 		const code = (data as { error?: { code?: string } } | undefined)?.error?.code;
-		if (code === LOAD_FAILED || code === RENDER_ERROR)
+
+		if (code === LOAD_FAILED || code === RENDER_ERROR) {
 			void activate();
+		}
 	};
 
 	on('subtitle', onSubtitle);

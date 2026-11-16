@@ -52,8 +52,7 @@ let closed = false;
 function languageLabel(code: string): string {
 	try {
 		return new Intl.DisplayNames([authStore.locale.value, 'en'], { type: 'language', fallback: 'code' }).of(code) ?? code;
-	}
-	catch {
+	} catch {
 		// A malformed code throws rather than falling back.
 		return code;
 	}
@@ -64,8 +63,8 @@ function title(): string {
 }
 
 function close(): void {
-	if (closed)
-		return;
+	if (closed) return;
+
 	closed = true;
 	emit('close');
 }
@@ -80,9 +79,11 @@ function clearHideTimer(): void {
 function showControls(): void {
 	osd?.setVisible(true);
 	clearHideTimer();
+
 	hideTimer = window.setTimeout(() => {
-		if (closePanel === null && player && !isPaused())
+		if (closePanel === null && player && !isPaused()) {
 			osd?.setVisible(false);
+		}
 	}, CONTROLS_TIMEOUT_MS);
 }
 
@@ -92,6 +93,7 @@ function isPaused(): boolean {
 
 function openPanel(unmount: () => void): void {
 	closePanel?.();
+
 	closePanel = (): void => {
 		unmount();
 		closePanel = null;
@@ -102,13 +104,14 @@ function openPanel(unmount: () => void): void {
 }
 
 function openSeek(): void {
-	if (!player)
-		return;
+	if (!player) return;
+
 	player.pause();
 	osd?.setVisible(false);
 	const target = player;
-	if (!host)
-		return;
+
+	if (!host) return;
+
 	openPanel(mountSeekContainer({
 		parent: host,
 		getCurrentTime: () => target.time(),
@@ -126,22 +129,26 @@ function openSeek(): void {
 }
 
 function openLanguage(): void {
-	if (!player)
-		return;
+	if (!player) return;
+
 	const target = player;
-	if (!host)
-		return;
+
+	if (!host) return;
+
 	const subtitleTracks: TrackItem[] = target.subtitles().map((track, index) => ({
 		id: index,
 		label: track.label,
 	}));
+
 	openPanel(mountLanguageScreen({
 		parent: host,
 		audioTracks: [],
 		subtitleTracks,
 		currentSubtitleId: target.subtitle()?.index ?? 'off',
 		onPickAudio: () => {},
-		onPickSubtitle: id => void target.subtitle(id === 'off' ? null : Number(id)),
+		onPickSubtitle: (id) => void target.subtitle(id === 'off'
+			? null
+			: Number(id)),
 		onExit: () => closePanel?.(),
 	}));
 }
@@ -150,26 +157,31 @@ function openLanguage(): void {
 // modal group with a focused entry, so they are read here. Enter and Back go
 // through the focus system below.
 function onKey(e: KeyboardEvent): void {
-	if (!player || closePanel !== null)
-		return;
+	if (!player || closePanel !== null) return;
 
 	screensaverStore.resetIdle();
 
 	if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
 		e.preventDefault();
 		openSeek();
+
 		return;
 	}
+
 	if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
 		e.preventDefault();
 		showControls();
+
 		return;
 	}
+
 	if (LANGUAGE_KEYS.has(e.key)) {
 		e.preventDefault();
 		openLanguage();
+
 		return;
 	}
+
 	if (TOGGLE_KEYS.has(e.key)) {
 		e.preventDefault();
 		player.togglePlayback();
@@ -184,9 +196,12 @@ const group = useFocusGroup({
 	onEscape: (dir) => {
 		if (dir !== 'back')
 			return true;
+
 		// An open panel closes itself on Back; the trailer waits its turn.
-		if (closePanel === null)
+		if (closePanel === null) {
 			close();
+		}
+
 		return true;
 	},
 });
@@ -195,8 +210,8 @@ const group = useFocusGroup({
 // on the player's container, so the player's own click-to-play handler never
 // fires alongside this one.
 function onSelect(): void {
-	if (!player || closePanel !== null)
-		return;
+	if (!player || closePanel !== null) return;
+
 	player.togglePlayback();
 	showControls();
 }
@@ -228,11 +243,14 @@ onMounted(async () => {
 		const mod = await import('@nomercy-entertainment/nomercy-video-player');
 		const { SubtitleOverlayPlugin } = await import('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay');
 		const created: NMVideoPlayer = mod.default(mountId);
+
 		created.addPlugin(SubtitleOverlayPlugin);
+
 		created.addPlugin(mod.OctopusPlugin, {
 			workerUrl: '/js/octopus/nomercy-libass-worker.js',
 			fallbackFont: '/js/octopus/default.ttf',
 		});
+
 		// No auth: on a progressive source the player appends a token to the
 		// URL as ?token=, which would hand the bearer token to the media host
 		// and sits on top of a query the host signs.
@@ -253,39 +271,53 @@ onMounted(async () => {
 			muted: false,
 			preload: 'auto',
 		});
+
 		player = created;
 
 		if (closed) {
 			void created.dispose();
 			player = null;
+
 			return;
 		}
 
 		const target = created;
+
 		host = mountOverlayHost(target.container);
+
 		osd = mountPlaybackOSD({
 			parent: host,
 			title: title(),
 			getCurrentTime: () => target.time(),
 			getDuration: () => target.duration(),
 		});
+
 		showControls();
 
-		target.on('play', () => showControls());
+		target.on('play', () =>
+			showControls());
+
 		target.on('pause', () => {
 			clearHideTimer();
+
 			// Seeking pauses first; the seek bar replaces the controls rather
 			// than stacking on top of them.
-			if (closePanel === null)
+			if (closePanel === null) {
 				osd?.setVisible(true);
+			}
 		});
+
 		// Any progress keeps the ambient screensaver away while it plays.
-		target.on('time', () => screensaverStore.resetIdle());
+		target.on('time', () =>
+			screensaverStore.resetIdle());
+
 		// A single trailer, so ended is the end.
-		target.on('ended', () => close());
-		target.on('error', () => close());
-	}
-	catch (err) {
+		target.on('ended', () =>
+			close());
+
+		target.on('error', () =>
+			close());
+	} catch (err) {
 		console.error('[trailer] player init failed', err);
 		close();
 	}

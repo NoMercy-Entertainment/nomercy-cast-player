@@ -9,6 +9,7 @@ const { state, hasPending, lastError, pending } = await vi.hoisted(async () => {
 	// vi.mock is hoisted above the file, so the refs it closes over have to be
 	// created up here with it.
 	const { ref: makeRef } = await import('vue');
+
 	return {
 		state: makeRef('idle'),
 		hasPending: makeRef(true),
@@ -44,7 +45,7 @@ describe('the crash-report row on the settings screen', () => {
 	});
 
 	function row(wrapper: ReturnType<typeof mount>) {
-		return wrapper.findAll('button').find(b => b.text().includes('Send crash reports'));
+		return wrapper.findAll('button').find((b) => b.text().includes('Send crash reports'));
 	}
 
 	it('exists and shows off by default', () => {
@@ -57,12 +58,14 @@ describe('the crash-report row on the settings screen', () => {
 	it('says what a report holds and where it goes', () => {
 		const text = row(mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } }))!.text();
 
-		for (const item of ['device id', 'device model', 'CPU type', 'memory and thread facts', 'app version', 'stack trace', 'nomercy.tv'])
+		for (const item of ['device id', 'device model', 'CPU type', 'memory and thread facts', 'app version', 'stack trace', 'nomercy.tv']) {
 			expect(text).toContain(item);
+		}
 	});
 
 	it('flips the setting on a click and shows it on', async () => {
 		const wrapper = mount(AppSettingsScreen, { global: { stubs: { RouterLink: true, teleport: true } } });
+
 		await row(wrapper)!.trigger('click');
 
 		expect(settingsStore.crashReports.value).toBe(true);

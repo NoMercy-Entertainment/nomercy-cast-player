@@ -5,5 +5,6 @@ declare module 'virtual:moooom-icons' {
 		fill: string;
 		body: string;
 	}
+
 	export const moooomIcons: Record<string, MoooomIconData>;
 }

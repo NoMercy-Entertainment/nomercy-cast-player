@@ -6,8 +6,10 @@ import type { Router } from 'vue-router';
  */
 export function leaveToPreviousOrHome(router: Router): void {
 	const previous = (window.history.state as { back?: string | null } | null)?.back;
-	if (!previous || previous === '/splash' || previous.startsWith('/splash?'))
+
+	if (!previous || previous === '/splash' || previous.startsWith('/splash?')) {
 		void router.replace('/');
-	else
+	} else {
 		router.back();
+	}
 }

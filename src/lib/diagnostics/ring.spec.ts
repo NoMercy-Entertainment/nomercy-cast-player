@@ -4,8 +4,10 @@ import { DiagnosticsCategory, DiagnosticsCode } from './events';
 
 function fixedClock(): () => number {
 	let now = 0;
+
 	return () => {
 		now += 10;
+
 		return now;
 	};
 }
@@ -14,13 +16,14 @@ describe('diagnosticsRing', () => {
 	it('keeps the newest events and drops the oldest when full', () => {
 		const ring = new DiagnosticsRing(4, fixedClock());
 
-		for (let i = 1; i <= 6; i += 1)
+		for (let i = 1; i <= 6; i += 1) {
 			ring.record(DiagnosticsCategory.Playback, DiagnosticsCode.Buffering, i);
+		}
 
 		const entries = ring.snapshot();
 
 		expect(entries).toHaveLength(4);
-		expect(entries.map(entry => entry.a)).toEqual([3, 4, 5, 6]);
+		expect(entries.map((entry) => entry.a)).toEqual([3, 4, 5, 6]);
 		expect(ring.recorded()).toBe(6);
 	});
 
@@ -33,12 +36,13 @@ describe('diagnosticsRing', () => {
 
 		const entries = ring.snapshot();
 
-		expect(entries.map(entry => entry.code)).toEqual([
+		expect(entries.map((entry) => entry.code)).toEqual([
 			'SocketOpened',
 			'PlaybackStarted',
 			'PlaybackEnded',
 		]);
-		expect(entries.map(entry => entry.atMs)).toEqual([10, 20, 30]);
+
+		expect(entries.map((entry) => entry.atMs)).toEqual([10, 20, 30]);
 		expect(entries[0].category).toBe('Network');
 	});
 
@@ -65,7 +69,7 @@ describe('diagnosticsRing', () => {
 		ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenClosed, 0, 0, 0, 'home');
 
 		expect(ring.labelCount()).toBe(1);
-		expect(ring.snapshot().map(entry => entry.label)).toEqual(['home', 'home']);
+		expect(ring.snapshot().map((entry) => entry.label)).toEqual(['home', 'home']);
 	});
 
 	it('the name survives the ring wrapping', () => {
@@ -75,14 +79,15 @@ describe('diagnosticsRing', () => {
 		ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, 'library');
 		ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, 'watch');
 
-		expect(ring.snapshot().map(entry => entry.label)).toEqual(['library', 'watch']);
+		expect(ring.snapshot().map((entry) => entry.label)).toEqual(['library', 'watch']);
 	});
 
 	it('a 2049th distinct name is dropped and the event still records', () => {
 		const ring = new DiagnosticsRing(2100, fixedClock());
 
-		for (let i = 0; i < 2049; i += 1)
+		for (let i = 0; i < 2049; i += 1) {
 			ring.record(DiagnosticsCategory.Lifecycle, DiagnosticsCode.ScreenOpened, 0, 0, 0, `screen${i}`);
+		}
 
 		const entries = ring.snapshot();
 

@@ -6,23 +6,23 @@
 
 import { canDraw } from './registry';
 
-export type ComponentType
-	= | 'NMGrid'
-		| 'NMList'
-		| 'NMContainer'
-		| 'NMLolomo'
-		| 'NMCarousel'
-		| 'NMCard'
-		| 'NMHomeCard'
-		| 'NMMusicCard'
-		| 'NMMusicHomeCard'
-		| 'NMTopResultCard'
-		| 'NMGenreCard'
-		| 'NMGroupCard'
-		| 'NMTrackRow'
-		| 'NMHero'
-		| 'NMHeroCard'
-		| 'PluginSlot';
+export type ComponentType =
+	| 'NMGrid' |
+	'NMList' |
+	'NMContainer' |
+	'NMLolomo' |
+	'NMCarousel' |
+	'NMCard' |
+	'NMHomeCard' |
+	'NMMusicCard' |
+	'NMMusicHomeCard' |
+	'NMTopResultCard' |
+	'NMGenreCard' |
+	'NMGroupCard' |
+	'NMTrackRow' |
+	'NMHero' |
+	'NMHeroCard' |
+	'PluginSlot';
 
 export interface Update {
 	/** "pageLoad" triggers refetch on revisit; other values are forward-compat. */
@@ -147,20 +147,20 @@ export interface PluginSlotWrapper {
 	slot: string;
 }
 
-export type ComponentData
-	= | NMGridWrapper
-		| NMListWrapper
-		| NMContainerWrapper
-		| NMLolomoWrapper
-		| NMCarouselWrapper
-		| NMCardWrapper
-		| NMGroupCardWrapper
-		| NMHomeCardWrapper
-		| NMMusicCardWrapper
-		| NMMusicHomeCardWrapper
-		| NMTopResultCardWrapper
-		| NMTrackRowWrapper
-		| PluginSlotWrapper;
+export type ComponentData =
+	| NMGridWrapper |
+	NMListWrapper |
+	NMContainerWrapper |
+	NMLolomoWrapper |
+	NMCarouselWrapper |
+	NMCardWrapper |
+	NMGroupCardWrapper |
+	NMHomeCardWrapper |
+	NMMusicCardWrapper |
+	NMMusicHomeCardWrapper |
+	NMTopResultCardWrapper |
+	NMTrackRowWrapper |
+	PluginSlotWrapper;
 
 export interface Component {
 	id: string;
@@ -185,6 +185,8 @@ export const CONTAINER_TYPES: ReadonlySet<ComponentType> = new Set([
 export function drawsContent(component: Component): boolean {
 	if (!CONTAINER_TYPES.has(component.component))
 		return canDraw(component.component);
+
 	const items = (component.props as ContainerWrapper | undefined)?.items;
+
 	return Array.isArray(items) && items.some(drawsContent);
 }

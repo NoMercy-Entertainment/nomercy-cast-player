@@ -12,5 +12,5 @@ export function canSee(access: string | null | undefined): boolean {
 }
 
 export function visibleEntries<T extends { access?: string | null }>(entries: T[]): T[] {
-	return entries.filter(entry => canSee(entry.access));
+	return entries.filter((entry) => canSee(entry.access));
 }

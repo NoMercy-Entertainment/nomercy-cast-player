@@ -13,22 +13,26 @@ export function dispatchOptionAction(
 	root.addEventListener('keydown', (e: KeyboardEvent) => {
 		const focusable = Array.from(
 			group.querySelectorAll<HTMLElement>('[data-focusable]'),
-		).filter(el => !el.hasAttribute('disabled'));
+		).filter((el) => !el.hasAttribute('disabled'));
 		const current = document.activeElement as HTMLElement | null;
-		const idx = current ? focusable.indexOf(current) : -1;
+		const idx = current
+			? focusable.indexOf(current)
+			: -1;
 
 		let next = -1;
+
 		if (axis === 'horizontal') {
-			if (e.key === 'ArrowLeft')
+			if (e.key === 'ArrowLeft') {
 				next = idx - 1;
-			else if (e.key === 'ArrowRight')
+			} else if (e.key === 'ArrowRight') {
 				next = idx + 1;
-		}
-		else if (axis === 'vertical') {
-			if (e.key === 'ArrowUp')
+			}
+		} else if (axis === 'vertical') {
+			if (e.key === 'ArrowUp') {
 				next = idx - 1;
-			else if (e.key === 'ArrowDown')
+			} else if (e.key === 'ArrowDown') {
 				next = idx + 1;
+			}
 		}
 
 		if (next >= 0 && next < focusable.length) {

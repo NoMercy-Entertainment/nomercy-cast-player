@@ -18,22 +18,28 @@ const props = defineProps<{
 const SPLIT_MARKERS = [':', '–', '—', '-', 'and the', 'en de', 'et le', 'und der', 'y el'];
 
 const SPLIT_REGEX = new RegExp(
-	`\\s*(${SPLIT_MARKERS.map(m => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\s+`,
+	`\\s*(${SPLIT_MARKERS.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})\\s+`,
 	'i',
 );
 
 const parts = computed<{ main: string; subtitle: string | null }>(() => {
 	const t = props.title?.trim();
+
 	if (!t)
 		return { main: '', subtitle: null };
+
 	const match = SPLIT_REGEX.exec(t);
+
 	if (!match)
 		return { main: t, subtitle: null };
+
 	const splitIndex = (match.index ?? 0) + match[0].length;
 	const main = t.slice(0, match.index).trim();
 	const subtitle = t.slice(splitIndex).trim();
+
 	if (!main)
 		return { main: t, subtitle: null };
+
 	return { main, subtitle: subtitle || null };
 });
 </script>

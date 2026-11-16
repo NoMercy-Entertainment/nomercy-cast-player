@@ -37,6 +37,7 @@ describe('the receiver asks for a new cast on every screen when the sign-in ends
 	function castMusic(): void {
 		authStore.setRenewalRequester(requester);
 		authStore.consumeRealHandshake(token(Math.floor(Date.now() / 1000) + 60), server);
+
 		wrapper = mount(App, {
 			attachTo: document.body,
 			global: { stubs: { RouterView: { template: '<div class="now-playing">made-up song</div>' } } },
@@ -97,11 +98,16 @@ describe('the receiver asks for a new cast on every screen when the sign-in ends
 		castMusic();
 		await untilExpiry();
 		const button = wrapper.find('button');
+
 		expect(button.text()).toBe('Try again');
 		expect(document.activeElement).toBe(button.element);
 		requester.mockClear();
 
-		button.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+		button.element.dispatchEvent(new KeyboardEvent('keydown', {
+			key: 'Enter',
+			bubbles: true,
+			cancelable: true,
+		}));
 
 		expect(requester).toHaveBeenCalledTimes(1);
 	});

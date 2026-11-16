@@ -13,7 +13,15 @@ vi.mock('@/lib/http/client', () => ({
 }));
 
 function card(id: string, title?: string): Component {
-	return { id, component: 'NMCarousel', props: { id, title, items: [] } };
+	return {
+		id,
+		component: 'NMCarousel',
+		props: {
+			id,
+			title,
+			items: [],
+		},
+	};
 }
 
 describe('usePageLoadMutationEffect with a route param that changes under a reused component', () => {
@@ -23,6 +31,7 @@ describe('usePageLoadMutationEffect with a route param that changes under a reus
 
 	it('writes the pageLoad refresh into the CURRENT route\'s cache key, not the key the component started with', async () => {
 		const queryClient = new QueryClient();
+
 		setQueryClient(queryClient);
 
 		queryClient.setQueryData(['library', 'A'], [card('card1')]);
@@ -39,19 +48,27 @@ describe('usePageLoadMutationEffect with a route param that changes under a reus
 				// + KeepAlive, no :key) — the hook must read the live route key, not a
 				// value frozen at the first mount.
 				usePageLoadMutationEffect(keyRef, dataRef, isLoadingRef, isFetchingRef);
+
 				return () => h('div');
 			},
 		});
+
 		mount(Host);
 
 		let resolveFetch!: (value: unknown) => void;
+
 		apiFetch.mockImplementation(() => new Promise((resolve) => {
 			resolveFetch = resolve;
 		}));
 
 		dataRef.value = [
-			{ ...card('card1'), update: { when: 'pageLoad', link: '/refresh', body: { replace_id: 'card1' } } },
+			{ ...card('card1'), update: {
+				when: 'pageLoad',
+				link: '/refresh',
+				body: { replace_id: 'card1' },
+			} },
 		];
+
 		await vi.waitFor(() => expect(apiFetch).toHaveBeenCalled());
 
 		// User navigates from library A to library B while this card's
@@ -62,10 +79,12 @@ describe('usePageLoadMutationEffect with a route param that changes under a reus
 
 		await vi.waitFor(() => {
 			const b = queryClient.getQueryData(['library', 'B']) as Component[];
+
 			expect((b[0].props as { title?: string }).title).toBe('Refreshed');
 		});
 
 		const a = queryClient.getQueryData(['library', 'A']) as Component[];
+
 		expect((a[0].props as { title?: string }).title).toBeUndefined();
 	});
 });

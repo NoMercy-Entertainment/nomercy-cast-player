@@ -16,6 +16,7 @@ import type { Direction } from '@/stores/focusStore';
 
 const { state, pending } = await vi.hoisted(async () => {
 	const { ref: makeRef } = await import('vue');
+
 	return {
 		state: makeRef('idle'),
 		pending: makeRef({ body: 'app 1.0' } as { body: string } | null),
@@ -47,7 +48,12 @@ vi.mock('@/queries/useMeQuery', () => ({
 
 vi.mock('@/queries/useInfoQuery', () => ({
 	useInfoQuery: () => ({
-		data: ref({ id: 'title-1', title: 'Example Title', link: '/movies/title-1', watchlist: false }),
+		data: ref({
+			id: 'title-1',
+			title: 'Example Title',
+			link: '/movies/title-1',
+			watchlist: false,
+		}),
 		isLoading: ref(false),
 		error: ref(null),
 		refetch: vi.fn(),
@@ -60,7 +66,11 @@ vi.mock('@/queries/useTrailerQuery', () => ({
 
 vi.mock('@/queries/useMusicListQuery', () => ({
 	useMusicListQuery: () => ({
-		data: ref({ id: 'alb-1', title: 'Test Album', tracks: [{ id: 'trk-1', title: 'Track One' }] }),
+		data: ref({
+			id: 'alb-1',
+			title: 'Test Album',
+			tracks: [{ id: 'trk-1', title: 'Track One' }],
+		}),
 		isLoading: ref(false),
 		error: ref(null),
 		refetch: vi.fn(),
@@ -84,7 +94,7 @@ afterEach(() => {
 });
 
 function outsideWarnings(): unknown[][] {
-	return (warn.mock.calls as unknown[][]).filter(c => String(c[0]).includes('used outside FocusGroup'));
+	return (warn.mock.calls as unknown[][]).filter((c) => String(c[0]).includes('used outside FocusGroup'));
 }
 
 /** Presses a D-pad direction through the store, as the global key handler does. */
@@ -102,11 +112,17 @@ async function walk(
 	wrapper = mount(component as never, {
 		props: props as never,
 		attachTo: document.body,
-		global: { plugins: [VueQueryPlugin], stubs: { RouterLink: true, teleport: true, SetupBackdrop: true } },
+		global: { plugins: [VueQueryPlugin], stubs: {
+			RouterLink: true,
+			teleport: true,
+			SetupBackdrop: true,
+		} },
 	});
+
 	await flushPromises();
 
 	const rows = [...document.body.querySelectorAll<HTMLElement>(selector)];
+
 	expect(rows.length).toBeGreaterThanOrEqual(minRows);
 	rows[0].focus();
 
@@ -114,6 +130,7 @@ async function walk(
 		press(dir);
 		expect(document.activeElement, `${dir} number ${i} reaches row ${i}`).toBe(rows[i]);
 	}
+
 	expect(outsideWarnings()).toEqual([]);
 }
 

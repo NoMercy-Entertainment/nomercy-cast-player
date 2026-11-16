@@ -19,33 +19,43 @@ const info = computed(() => data.value ?? null);
 
 const now = ref(Date.now());
 let tickTimer: number | null = null;
+
 onMounted(() => {
 	tickTimer = window.setInterval(() => {
 		now.value = Date.now();
 	}, 1000);
 });
+
 onUnmounted(() => {
-	if (tickTimer !== null)
+	if (tickTimer !== null) {
 		window.clearInterval(tickTimer);
+	}
 });
 
 function formatUptime(bootIso: string | undefined, currentMs: number): string {
 	if (!bootIso)
 		return '—';
+
 	const boot = Date.parse(bootIso);
+
 	if (!Number.isFinite(boot))
 		return '—';
+
 	const seconds = Math.max(0, Math.floor((currentMs - boot) / 1000));
 	const d = Math.floor(seconds / 86400);
 	const h = Math.floor((seconds % 86400) / 3600);
 	const m = Math.floor((seconds % 3600) / 60);
 	const s = seconds % 60;
+
 	if (d > 0)
 		return `${d}d ${h}h ${m}m`;
+
 	if (h > 0)
 		return `${h}h ${m}m`;
+
 	if (m > 0)
 		return `${m}m ${s}s`;
+
 	return `${s}s`;
 }
 

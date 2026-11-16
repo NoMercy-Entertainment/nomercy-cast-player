@@ -49,32 +49,37 @@ export interface ResolvedTrailer {
 	subtitles: TrailerSubtitle[];
 }
 
-export type TrailerLookup
-	= | { state: 'available'; trailer: ResolvedTrailer }
-		| { state: 'processing'; videoId: string }
-		| { state: 'unavailable' };
+export type TrailerLookup =
+	| { state: 'available'; trailer: ResolvedTrailer } |
+	{ state: 'processing'; videoId: string } |
+	{ state: 'unavailable' };
 
 export function youTubeId(src: string | undefined): string | null {
 	if (!src)
 		return null;
+
 	const match = src.match(YOUTUBE_ID);
+
 	if (match)
 		return match[1];
-	return BARE_ID.test(src) ? src : null;
+
+	return BARE_ID.test(src)
+		? src
+		: null;
 }
 
 /** YouTube trailers, official first, the order the KMP TV screen tries them. */
 export function trailerCandidates(videos: VideoRef[] | undefined): string[] {
 	return (videos ?? [])
-		.filter(v => v.site?.toLowerCase() === 'youtube' && v.type?.toLowerCase() === 'trailer')
+		.filter((v) => v.site?.toLowerCase() === 'youtube' && v.type?.toLowerCase() === 'trailer')
 		.sort((a, b) => Number(b.official === true) - Number(a.official === true))
-		.map(v => youTubeId(v.src))
+		.map((v) => youTubeId(v.src))
 		.filter((id): id is string => id !== null);
 }
 
-export function toLookup(body: WireResponse | null): TrailerLookup {
+export function toLookup(body: WireResponse | null) {
 	if (!body?.success)
-		return { state: 'unavailable' };
+		return { state: 'unavailable' } as const satisfies TrailerLookup;
 
 	const { data } = body;
 
@@ -83,19 +88,21 @@ export function toLookup(body: WireResponse | null): TrailerLookup {
 			state: 'available',
 			trailer: {
 				videoId: data.videoId,
-				title: data.title && data.title !== data.videoId ? data.title : null,
+				title: data.title && data.title !== data.videoId
+					? data.title
+					: null,
 				url: data.downloadUrl,
 				// The API names the language `lang`. Reading any other field
 				// is the bug app-web shipped: every track had no language.
-				subtitles: (data.subtitles ?? []).map(sub => ({ language: sub.lang, url: sub.url })),
+				subtitles: (data.subtitles ?? []).map((sub) => ({ language: sub.lang, url: sub.url })),
 			},
-		};
+		} as const satisfies TrailerLookup;
 	}
 
 	if (data.processing || body.status === 'queued')
-		return { state: 'processing', videoId: data.videoId };
+		return { state: 'processing', videoId: data.videoId } as const satisfies TrailerLookup;
 
-	return { state: 'unavailable' };
+	return { state: 'unavailable' } as const satisfies TrailerLookup;
 }
 
 async function lookup(videoId: string, accessToken: string): Promise<TrailerLookup> {
@@ -106,9 +113,9 @@ async function lookup(videoId: string, accessToken: string): Promise<TrailerLook
 				Accept: 'application/json',
 			},
 		});
+
 		return toLookup(await res.json() as WireResponse);
-	}
-	catch {
+	} catch {
 		return { state: 'unavailable' };
 	}
 }
@@ -127,8 +134,9 @@ export async function findTrailer(candidates: string[], accessToken: string): Pr
 		if (result.state === 'available')
 			return result;
 
-		if (result.state === 'processing' && processing === null)
+		if (result.state === 'processing' && processing === null) {
 			processing = result;
+		}
 	}
 
 	return processing ?? { state: 'unavailable' };

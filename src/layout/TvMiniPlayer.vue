@@ -23,6 +23,7 @@ const title = computed(() => track.value?.name ?? '');
 const artist = computed(() => track.value?.artist ?? '');
 
 const el = ref<HTMLElement | null>(null);
+
 useFocusEntry({
 	key: 'topnav-mini-player',
 	el,

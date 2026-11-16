@@ -25,7 +25,10 @@ const profileGroup = useFocusGroup({
 	type: 'vertical',
 	restorationKey: 'profile-list',
 	containerEl,
-	onEscape: dir => (dir === 'up' ? focusTopnav() : false),
+	onEscape: (dir) =>
+		dir === 'up'
+			? focusTopnav()
+			: false,
 });
 
 useNavFocusBridge(profileGroup);
@@ -35,10 +38,10 @@ const { data: me } = useMeQuery();
 const claims = computed(() => authStore.userClaims.value ?? null);
 const userName = computed(
 	() =>
-		me.value?.name
-		?? (claims.value?.display_name as string)
-		?? (claims.value?.preferred_username as string)
-		?? t('views.profile.user'),
+		me.value?.name ??
+		(claims.value?.display_name as string) ??
+		(claims.value?.preferred_username as string) ??
+		t('views.profile.user'),
 );
 const userEmail = computed(
 	() => me.value?.email ?? (claims.value?.email as string | undefined) ?? '',
@@ -46,6 +49,7 @@ const userEmail = computed(
 const avatarUrl = computed(() => {
 	if (me.value?.avatarUrl)
 		return me.value.avatarUrl;
+
 	// No avatar claim means no avatar: the initials fallback below covers it.
 	return null;
 });
@@ -63,15 +67,19 @@ function handleDialogKey(e: KeyboardEvent): void {
 	if (e.key === 'Escape' || e.key === 'Back' || e.key === 'GoBack') {
 		e.preventDefault();
 		showSignOutConfirm.value = false;
+
 		return;
 	}
+
 	if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
 		e.preventDefault();
 		const focused = document.activeElement;
-		if (focused === dialogCancelEl.value)
+
+		if (focused === dialogCancelEl.value) {
 			dialogConfirmEl.value?.focus();
-		else
+		} else {
 			dialogCancelEl.value?.focus();
+		}
 	}
 }
 
@@ -80,8 +88,7 @@ watch(showSignOutConfirm, async (open) => {
 		await nextTick();
 		dialogCancelEl.value?.focus();
 		window.addEventListener('keydown', handleDialogKey, true);
-	}
-	else {
+	} else {
 		window.removeEventListener('keydown', handleDialogKey, true);
 	}
 });

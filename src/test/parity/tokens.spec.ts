@@ -33,6 +33,7 @@ describe('shared focus ring is a 2 px white stroke without scale (TvCardViewHold
 			'styles/components.css',
 			'.nm-focus-scale:focus-visible .nm-focus-ring',
 		);
+
 		expect(ring['box-shadow']).toBe('0 0 0 2px var(--cast-white)');
 	});
 
@@ -54,6 +55,7 @@ describe('hero rails layout (NMLolomo.kt:251, VideoContentList.kt:590-598)', () 
 describe('hero scrim (BackdropImageWithOverlay.kt:253-285)', () => {
 	it('is the KMP radial: transparent to 25 %, black from 37.5 %', () => {
 		const bg = decls('styles/components.css', '.nm-hero-scrim').background;
+
 		expect(bg).toBe(
 			'radial-gradient( ellipse 1987px 1728px at calc(100% - 187px) -450px, transparent 0%, transparent 25%, var(--cast-black) 37.5%, var(--cast-black) 100% )',
 		);

@@ -20,14 +20,20 @@ useFocusEntry({
 	key: props.id,
 	el,
 	onAction: () => {
-		if (props.data.link)
+		if (props.data.link) {
 			router.push(props.data.link);
+		}
 	},
 });
 </script>
 
 <template>
-	<article ref="el" class="top-result nm-focus-border" data-focusable tabindex="0" role="button">
+	<article ref="el"
+		class="top-result nm-focus-border"
+		data-focusable
+		tabindex="0"
+		role="button"
+	>
 		<div class="art">
 			<img v-if="image" class="nm-cover-top" :src="image" :alt="props.data.title">
 			<FallbackPoster v-else :title="props.data.title" />
