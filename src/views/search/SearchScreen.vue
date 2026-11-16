@@ -132,6 +132,7 @@ function setMode(next: 'video' | 'music'): void {
 	display: flex;
 	align-items: center;
 	gap: 16px;
+	width: 75%;
 	height: 60px;
 	padding: 0 16px;
 	background: oklch(0.18 0.01 250 / 0.85);

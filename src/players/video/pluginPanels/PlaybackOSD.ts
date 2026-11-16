@@ -53,7 +53,9 @@ export function mountPlaybackOSD(opts: PlaybackOSDOptions): PlaybackOSDHandle {
 	fill.className = 'osd-bar-fill';
 	const chapterLayer = document.createElement('div');
 	chapterLayer.className = 'osd-bar-chapters';
-	barWrap.append(chapterLayer, fill);
+	const thumb = document.createElement('div');
+	thumb.className = 'osd-bar-thumb';
+	barWrap.append(chapterLayer, fill, thumb);
 	const remainingEl = document.createElement('span');
 	remainingEl.className = 'osd-time osd-remaining';
 	progressRow.append(elapsedEl, barWrap, remainingEl);
@@ -119,6 +121,7 @@ export function mountPlaybackOSD(opts: PlaybackOSDOptions): PlaybackOSDHandle {
 		const d = opts.getDuration();
 		if (d > 0) {
 			fill.style.width = `${Math.min(100, (t / d) * 100)}%`;
+			thumb.style.left = fill.style.width;
 			elapsedEl.textContent = fmt(t);
 			remainingEl.textContent = `-${fmt(Math.max(0, d - t))}`;
 		}

@@ -521,13 +521,24 @@
 	height: 8px;
 	border-radius: 4px;
 	background: rgba(211, 211, 211, 0.4);
-	overflow: hidden;
+}
+.osd-bar-thumb {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	transform: translate(-50%, -50%);
+	z-index: 3;
 }
 .osd-bar-fill {
 	position: absolute;
 	left: 0;
 	top: 0;
 	bottom: 0;
+	border-radius: 4px 0 0 4px;
 	background: rgba(255, 255, 255, 0.8);
 	transition: width 200ms linear;
 	z-index: 1;
