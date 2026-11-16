@@ -78,6 +78,7 @@ export default defineConfig(({ command, mode }) => {
 			// renders, and nothing below rendering can see it.
 			environment: 'jsdom',
 			globals: true,
+			setupFiles: ['src/test/setup.ts'],
 			include: ['src/**/*.{test,spec}.{ts,vue}'],
 			exclude: ['**/node_modules/**', '**/docs/**'],
 		},
