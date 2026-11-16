@@ -29,6 +29,43 @@ function osdText(): { visible: boolean; elapsed: string | null; remaining: strin
 	};
 }
 
+// The surfaces a viewer can report as blank or covered. Class names and styles only, no text or URLs.
+const LAYERS = [
+	'.playback-osd',
+	'.pre-screen',
+	'.pre-screen-buttons button',
+	'.tv-overlay-host',
+	'.nm-hero-rails-screen',
+	'.nm-hero-rails',
+	'.nm-hero-rails [data-rail-id]',
+	'.empty-state',
+	'.error-panel',
+	'video',
+] as const;
+const LAYER_ITEMS = 4;
+
+function layers(): Record<string, unknown> {
+	return Object.fromEntries(LAYERS.map((selector) => {
+		const found = Array.from(document.querySelectorAll<HTMLElement>(selector));
+		return [selector, {
+			count: found.length,
+			items: found.slice(0, LAYER_ITEMS).map((el) => {
+				const style = getComputedStyle(el);
+				const box = el.getBoundingClientRect();
+				return {
+					className: typeof el.className === 'string' ? el.className : '',
+					display: style.display,
+					visibility: style.visibility,
+					opacity: style.opacity,
+					zIndex: style.zIndex,
+					box: [box.x, box.y, box.width, box.height].map(Math.round),
+					children: el.childElementCount,
+				};
+			}),
+		}];
+	}));
+}
+
 /** Only what a sender needs to see why playback stalls: no tokens, no server address. */
 export function buildDiagnosticsAnswer(): Record<string, unknown> {
 	const mse = (globalThis as { MediaSource?: { isTypeSupported: (type: string) => boolean } }).MediaSource;
@@ -49,6 +86,7 @@ export function buildDiagnosticsAnswer(): Record<string, unknown> {
 		osd: osdText(),
 		codecs: Object.fromEntries(CODECS.map(type => [type, mse?.isTypeSupported(type) ?? null])),
 		crashes: pendingCrashes(),
+		layers: layers(),
 		events: diagnosticsRing.snapshot().slice(-LAST_EVENTS),
 	};
 }

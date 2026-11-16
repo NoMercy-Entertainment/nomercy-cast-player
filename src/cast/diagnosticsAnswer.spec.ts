@@ -85,6 +85,27 @@ describe('a sender asks the receiver for its diagnostics (a TV has no DevTools)'
 		expect(JSON.stringify(answer)).not.toContain('secret-placeholder-token');
 	});
 
+	// devP: Music was blank and the pre-screen mounted ("panel pre") yet unseen; a screencap cannot say what covers what.
+	it('reports each screen layer: how many match, and each one\'s classes, z-index, opacity and display', () => {
+		document.body.innerHTML = [
+			'<div class="panel playback-osd is-visible" style="z-index: 5"></div>',
+			'<div class="panel playback-osd is-visible" style="z-index: 7"></div>',
+			'<div class="panel pre-screen" style="opacity: 0; z-index: 3"><div class="pre-screen-buttons"><button>Play</button></div></div>',
+			'<div class="nm-hero-rails-screen" style="display: none"></div>',
+		].join('');
+		const { ask, sendCustomMessage } = fakeContext();
+
+		ask({ diagnostics: true });
+
+		const layers = sendCustomMessage.mock.calls[0]![2].diagnostics.layers;
+		expect(layers['.playback-osd'].count).toBe(2);
+		expect(layers['.playback-osd'].items.map((item: { zIndex: string }) => item.zIndex)).toEqual(['5', '7']);
+		expect(layers['.pre-screen'].items[0]).toEqual(expect.objectContaining({ className: 'panel pre-screen', opacity: '0', zIndex: '3', children: 1 }));
+		expect(layers['.pre-screen-buttons button'].count).toBe(1);
+		expect(layers['.nm-hero-rails-screen'].items[0].display).toBe('none');
+		expect(layers['.empty-state'].count).toBe(0);
+	});
+
 	it('reports no crashes when none was recorded (positive control: the field is there)', () => {
 		const { ask, sendCustomMessage } = fakeContext();
 
