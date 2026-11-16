@@ -29,6 +29,10 @@
 	--cast-black: #000;
 	/* KMP light text is onSurface = slate_1 (NoMercyTheme.kt:576), near white; NM's #EDEDED is dimmer. */
 	--cast-text-primary: var(--cast-white);
+	/* KMP colorScheme (NoMercyTheme.kt:557,573,578): primary purple_9 (default theme), background slate_12, onSurfaceVariant slate_2. */
+	--cast-bg-base: #11181c;
+	--cast-text-secondary: #f8f9fa;
+	--cast-accent: #8e4ec6;
 	--cast-skip-bg: #262630eb;
 	--cast-skip-ink: #262630;
 }
