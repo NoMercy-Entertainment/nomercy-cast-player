@@ -9,13 +9,17 @@ describe('tvSeekActions (TvSeekActions.kt:11-35)', () => {
 
 	it('commit seeks, clears the override time and plays, in that order', () => {
 		const calls: string[] = [];
-		commitSeek(42, t => calls.push(`seek ${t}`), () => calls.push('clear'), () => calls.push('play'));
+
+		commitSeek(42, (t) => calls.push(`seek ${t}`), () => calls.push('clear'), () =>
+			calls.push('play'));
+
 		expect(calls).toEqual(['seek 42', 'clear', 'play']);
 	});
 
 	it('cancel clears the override time and plays', () => {
 		const clear = vi.fn();
 		const play = vi.fn();
+
 		cancelSeek(clear, play);
 		expect(clear).toHaveBeenCalledOnce();
 		expect(play).toHaveBeenCalledOnce();
@@ -47,11 +51,19 @@ describe('scrub strip (TVSeekContainer.kt)', () => {
 	});
 
 	it('s03 center commits the selected frame time', () => {
-		expect(seekStripKey(times, 2, 'center')).toEqual({ index: 2, consumed: true, commit: 20 });
+		expect(seekStripKey(times, 2, 'center')).toEqual({
+			index: 2,
+			consumed: true,
+			commit: 20,
+		});
 	});
 
 	it.each(['up', 'down', 'back'] as const)('s04 %s cancels', (key) => {
-		expect(seekStripKey(times, 2, key)).toEqual({ index: 2, consumed: true, cancel: true });
+		expect(seekStripKey(times, 2, key)).toEqual({
+			index: 2,
+			consumed: true,
+			cancel: true,
+		});
 	});
 
 	it('s05 any other key is not handled', () => {

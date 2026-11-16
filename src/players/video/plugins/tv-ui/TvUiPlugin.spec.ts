@@ -11,6 +11,7 @@ vi.mock('@/lib/http/client', () => ({
 		}
 	},
 }));
+
 const { apiFetch } = await import('@/lib/http/client');
 
 interface Item { id: number; title: string; image?: string; video_id?: string; video_type?: string; tmdb_id?: number; skip_segments?: unknown[]; season?: number; episode?: number }
@@ -22,7 +23,15 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 	now = 0;
 	length = 100;
 	bufferedTo = 0;
-	items: Item[] = [{ id: 1, title: 'One', image: '/one.jpg', video_id: 'f1', video_type: 'tv', tmdb_id: 7 }, { id: 2, title: 'Two' }];
+	items: Item[] = [{
+		id: 1,
+		title: 'One',
+		image: '/one.jpg',
+		video_id: 'f1',
+		video_type: 'tv',
+		tmdb_id: 7,
+	}, { id: 2, title: 'Two' }];
+
 	calls: string[] = [];
 	seeks: number[] = [];
 	added: unknown[] = [];
@@ -32,6 +41,7 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 			this.seeks.push(value);
 			this.now = value;
 		}
+
 		return this.now;
 	};
 
@@ -55,6 +65,7 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 	next = vi.fn();
 	addSubtitleTrack = (track: unknown): unknown => {
 		this.added.push(track);
+
 		return track;
 	};
 
@@ -73,19 +84,34 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 // A plugin's window key listener outlives its test unless its lifecycle is disposed.
 const registries: LifecycleRegistry[] = [];
 
-function setup(options: TvUiOptions = { skipPreScreen: true }): { player: FakePlayer; plugin: TvUiPlugin; root: HTMLElement } {
+function setup(options: TvUiOptions = { skipPreScreen: true }) {
 	const player = new FakePlayer();
+
 	document.body.append(player.container);
 	const plugin = new TvUiPlugin();
 	const lifecycle = new LifecycleRegistry();
+
 	registries.push(lifecycle);
 	plugin.initialize(player as never, options, lifecycle);
 	plugin.use();
-	return { player, plugin, root: player.container.querySelector<HTMLElement>('.tvui-root')! };
+
+	return {
+		player,
+		plugin,
+		root: player.container.querySelector<HTMLElement>('.tvui-root')!,
+	} as const satisfies {
+		player: FakePlayer;
+		plugin: TvUiPlugin;
+		root: HTMLElement;
+	};
 }
 
 function press(key: string): void {
-	window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+	window.dispatchEvent(new KeyboardEvent('keydown', {
+		key,
+		bubbles: true,
+		cancelable: true,
+	}));
 }
 
 const pill = (root: HTMLElement): HTMLElement | null => root.querySelector('[data-skip-prompt]');
@@ -95,7 +121,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-	registries.splice(0).forEach(registry => registry.dispose());
+	registries.splice(0).forEach((registry) => registry.dispose());
 	vi.useRealTimers();
 	document.body.replaceChildren();
 	vi.mocked(apiFetch).mockReset();
@@ -104,7 +130,13 @@ afterEach(() => {
 describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-219)', () => {
 	it('shows a skip pill for chapter-skip-available, a click seeks to the chapter end and clears it', () => {
 		const { player, root } = setup();
-		player.emit('chapter-skip-available', { type: 'intro', startTime: 5, endTime: 40 });
+
+		player.emit('chapter-skip-available', {
+			type: 'intro',
+			startTime: 5,
+			endTime: 40,
+		});
+
 		expect(pill(root)?.textContent).toBe('Skip intro');
 		pill(root)!.click();
 		expect(player.seeks).toEqual([40]);
@@ -113,6 +145,7 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 
 	it('chapter-skip-clear removes the pill', () => {
 		const { player, root } = setup();
+
 		player.emit('chapter-skip-available', { type: 'credits', endTime: 90 });
 		expect(pill(root)?.textContent).toBe('Skip credits');
 		player.emit('chapter-skip-clear');
@@ -121,7 +154,13 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 
 	it('offers the next episode inside the credits and advances once at the content end', () => {
 		const { player, root } = setup();
-		player.items[0].skip_segments = [{ type: 'credits', credits_start: 80, content_end: 95 }];
+
+		player.items[0].skip_segments = [{
+			type: 'credits',
+			credits_start: 80,
+			content_end: 95,
+		}];
+
 		player.now = 85;
 		player.emit('time', { time: 85 });
 		expect(pill(root)?.textContent).toBe('Next episode');
@@ -133,6 +172,7 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 
 	it('hides the pill while the settings panel is open (SkipOverlay unmounts)', () => {
 		const { player, root } = setup();
+
 		player.emit('pause');
 		player.emit('chapter-skip-available', { type: 'intro', endTime: 40 });
 		root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
@@ -144,6 +184,7 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 describe('first-frame overlays and messages (TvUiPlugin.kt:624-666)', () => {
 	it('shows the item backdrop and the loading overlay until a frame plays', () => {
 		const { player, root } = setup();
+
 		player.length = 0;
 		player.emit('item', { item: player.items[0], index: 0 });
 		expect(root.querySelector('.tvui-backdrop')).not.toBeNull();
@@ -158,6 +199,7 @@ describe('first-frame overlays and messages (TvUiPlugin.kt:624-666)', () => {
 
 	it('shows the player message at the top center and removes it', () => {
 		const { player, root } = setup();
+
 		player.emit('display-message', { text: 'Subtitles off' });
 		expect(root.querySelector('.tvui-center-message')?.textContent).toBe('Subtitles off');
 		player.emit('remove-message');
@@ -168,6 +210,7 @@ describe('first-frame overlays and messages (TvUiPlugin.kt:624-666)', () => {
 describe('engine accessors', () => {
 	it('enter with hidden controls pauses a playing engine through playState()', () => {
 		const { player } = setup();
+
 		player.now = 5;
 		player.emit('time', { time: 5 });
 		player.state = 'playing';
@@ -177,6 +220,7 @@ describe('engine accessors', () => {
 
 	it('the volume indicator reads volume() and volumeState()', () => {
 		const { root } = setup();
+
 		press('AudioVolumeUp');
 		vi.advanceTimersByTime(60);
 		expect(root.querySelector('.tvui-volume')?.textContent).toContain('30%');
@@ -184,14 +228,16 @@ describe('engine accessors', () => {
 
 	it('writes the subtitle style with the engine field names', () => {
 		const { player, root } = setup();
+
 		player.emit('pause');
 		root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
 		const rows = (): HTMLElement[] => Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row'));
-		rows().find(row => row.textContent?.startsWith('Subtitle style'))!.click();
+
+		rows().find((row) => row.textContent?.startsWith('Subtitle style'))!.click();
 		vi.advanceTimersByTime(400);
-		rows().find(row => row.textContent?.startsWith('Edge'))!.click();
+		rows().find((row) => row.textContent?.startsWith('Edge'))!.click();
 		vi.advanceTimersByTime(400);
-		rows().find(row => row.textContent?.includes('Drop shadow'))!.click();
+		rows().find((row) => row.textContent?.includes('Drop shadow'))!.click();
 		expect(player.subtitleStyle).toHaveBeenCalledWith({ edgeStyle: 'dropShadow' });
 	});
 });
@@ -199,6 +245,7 @@ describe('engine accessors', () => {
 describe('scrub strip (TVSeekContainer.kt:61-173)', () => {
 	it('shows the highlighted frame time in the bottom bar while scrubbing', () => {
 		const { player, root } = setup();
+
 		player.emit('pause');
 		press('ArrowRight');
 		press('ArrowRight');
@@ -208,6 +255,7 @@ describe('scrub strip (TVSeekContainer.kt:61-173)', () => {
 
 	it('draws the buffered bar from buffered() over duration()', () => {
 		const { player, root } = setup();
+
 		player.bufferedTo = 40;
 		player.emit('pause');
 		player.emit('time', { time: 0 });
@@ -216,22 +264,41 @@ describe('scrub strip (TVSeekContainer.kt:61-173)', () => {
 });
 
 describe('subtitle search dialog (SubtitleSearchDialog.kt:60-300)', () => {
-	const found = { data: [{ id: 'a', download_url: 'https://example.test/s.srt', language: 'nl', language_name: 'Dutch', release_name: 'Rel', downloads: 12, format: 'srt', hearing_impaired: false }] };
+	const found = { data: [{
+		id: 'a',
+		download_url: 'https://example.test/s.srt',
+		language: 'nl',
+		language_name: 'Dutch',
+		release_name: 'Rel',
+		downloads: 12,
+		format: 'srt',
+		hearing_impaired: false,
+	}] };
 
 	async function openSearch(): Promise<{ player: FakePlayer; root: HTMLElement }> {
 		const { player, root } = setup({ skipPreScreen: false });
 		const buttons = Array.from(root.querySelectorAll<HTMLElement>('.tvui-pre-buttons button'));
-		buttons.find(button => button.textContent?.includes('Audio'))!.click();
-		Array.from(root.querySelectorAll<HTMLElement>('.tvui-row')).find(row => row.textContent?.includes('Search subtitles online'))!.click();
+
+		buttons.find((button) => button.textContent?.includes('Audio'))!.click();
+		Array.from(root.querySelectorAll<HTMLElement>('.tvui-row')).find((row) => row.textContent?.includes('Search subtitles online'))!.click();
 		await vi.advanceTimersByTimeAsync(0);
+
 		return { player, root };
 	}
 
 	it('searches the playing item, lists the candidates and downloads the picked one', async () => {
-		vi.mocked(apiFetch).mockResolvedValueOnce(found).mockResolvedValueOnce({ data: { file: '/s/nl.srt', kind: 'subtitles', label: 'Dutch', language: 'nl' } });
+		vi.mocked(apiFetch).mockResolvedValueOnce(found).mockResolvedValueOnce({ data: {
+			file: '/s/nl.srt',
+			kind: 'subtitles',
+			label: 'Dutch',
+			language: 'nl',
+		} });
+
 		const { player, root } = await openSearch();
+
 		expect(vi.mocked(apiFetch).mock.calls[0][0]).toMatchObject({ method: 'GET', path: expect.stringContaining('/api/v1/subtitles/search?type=tv&id=7&videoFileId=f1') });
 		const row = root.querySelector<HTMLElement>('.tvui-result')!;
+
 		expect(row.textContent).toContain('Dutch');
 		row.click();
 		await vi.advanceTimersByTimeAsync(0);
@@ -242,8 +309,10 @@ describe('subtitle search dialog (SubtitleSearchDialog.kt:60-300)', () => {
 
 	it('says so when the provider is rate limited and BACK closes the dialog', async () => {
 		const { HttpError } = await import('@/lib/http/client');
+
 		vi.mocked(apiFetch).mockRejectedValueOnce(new HttpError('x', 429, ''));
 		const { root } = await openSearch();
+
 		expect(root.textContent).toContain('rate-limited');
 		press('Escape');
 		expect(root.querySelector('.tvui-search')).toBeNull();
@@ -253,6 +322,7 @@ describe('subtitle search dialog (SubtitleSearchDialog.kt:60-300)', () => {
 describe('focus watchdog (TvUiPlugin.kt:424-485)', () => {
 	it('claims focus back for the open dialog when it left the player', () => {
 		const { root } = setup({ skipPreScreen: false });
+
 		(document.activeElement as HTMLElement | null)?.blur();
 		expect(root.contains(document.activeElement)).toBe(false);
 		vi.advanceTimersByTime(600);

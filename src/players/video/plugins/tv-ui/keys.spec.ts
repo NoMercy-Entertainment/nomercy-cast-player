@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { keyOf, routeRootKey, sharedKeyAction } from './keys';
 import type { RootKeyState } from './keys';
 
-const base: RootKeyState = {
+const base = {
 	preScreen: false,
 	dialogOpen: false,
 	seekMode: false,
 	controlsVisible: false,
 	topBarFocused: false,
 	duration: 100,
-};
+} as const satisfies RootKeyState;
 
 describe('keyOf (web key names to the KMP key codes)', () => {
 	it.each([
@@ -34,8 +34,9 @@ describe('keyOf (web key names to the KMP key codes)', () => {
 
 describe('routeRootKey (TvUiPlugin.kt:502-619)', () => {
 	it('k01 every key is left alone while a dialog or the settings panel is open', () => {
-		for (const key of ['left', 'right', 'up', 'down', 'center', 'back', 'other'] as const)
+		for (const key of ['left', 'right', 'up', 'down', 'center', 'back', 'other'] as const) {
 			expect(routeRootKey({ ...base, dialogOpen: true }, key)).toEqual({ action: 'none', consumed: false });
+		}
 	});
 
 	it('k03 seek mode leaves every key to the scrub strip', () => {
@@ -85,9 +86,18 @@ describe('routeRootKey (TvUiPlugin.kt:502-619)', () => {
 });
 
 describe('sharedKeyAction (VideoChromeStoreAdapter.kt:181-188)', () => {
-	it('h01 volume mute toggles mute', () => expect(sharedKeyAction('volumeMute')).toBe('toggleMute'));
-	it('h02 rewind is a chapter-aware seek back', () => expect(sharedKeyAction('rewind')).toBe('seekBack'));
-	it('h03 fast forward is a chapter-aware seek forward', () => expect(sharedKeyAction('fastForward')).toBe('seekForward'));
-	it('h04 center toggles play and pause', () => expect(sharedKeyAction('center')).toBe('togglePlay'));
-	it('h05 everything else goes to the library key handler', () => expect(sharedKeyAction('other')).toBe('library'));
+	it('h01 volume mute toggles mute', () =>
+		expect(sharedKeyAction('volumeMute')).toBe('toggleMute'));
+
+	it('h02 rewind is a chapter-aware seek back', () =>
+		expect(sharedKeyAction('rewind')).toBe('seekBack'));
+
+	it('h03 fast forward is a chapter-aware seek forward', () =>
+		expect(sharedKeyAction('fastForward')).toBe('seekForward'));
+
+	it('h04 center toggles play and pause', () =>
+		expect(sharedKeyAction('center')).toBe('togglePlay'));
+
+	it('h05 everything else goes to the library key handler', () =>
+		expect(sharedKeyAction('other')).toBe('library'));
 });

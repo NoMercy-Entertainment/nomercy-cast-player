@@ -14,17 +14,25 @@ export type BackAction = 'closeSearch' | 'settingsStepBack' | 'closeDialogToPreS
 export function backAction(state: BackState): BackAction {
 	if (state.search)
 		return 'closeSearch';
+
 	if (state.settings)
 		return 'settingsStepBack';
+
 	if (state.episodeOrLanguage)
 		return 'closeDialogToPreScreen';
+
 	if (state.seekMode)
 		return 'cancelSeek';
+
 	if (state.controlsVisible)
 		return 'hideControls';
+
 	if (state.preScreen)
 		return 'exit';
-	return state.remote ? 'pauseAndExit' : 'pauseToPreScreen';
+
+	return state.remote
+		? 'pauseAndExit'
+		: 'pauseToPreScreen';
 }
 
 export type SettingsPane = 'main' | 'quality' | 'subtitle' | 'audio' | 'subtitleStyle';
@@ -36,10 +44,12 @@ export interface SettingsNav {
 }
 
 // TvUiPlugin.kt:227-234.
-export function settingsStepBack(nav: SettingsNav): SettingsNav | 'close' {
+export function settingsStepBack(nav: SettingsNav) {
 	if (nav.pane === 'subtitleStyle' && nav.styleProp !== null)
-		return { pane: 'subtitleStyle', styleProp: null };
+		return { pane: 'subtitleStyle', styleProp: null } as const satisfies SettingsNav | 'close';
+
 	if (nav.pane === 'main')
 		return 'close';
-	return { pane: 'main', styleProp: null };
+
+	return { pane: 'main', styleProp: null } as const satisfies SettingsNav | 'close';
 }

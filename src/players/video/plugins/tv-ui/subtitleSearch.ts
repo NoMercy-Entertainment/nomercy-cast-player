@@ -47,10 +47,18 @@ interface PlayingItem {
 // SubtitleSearchDialog.kt:38-41: the playing item names the target, a show by its tmdb id.
 export function searchTarget(item: PlayingItem | undefined): SearchTarget | null {
 	const type = item?.video_type;
-	const id = Number(type === 'tv' ? (item?.tmdb_id ?? item?.id) : item?.id);
+	const id = Number(type === 'tv'
+		? (item?.tmdb_id ?? item?.id)
+		: item?.id);
+
 	if (!type || !Number.isFinite(id))
 		return null;
-	return { type, id, videoFileId: item?.video_id };
+
+	return {
+		type,
+		id,
+		videoFileId: item?.video_id,
+	};
 }
 
 export function isRateLimited(error: unknown): boolean {
@@ -59,11 +67,15 @@ export function isRateLimited(error: unknown): boolean {
 
 export async function searchSubtitles(target: SearchTarget, language: string): Promise<SubtitleCandidate[]> {
 	const query = new URLSearchParams({ type: target.type, id: String(target.id) });
-	if (target.videoFileId)
+
+	if (target.videoFileId) {
 		query.set('videoFileId', target.videoFileId);
+	}
+
 	query.set('language', language);
 	const body = await apiFetch<{ data?: RawCandidate[] }>({ path: `/api/v1/subtitles/search?${query.toString()}`, method: 'GET' });
-	return (body.data ?? []).map(raw => ({
+
+	return (body.data ?? []).map((raw) => ({
 		id: raw.id,
 		downloadUrl: raw.download_url,
 		language: raw.language,
@@ -81,7 +93,15 @@ export async function downloadSubtitle(target: SearchTarget, candidate: Subtitle
 		path: '/api/v1/subtitles/download',
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ type: target.type, id: target.id, video_file_id: target.videoFileId, download_url: candidate.downloadUrl, language: candidate.language, format: candidate.format }),
+		body: JSON.stringify({
+			type: target.type,
+			id: target.id,
+			video_file_id: target.videoFileId,
+			download_url: candidate.downloadUrl,
+			language: candidate.language,
+			format: candidate.format,
+		}),
 	});
+
 	return body.data;
 }

@@ -24,23 +24,78 @@ describe('engine accessors of nomercy-video-player 2.8.3', () => {
 	});
 
 	it('fromEngineStyle is the inverse for the settings rows', () => {
-		const view = fromEngineStyle({ fontSize: 150, fontFamily: 'Arial, sans-serif', textColor: 'yellow', backgroundOpacity: 50, edgeStyle: 'dropShadow' });
-		expect(view).toEqual({ fontSize: 36, fontFamily: 'Arial, sans-serif', fontColor: 'yellow', backgroundOpacity: 0.5, edgeStyle: 'drop_shadow' });
+		const view = fromEngineStyle({
+			fontSize: 150,
+			fontFamily: 'Arial, sans-serif',
+			textColor: 'yellow',
+			backgroundOpacity: 50,
+			edgeStyle: 'dropShadow',
+		});
+
+		expect(view).toEqual({
+			fontSize: 36,
+			fontFamily: 'Arial, sans-serif',
+			fontColor: 'yellow',
+			backgroundOpacity: 0.5,
+			edgeStyle: 'drop_shadow',
+		});
 	});
 });
 
 describe('backdrop and loading overlay predicates (TvUiPlugin.kt:630, :668)', () => {
 	it('the backdrop shows before the first frame and never over the pre-screen', () => {
-		expect(showBackdrop({ preScreen: false, duration: 0, time: 0 })).toBe(true);
-		expect(showBackdrop({ preScreen: false, duration: 100, time: 0 })).toBe(true);
-		expect(showBackdrop({ preScreen: false, duration: 100, time: 5 })).toBe(false);
-		expect(showBackdrop({ preScreen: true, duration: 0, time: 0 })).toBe(false);
+		expect(showBackdrop({
+			preScreen: false,
+			duration: 0,
+			time: 0,
+		})).toBe(true);
+
+		expect(showBackdrop({
+			preScreen: false,
+			duration: 100,
+			time: 0,
+		})).toBe(true);
+
+		expect(showBackdrop({
+			preScreen: false,
+			duration: 100,
+			time: 5,
+		})).toBe(false);
+
+		expect(showBackdrop({
+			preScreen: true,
+			duration: 0,
+			time: 0,
+		})).toBe(false);
 	});
 
 	it('the loading overlay shows without duration, or at time 0 while not playing', () => {
-		expect(showLoading({ preScreen: false, duration: 0, time: 0, playing: false })).toBe(true);
-		expect(showLoading({ preScreen: false, duration: 100, time: 0, playing: false })).toBe(true);
-		expect(showLoading({ preScreen: false, duration: 100, time: 0, playing: true })).toBe(false);
-		expect(showLoading({ preScreen: true, duration: 0, time: 0, playing: false })).toBe(false);
+		expect(showLoading({
+			preScreen: false,
+			duration: 0,
+			time: 0,
+			playing: false,
+		})).toBe(true);
+
+		expect(showLoading({
+			preScreen: false,
+			duration: 100,
+			time: 0,
+			playing: false,
+		})).toBe(true);
+
+		expect(showLoading({
+			preScreen: false,
+			duration: 100,
+			time: 0,
+			playing: true,
+		})).toBe(false);
+
+		expect(showLoading({
+			preScreen: true,
+			duration: 0,
+			time: 0,
+			playing: false,
+		})).toBe(false);
 	});
 });

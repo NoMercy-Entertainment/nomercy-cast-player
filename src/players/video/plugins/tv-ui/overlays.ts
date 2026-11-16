@@ -18,34 +18,45 @@ export function showLoading(state: FirstFrameState & { playing: boolean }): bool
 
 function layer(className: string, image: string | null): HTMLElement {
 	const node = el('div', className);
-	if (image)
+
+	if (image) {
 		node.style.backgroundImage = `url("${image}")`;
+	}
+
 	return node;
 }
 
 export function backdropLayer(image: string): HTMLElement {
 	const node = layer('tvui-backdrop', image);
+
 	node.setAttribute('role', 'img');
 	node.setAttribute('aria-label', t('player_backdrop'));
+
 	return node;
 }
 
 // CastLoadingOverlay.kt:39-90: the item image under a dark gradient, a spinner and two lines.
 export function loadingLayer(image: string | null): HTMLElement {
 	const node = el('div', 'tvui-loading', layer('tvui-loading-art', image), el('div', 'tvui-spinner'), el('div', 'tvui-loading-title', t('player_loading')), el('div', 'tvui-loading-subtitle', t('player_preparing')));
+
 	node.setAttribute('role', 'status');
+
 	return node;
 }
 
 // CenterMessage.kt:30-47.
 export function centerMessage(text: string): HTMLElement {
 	const node = el('div', 'tvui-center-message', text);
+
 	node.setAttribute('role', 'status');
+
 	return node;
 }
 
 export function skipPrompt(label: string, onSkip: () => void): HTMLElement {
 	const node = focusable(el('button', 'tvui-button tvui-skip', label), onSkip);
+
 	node.dataset.skipPrompt = 'true';
+
 	return node;
 }

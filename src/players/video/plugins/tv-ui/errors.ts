@@ -18,21 +18,29 @@ const MESSAGE_GROUPS = [
 export function errorMessageKey(error: string | null | undefined): string {
 	if (!error)
 		return 'error_unknown';
+
 	const message = error.toLowerCase();
-	return MESSAGE_GROUPS.find(([needles]) => needles.some(needle => message.includes(needle)))?.[1] ?? 'player_error_technical';
+
+	return MESSAGE_GROUPS.find(([needles]) => needles.some((needle) => message.includes(needle)))?.[1] ?? 'player_error_technical';
 }
 
 export function errorHintKey(error: string | null | undefined): string | null {
 	if (!error)
 		return null;
+
 	const message = error.toLowerCase();
-	if (['exceeds_capabilities', 'codec', 'profile', 'level'].some(needle => message.includes(needle)))
+
+	if (['exceeds_capabilities', 'codec', 'profile', 'level'].some((needle) => message.includes(needle)))
 		return 'player_error_hint_codec';
+
 	if (message.includes('timeout') || message.includes('network'))
 		return 'player_error_hint_network';
+
 	if (message.includes('format') && message.includes('unsupported'))
 		return 'player_error_hint_format';
+
 	if (message.includes('drm') || message.includes('license'))
 		return 'player_error_hint_drm';
+
 	return null;
 }

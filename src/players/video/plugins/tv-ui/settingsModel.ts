@@ -10,7 +10,11 @@ export interface MainRow {
 }
 
 // PlayerSettingsScreen.kt:mainRows: a row with nothing to choose is shown disabled.
-export function mainRows(counts: { levels: number; textTracks: number; audioTracks: number }): MainRow[] {
+export function mainRows(counts: {
+	levels: number;
+	textTracks: number;
+	audioTracks: number;
+}): MainRow[] {
 	return [
 		{ id: 'audio', enabled: counts.audioTracks > 1 },
 		{ id: 'subtitle', enabled: counts.textTracks > 0 },

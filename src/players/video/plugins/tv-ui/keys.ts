@@ -38,27 +38,32 @@ export interface RootRoute {
 	consumed: boolean;
 }
 
-const PASS: RootRoute = { action: 'none', consumed: false };
+const PASS = { action: 'none', consumed: false } as const satisfies RootRoute;
 
 // TvUiPlugin.kt:502-619, the root key router.
 export function routeRootKey(state: RootKeyState, key: KeyName): RootRoute {
 	if (state.dialogOpen || state.seekMode)
 		return PASS;
+
 	switch (key) {
 		case 'left':
 		case 'right':
 			if (state.preScreen || state.topBarFocused || state.duration <= 0)
 				return PASS;
+
 			return { action: 'enterSeek', consumed: true };
 		case 'up':
 		case 'down':
 			if (state.preScreen)
 				return PASS;
+
 			return state.controlsVisible
 				? { action: 'rescheduleHide', consumed: false }
 				: { action: 'showControls', consumed: true };
 		case 'center':
-			return state.controlsVisible ? PASS : { action: 'togglePlay', consumed: true };
+			return state.controlsVisible
+				? PASS
+				: { action: 'togglePlay', consumed: true };
 		case 'volumeUp':
 		case 'volumeDown':
 		case 'volumeMute':

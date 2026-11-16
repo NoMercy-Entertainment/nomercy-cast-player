@@ -3,8 +3,13 @@ import { FONT_SIZE_CHOICES, mainRows, paneTitleKey, styleRowFocus, withinEnterGu
 
 describe('settings model (PlayerSettingsScreen.kt)', () => {
 	it('p03 rows without a choice are disabled', () => {
-		const rows = mainRows({ levels: 1, textTracks: 0, audioTracks: 1 });
-		expect(rows.map(row => [row.id, row.enabled])).toEqual([
+		const rows = mainRows({
+			levels: 1,
+			textTracks: 0,
+			audioTracks: 1,
+		});
+
+		expect(rows.map((row) => [row.id, row.enabled])).toEqual([
 			['audio', false],
 			['subtitle', false],
 			['subtitleStyle', true],
@@ -15,12 +20,21 @@ describe('settings model (PlayerSettingsScreen.kt)', () => {
 	});
 
 	it('p03 rows with a choice are enabled', () => {
-		const rows = mainRows({ levels: 3, textTracks: 2, audioTracks: 2 });
-		expect(rows.every(row => row.enabled)).toBe(true);
+		const rows = mainRows({
+			levels: 3,
+			textTracks: 2,
+			audioTracks: 2,
+		});
+
+		expect(rows.every((row) => row.enabled)).toBe(true);
 	});
 
 	it('p04 the first enabled row takes the initial focus', () => {
-		expect(mainRows({ levels: 1, textTracks: 2, audioTracks: 1 }).findIndex(row => row.enabled)).toBe(1);
+		expect(mainRows({
+			levels: 1,
+			textTracks: 2,
+			audioTracks: 1,
+		}).findIndex((row) => row.enabled)).toBe(1);
 	});
 
 	it('p05 an action inside 300 ms of entering a pane is ignored', () => {
