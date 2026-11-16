@@ -49,7 +49,8 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 		key: opts.key,
 		order: opts.order ?? 0,
 		get enabled() {
-			return opts.enabled?.value ?? true;
+			// An entry whose element is not drawn (a Show All pill with no link) is no neighbor.
+			return (opts.enabled?.value ?? true) && opts.el.value !== null;
 		},
 		el: () => opts.el.value,
 		isFocused: () => document.activeElement === opts.el.value,

@@ -1,4 +1,4 @@
-import { getCurrentInstance, inject, onActivated, onBeforeUnmount, onDeactivated, onMounted, provide, ref } from 'vue';
+import { getCurrentInstance, inject, onActivated, onBeforeUnmount, onDeactivated, onMounted, provide, ref, toRaw, watch } from 'vue';
 import type { Ref } from 'vue';
 import {
 	focusStore,
@@ -119,8 +119,10 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		type: opts.type,
 		register(entry) {
 			entries.value.push(entry);
+			focusStore.entryChanges.value++;
 			return () => {
-				entries.value = entries.value.filter(e => e !== entry);
+				// The ref hands back reactive proxies, so compare the raw objects.
+				entries.value = entries.value.filter(e => toRaw(e) !== entry);
 			};
 		},
 		focusByKey(key) {
@@ -276,6 +278,14 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		activate();
 		attemptAutoFocus();
 	});
+
+	// A server-driven page mounts before its data (or on an error panel); its cards register later.
+	if (!parent) {
+		watch(focusStore.entryChanges, () => {
+			if (isActive)
+				attemptAutoFocus();
+		});
+	}
 
 	// KeepAlive cycle: re-enter restored page → reattach to focusStore stack
 	// and re-attempt auto-focus so the saved entry regains focus. Without

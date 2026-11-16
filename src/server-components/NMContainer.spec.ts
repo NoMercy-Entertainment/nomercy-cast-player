@@ -9,6 +9,9 @@ vi.mock('vue-router', () => ({
 	useRouter: () => ({ push: vi.fn() }),
 }));
 
+// jsdom has no layout, so it has no scrollIntoView; a rail that mounts alone now takes first focus.
+Element.prototype.scrollIntoView = vi.fn();
+
 function homeCard(n: number): Component {
 	const id = `00000000-0000-4000-8000-00000000010${n}`;
 	return {

@@ -145,3 +145,105 @@ describe('the music page never ends blank', () => {
 		expect(wrapper.text()).toContain('Try again');
 	});
 });
+
+describe('a page opened by the sender gets its first focus', () => {
+	async function mountAttached(data: Component[] | undefined, isLoading: boolean): Promise<ReturnType<typeof mount>> {
+		const wrapper = mount(HeroRailsView, {
+			attachTo: document.body,
+			props: {
+				restorationKey: `first-focus-${Math.random()}`,
+				data,
+				isLoading,
+				refetch: vi.fn(),
+				errorContext: 'Couldn\'t load music',
+				emptyMessage: EMPTY_MESSAGE,
+			},
+		});
+		await flushPromises();
+		return wrapper;
+	}
+
+	async function settle(): Promise<void> {
+		await flushPromises();
+		await vi.dynamicImportSettled();
+		await flushPromises();
+	}
+
+	const rails = (): Component[] => [
+		carousel('albums', [
+			album('00000000-0000-4000-8000-000000000001'),
+			album('00000000-0000-4000-8000-000000000002'),
+		]),
+		carousel('more', [album('00000000-0000-4000-8000-000000000003')]),
+	];
+
+	it('focuses the first card when the answer is there at mount (positive control)', async () => {
+		const wrapper = await mountAttached(rails(), false);
+		await settle();
+
+		const first = wrapper.find('[data-rail-id="albums"] [data-focusable]').element;
+		expect(document.activeElement).toBe(first);
+		wrapper.unmount();
+	});
+
+	it('focuses the first card when the answer arrives after mount', async () => {
+		const wrapper = await mountAttached(undefined, true);
+		await settle();
+		expect(document.activeElement).toBe(document.body);
+
+		await wrapper.setProps({ data: rails(), isLoading: false });
+		await settle();
+
+		const first = wrapper.find('[data-rail-id="albums"] [data-focusable]').element;
+		expect(document.activeElement).toBe(first);
+		wrapper.unmount();
+	});
+
+	it('focuses the first card when the answer replaces an error panel', async () => {
+		const wrapper = mount(HeroRailsView, {
+			attachTo: document.body,
+			props: {
+				restorationKey: `first-focus-${Math.random()}`,
+				data: undefined,
+				isLoading: false,
+				error: new Error('timeout'),
+				refetch: vi.fn(),
+				errorContext: 'Couldn\'t load music',
+				emptyMessage: EMPTY_MESSAGE,
+			},
+		});
+		await settle();
+		(document.activeElement as HTMLElement | null)?.blur();
+
+		await wrapper.setProps({ data: rails(), error: null });
+		await settle();
+
+		const first = wrapper.find('[data-rail-id="albums"] [data-focusable]').element;
+		expect(document.activeElement).toBe(first);
+		wrapper.unmount();
+	});
+
+	it('moves focus down to the next rail when the first rail has no Show All', async () => {
+		const wrapper = await mountAttached(undefined, true);
+		await wrapper.setProps({ data: rails(), isLoading: false });
+		await settle();
+
+		const { focusStore } = await import('@/stores/focusStore');
+		expect(focusStore.activeGroup()?.handleKey('down')).toBe(true);
+		const next = wrapper.find('[data-rail-id="more"] [data-focusable]').element;
+		expect(document.activeElement).toBe(next);
+		wrapper.unmount();
+	});
+
+	it('moves focus on from the first card with a key', async () => {
+		const wrapper = await mountAttached(undefined, true);
+		await wrapper.setProps({ data: rails(), isLoading: false });
+		await settle();
+
+		const { focusStore } = await import('@/stores/focusStore');
+		expect(focusStore.activeGroup()?.handleKey('right')).toBe(true);
+		const cards = wrapper.findAll('[data-rail-id="albums"] [data-focusable]');
+		expect(document.activeElement).toBe(cards[1].element);
+		wrapper.unmount();
+	});
+});

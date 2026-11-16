@@ -30,6 +30,9 @@ const groupStack = shallowRef<FocusGroupHandle[]>([]);
  */
 const restoration = ref<Map<string, string>>(new Map());
 
+/** Bumped when any group gains an entry, so a page group can retry its first focus. */
+const entryChanges = ref(0);
+
 /** Focus-entry action per element, so OK can run it without a click. */
 const actionByEl = new WeakMap<HTMLElement, () => void>();
 
@@ -116,6 +119,7 @@ function requestFocus(key: string): boolean {
 
 export const focusStore = {
 	groupStack,
+	entryChanges,
 	activeGroup,
 	pushGroup,
 	popGroup,
