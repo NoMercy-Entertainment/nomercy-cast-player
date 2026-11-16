@@ -63,6 +63,9 @@ jobs:
       - name: Build
         run: node node_modules/vite/bin/vite.js build
 
+      - name: Check the built CSS reads on Chrome 92
+        run: node scripts/check-cast-css.mjs
+
       # cast.nomercy.tv is the Cloudflare Pages project cast-nomercy-tv. This step
       # used to publish to GitHub Pages, which only redirects to that domain, so
       # from 2026-09-11 the domain kept serving the deleted Kotlin/Wasm receiver

@@ -9,6 +9,7 @@
 		"dev": "vite --host --force",
 		"build": "vue-tsc --noEmit && vite build",
 		"preview": "vite preview",
+		"check:css": "node scripts/check-cast-css.mjs",
 		"copy:octopus": "node scripts/copyOctopusWorker.mjs",
 		"typecheck": "vue-tsc --noEmit",
 		"lint": "eslint . --ext .ts,.vue --report-unused-disable-directives --max-warnings 0",

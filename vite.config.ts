@@ -3,6 +3,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { loadEnv } from 'vite';
 import type { Plugin, ProxyOptions } from 'vite';
+import { chrome92Layers, chrome92Targets, chrome92Visitor } from './scripts/chrome92Css.mjs';
 import { copyOctopusWorker } from './scripts/copyOctopusWorker.mjs';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
@@ -67,7 +68,7 @@ export default defineConfig(({ command, mode }) => {
 	const target = devTarget(command, env.CAST_DEV_SERVER_URL || undefined);
 
 	return {
-		plugins: [octopusWorker(), vue(), tailwindcss()],
+		plugins: [octopusWorker(), vue(), tailwindcss(), chrome92Layers()],
 		define: {
 			__APP_VERSION__: JSON.stringify(pkg.version),
 		},
@@ -79,6 +80,11 @@ export default defineConfig(({ command, mode }) => {
 			include: ['src/**/*.{test,spec}.{ts,vue}'],
 			exclude: ['**/node_modules/**', '**/docs/**'],
 		},
+		// Chrome 92 on the Cast device reads no lab(), oklch() or @layer.
+		css: {
+			transformer: 'lightningcss',
+			lightningcss: { targets: chrome92Targets, visitor: chrome92Visitor },
+		},
 		resolve: {
 			alias: {
 				'@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -87,6 +93,7 @@ export default defineConfig(({ command, mode }) => {
 		build: {
 			outDir: 'docs',
 			target: 'es2022',
+			cssTarget: 'chrome92',
 			sourcemap: true,
 			rollupOptions: {
 				output: {
