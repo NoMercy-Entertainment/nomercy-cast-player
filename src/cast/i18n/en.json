@@ -1,0 +1,7 @@
+{
+	"cast": {
+		"boot_step_account": "The account service did not answer.",
+		"boot_step_server": "The media server does not answer.",
+		"boot_step_connect": "The connection to the media server did not open."
+	}
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
@@ -21,6 +22,7 @@ const props = defineProps<{
 	update?: Update;
 }>();
 
+const { t } = useTranslation();
 const router = useRouter();
 const el = ref<HTMLElement | null>(null);
 
@@ -36,17 +38,17 @@ const typeLabel = computed(() => {
 	switch (cardType.value) {
 		case 'playlist':
 		case 'favorite':
-			return 'Playlist';
+			return t('components.music_card_type.playlist');
 		case 'album':
-			return 'Album';
+			return t('components.music_card_type.album');
 		case 'artist':
-			return 'Artist';
+			return t('components.music_card_type.artist');
 		case 'release_groups':
 		case 'release_group':
-			return 'Release';
+			return t('components.music_card_type.release');
 		case 'genres':
 		case 'genre':
-			return 'Genre';
+			return t('components.music_card_type.genre');
 		default:
 			return '';
 	}
@@ -58,7 +60,7 @@ const subtitle = computed(() => {
 	const tracks = wrapperData.value.tracks as number | undefined;
 	const year = wrapperData.value.year as number | string | undefined;
 	const tail = typeof tracks === 'number'
-		? `${tracks} ${tracks === 1 ? 'track' : 'tracks'}`
+		? t('components.track_count', { count: tracks })
 		: (year ? String(year) : '');
 	if (typeLabel.value && tail)
 		return `${typeLabel.value} • ${tail}`;

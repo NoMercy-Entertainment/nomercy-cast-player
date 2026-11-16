@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusGroup } from '@/composables/useFocusGroup';
@@ -12,6 +13,7 @@ const props = defineProps<{
 	update?: Update;
 }>();
 
+const { t } = useTranslation();
 const router = useRouter();
 const containerEl = ref<HTMLElement | null>(null);
 const moreLinkEl = ref<HTMLElement | null>(null);
@@ -47,7 +49,7 @@ useFocusEntry({
 				tabindex="0"
 				@click.prevent="props.data.more_link && router.push(props.data.more_link)"
 			>
-				{{ props.data.more_link_text || 'More' }}
+				{{ props.data.more_link_text || t('music.more') }}
 			</button>
 		</header>
 

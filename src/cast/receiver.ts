@@ -1,5 +1,6 @@
 import type { Router } from 'vue-router';
 import { ref } from 'vue';
+import i18next from '@/i18n/i18next';
 import { ALL_CUSTOM_NAMESPACES } from './namespaces';
 import type { NavigatePayload } from './messageBus';
 import type { ResolvedServer } from '@/lib/resolveServer';
@@ -227,9 +228,9 @@ function startFromLaunch(launch: LaunchCustomData, router: Router): void {
 const BootDeadlineMs = 15_000;
 
 const BootStepReasons = {
-	account: 'The account service did not answer.',
-	server: 'The media server does not answer.',
-	connect: 'The connection to the media server did not open.',
+	account: () => i18next.t('cast.boot_step_account'),
+	server: () => i18next.t('cast.boot_step_server'),
+	connect: () => i18next.t('cast.boot_step_connect'),
 } as const;
 
 let bootRun = 0;
@@ -264,7 +265,7 @@ function runBoot(plan: BootPlan): void {
 		if (step === 'connect')
 			void socketStore.disconnectAll();
 		console.warn('[cast] boot passed its deadline at step', step);
-		authStore.bootError.value = BootStepReasons[step];
+		authStore.bootError.value = BootStepReasons[step]();
 	}, BootDeadlineMs);
 
 	void (async () => {
@@ -290,7 +291,7 @@ function runBoot(plan: BootPlan): void {
 			if (threw)
 				authStore.receiverState.value = 'DEGRADED';
 			else
-				authStore.bootError.value = BootStepReasons.server;
+				authStore.bootError.value = BootStepReasons.server();
 			return;
 		}
 		if (!authStore.consumeRealHandshake(plan.token, server)) {

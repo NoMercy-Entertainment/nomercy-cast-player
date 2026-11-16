@@ -33,13 +33,21 @@
 			"watch": "Bekijken"
 		},
 		"music_card_type": {
-			"album": "Album"
-		}
+			"album": "Album",
+			"artist": "Artiest",
+			"playlist": "Afspeellijst",
+			"genre": "Genre",
+			"release": "Uitgave"
+		},
+		"track_count_one": "{{count}} nummer",
+		"track_count_other": "{{count}} nummers",
+		"show_all": "Alles weergeven"
 	},
 	"info": {
 		"watch_trailer": "Trailer bekijken"
 	},
 	"music": {
+		"more": "Meer",
 		"tracks": "nummers",
 		"player": {
 			"lyrics": "Songteksten",

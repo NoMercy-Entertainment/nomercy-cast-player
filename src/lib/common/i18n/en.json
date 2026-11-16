@@ -33,13 +33,21 @@
 			"watch": "Watch"
 		},
 		"music_card_type": {
-			"album": "Album"
-		}
+			"album": "Album",
+			"artist": "Artist",
+			"playlist": "Playlist",
+			"genre": "Genre",
+			"release": "Release"
+		},
+		"track_count_one": "{{count}} track",
+		"track_count_other": "{{count}} tracks",
+		"show_all": "Show All"
 	},
 	"info": {
 		"watch_trailer": "Watch trailer"
 	},
 	"music": {
+		"more": "More",
 		"tracks": "tracks",
 		"player": {
 			"lyrics": "Lyrics",

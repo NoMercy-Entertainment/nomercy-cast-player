@@ -4,6 +4,7 @@ import { buildDiagnosticsReport } from './payload';
 import { collectDeviceFacts } from './deviceFacts';
 import { castDeviceId } from './deviceId';
 import { diagnosticsRing } from './sink';
+import i18next from '@/i18n/i18next';
 import { authStore } from '@/stores/authStore';
 import { postDiagnosticsReport } from '@/lib/nomercyApi';
 
@@ -47,7 +48,7 @@ async function confirmSend(): Promise<boolean> {
 	const token = authStore.accessToken.value;
 	if (!token) {
 		state.value = 'failed';
-		lastError.value = 'Not signed in';
+		lastError.value = i18next.t('diagnostics.not_signed_in');
 		return false;
 	}
 

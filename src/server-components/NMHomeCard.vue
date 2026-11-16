@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
@@ -21,6 +22,7 @@ const props = defineProps<{
 	update?: Update;
 }>();
 
+const { t } = useTranslation();
 const router = useRouter();
 
 const imageSource
@@ -119,7 +121,7 @@ useFocusEntry({
 					@click.prevent="watchPath && router.push(watchPath)"
 				>
 					<MoooomIcon icon="nmPlay" width="16" height="16" />
-					Watch
+					{{ t('components.cards.watch') }}
 				</button>
 				<button
 					v-if="detailsPath"
@@ -131,7 +133,7 @@ useFocusEntry({
 					@click.prevent="detailsPath && router.push(detailsPath)"
 				>
 					<MoooomIcon icon="infoCircle" width="16" height="16" />
-					Details
+					{{ t('common.details') }}
 				</button>
 			</div>
 		</div>
