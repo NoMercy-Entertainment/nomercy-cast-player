@@ -3,7 +3,8 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import FallbackPoster from '@/components/cards/FallbackPoster.vue';
-import { buildImageUrl, POSTER_SIZE } from '@/lib/images/urls';
+import { buildImageUrl, pickPaletteColor, POSTER_SIZE } from '@/lib/images/urls';
+import type { PaletteColors } from '@/lib/images/urls';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { NMCardWrapper, Update } from './types';
 
@@ -37,6 +38,10 @@ const imageSource = computed(() => {
 });
 
 const imageUrl = computed(() => buildImageUrl(imageSource.value, POSTER_SIZE));
+
+const accent = computed(() =>
+	pickPaletteColor((wrapperData.value.color_palette ?? wrapperData.value.colorPalette) as PaletteColors | undefined),
+);
 
 const progressPct = computed(() => {
 	const p = (props.data as unknown as { progress?: { time?: number; total?: number } }).progress;
@@ -81,7 +86,7 @@ useFocusEntry({
 		tabindex="0"
 		role="button"
 	>
-		<div class="poster nm-focus-ring">
+		<div class="poster nm-focus-ring" :style="accent ? { '--card-accent': accent } : undefined">
 			<img
 				v-if="imageUrl"
 				class="nm-cover-top"
@@ -121,6 +126,18 @@ useFocusEntry({
 	overflow: hidden;
 	background: oklch(0.18 0.01 250);
 	position: relative;
+}
+/* TvCardViewHolder.kt:79-102: a 1 dp palette stroke at rest, replaced by the white ring on focus. */
+.poster::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border: 1px solid var(--card-accent, rgba(255, 255, 255, 0.18));
+	border-radius: inherit;
+	pointer-events: none;
+}
+.card:focus-visible .poster::after {
+	border-color: transparent;
 }
 .progress {
 	position: absolute;

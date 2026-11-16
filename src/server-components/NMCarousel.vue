@@ -82,13 +82,15 @@ useFocusEntry({
 }
 .rail-header {
 	display: flex;
-	align-items: baseline;
-	padding: 0 var(--tv-safe-padding) 0 40px;
+	align-items: center;
+	height: 36px;
+	box-sizing: border-box;
+	padding: 4px 16px 4px 40px;
 }
 .rail-header h2 {
 	margin: 0;
-	font-size: 16px;
-	font-weight: 600;
+	font-size: 14px;
+	font-weight: 500;
 	letter-spacing: -0.005em;
 	color: oklch(1 0 0);
 }
@@ -100,14 +102,14 @@ useFocusEntry({
 	width: var(--rail-card-width, 180px);
 	aspect-ratio: 2/3;
 	border-radius: var(--radius-card);
-	background: rgba(0, 0, 0, 0.55);
-	border: 1px solid rgba(255, 255, 255, 0.08);
+	background: #1a1a1a;
+	border: 1px solid var(--color-primary, #fff);
 	color: #fff;
 	text-decoration: none;
-	font-size: 14px;
-	font-weight: 600;
+	font-size: 16px;
+	font-weight: 500;
 	text-align: center;
-	padding: 16px;
+	padding: 12px;
 	cursor: pointer;
 	transition:
 		border-color var(--motion-fast),
@@ -119,11 +121,8 @@ useFocusEntry({
 	visibility: hidden;
 }
 .show-all:focus-visible {
-	border-color: var(--color-primary, oklch(0.7 0.2 285));
-	background: rgba(0, 0, 0, 0.75);
-	box-shadow:
-		0 0 0 2px var(--color-primary, oklch(0.7 0.2 285)),
-		0 12px 32px rgba(0, 0, 0, 0.6);
+	border-color: #fff;
+	box-shadow: 0 0 0 1px #fff;
 	outline: none;
 }
 .show-all-text {

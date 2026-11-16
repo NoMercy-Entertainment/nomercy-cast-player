@@ -84,20 +84,42 @@ useFocusEntry({
 }
 .cover {
 	width: 100%;
-	aspect-ratio: 1 / 1;
+	aspect-ratio: 2 / 3;
 	border-radius: var(--radius-card);
 	overflow: hidden;
 	position: relative;
+	background: #1a1a1a;
+}
+/* TvCardViewHolder.kt:156-159: accent at alpha 0.45 fading to #1A1A1A, plus a 1 dp accent stroke. */
+.cover::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(var(--color-primary, #fff), transparent);
+	opacity: 0.45;
+}
+.cover::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border: 1px solid var(--color-primary, #fff);
+	border-radius: inherit;
+	pointer-events: none;
 }
 .cover img {
+	position: relative;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
 }
+/* KMP draws no text under a group card; it stays in the DOM for screen readers. */
 .meta {
-	display: flex;
-	flex-direction: column;
-	gap: 2px;
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
 }
 .name {
 	margin: 0;

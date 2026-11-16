@@ -40,17 +40,21 @@ defineProps<{
 	gap: 0;
 }
 .skeleton-title {
-	height: 24px;
+	height: 36px;
 	width: 160px;
 	margin-left: 40px;
+	box-sizing: border-box;
+	border: solid transparent;
+	border-width: 10px 0;
 	background: oklch(1 0 0 / 0.06);
+	background-clip: padding-box;
 	border-radius: var(--radius-card);
 }
 .skeleton-track {
 	display: flex;
 	gap: var(--rail-card-gap);
 	overflow: hidden;
-	padding: 16px var(--tv-safe-padding) 16px 40px;
+	padding: 2px 40px;
 }
 .skeleton-grid {
 	display: grid;

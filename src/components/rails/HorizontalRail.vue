@@ -26,13 +26,12 @@ defineExpose({ trackEl });
 	gap: var(--rail-card-gap);
 	overflow-x: auto;
 	overflow-y: visible;
-	/* APK contentPadding(start = 40dp). End padding scales with peek so
-		the last card never glues to the right edge. */
-	padding: 16px var(--tv-safe-padding) 16px 40px;
+	/* item_tv_row.xml: 40 dp each side; 2 px above and below keep the focus ring unclipped. */
+	padding: 2px 40px;
 	scroll-behavior: smooth;
 }
 /* No card drawn yet: keep one card row of room so the rails below stay put. */
 .rail-track:empty {
-	min-height: calc(var(--rail-card-height) + 32px);
+	min-height: calc(var(--rail-card-height) + 4px);
 }
 </style>

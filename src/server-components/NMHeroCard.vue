@@ -52,8 +52,8 @@ useFocusEntry({
 
 <style scoped>
 .hero-card {
-	flex: 0 0 480px;
-	width: 480px;
+	flex: 0 0 calc((100vw - 40px - 42px - 24px) / 3);
+	width: calc((100vw - 40px - 42px - 24px) / 3);
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
