@@ -32,3 +32,38 @@ describe('resolveServerFromAppConfig', () => {
 		expect(server?.defaultAudioLanguage).toBeNull();
 	});
 });
+
+// Placeholder ids and hosts. KMP: ServerSelectionLogic.kt:94-108 (cast server), :110-125 (selection).
+const servers = [
+	{ id: 'server-a', serverBaseUrl: 'https://a.example.invalid', is_owner: false },
+	{ id: 'server-b', serverBaseUrl: 'https://b.example.invalid', is_owner: true },
+];
+
+function route(down: string[]) {
+	return vi.fn(async (url: string) => {
+		if (url.includes('/v1/app_config'))
+			return new Response(JSON.stringify({ data: { servers } }), { status: 200 });
+		if (down.some(host => url.includes(host)))
+			throw new TypeError('unreachable');
+		return new Response('{}', { status: 401 });
+	});
+}
+
+describe('resolveServerFromAppConfig server choice', () => {
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('prefers the account\'s own server when the cast names none', async () => {
+		vi.stubGlobal('fetch', route([]));
+		expect((await resolveServerFromAppConfig('token'))?.serverId).toBe('server-b');
+	});
+
+	it('keeps the server the cast names, even when it does not answer', async () => {
+		vi.stubGlobal('fetch', route(['a.example.invalid']));
+		expect((await resolveServerFromAppConfig('token', { server_id: 'server-a' }))?.serverId).toBe('server-a');
+	});
+
+	it('refuses a server id the account does not have', async () => {
+		vi.stubGlobal('fetch', route([]));
+		expect(await resolveServerFromAppConfig('token', { server_id: 'server-x' })).toBeNull();
+	});
+});

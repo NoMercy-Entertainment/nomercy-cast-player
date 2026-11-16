@@ -159,15 +159,13 @@ describe('a stuck boot ends on the error screen, never an endless splash', () =>
 		expect(push).not.toHaveBeenCalled();
 	});
 
-	it('tries the other listed servers when the named one does not answer', async () => {
+	it('stays on the named server when it does not answer, as KMP does (ServerSelectionLogic.kt:102-107)', async () => {
 		stubNetwork([Server, OtherServer], () => [OtherServer.serverBaseUrl]);
 
-		const push = castFromPhone({ server_id: Server.id });
+		castFromPhone({ server_id: Server.id });
 
 		await vi.advanceTimersByTimeAsync(6000);
-		expect(push).toHaveBeenCalledWith(WatchRoute);
-		expect(authStore.serverUrl.value).toBe(OtherServer.serverBaseUrl);
-		expect(authStore.bootError.value).toBeNull();
+		expect(authStore.serverUrl.value).toBe(Server.serverBaseUrl);
 	});
 
 	it('shows the connection reason after 15 s when connectAll never settles', async () => {

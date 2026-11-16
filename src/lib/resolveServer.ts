@@ -16,6 +16,7 @@ interface AppConfigServer {
 	serverBaseUrl: string;
 	/** Absent from a control plane older than the field; the tunnel is then kept. */
 	internal_server_url?: string;
+	is_owner?: boolean;
 }
 
 interface AppConfigResponse {
@@ -92,18 +93,22 @@ export async function resolveServerFromAppConfig(
 
 	const listed = findNamed(servers, named);
 	if (listed) {
+		// KMP switches to the named server and never to another one (ServerSelectionLogic.kt:102-107).
 		const route = await reachableRoute(listed);
-		if (route)
-			return { serverId: listed.id, serverUrl: route, ...languages };
+		return { serverId: listed.id, serverUrl: route ?? listed.serverBaseUrl, ...languages };
 	}
+	// A named id the account does not have is refused, not played from another library (:104-106).
+	if (named.server_id)
+		return null;
 
-	// Probed together, picked in list order: a dead first server costs no extra wait.
-	const others = servers.filter(server => server !== listed);
-	const routes = await Promise.all(others.map(reachableRoute));
+	// No server named: the account's own servers first (KMP restores the saved choice, which a
+	// receiver lacks). Probed together, picked in that order: a dead first server costs no wait.
+	const ordered = [...servers.filter(server => server.is_owner === true), ...servers.filter(server => server.is_owner !== true)];
+	const routes = await Promise.all(ordered.map(reachableRoute));
 	const first = routes.findIndex(route => route !== null);
 	if (first === -1)
 		return null;
-	return { serverId: others[first].id, serverUrl: routes[first]!, ...languages };
+	return { serverId: ordered[first].id, serverUrl: routes[first]!, ...languages };
 }
 
 async function fetchAppConfig(accessToken: string): Promise<AppConfigResponse['data']> {
