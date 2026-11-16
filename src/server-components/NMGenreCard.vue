@@ -50,13 +50,13 @@ useFocusEntry({
 	padding: 0;
 	background: oklch(0.18 0.01 250);
 	cursor: pointer;
-	border-radius: var(--radius-card);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 8px;
 	overflow: hidden;
 	outline: none;
-	transition: box-shadow var(--motion-fast);
 }
 .genre-card:focus-visible {
-	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+	border: 3px solid #fff;
 }
 .art-img {
 	position: absolute;

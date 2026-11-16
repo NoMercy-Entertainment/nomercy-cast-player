@@ -28,8 +28,8 @@ defineProps<{
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	gap: 16px;
-	padding: 48px;
+	gap: 12px;
+	padding: 48px 40px;
 	height: 100%;
 }
 .empty-message {

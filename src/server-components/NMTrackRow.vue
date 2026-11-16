@@ -97,9 +97,10 @@ useFocusEntry({
 	grid-template-columns: 32px 64px 1fr auto;
 	align-items: center;
 	gap: 16px;
+	height: 48px;
 	padding: 8px 16px;
 	border: 2px solid transparent;
-	background: transparent;
+	background: oklch(0.18 0.015 250 / 0.2);
 	cursor: pointer;
 	border-radius: 8px;
 	outline: none;
@@ -127,9 +128,9 @@ useFocusEntry({
 	font-size: 14px;
 }
 .cover {
-	width: 48px;
-	height: 48px;
-	border-radius: 8px;
+	width: 40px;
+	height: 40px;
+	border-radius: 4px;
 	object-fit: cover;
 }
 .name {

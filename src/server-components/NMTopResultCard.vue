@@ -49,9 +49,11 @@ useFocusEntry({
 <style scoped>
 .top-result {
 	display: grid;
-	grid-template-columns: 200px 1fr;
-	gap: 24px;
-	padding: 24px;
+	grid-template-columns: 52px 1fr;
+	align-items: center;
+	height: 64px;
+	gap: 8px;
+	padding: 0 8px;
 	background: oklch(0.18 0.01 250);
 	border-radius: var(--radius-card);
 	cursor: pointer;
@@ -66,26 +68,26 @@ useFocusEntry({
 	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
 }
 .art {
-	width: 200px;
-	height: 200px;
-	border-radius: var(--radius-card);
+	width: 52px;
+	height: 52px;
+	border-radius: 4px;
 	overflow: hidden;
 }
 .kind {
 	margin: 0;
-	font-size: 14px;
+	font-size: 12px;
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
 	color: var(--color-text-secondary);
 }
 .title {
-	margin: 8px 0 0;
-	font-size: 32px;
+	margin: 0;
+	font-size: 14px;
 	font-weight: 700;
 }
 .subtitle {
-	margin: 8px 0 0;
-	font-size: 16px;
+	margin: 0;
+	font-size: 12px;
 	color: var(--color-text-secondary);
 }
 </style>

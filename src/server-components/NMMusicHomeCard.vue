@@ -55,22 +55,25 @@ useFocusEntry({
 
 <style scoped>
 .music-home-card {
-	flex: 0 0 280px;
-	width: 280px;
+	flex: 0 0 auto;
+	width: auto;
 	display: flex;
-	flex-direction: column;
-	gap: 8px;
+	flex-direction: row;
+	align-items: center;
+	gap: 12px;
 	border: 0;
-	padding: 0;
+	border-radius: 20px;
+	padding: 8px;
 	background: transparent;
 	cursor: pointer;
 	contain: layout paint;
 	outline: none;
 }
 .cover {
-	width: 100%;
+	flex: 0 0 96px;
+	width: 96px;
 	aspect-ratio: 1/1;
-	border-radius: var(--radius-card);
+	border-radius: 16px;
 	overflow: hidden;
 }
 .kind {
@@ -82,7 +85,7 @@ useFocusEntry({
 }
 .name {
 	margin: 4px 0 0;
-	font-size: 16px;
+	font-size: 18px;
 	font-weight: 600;
 }
 .artist {

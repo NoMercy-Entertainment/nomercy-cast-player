@@ -47,6 +47,6 @@ useFocusGroup({
 	display: flex;
 	flex-direction: column;
 	padding: 16px var(--tv-safe-padding);
-	gap: 8px;
+	gap: 16px;
 }
 </style>

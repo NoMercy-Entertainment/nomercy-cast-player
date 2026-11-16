@@ -40,10 +40,10 @@ const stacksSections = computed(() => props.data.items?.some(item => CONTAINER_T
 	display: flex;
 	flex-direction: row;
 	gap: 16px;
-	padding: 0 var(--tv-safe-padding);
+	padding: 16px 8px;
 }
 .container-header {
-	padding: 0 var(--tv-safe-padding);
+	padding: 0 8px;
 }
 .container-header h2 {
 	margin: 0;

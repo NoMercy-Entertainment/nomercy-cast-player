@@ -78,8 +78,8 @@ useFocusEntry({
 .grid-track {
 	display: grid;
 	grid-template-columns: repeat(var(--cols), 1fr);
-	gap: var(--rail-card-gap);
-	padding: 16px var(--tv-safe-padding);
+	gap: 16px;
+	padding: 64px 20px 16px 16px;
 }
 .more-link {
 	font-size: 14px;
