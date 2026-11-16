@@ -5,6 +5,7 @@ import { loadEnv } from 'vite';
 import type { Plugin, ProxyOptions } from 'vite';
 import { chrome92Layers, chrome92Targets, chrome92Visitor } from './scripts/chrome92Css.mjs';
 import { copyOctopusWorker } from './scripts/copyOctopusWorker.mjs';
+import { moooomIconsPlugin } from './tooling/vite/moooomIcons';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
 import pkg from './package.json' with { type: 'json' };
@@ -68,7 +69,7 @@ export default defineConfig(({ command, mode }) => {
 	const target = devTarget(command, env.CAST_DEV_SERVER_URL || undefined);
 
 	return {
-		plugins: [octopusWorker(), vue(), tailwindcss(), chrome92Layers()],
+		plugins: [octopusWorker(), moooomIconsPlugin(), vue(), tailwindcss(), chrome92Layers()],
 		define: {
 			__APP_VERSION__: JSON.stringify(pkg.version),
 		},
