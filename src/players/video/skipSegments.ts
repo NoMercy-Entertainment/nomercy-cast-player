@@ -9,19 +9,31 @@ export interface SkipSegment {
 
 export type SkipAction = 'none' | 'next-button' | 'advance';
 
-export function segmentsForItem(item: unknown): SkipSegment[] {
-	if (!item || typeof item !== 'object')
+interface SegmentSource {
+	skip_segments?: SkipSegment[];
+	segments?: SkipSegment[];
+}
+
+function carriesSegments(item: object): item is SegmentSource {
+	return 'skip_segments' in item || 'segments' in item;
+}
+
+export function segmentsForItem(item: object | null | undefined): SkipSegment[] {
+	if (!item || !carriesSegments(item))
 		return [];
 
-	const source = item as { skip_segments?: unknown; segments?: unknown };
-	const list = source.skip_segments ?? source.segments;
+	const list = item.skip_segments ?? item.segments;
 
 	return Array.isArray(list)
 		? list.filter((value) => value && typeof value.type === 'string')
 		: [];
 }
 
-export function decideSkipAction(position: number, segments: SkipSegment[], hasNext: boolean): SkipAction {
+export function decideSkipAction(
+	position: number,
+	segments: SkipSegment[],
+	hasNext: boolean,
+): SkipAction {
 	if (!hasNext || !Number.isFinite(position))
 		return 'none';
 

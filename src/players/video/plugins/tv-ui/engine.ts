@@ -48,7 +48,7 @@ export function toEngineStyle(patch: Partial<ViewStyle>): Partial<SubtitleStyle>
 	}
 
 	if (patch.edgeStyle !== undefined) {
-		out.edgeStyle = EDGE_TO_ENGINE[patch.edgeStyle] ?? 'none';
+		out.edgeStyle = new Map(Object.entries(EDGE_TO_ENGINE)).get(patch.edgeStyle) ?? 'none';
 	}
 
 	return out;

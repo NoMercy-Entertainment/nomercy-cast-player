@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { CurrentTrackSnapshot } from '@/stores/playbackStore';
 
-import { formatTime, progressPercent, totalLabel } from './transport';
+import { progressPercent, totalLabel } from './transport';
 
 function track(over: Partial<CurrentTrackSnapshot> = {}): CurrentTrackSnapshot {
 	return {
@@ -15,9 +15,10 @@ function track(over: Partial<CurrentTrackSnapshot> = {}): CurrentTrackSnapshot {
 
 describe('the music transport', () => {
 	it('reads a track as minutes and seconds', () => {
-		expect(formatTime(0)).toBe('0:00');
-		expect(formatTime(65_000)).toBe('1:05');
+		expect(totalLabel(track({ duration_ms: 0 }))).toBe('0:00');
+		expect(totalLabel(track({ duration_ms: 65_000 }))).toBe('1:05');
 		expect(totalLabel(track())).toBe('4:00');
+		expect(totalLabel(track({ duration_ms: 3_725_000 }))).toBe('1:02:05');
 	});
 
 	it('reads a live stream as Live, not as a zero length track', () => {

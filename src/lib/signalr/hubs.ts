@@ -13,15 +13,15 @@ import type { HubConnection } from '@microsoft/signalr';
 export class TypedHub {
 	constructor(private readonly conn: HubConnection) {}
 
-	invoke<T = unknown>(method: string, ...args: unknown[]): Promise<T> {
+	invoke<T = void>(method: string, ...args: Array<number | string | object | null | undefined>): Promise<T> {
 		return this.conn.invoke<T>(method, ...args);
 	}
 
-	on(event: string, handler: (...args: unknown[]) => void): void {
+	on(event: string, handler: (...args: never[]) => void): void {
 		this.conn.on(event, handler);
 	}
 
-	off(event: string, handler?: (...args: unknown[]) => void): void {
+	off(event: string, handler?: (...args: never[]) => void): void {
 		if (handler) {
 			this.conn.off(event, handler);
 		} else {

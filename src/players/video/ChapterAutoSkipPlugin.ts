@@ -15,12 +15,13 @@
 import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 import { segmentsForItem } from './skipSegments';
+import type { SkipSegment } from './skipSegments';
 
 // The events this plugin exchanges with the overlay are not in the player's typed map.
 type PlayerLike = Pick<NMVideoPlayer, 'time' | 'item' | 'chapters'> & {
-	on: (event: string, handler: (data: unknown) => void) => void;
-	off: (event: string, handler?: (data: unknown) => void) => void;
-	emit?: (event: string, data?: unknown) => void;
+	on: (event: string, handler: () => void) => void;
+	off: (event: string, handler?: () => void) => void;
+	emit?: (event: string, data?: SkipChapter) => void;
 };
 
 interface SkipChapter { id: string; type?: string; endTime?: number; startTime?: number }
@@ -52,6 +53,22 @@ function chapterAt(player: PlayerLike, t: number): SkipChapter | null {
 	};
 }
 
+function segmentChapter(segments: SkipSegment[], t: number): SkipChapter | null {
+	const intro = segments.find((segment) => segment.type.toLowerCase() === 'intro' &&
+		typeof segment.start === 'number' && typeof segment.end === 'number' &&
+		t >= segment.start && t < segment.end);
+
+	if (!intro)
+		return null;
+
+	return {
+		id: `intro-${intro.start}`,
+		type: 'intro',
+		startTime: intro.start,
+		endTime: intro.end,
+	};
+}
+
 let lastChapterId: string | null = null;
 const unsubs: Array<() => void> = [];
 
@@ -66,18 +83,8 @@ export function attachChapterAutoSkip(player: PlayerLike): void {
 		const t = player.time();
 		const item = player.item();
 		const segments = segmentsForItem(item);
-		const intro = segments.find((segment) => segment.type.toLowerCase() === 'intro' &&
-			typeof segment.start === 'number' && typeof segment.end === 'number' &&
-			t >= segment.start && t < segment.end);
 		const chapter = segments.length
-			? intro
-				? {
-						id: `intro-${intro.start}`,
-						type: 'intro',
-						startTime: intro.start,
-						endTime: intro.end,
-					}
-				: null
+			? segmentChapter(segments, t)
 			: chapterAt(player, t);
 
 		if (!chapter) {

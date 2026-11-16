@@ -1,3 +1,4 @@
+import { throttle } from '@/lib/throttle';
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { ConnectedDeviceSnapshot, CurrentTrackSnapshot } from '@/stores/playbackStore';
@@ -8,45 +9,6 @@ import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 import type { DiagnosticsEngine } from '@/lib/diagnostics/playerEvents';
 import { attachEngineDiagnostics } from '@/lib/diagnostics/playerEvents';
 
-type Throttled<T extends (...args: never[]) => void> = T;
-
-function throttle<T extends (...args: never[]) => void>(fn: T, ms: number): Throttled<T> {
-	let last = 0;
-	let pending: ReturnType<typeof setTimeout> | null = null;
-
-	return ((...args: never[]) => {
-		const now = Date.now();
-
-		if (now - last >= ms) {
-			last = now;
-			fn(...args);
-		} else if (pending === null) {
-			pending = setTimeout(
-				() => {
-					last = Date.now();
-					pending = null;
-					fn(...args);
-				},
-				ms - (now - last),
-			);
-		}
-	}) as Throttled<T>;
-}
-
-interface MusicEngineLike {
-	on: (event: string, handler: (...args: unknown[]) => void) => void;
-	off: (event: string, handler?: (...args: unknown[]) => void) => void;
-	play: () => void;
-	pause: () => void;
-	next: () => void;
-	previous: () => void;
-	seek: (seconds: number) => void;
-	loadTrack?: (data: unknown) => void;
-	applyServerState?: (state: unknown) => void;
-	volume?: (percent: number) => void;
-	currentTrack?: () => CurrentTrackSnapshot;
-}
-
 interface RawTrack {
 	id?: string | number;
 	name?: string;
@@ -55,20 +17,52 @@ interface RawTrack {
 		name?: string;
 		cover?: string;
 		backdrop?: string | null;
-		color_palette?: unknown;
-		[k: string]: unknown;
+		color_palette?: CurrentTrackSnapshot['color_palette'];
 	}>;
 	artist_track?: Array<{
 		name?: string;
 		backdrop?: string | null;
-		[k: string]: unknown;
 	}>;
 	duration?: number | string;
-	color_palette?: unknown;
+	color_palette?: CurrentTrackSnapshot['color_palette'];
 	favorite?: boolean;
 	plugin_id?: string | null;
 	live?: boolean;
-	[k: string]: unknown;
+}
+
+interface MusicEvents {
+	play: undefined;
+	pause: { ended?: boolean } | undefined;
+	next: undefined;
+	previous: undefined;
+	seek: number;
+	time: { currentTime?: number; position?: number } | number;
+	song: RawTrack | null;
+	queue: RawTrack[] | undefined;
+	shuffle: boolean;
+	repeat: 'off' | 'all' | 'one';
+}
+
+export interface MusicEngineLike {
+	on: <K extends keyof MusicEvents>(event: K, handler: (payload: MusicEvents[K]) => void) => void;
+	off: <K extends keyof MusicEvents>(event: K, handler?: (payload: MusicEvents[K]) => void) => void;
+	play: () => void;
+	pause: () => void;
+	next: () => void;
+	previous: () => void;
+	seek: (seconds: number) => void;
+	volume?: (percent: number) => void;
+	currentTrack?: () => CurrentTrackSnapshot;
+}
+
+interface PlayerState {
+	device_id?: string | null;
+	device_volumes?: Record<string, number>;
+}
+
+// The wire is a bare state or an { events: [{ event: { state } }] } envelope.
+interface StatePayload extends PlayerState {
+	events?: Array<{ type?: string; event?: { state?: PlayerState | null } }>;
 }
 
 function toSnapshot(raw: RawTrack | null | undefined): CurrentTrackSnapshot | null {
@@ -80,9 +74,8 @@ function toSnapshot(raw: RawTrack | null | undefined): CurrentTrackSnapshot | nu
 	const durationSec = typeof raw.duration === 'number'
 		? raw.duration
 		: Number(raw.duration ?? 0);
-	const palette = (raw.color_palette ?? album?.color_palette ?? null) as
-		CurrentTrackSnapshot['color_palette'];
-	const backdrop = (album?.backdrop ?? raw.artist_track?.find((a) => a.backdrop)?.backdrop) ?? null;
+	const palette = raw.color_palette ?? album?.color_palette ?? null;
+	const backdrop = album?.backdrop ?? raw.artist_track?.find((a) => a.backdrop)?.backdrop ?? null;
 
 	return {
 		id: String(raw.id ?? raw.name ?? Math.random()),
@@ -96,8 +89,8 @@ function toSnapshot(raw: RawTrack | null | undefined): CurrentTrackSnapshot | nu
 			: undefined,
 		color_palette: palette,
 		favorite: raw.favorite ?? false,
-		plugin_id: (raw.plugin_id as string | null | undefined) ?? null,
-		live: (raw.live as boolean | undefined) ?? false,
+		plugin_id: raw.plugin_id ?? null,
+		live: raw.live ?? false,
 	};
 }
 
@@ -123,7 +116,7 @@ let activeDeviceId: string | null = null;
 // It applies the command to the user's one music session whoever sends it, so
 // a receiver that is not the active device would start or stop another
 // device's audio. Send only while the server names this receiver.
-function sendCommand(command: string, data: unknown = null): void {
+function sendCommand(command: string, data: number | null = null): void {
 	if (activeDeviceId === null || activeDeviceId !== castDeviceId()) return;
 
 	void socketStore.musicHub.value?.invoke('PlaybackCommand', command, data);
@@ -132,15 +125,15 @@ function sendCommand(command: string, data: unknown = null): void {
 function bindOutbound(p: MusicEngineLike): void {
 	// Player events → SignalR. Server tracks state, propagates to other senders.
 	const onPlay = (): void => {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, trackLabel(p));
+		const label = trackLabel(p);
+
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, label);
 		sendCommand('play');
 		playbackStore.music.applyPlayState(true);
 	};
 
-	const onPause = (...args: unknown[]): void => {
+	const onPause = (audio: MusicEvents['pause']): void => {
 		// The audio element also pauses when a track runs out; that is not a user pause.
-		const audio = args[0] as { ended?: boolean } | undefined;
-
 		if (!audio?.ended) {
 			sendCommand('pause');
 		}
@@ -156,14 +149,11 @@ function bindOutbound(p: MusicEngineLike): void {
 		sendCommand('previous');
 	};
 
-	const onSeek = (...args: unknown[]): void => {
-		const t = args[0] as number;
-
-		sendCommand('seek', Math.round(t));
+	const onSeek = (time: number): void => {
+		sendCommand('seek', Math.round(time));
 	};
 
-	const onTime = throttle((...args: unknown[]) => {
-		const data = args[0] as { currentTime?: number; position?: number } | number;
+	const onTime = throttle((data: MusicEvents['time']) => {
 		const seconds = typeof data === 'number'
 			? data
 			: (data.position ?? data.currentTime ?? 0);
@@ -176,8 +166,7 @@ function bindOutbound(p: MusicEngineLike): void {
 			: String(trackId));
 	}, 5000);
 
-	const onSong = (...args: unknown[]): void => {
-		const raw = args[0] as RawTrack | null;
+	const onSong = (raw: RawTrack | null): void => {
 		const snap = toSnapshot(raw);
 
 		recordDiagnostic(
@@ -196,20 +185,17 @@ function bindOutbound(p: MusicEngineLike): void {
 		playbackStore.music.applyTrack(snap, queue);
 	};
 
-	const onQueue = (...args: unknown[]): void => {
-		const raws = (args[0] ?? []) as RawTrack[];
-		const next = raws.map(toSnapshot).filter((x): x is CurrentTrackSnapshot => x !== null);
+	const onQueue = (raws: RawTrack[] | undefined): void => {
+		const next = (raws ?? []).map(toSnapshot).filter((x): x is CurrentTrackSnapshot => x !== null);
 
 		playbackStore.music.applyTrack(playbackStore.music.track.value, next);
 	};
 
-	const onShuffle = (...args: unknown[]): void => {
-		playbackStore.music.applyShuffle(Boolean(args[0]));
+	const onShuffle = (on: boolean): void => {
+		playbackStore.music.applyShuffle(Boolean(on));
 	};
 
-	const onRepeat = (...args: unknown[]): void => {
-		const mode = args[0] as 'off' | 'all' | 'one';
-
+	const onRepeat = (mode: MusicEvents['repeat']): void => {
 		playbackStore.music.applyRepeat(mode);
 	};
 
@@ -244,16 +230,14 @@ function bindDiagnostics(p: MusicEngineLike): number {
 	return attachEngineDiagnostics(p as DiagnosticsEngine, () => trackLabel(p), unsubs);
 }
 
-interface VolumeState { device_volumes?: Record<string, number> }
-
-// The wire is an { events: [{ event: { state } }] } envelope.
-function applyOwnVolume(p: MusicEngineLike, payload: unknown): void {
-	const envelope = payload as { events?: Array<{ event?: { state?: VolumeState | null } }> } | null;
-	const state = envelope?.events?.at(-1)?.event?.state ?? (payload as VolumeState | null);
+function applyOwnVolume(p: MusicEngineLike, payload: StatePayload | null): void {
+	const state = payload?.events?.at(-1)?.event?.state ?? payload;
 	const own = state?.device_volumes?.[castDeviceId()];
 
 	if (typeof own === 'number') {
-		p.volume?.(Math.max(0, Math.min(100, own)));
+		const percent = Math.min(100, own);
+
+		p.volume?.(Math.max(0, percent));
 	}
 }
 
@@ -262,20 +246,18 @@ function bindInbound(p: MusicEngineLike): void {
 
 	if (!hub) return;
 
-	const onState = (...args: unknown[]): void => {
-		const payload = args[0] as { events?: Array<{ type?: string; event?: { state?: { device_id?: string | null } | null } }> } | null;
+	const onState = (payload: StatePayload | null): void => {
+		const changed = [...payload?.events ?? []].reverse().find((entry) => entry.type === 'PlayerStateChanged');
 		const state = payload?.events
-			? [...payload.events].reverse().find((entry) => entry.type === 'PlayerStateChanged')?.event?.state
-			: args[0] as { device_id?: string | null } | null | undefined;
+			? changed?.event?.state
+			: payload;
 
 		activeDeviceId = state?.device_id ?? null;
-		applyOwnVolume(p, args[0]);
+		applyOwnVolume(p, payload);
 	};
 
-	const onConnectedDevices = (...args: unknown[]): void => {
-		const devices = (args[0] ?? []) as ConnectedDeviceSnapshot[];
-
-		playbackStore.music.applyConnectedDevices(devices);
+	const onConnectedDevices = (devices: ConnectedDeviceSnapshot[] | undefined): void => {
+		playbackStore.music.applyConnectedDevices(devices ?? []);
 	};
 
 	hub.on('MusicPlayerState', onState);

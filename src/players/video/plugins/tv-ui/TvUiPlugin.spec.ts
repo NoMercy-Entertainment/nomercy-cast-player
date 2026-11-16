@@ -48,7 +48,7 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 	duration = (): number => this.length;
 	buffered = (): number => this.bufferedTo;
 	queue = (): Item[] => this.items;
-	item = (): Item => this.items[0];
+	item = (): Item => this.items[0]!;
 	index = (): number => 0;
 	chapters = (): never[] => [];
 	play = vi.fn(async () => {
@@ -155,7 +155,7 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 	it('offers the next episode inside the credits and advances once at the content end', () => {
 		const { player, root } = setup();
 
-		player.items[0].skip_segments = [{
+		player.items[0]!.skip_segments = [{
 			type: 'credits',
 			credits_start: 80,
 			content_end: 95,
@@ -296,13 +296,13 @@ describe('subtitle search dialog (SubtitleSearchDialog.kt:60-300)', () => {
 
 		const { player, root } = await openSearch();
 
-		expect(vi.mocked(apiFetch).mock.calls[0][0]).toMatchObject({ method: 'GET', path: expect.stringContaining('/api/v1/subtitles/search?type=tv&id=7&videoFileId=f1') });
+		expect(vi.mocked(apiFetch).mock.calls[0]?.[0]).toMatchObject({ method: 'GET', path: expect.stringContaining('/api/v1/subtitles/search?type=tv&id=7&videoFileId=f1') });
 		const row = root.querySelector<HTMLElement>('.tvui-result')!;
 
 		expect(row.textContent).toContain('Dutch');
 		row.click();
 		await vi.advanceTimersByTimeAsync(0);
-		expect(vi.mocked(apiFetch).mock.calls[1][0]).toMatchObject({ method: 'POST', path: '/api/v1/subtitles/download' });
+		expect(vi.mocked(apiFetch).mock.calls[1]?.[0]).toMatchObject({ method: 'POST', path: '/api/v1/subtitles/download' });
 		expect(player.added).toHaveLength(1);
 		expect(root.textContent).toContain('Subtitle added');
 	});

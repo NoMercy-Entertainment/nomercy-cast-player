@@ -1,13 +1,6 @@
+import { formatSeconds } from '@nomercy-entertainment/nomercy-player-core';
 import i18next from '@/i18n/i18next';
 import type { CurrentTrackSnapshot } from '@/stores/playbackStore';
-
-export function formatTime(ms: number): string {
-	const total = Math.max(0, Math.round(ms / 1000));
-	const minutes = Math.floor(total / 60);
-	const seconds = total % 60;
-
-	return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
 
 /**
  * What the right-hand side of the bar reads.
@@ -20,7 +13,7 @@ export function totalLabel(track: CurrentTrackSnapshot | null): string {
 	if (track?.live)
 		return i18next.t('music.player.live');
 
-	return formatTime(track?.duration_ms ?? 0);
+	return formatSeconds(Math.round((track?.duration_ms ?? 0) / 1000));
 }
 
 /** A stream with no end has no progress to draw, however long it has been playing. */

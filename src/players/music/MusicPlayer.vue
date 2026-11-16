@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, watch } from 'vue';
 import { musicSyncBridge } from './syncBridge';
+import type { MusicEngineLike } from './syncBridge';
 import { authStore } from '@/stores/authStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
@@ -22,7 +23,21 @@ import { recordDiagnostic } from '@/lib/diagnostics/sink';
 // name has to say so or a reader blames the song that was queued.
 const ENGINE_LABEL = 'music-player engine';
 
-let engine: { dispose?: () => void } | null = null;
+interface EngineOptions {
+	siteTitle: string;
+	baseUrl: string;
+	expose: boolean;
+	disableAutoPlayback: boolean;
+}
+
+type Engine = MusicEngineLike & {
+	dispose?: () => void;
+	setAccessToken?: (token: string | (() => string)) => void;
+};
+
+type EngineCtor = new (options: EngineOptions) => Engine;
+
+let engine: Engine | null = null;
 let stoppedByUnmount = false;
 
 async function initEngine(): Promise<void> {
@@ -36,9 +51,8 @@ async function initEngine(): Promise<void> {
 
 	try {
 		const mod = await import('@nomercy-entertainment/nomercy-music-player');
-		const Ctor =
-			(mod as { default?: new (opts: unknown) => unknown }).default ??
-			(mod as { MusicPlayer?: new (opts: unknown) => unknown }).MusicPlayer;
+		const exported: object = mod;
+		const Ctor: EngineCtor | undefined = Reflect.get(exported, 'default') ?? Reflect.get(exported, 'MusicPlayer');
 
 		if (typeof Ctor !== 'function') {
 			recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
@@ -52,12 +66,12 @@ async function initEngine(): Promise<void> {
 			baseUrl: serverUrl,
 			expose: false,
 			disableAutoPlayback: false,
-		}) as { dispose?: () => void; setAccessToken?: (t: string | (() => string)) => void };
+		});
 
 		created.setAccessToken?.(() => authStore.accessToken.value ?? '');
 		engine = created;
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceResolved, 0, 0, 0, ENGINE_LABEL);
-		musicSyncBridge.attach(engine as never);
+		musicSyncBridge.attach(created);
 	} catch (err) {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceFailed, 0, 0, 0, ENGINE_LABEL);
 		console.error('[music-player] init failed', err);

@@ -313,7 +313,13 @@ describe('videoPlayer starts the cast watch session', () => {
 			title: id,
 			file: `https://example.invalid/${id}.m3u8`,
 		});
-		const [e1, e1a, e2, e3, e4, e5, e6] = ['e1', 'e1a', 'e2', 'e3', 'e4', 'e5', 'e6'].map(episode);
+		const e1 = episode('e1');
+		const e1a = episode('e1a');
+		const e2 = episode('e2');
+		const e3 = episode('e3');
+		const e4 = episode('e4');
+		const e5 = episode('e5');
+		const e6 = episode('e6');
 		const wrapper = mount(VideoPlayer, {
 			props: {
 				type: 'tv',

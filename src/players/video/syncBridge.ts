@@ -1,4 +1,5 @@
 import type { NMVideoPlayer } from '@nomercy-entertainment/nomercy-video-player';
+import { throttle } from '@/lib/throttle';
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
@@ -6,31 +7,6 @@ import { recordDiagnostic } from '@/lib/diagnostics/sink';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
 import type { DiagnosticsEngine } from '@/lib/diagnostics/playerEvents';
 import { attachEngineDiagnostics } from '@/lib/diagnostics/playerEvents';
-
-type Throttled<T extends (...args: never[]) => void> = T;
-
-function throttle<T extends (...args: never[]) => void>(fn: T, ms: number): Throttled<T> {
-	let last = 0;
-	let pending: ReturnType<typeof setTimeout> | null = null;
-
-	return ((...args: never[]) => {
-		const now = Date.now();
-
-		if (now - last >= ms) {
-			last = now;
-			fn(...args);
-		} else if (pending === null) {
-			pending = setTimeout(
-				() => {
-					last = Date.now();
-					pending = null;
-					fn(...args);
-				},
-				ms - (now - last),
-			);
-		}
-	}) as Throttled<T>;
-}
 
 type VideoEngineLike = NMVideoPlayer;
 
@@ -44,6 +20,11 @@ interface WireItem {
 	tmdb_id?: string | number;
 	type?: string;
 	tmdbId?: string | number;
+}
+
+interface LoadMessage {
+	playlist: Parameters<NMVideoPlayer['playNow']>[0];
+	item?: { id?: string | number; type?: string };
 }
 
 let engine: VideoEngineLike | null = null;
@@ -63,27 +44,33 @@ function mediaLabel(p: VideoEngineLike): string | undefined {
 }
 
 // The server can refuse a command. The refusal is one diagnostics line; playback state stays as it is.
-function guard(where: string, sent: Promise<unknown> | undefined): void {
-	void Promise.resolve(sent).catch((error: unknown) => recordSwallowed(where, error));
+function guard(where: string, sent: Promise<void> | undefined): void {
+	void Promise.resolve(sent).catch((error: Error) => recordSwallowed(where, error));
 }
 
 // The server keeps one player state per user, filled only by StartPlaybackCommand, and a seek
 // saves progress to whatever item that state names. The item is reported before any command.
-let started: { id: number | string; taken: Promise<unknown> } | null = null;
+let started: { id: number | string; taken: Promise<void> } | null = null;
 
-function reportStart(p: VideoEngineLike): Promise<unknown> | undefined {
+function reportStart(p: VideoEngineLike): Promise<void> | undefined {
 	const item = p.item() as WireItem | undefined;
 	const hub = socketStore.videoHub.value;
 
 	if (!hub || !item?.id || !item.playlist_type || item.playlist_id === undefined)
 		return undefined;
 
-	const taken = Promise.resolve(hub.invoke('StartPlaybackCommand', item.playlist_type, item.playlist_id, Number(item.id)));
+	const itemId = Number(item.id);
+	const taken = hub.invoke<void>(
+		'StartPlaybackCommand',
+		item.playlist_type,
+		item.playlist_id,
+		itemId,
+	);
 	const mine = { id: item.id, taken };
 
 	started = mine;
 
-	taken.catch((error: unknown) => {
+	taken.catch((error: Error) => {
 		recordSwallowed('syncStartPlayback', error);
 
 		if (started === mine) {
@@ -112,7 +99,9 @@ function bindOutbound(p: VideoEngineLike): void {
 	};
 
 	const onPlay = (): void => {
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, mediaLabel(p));
+		const label = mediaLabel(p);
+
+		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, label);
 
 		afterStart(p, () =>
 			guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'play', null)));
@@ -127,15 +116,18 @@ function bindOutbound(p: VideoEngineLike): void {
 		playbackStore.video.applyPlayState(false);
 	};
 
-	const onSeek = (...args: unknown[]): void => {
-		const data = args[0] as { time: number };
+	const onSeek = (data: { time: number }): void => {
+		const target = Math.round(data.time);
 
 		afterStart(p, () =>
-			guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', Math.round(data.time))));
+			guard(
+				'syncPlaybackCommand',
+				socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', target),
+			));
 	};
 
-	const onTime = throttle((...args: unknown[]) => {
-		const seconds = (args[0] as { time?: number } | undefined)?.time ?? 0;
+	const onTime = throttle((data: { time?: number } | undefined) => {
+		const seconds = data?.time ?? 0;
 
 		playbackStore.video.applyTime(Math.round(seconds * 1000));
 		const item = p.item() as WireItem | undefined;
@@ -187,15 +179,15 @@ function bindInbound(p: VideoEngineLike): void {
 	if (!hub) return;
 
 	const onPlay = (): void => {
-		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.PlayPressed, 0, 0, 0, mediaLabel(p));
+		const label = mediaLabel(p);
+
+		recordDiagnostic(DiagnosticsCategory.Input, DiagnosticsCode.PlayPressed, 0, 0, 0, label);
 		void p.play();
 	};
 
 	const onPause = (): void => void p.pause();
 
-	const onSeek = (...args: unknown[]): void => {
-		const data = args[0] as { time: number };
-
+	const onSeek = (data: { time: number }): void => {
 		void p.time(data.time);
 	};
 
@@ -203,20 +195,25 @@ function bindInbound(p: VideoEngineLike): void {
 	const onNext = (): void => void p.next();
 	const onPrev = (): void => void p.previous();
 
-	const onLoad = (...args: unknown[]): void => {
-		const data = args[0] as { playlist: unknown[]; item?: { id?: string | number; type?: unknown } };
+	const onLoad = (data: LoadMessage): void => {
 		const item = data.item;
 		const label = item?.id === undefined
 			? 'video playlist'
 			: `${item.type ?? 'video'}-${String(item.id)}`;
 
-		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.SourceRequested, 0, 0, 0, label);
-		p.playNow(data.playlist as never, item?.id);
+		recordDiagnostic(
+			DiagnosticsCategory.Playback,
+			DiagnosticsCode.SourceRequested,
+			0,
+			0,
+			0,
+			label,
+		);
+
+		p.playNow(data.playlist, item?.id);
 	};
 
-	const onVol = (...args: unknown[]): void => {
-		const data = args[0] as { volume: number };
-
+	const onVol = (data: { volume: number }): void => {
 		void p.volume(data.volume);
 	};
 

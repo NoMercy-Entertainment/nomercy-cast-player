@@ -9,6 +9,12 @@ export interface AssFallbackOptions {
 	fetchText?: (url: string) => Promise<string>;
 }
 
+// The subtitle event names a track; the plugin warning event names an error code.
+interface FallbackEvent {
+	track?: number | null;
+	error?: { code?: string };
+}
+
 type FallbackPlayer = Pick<NMVideoPlayer, 'on' | 'off' | 'container' | 'subtitles' | 'time'>;
 
 const RENDER_TIMEOUT_MS = 8000;
@@ -71,8 +77,8 @@ async function fetchWithToken(url: string): Promise<string> {
 export function attachAssPlainTextFallback(player: FallbackPlayer, options: AssFallbackOptions = {}): () => void {
 	const fetchText = options.fetchText ?? fetchWithToken;
 	const timeoutMs = options.timeoutMs ?? RENDER_TIMEOUT_MS;
-	const on = player.on.bind(player) as (event: string, handler: (data?: unknown) => void) => void;
-	const off = player.off.bind(player) as (event: string, handler: (data?: unknown) => void) => void;
+	const on = player.on.bind(player) as (event: string, handler: (data?: FallbackEvent) => void) => void;
+	const off = player.off.bind(player) as (event: string, handler: (data?: FallbackEvent) => void) => void;
 
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let styledUrl: string | null = null;
@@ -126,12 +132,12 @@ export function attachAssPlainTextFallback(player: FallbackPlayer, options: AssF
 		}
 	}
 
-	const onSubtitle = (data?: unknown): void => {
+	const onSubtitle = (data?: FallbackEvent): void => {
 		epoch++;
 		clearTimer();
 		clearText();
 		styledUrl = null;
-		const track = (data as { track?: number | null } | undefined)?.track;
+		const track = data?.track;
 
 		if (typeof track !== 'number' || track < 0) return;
 
@@ -145,8 +151,8 @@ export function attachAssPlainTextFallback(player: FallbackPlayer, options: AssF
 
 	const onReady = (): void => clearTimer();
 
-	const onWarning = (data?: unknown): void => {
-		const code = (data as { error?: { code?: string } } | undefined)?.error?.code;
+	const onWarning = (data?: FallbackEvent): void => {
+		const code = data?.error?.code;
 
 		if (code === LOAD_FAILED || code === RENDER_ERROR) {
 			void activate();

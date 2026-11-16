@@ -176,7 +176,7 @@ describe('the sync bridge reads the 2.x payloads', () => {
 			await flush();
 
 			expect(caught()).toHaveLength(1);
-			expect(caught()[0].label).toContain(where);
+			expect(caught()[0]?.label).toContain(where);
 
 			expect(playbackStore.video.playing.value).toBe(event === 'play'
 				? true

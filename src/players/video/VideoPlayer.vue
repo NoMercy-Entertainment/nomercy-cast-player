@@ -74,9 +74,14 @@ let engine: NMVideoPlayer | null = null;
 let detachAssFallback: (() => void) | null = null;
 let overlay: TVOverlayPlugin | null = null;
 let unmounted = false;
-let disposeChapters: (() => void) | null = null;
 
-function mergeLivePlaylist(current: PlaylistItem[], incoming: PlaylistItem[], playingId: string | number): PlaylistItem[] {
+interface MergeItem { id: string | number; file?: string }
+
+function mergeLivePlaylist(
+	current: readonly MergeItem[],
+	incoming: readonly MergeItem[],
+	playingId: string | number,
+): readonly MergeItem[] {
 	const merged = [...current];
 	const playingIndex = merged.findIndex((item) => String(item.id) === String(playingId));
 
@@ -105,8 +110,8 @@ function mergeLivePlaylist(current: PlaylistItem[], incoming: PlaylistItem[], pl
 watch(() => props.playlist, (incoming) => {
 	if (props.type !== 'tv' || !incoming || !engine) return;
 
-	const current = engine.queue() as unknown as PlaylistItem[];
-	const playingId = (engine.item() as unknown as PlaylistItem | undefined)?.id;
+	const current = engine.queue();
+	const playingId = engine.item()?.id;
 
 	if (playingId === undefined) return;
 
@@ -138,13 +143,7 @@ onMounted(async () => {
 	try {
 		const prepared = await prepareChapterPlaylist(props.playlist ?? [], authStore.accessToken.value, authStore.serverUrl.value);
 
-		if (unmounted) {
-			prepared.dispose();
-
-			return;
-		}
-
-		disposeChapters = prepared.dispose;
+		if (unmounted) return;
 
 		// Tag the container element so the package's factory can target it
 		// by ID — its public surface uses string IDs, not direct DOM refs.
@@ -178,7 +177,7 @@ onMounted(async () => {
 		});
 
 		player.setup({
-			playlist: prepared.playlist as never,
+			playlist: prepared as never,
 			auth: {
 				bearerToken: () => authStore.accessToken.value ?? '',
 				mediaOrigins: () => authStore.serverUrl.value ?? undefined,
@@ -250,7 +249,6 @@ onBeforeUnmount(() => {
 	detachAssFallback?.();
 	detachAssFallback = null;
 	void engine?.dispose();
-	disposeChapters?.();
 	engine = null;
 	overlay = null;
 });

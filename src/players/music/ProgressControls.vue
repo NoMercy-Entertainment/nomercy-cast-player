@@ -6,7 +6,8 @@ import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { playbackStore } from '@/stores/playbackStore';
 import { musicSyncBridge } from './syncBridge';
-import { formatTime, progressPercent, totalLabel } from './transport';
+import { formatSeconds } from '@nomercy-entertainment/nomercy-player-core';
+import { progressPercent, totalLabel } from './transport';
 
 /*
  * APK FullPlayerScreenTV controls row (mirrored): shuffle | prev | play | next | repeat
@@ -109,7 +110,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 <template>
 	<div class="controls">
 		<div class="progress-row">
-			<span class="time">{{ formatTime(time) }}</span>
+			<span class="time">{{ formatSeconds(Math.round(time / 1000)) }}</span>
 			<div class="bar">
 				<div class="fill" :style="{ width: `${pct}%` }" />
 			</div>

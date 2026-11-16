@@ -1,51 +1,50 @@
+import { parseVtt } from '@nomercy-entertainment/nomercy-player-core';
+import type { Chapter } from '@nomercy-entertainment/nomercy-player-core';
 import type { PlaylistItem } from '@/queries/usePlaylistQuery';
 
-export interface ChapterCue { start: number; end: number; title: string }
+const TIMING = /-->/;
 
-const TIMING = /^(\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?)\s+-->\s+(\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?)/;
+// Old server files run the cues together with no blank line, and the VTT parser
+// reads that as one cue. Insert the blank line a cue boundary needs.
+function separateCues(file: string): string {
+	const lines = file.replaceAll('\r', '').split('\n');
+	const breakBefore = new Set<number>();
 
-function seconds(value: string): number {
-	const [hours, minutes, rest] = value.split(':');
+	lines.forEach((line, index) => {
+		if (!TIMING.test(line) || index === 0) return;
 
-	return Number(hours) * 3600 + Number(minutes) * 60 + Number(rest);
-}
+		const previous = (lines[index - 1] ?? '').trim();
+		const before = (lines[index - 2] ?? '').trim();
 
-export function parseChapterFile(file: string): ChapterCue[] {
-	const lines = file.replace(/\r/g, '').split('\n');
-	const cues: ChapterCue[] = [];
+		if (!previous) return;
 
-	for (let i = 0; i < lines.length; i++) {
-		const match = TIMING.exec(lines[i].trim());
-
-		if (!match) continue;
-
-		const title = lines[i + 1]?.trim();
-
-		if (title && seconds(match[2]) > seconds(match[1])) {
-			cues.push({
-				start: seconds(match[1]),
-				end: seconds(match[2]),
-				title,
-			});
+		if (previous.startsWith('WEBVTT') || TIMING.test(before)) {
+			breakBefore.add(index);
+		} else if (before) {
+			breakBefore.add(index - 1);
 		}
-	}
+	});
 
-	return cues;
+	return lines.flatMap((line, index) =>
+		breakBefore.has(index)
+			? ['', line]
+			: [line]).join('\n');
 }
 
-function timestamp(value: number): string {
-	const ms = Math.round(value * 1000);
-
-	return `${String(Math.floor(ms / 3_600_000)).padStart(2, '0')}:${String(Math.floor(ms / 60_000) % 60).padStart(2, '0')}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}.${String(ms % 1000).padStart(3, '0')}`;
+export function parseChapterFile(file: string): Chapter[] {
+	return parseVtt(separateCues(file)).cues.map((cue) => ({
+		start: cue.start,
+		end: cue.end,
+		title: (cue.payload.split('\n')[0] ?? '').trim(),
+	})).filter((cue) => cue.title && cue.end > cue.start).map((cue, index) => ({ index, ...cue }));
 }
 
-export function serializeChapters(cues: ChapterCue[]): string {
-	return `WEBVTT\n\n${cues.map((cue, index) => `Chapter ${index + 1}\n${timestamp(cue.start)} --> ${timestamp(cue.end)}\n${cue.title}`).join('\n\n')}\n`;
-}
-
-export async function prepareChapterPlaylist(items: PlaylistItem[], token: string | null, baseUrl?: string | null): Promise<{ playlist: PlaylistItem[]; dispose: () => void }> {
-	const urls: string[] = [];
-	const playlist = await Promise.all(items.map(async (item) => {
+export async function prepareChapterPlaylist(
+	items: PlaylistItem[],
+	token: string | null,
+	baseUrl?: string | null,
+): Promise<PlaylistItem[]> {
+	return Promise.all(items.map(async (item) => {
 		const tracks = Array.isArray(item.tracks)
 			? item.tracks as Array<{ kind?: string; file?: string }>
 			: [];
@@ -66,23 +65,13 @@ export async function prepareChapterPlaylist(items: PlaylistItem[], token: strin
 			if (!response.ok)
 				return item;
 
-			const cues = parseChapterFile(await response.text());
+			const chapters = parseChapterFile(await response.text());
 
-			if (!cues.length)
-				return item;
-
-			const url = URL.createObjectURL(new Blob([serializeChapters(cues)], { type: 'text/vtt' }));
-
-			urls.push(url);
-
-			return { ...item, tracks: tracks.map((track) =>
-				track === chapter
-					? { ...track, file: url }
-					: track) };
+			return chapters.length
+				? { ...item, chapters }
+				: item;
 		} catch {
 			return item;
 		}
 	}));
-
-	return { playlist, dispose: () => urls.forEach((url) => URL.revokeObjectURL(url)) };
 }
