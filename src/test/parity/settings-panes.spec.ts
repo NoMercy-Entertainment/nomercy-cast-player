@@ -106,7 +106,7 @@ describe('settings categories behave like the KMP TV menu', () => {
 		await boot();
 		expect(row('Subtitle hints')?.style.display).not.toBe('none');
 		expect(row('Auto-skip intros and credits')?.style.display).toBe('none');
-		cats()[1].click();
+		cats()[1]!.click();
 		await flushPromises();
 		expect(row('Auto-skip intros and credits')?.style.display).not.toBe('none');
 		expect(row('Subtitle hints')?.style.display).toBe('none');
@@ -114,10 +114,10 @@ describe('settings categories behave like the KMP TV menu', () => {
 
 	it('moves between categories with UP and DOWN, and focus alone does not open one (:258-260)', async () => {
 		await boot();
-		cats()[0].focus();
+		cats()[0]!.focus();
 		press('ArrowDown');
 		expect(document.activeElement).toBe(cats()[1]);
-		expect(cats()[1].getAttribute('aria-selected')).toBe('false');
+		expect(cats()[1]?.getAttribute('aria-selected')).toBe('false');
 		press('ArrowDown');
 		expect(document.activeElement).toBe(cats()[2]);
 		press('ArrowDown');
@@ -126,16 +126,16 @@ describe('settings categories behave like the KMP TV menu', () => {
 
 	it('oK on a category opens it and keeps focus on it', async () => {
 		await boot();
-		cats()[1].focus();
+		cats()[1]!.focus();
 		press('Enter');
 		await flushPromises();
-		expect(cats()[1].getAttribute('aria-selected')).toBe('true');
+		expect(cats()[1]?.getAttribute('aria-selected')).toBe('true');
 		expect(document.activeElement).toBe(cats()[1]);
 	});
 
 	it('right enters the open category rows, left returns to the open category', async () => {
 		await boot();
-		cats()[1].focus();
+		cats()[1]!.focus();
 		press('Enter');
 		await flushPromises();
 		press('ArrowRight');

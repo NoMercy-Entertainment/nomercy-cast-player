@@ -101,7 +101,7 @@ describe('music list controls match ListScreen.kt ControlHeader', () => {
 		const router = await boot();
 		const back = vi.spyOn(router, 'back');
 
-		icons()[0].click();
+		icons()[0]!.click();
 		expect(back).toHaveBeenCalledTimes(1);
 	});
 
@@ -109,7 +109,7 @@ describe('music list controls match ListScreen.kt ControlHeader', () => {
 		await boot();
 		apiFetch.mockClear();
 		apiFetch.mockResolvedValue({});
-		icons()[1].click();
+		icons()[1]!.click();
 		await flushPromises();
 
 		expect(apiFetch).toHaveBeenCalledWith(expect.objectContaining({
@@ -118,12 +118,12 @@ describe('music list controls match ListScreen.kt ControlHeader', () => {
 			body: JSON.stringify({ value: true }),
 		}));
 
-		expect(icons()[1].getAttribute('aria-pressed')).toBe('true');
+		expect(icons()[1]?.getAttribute('aria-pressed')).toBe('true');
 	});
 
 	it('music.list.controls: about opens the description and Back closes it (MediaAboutButton.kt:80-111)', async () => {
 		await boot();
-		icons()[2].click();
+		icons()[2]!.click();
 		await flushPromises();
 		expect(document.querySelector('.about-dialog')?.textContent).toContain('About this example album.');
 		press('Escape');
@@ -133,7 +133,7 @@ describe('music list controls match ListScreen.kt ControlHeader', () => {
 
 	it('music.list.controls: D-pad moves back, like, about, play with UP and DOWN', async () => {
 		await boot();
-		icons()[0].focus();
+		icons()[0]!.focus();
 		press('ArrowDown');
 		expect(document.activeElement).toBe(icons()[1]);
 		press('ArrowDown');

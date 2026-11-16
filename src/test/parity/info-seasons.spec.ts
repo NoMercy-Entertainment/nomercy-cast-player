@@ -129,8 +129,8 @@ describe('info.episode-card matches TvHomeAdapter.kt:36-75 / InfoComponentMappin
 		await boot();
 		expect(cards()).toHaveLength(2);
 		expect(cards().every((c) => c.classList.contains('card-wide'))).toBe(true);
-		expect(cards()[0].querySelector('.caption-title')?.textContent?.trim()).toBe('1. Pilot');
-		expect(cards()[0].querySelector('.caption-title-2')).not.toBeNull();
+		expect(cards()[0]?.querySelector('.caption-title')?.textContent?.trim()).toBe('1. Pilot');
+		expect(cards()[0]?.querySelector('.caption-title-2')).not.toBeNull();
 	});
 
 	it('wide card: 16:9, three whole cards and a 42 px peek (:68-75)', () => {
@@ -181,7 +181,7 @@ describe('info.season-picker matches TvHomeAdapter.kt:395-420,449-473', () => {
 		await boot();
 		const buttons = Array.from(document.querySelectorAll<HTMLElement>('.actions [data-focusable]'));
 
-		buttons[buttons.length - 1].focus();
+		buttons.at(-1)!.focus();
 		press('ArrowDown');
 		expect(document.activeElement).toBe(chip());
 		press('ArrowDown');
@@ -206,7 +206,7 @@ describe('info.season-picker.overlay matches TvSeasonPickerOverlay.kt:74-156', (
 		await flushPromises();
 		expect(rows().map((r) => r.textContent?.trim())).toEqual(['1 - Season One', '2 - Season Two', '3 - Season Three']);
 		expect(document.activeElement).toBe(rows()[0]);
-		expect(rows()[0].getAttribute('aria-selected')).toBe('true');
+		expect(rows()[0]?.getAttribute('aria-selected')).toBe('true');
 	});
 
 	it('pressing DOWN moves between rows and stays inside the panel', async () => {
@@ -232,7 +232,7 @@ describe('info.season-picker.overlay matches TvSeasonPickerOverlay.kt:74-156', (
 		expect(document.querySelector('.season-overlay')).toBeNull();
 		expect(chip()?.textContent?.trim()).toBe('2 - Season Two');
 		expect(cards()).toHaveLength(1);
-		expect(cards()[0].querySelector('.caption-title')?.textContent?.trim()).toBe('1. Return');
+		expect(cards()[0]?.querySelector('.caption-title')?.textContent?.trim()).toBe('1. Return');
 		expect(document.activeElement).toBe(chip());
 	});
 

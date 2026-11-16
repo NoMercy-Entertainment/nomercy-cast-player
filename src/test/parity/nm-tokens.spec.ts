@@ -35,7 +35,8 @@ describe('the receiver reads the NM design tokens', () => {
 
 		for (const file of sourceFiles(path.join(ROOT, 'src'))) {
 			for (const m of fs.readFileSync(file, 'utf8').matchAll(/var\((--nm-[\w-]+)/g)) {
-				used.add(m[1]);
+				if (m[1])
+					used.add(m[1]);
 			}
 		}
 

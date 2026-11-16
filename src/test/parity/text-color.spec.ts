@@ -11,9 +11,11 @@ function resolve(value: string | undefined): string | undefined {
 	for (let i = 0; v && i < 8; i++) {
 		const m = v.match(/^var\((--[\w-]+)\)$/);
 
-		if (!m) break;
+		const name = m?.[1];
 
-		v = own[m[1]] ?? nm[m[1]];
+		if (!name) break;
+
+		v = own[name] ?? nm[name];
 	}
 
 	return v;

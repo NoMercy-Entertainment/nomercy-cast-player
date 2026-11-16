@@ -80,11 +80,12 @@ describe('usePageLoadMutationEffect with a route param that changes under a reus
 		await vi.waitFor(() => {
 			const b = queryClient.getQueryData(['library', 'B']) as Component[];
 
-			expect((b[0].props as { title?: string }).title).toBe('Refreshed');
+			expect((b[0]?.props as { title?: string } | undefined)?.title).toBe('Refreshed');
 		});
 
 		const a = queryClient.getQueryData(['library', 'A']) as Component[];
 
-		expect((a[0].props as { title?: string }).title).toBeUndefined();
+		expect(a[0]).toBeDefined();
+		expect((a[0]?.props as { title?: string } | undefined)?.title).toBeUndefined();
 	});
 });

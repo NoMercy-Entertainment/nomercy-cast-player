@@ -17,7 +17,7 @@ import { sinkComponents } from '@/lib/plugin/sinkComponents.generated';
 function registry(): string[] {
 	const names = resolverSource.matchAll(/^\t(NM[A-Za-z]+):/gm);
 
-	return [...names].map((match) => match[1]).sort();
+	return [...names].flatMap((match) => match[1] ?? []).sort();
 }
 
 /**
@@ -88,7 +88,7 @@ describe('what the receiver draws', () => {
 	it('draws or names every component the kitchen sink sends', () => {
 		const drawn = new Set(registry());
 		const missing = sinkComponents.filter(
-			(name) => !drawn.has(name) && !NOT_ON_A_TELEVISION.includes(name),
+			(name) => !drawn.has(name) && !new Set<string>(NOT_ON_A_TELEVISION).has(name),
 		);
 
 		expect(missing, 'a component the sink sends that this receiver neither draws nor lists').toEqual([]);

@@ -13,7 +13,7 @@ describe('refreshLibrary payload', () => {
 	});
 
 	it('ignores a payload with no key', () => {
-		expect(refreshKeyOf({})).toBeNull();
+		expect(refreshKeyOf({ queryKey: [] })).toBeNull();
 		expect(refreshKeyOf(undefined)).toBeNull();
 	});
 });

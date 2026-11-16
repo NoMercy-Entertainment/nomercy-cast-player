@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ALL_PLAYER_EVENTS, attachEngineDiagnostics } from './playerEvents';
-import type { DiagnosticsEngine } from './playerEvents';
+import type { DiagnosticsEngine, EventPayload } from './playerEvents';
 import { diagnosticsRing } from './sink';
 
 function fakeEngine() {
-	const handlers = new Map<string, Array<(...args: unknown[]) => void>>();
+	const handlers = new Map<string, Array<(...args: EventPayload[]) => void>>();
 
 	return {
 		engine: {
@@ -25,12 +25,12 @@ function fakeEngine() {
 				handlers.set(event, (handlers.get(event) ?? []).filter((entry) => entry !== handler));
 			},
 		},
-		emit: (event, payload) => {
+		emit: (event, payload?) => {
 			for (const handler of [...(handlers.get(event) ?? [])]) {
 				handler(payload);
 			}
 		},
-	} as const satisfies { engine: DiagnosticsEngine; emit: (event: string, payload?: unknown) => void };
+	} as const satisfies { engine: DiagnosticsEngine; emit: (event: string, payload?: EventPayload) => void };
 }
 
 describe('the receiver subscribes to every engine event', () => {
@@ -69,7 +69,7 @@ describe('the receiver subscribes to every engine event', () => {
 
 		emit('seeked', { time: 90 });
 
-		expect(diagnosticsRing.snapshot()[0].b).toBe(90);
+		expect(diagnosticsRing.snapshot()[0]?.b).toBe(90);
 	});
 
 	it('hands every subscription back so a detach tears all of them down', () => {

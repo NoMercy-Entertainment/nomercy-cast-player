@@ -287,7 +287,7 @@ describe('a page opened by the sender gets its first focus', () => {
 		expect(focusStore.activeGroup()?.handleKey('right')).toBe(true);
 		const cards = wrapper.findAll('[data-rail-id="albums"] [data-focusable]');
 
-		expect(document.activeElement).toBe(cards[1].element);
+		expect(document.activeElement).toBe(cards[1]?.element);
 		wrapper.unmount();
 	});
 });

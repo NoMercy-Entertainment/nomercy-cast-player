@@ -124,7 +124,7 @@ async function walk(
 	const rows = [...document.body.querySelectorAll<HTMLElement>(selector)];
 
 	expect(rows.length).toBeGreaterThanOrEqual(minRows);
-	rows[0].focus();
+	rows[0]!.focus();
 
 	for (let i = 1; i < rows.length; i++) {
 		press(dir);

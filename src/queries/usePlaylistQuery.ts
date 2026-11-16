@@ -4,6 +4,7 @@ import type { Ref } from 'vue';
 import { QueryKeys } from './keys';
 import { queryConfigs } from './configs';
 import { apiFetch } from '@/lib/http/client';
+import type { Chapter } from '@nomercy-entertainment/nomercy-player-core';
 
 export interface PlaylistTrack {
 	kind?: string;
@@ -19,6 +20,8 @@ export interface PlaylistItem {
 	season?: number | string;
 	episode?: number | string;
 	tracks?: PlaylistTrack[];
+	/** Parsed from the chapter track before playback; the player reads them inline. */
+	chapters?: Chapter[];
 }
 
 export interface PlaylistResponse {
