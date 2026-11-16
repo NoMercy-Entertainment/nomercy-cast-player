@@ -10,6 +10,7 @@ import EmptyState from '@/components/feedback/EmptyState.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import HomeHero from '@/views/home/HomeHero.vue';
 import { focusedCardStore } from '@/stores/focusedCardStore';
+import { drawsContent } from '@/server-components/types';
 import type { Component } from '@/server-components/types';
 
 /*
@@ -79,7 +80,7 @@ useHeroSeed(componentsRef);
 			/>
 		</template>
 		<EmptyState
-			v-else-if="components.length === 0"
+			v-else-if="!components.some(drawsContent)"
 			:message="emptyMessage"
 			:action="{ label: 'Refresh', onAction: refetch }"
 		/>

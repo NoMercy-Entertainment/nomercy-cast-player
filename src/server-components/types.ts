@@ -163,3 +163,11 @@ export const CONTAINER_TYPES: ReadonlySet<ComponentType> = new Set([
 	'NMLolomo',
 	'NMCarousel',
 ]);
+
+/** A container with no items draws nothing, so it counts only when something inside draws. */
+export function drawsContent(component: Component): boolean {
+	if (!CONTAINER_TYPES.has(component.component))
+		return true;
+	const items = (component.props as ContainerWrapper | undefined)?.items;
+	return Array.isArray(items) && items.some(drawsContent);
+}
