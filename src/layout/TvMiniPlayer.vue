@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { playbackStore } from '@/stores/playbackStore';
@@ -12,6 +13,7 @@ import { buildImageUrl } from '@/lib/images/urls';
  * when paused, scrolling track name + artist label, click → full player.
  */
 
+const { t } = useTranslation();
 const router = useRouter();
 
 const track = computed(() => playbackStore.music.track.value);
@@ -37,7 +39,7 @@ useFocusEntry({
 		class="mini-player"
 		data-focusable
 		tabindex="0"
-		:aria-label="`Now playing: ${title}`"
+		:aria-label="t('layout.mini_player.aria', { title })"
 		@click.prevent="router.push('/now-playing')"
 	>
 		<div class="art">

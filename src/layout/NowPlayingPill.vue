@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { socketStore } from '@/stores/socketStore';
 import { computed } from 'vue';
+import { useTranslation } from 'i18next-vue';
 
+const { t } = useTranslation();
 const stateLabel = computed(() => {
 	switch (socketStore.connectionState.value) {
 		case 'connecting':
-			return 'Connecting…';
+			return t('cast_remote.connecting');
 		case 'reconnecting':
-			return 'Reconnecting…';
+			return t('layout.connection.reconnecting');
 		case 'connected':
-			return 'Connected';
+			return t('activity.connection.connected');
 		case 'failed':
-			return 'Disconnected';
+			return t('activity.connection.disconnected');
 		default:
 			return '';
 	}

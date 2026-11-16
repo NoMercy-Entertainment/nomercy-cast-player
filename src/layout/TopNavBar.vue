@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import ProfileChip from './ProfileChip.vue';
@@ -18,6 +19,7 @@ import AppLogoSquare from './AppLogoSquare.vue';
  * 20dp white-tinted, mirrors APK TvNavigationBarButton.
  */
 
+const { t } = useTranslation();
 const navEl = ref<HTMLElement | null>(null);
 const router = useRouter();
 const route = useRoute();
@@ -50,7 +52,7 @@ useFocusGroup({
 		<nav ref="navEl" class="nav-items">
 			<NavLink
 				focus-key="nav-home"
-				label="Home"
+				:label="t('nav.home')"
 				path="/"
 				:active="route.path === '/'"
 				@action="(p) => router.push(p)"
@@ -61,7 +63,7 @@ useFocusGroup({
 			</NavLink>
 			<NavLink
 				focus-key="nav-libraries"
-				label="Libraries"
+				:label="t('nav.libraries')"
 				path="/libraries"
 				:active="route.path.startsWith('/libraries')"
 				@action="(p) => router.push(p)"
@@ -72,7 +74,7 @@ useFocusGroup({
 			</NavLink>
 			<NavLink
 				focus-key="nav-music"
-				label="Music"
+				:label="t('nav.music')"
 				path="/music"
 				:active="route.path.startsWith('/music')"
 				@action="(p) => router.push(p)"
@@ -86,7 +88,7 @@ useFocusGroup({
 				label=""
 				path="/search"
 				:icon-only="true"
-				aria-label="Search"
+				:aria-label="t('nav.search')"
 				:active="route.path === '/search'"
 				@action="(p) => router.push(p)"
 			>

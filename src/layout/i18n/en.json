@@ -1,0 +1,23 @@
+{
+	"activity": {
+		"connection": {
+			"connected": "Connected",
+			"disconnected": "Disconnected"
+		}
+	},
+	"cast_remote": {
+		"connecting": "Connecting…"
+	},
+	"layout": {
+		"connection": {
+			"reconnecting": "Reconnecting…"
+		},
+		"profile_chip": {
+			"you": "You",
+			"aria": "Profile: {{name}}"
+		},
+		"mini_player": {
+			"aria": "Now playing: {{title}}"
+		}
+	}
+}

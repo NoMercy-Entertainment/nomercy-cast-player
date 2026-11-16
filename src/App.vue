@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { authStore } from '@/stores/authStore';
 import { useDPad } from '@/composables/useDPad';
 import { screensaverStore } from '@/stores/screensaverStore';
@@ -22,6 +23,7 @@ import MusicPlayer from '@/players/music/MusicPlayer.vue';
  * sender-required splash.
  */
 
+const { t } = useTranslation();
 const router = useRouter();
 useDPad(router);
 
@@ -48,15 +50,15 @@ onMounted(() => {
 <template>
 	<SenderRequiredScreen
 		v-if="authStore.bootError.value"
-		title="Could not start the cast"
+		:title="t('app.boot_error_title')"
 		:message="authStore.bootError.value"
 		:retry="authStore.retryBoot"
 	/>
 	<SenderRequiredScreen v-else-if="inDegraded" />
 	<SenderRequiredScreen
 		v-else-if="castAgain"
-		title="Cast again to keep watching"
-		message="Your sign-in on this TV is ending. Cast again from your phone to keep watching."
+		:title="t('app.cast_again_title')"
+		:message="t('app.cast_again_message')"
 		:retry="authStore.requestRenewal"
 	/>
 	<MusicPlayer v-else>

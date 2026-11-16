@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
 import FocusableButton from '@/components/buttons/FocusableButton.vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 
@@ -8,6 +9,7 @@ defineProps<{
 	context?: string;
 }>();
 
+const { t } = useTranslation();
 // The panel owns its focus group, so its action takes D-pad focus on every screen.
 useFocusGroup({ type: 'vertical', initialFocusKey: 'error-retry' });
 </script>
@@ -15,13 +17,13 @@ useFocusGroup({ type: 'vertical', initialFocusKey: 'error-retry' });
 <template>
 	<div class="error-panel">
 		<h3 class="error-title">
-			{{ context ?? 'Something went wrong' }}
+			{{ context ?? t('common.something_went_wrong') }}
 		</h3>
 		<p class="error-message">
 			{{ error.message }}
 		</p>
 		<FocusableButton v-if="retry" focus-key="error-retry" @action="retry">
-			Try again
+			{{ t('startup.tryAgain') }}
 		</FocusableButton>
 	</div>
 </template>

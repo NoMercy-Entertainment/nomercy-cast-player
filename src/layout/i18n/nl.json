@@ -1,0 +1,16 @@
+{
+	"activity": {
+		"connection": {
+			"connected": "Verbonden",
+			"disconnected": "Verbinding verbroken"
+		}
+	},
+	"cast_remote": {
+		"connecting": "Verbinden…"
+	},
+	"layout": {
+		"connection": {
+			"reconnecting": "Opnieuw verbinden…"
+		}
+	}
+}

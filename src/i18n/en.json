@@ -1,0 +1,7 @@
+{
+	"app": {
+		"boot_error_title": "Could not start the cast",
+		"cast_again_title": "Cast again to keep watching",
+		"cast_again_message": "Your sign-in on this TV is ending. Cast again from your phone to keep watching."
+	}
+}

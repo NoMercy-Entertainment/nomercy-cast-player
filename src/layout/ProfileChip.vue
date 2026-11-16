@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useTranslation } from 'i18next-vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useMeQuery } from '@/queries/useMeQuery';
 import { authStore } from '@/stores/authStore';
 
+const { t } = useTranslation();
 const router = useRouter();
 const { data: me } = useMeQuery();
 
@@ -16,7 +18,7 @@ const displayName = computed(() => {
 		(claims?.display_name as string)
 		?? (claims?.preferred_username as string)
 		?? (claims?.given_name as string)
-		?? 'You'
+		?? t('layout.profile_chip.you')
 	);
 });
 
@@ -65,7 +67,7 @@ useFocusEntry({
 		type="button"
 		data-focusable
 		tabindex="0"
-		:aria-label="`Profile: ${displayName}`"
+		:aria-label="t('layout.profile_chip.aria', { name: displayName })"
 		@click.prevent="router.push('/profile')"
 	>
 		<img v-if="avatarUrl" :src="avatarUrl" :alt="displayName" class="avatar">

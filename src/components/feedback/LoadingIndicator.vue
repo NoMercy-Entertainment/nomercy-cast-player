@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { useTranslation } from 'i18next-vue';
+
 /*
  * Centered spinner. Mirrors APK LoadingIndicator.kt's CircularProgressIndicator.
  */
+const { t } = useTranslation();
 </script>
 
 <template>
-	<div class="loader" role="progressbar" aria-label="Loading">
+	<div class="loader" role="progressbar" :aria-label="t('common.loading')">
 		<div class="ring" />
 	</div>
 </template>
