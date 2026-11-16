@@ -11,6 +11,13 @@
 	"layout": {
 		"connection": {
 			"reconnecting": "Opnieuw verbinden…"
+		},
+		"profile_chip": {
+			"you": "Jij",
+			"aria": "Profiel: {{name}}"
+		},
+		"mini_player": {
+			"aria": "Wordt nu afgespeeld: {{title}}"
 		}
 	}
 }

@@ -20,6 +20,14 @@
 		"restart": "Herstarten",
 		"audio_and_subtitles": "Audio en ondertiteling",
 		"auto_skip_chapters": "Intro's en outro's automatisch overslaan",
-		"extras": "Extra's"
+		"extras": "Extra's",
+		"start_error": "De videospeler kon niet starten.",
+		"skip_credits": "Aftiteling overslaan",
+		"skip_intro": "Intro overslaan",
+		"pre_screen_aria": "Menu voor het afspelen",
+		"resume_from": "Hervatten vanaf {{time}}",
+		"quality_auto_with": "Automatisch ({{label}})",
+		"extras_episode": "Extra's A{{episode}}",
+		"season_number": "Seizoen {{number}}"
 	}
 }

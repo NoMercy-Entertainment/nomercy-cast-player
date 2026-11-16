@@ -4,5 +4,12 @@
 			"add_to_watchlist": "Aan kijklijst toevoegen",
 			"remove_from_watchlist": "Van kijklijst verwijderen"
 		}
+	},
+	"views": {
+		"info": {
+			"load_error": "Details laden lukte niet",
+			"minutes": "{{count}} min",
+			"season": "Seizoen"
+		}
 	}
 }
