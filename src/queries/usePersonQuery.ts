@@ -23,7 +23,7 @@ export function usePersonQuery(id: Ref<string>) {
 	const query = useQuery({
 		queryKey,
 		queryFn: () => fetchPerson(id.value),
-		...queryConfigs.static,
+		...queryConfigs.standard,
 	});
 
 	usePageLoadMutationEffect(queryKey, query.data, query.isLoading, query.isFetching);

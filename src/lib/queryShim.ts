@@ -48,16 +48,14 @@ export function mapServerKey(serverKey: readonly string[]): readonly (readonly s
 		return [];
 
 	const head = serverKey[0];
-	const second = serverKey[1];
 	// The server publishes two-element per-title keys — ["movie","<id>"] and
 	// ["tv","<id>"] — so the id sits at index 1, not 2. Reading index 2 left it
 	// undefined and silently dropped every per-title invalidation.
 	const id = serverKey[1];
 
-	if (head === 'base' && second === 'libraries')
-		return [['libraries']];
-	if (head === 'base' && second === 'info')
-		return [['info']];
+	// QueryClient.kt:667-699: the server's 'base' prefix is dropped.
+	if (head === 'base' && serverKey.length > 1)
+		return [serverKey.slice(1)];
 	if (head === 'movie' && id !== undefined)
 		return [['info', 'movie', id]];
 	if (head === 'tv' && id !== undefined)
@@ -107,6 +105,33 @@ export function invalidatePlugins(): void {
 	if (!client)
 		return;
 	void client.invalidateQueries({ queryKey: ['plugins'], exact: false });
+}
+
+/** NoMercyApplication.kt:760-787: a foreground after 10 s away refreshes the library; every foreground sweeps. */
+export const ForegroundThresholdMs = 10_000;
+
+export function createForegroundWatch(refresh: () => void, sweep: () => void, now: () => number = Date.now): { hidden: () => void; visible: () => void } {
+	let hiddenAt: number | null = null;
+	return {
+		hidden: () => {
+			hiddenAt = now();
+		},
+		visible: () => {
+			if (hiddenAt !== null && now() - hiddenAt >= ForegroundThresholdMs)
+				refresh();
+			hiddenAt = null;
+			sweep();
+		},
+	};
+}
+
+/** WatchScreen.kt:705-716: leaving the player refreshes home and libraries, exact, only when something played. */
+export function invalidateAfterPlayback(played: boolean): void {
+	const client = getClient?.();
+	if (!client || !played)
+		return;
+	void client.invalidateQueries({ queryKey: ['home'], exact: true });
+	void client.invalidateQueries({ queryKey: ['libraries'], exact: true });
 }
 
 export function staleSweep(maxAgeMs = 3 * 60 * 60_000): void {

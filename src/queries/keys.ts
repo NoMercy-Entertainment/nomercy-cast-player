@@ -14,6 +14,7 @@ export const QueryKeys = {
 	info: (type: string, id: string) => ['info', type, id] as const,
 	available: (type: string, id: string) => ['info', type, id, 'available'] as const,
 	person: (id: string) => ['person', id] as const,
+	serverInfo: () => ['dashboard', 'server', 'info'] as const,
 	search: (type: string, query: string) => ['search', type, query] as const,
 	musicStart: () => ['music', 'start'] as const,
 	musicCards: (path: string) =>

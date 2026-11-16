@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/vue-query';
 import { apiFetch } from '@/lib/http/client';
+import { QueryKeys } from './keys';
+import { queryConfigs } from './configs';
 
 /**
  * Server info query — mirrors APK useServerInfoQuery hitting
@@ -34,9 +36,8 @@ async function fetchServerInfo(): Promise<ServerInfo | null> {
 
 export function useServerInfoQuery() {
 	return useQuery({
-		queryKey: ['server-info'],
+		queryKey: [...QueryKeys.serverInfo()],
 		queryFn: fetchServerInfo,
-		staleTime: 30_000,
-		refetchOnWindowFocus: false,
+		...queryConfigs.standard,
 	});
 }

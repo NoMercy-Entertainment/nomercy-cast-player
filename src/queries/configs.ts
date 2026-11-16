@@ -16,6 +16,12 @@ export const queryConfigs = {
 		staleTime: 5 * 60_000,
 		gcTime: 10 * 60_000,
 	},
+	// QueryClient.kt:1291-1305: home keeps its answer on a revisit and is refreshed by events.
+	homeContent: {
+		staleTime: 5 * 60_000,
+		gcTime: 10 * 60_000,
+		refetchOnMount: false,
+	},
 	static: {
 		staleTime: 30 * 60_000,
 		gcTime: 60 * 60_000,

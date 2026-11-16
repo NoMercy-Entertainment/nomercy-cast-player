@@ -33,7 +33,7 @@ export const defaultQueryClientOptions = {
 	defaultOptions: {
 		queries: {
 			...queryConfigs.standard,
-			retry: 2,
+			retry: 0,
 			refetchOnWindowFocus: false,
 		},
 	},

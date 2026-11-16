@@ -6,6 +6,7 @@ import { installChunkReload } from './router/chunkReload';
 import { bootCastReceiver } from './cast/receiver';
 import { defaultQueryClientOptions, setQueryClient, staleSweep } from './queries/client';
 import { socketStore } from './stores/socketStore';
+import { createForegroundWatch } from './lib/queryShim';
 import { scheduleIdle } from './composables/useIdleCallback';
 import { installCrashHandlers } from './lib/diagnostics/crashHandler';
 import { installDiagnosticsConsoleTap } from './lib/diagnostics/consoleTap';
@@ -52,6 +53,7 @@ if (import.meta.env.VITE_CAST_AGAIN_PROOF === '1')
 // Foreground resume sweep — visibilitychange hidden→visible triggers
 // invalidateAllLibrary so we catch missed RefreshLibrary events while
 // cast_shell had us suspended.
+const foreground = createForegroundWatch(() => socketStore.onForegroundResume(), () => staleSweep());
 document.addEventListener('visibilitychange', () => {
 	// Which screen was on when the receiver went away is half the story of
 	// every "it just stopped" report.
@@ -60,9 +62,10 @@ document.addEventListener('visibilitychange', () => {
 
 	if (document.visibilityState === 'visible') {
 		recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppForegrounded, 0, 0, 0, screen);
-		socketStore.onForegroundResume();
+		foreground.visible();
 		return;
 	}
+	foreground.hidden();
 	recordDiagnostic(DiagnosticsCategory.Lifecycle, DiagnosticsCode.AppBackgrounded, 0, 0, 0, screen);
 });
 

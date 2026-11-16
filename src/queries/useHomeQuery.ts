@@ -38,7 +38,7 @@ export function useHomeQuery() {
 	const query = useQuery({
 		queryKey: [...QueryKeys.home()],
 		queryFn: fetchHome,
-		...queryConfigs.standard,
+		...queryConfigs.homeContent,
 	});
 
 	usePageLoadMutationEffect(
