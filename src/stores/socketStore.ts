@@ -3,7 +3,7 @@ import { TypedHub } from '@/lib/signalr/hubs';
 import { buildHub } from '@/lib/signalr/connection';
 import type { HubName } from '@/lib/signalr/connection';
 import type { MusicPlayerStateMsg, RefreshLibraryPayload, VideoPlayerStateMsg } from '@/lib/signalr/events';
-import { invalidateAllLibrary, invalidateFromServer, invalidatePlugins } from '@/lib/queryShim';
+import { createRefreshBatcher, invalidateAllLibrary, invalidateFromServer, invalidatePlugins, refreshKeyOf } from '@/lib/queryShim';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 import { recordSwallowed } from '@/lib/diagnostics/swallowed';
@@ -86,12 +86,14 @@ async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
 	}
 }
 
+const queueRefresh = createRefreshBatcher(400, invalidateFromServer);
+
 function bindRefreshLibrary(hub: TypedHub, name: HubName): void {
 	hub.on('RefreshLibrary', (...args: unknown[]) => {
-		const serverKey = args[0] as RefreshLibraryPayload | undefined;
-		if (Array.isArray(serverKey)) {
+		const serverKey = refreshKeyOf(args[0] as RefreshLibraryPayload | undefined);
+		if (serverKey) {
 			console.debug(`[socket] ${name} RefreshLibrary`, serverKey);
-			invalidateFromServer(serverKey);
+			queueRefresh(serverKey);
 		}
 	});
 }

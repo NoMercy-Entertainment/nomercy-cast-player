@@ -20,6 +20,29 @@ export function registerQueryClientGetter(getter: () => QueryClient): void {
 	getClient = getter;
 }
 
+// The server sends RefreshLibraryDto as { queryKey: [...] }; a bare list is kept for older senders.
+export function refreshKeyOf(payload: unknown): string[] | null {
+	const key = Array.isArray(payload) ? payload : (payload as { queryKey?: unknown } | null | undefined)?.queryKey;
+	return Array.isArray(key) && key.length > 0 ? key.map(String) : null;
+}
+
+// KMP batches RefreshLibrary keys for 400 ms and flushes each distinct key once (SharedMainScreen.kt:606-617).
+export function createRefreshBatcher(windowMs: number, flush: (key: readonly string[]) => void): (key: readonly string[]) => void {
+	const pending = new Map<string, readonly string[]>();
+	let timer: ReturnType<typeof setTimeout> | null = null;
+	return (key) => {
+		pending.set(JSON.stringify(key), key);
+		if (timer !== null)
+			clearTimeout(timer);
+		timer = setTimeout(() => {
+			timer = null;
+			const batch = [...pending.values()];
+			pending.clear();
+			batch.forEach(flush);
+		}, windowMs);
+	};
+}
+
 export function mapServerKey(serverKey: readonly string[]): readonly (readonly string[])[] {
 	if (!Array.isArray(serverKey) || serverKey.length === 0)
 		return [];

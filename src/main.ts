@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import App from './App.vue';
 import router from './router';
+import { installChunkReload } from './router/chunkReload';
 import { bootCastReceiver } from './cast/receiver';
 import { defaultQueryClientOptions, setQueryClient, staleSweep } from './queries/client';
 import { socketStore } from './stores/socketStore';
@@ -36,6 +37,7 @@ setQueryClient(queryClient);
 
 const app = createApp(App);
 app.use(router);
+installChunkReload(router);
 app.use(VueQueryPlugin, { queryClient });
 
 app.mount('#app');

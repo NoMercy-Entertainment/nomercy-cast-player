@@ -76,4 +76,5 @@ export interface BroadcastEventPayloadMsg {
 	}>;
 }
 
-export type RefreshLibraryPayload = readonly string[];
+// The media server's RefreshLibraryDto ({ queryKey }); older senders sent the bare list.
+export type RefreshLibraryPayload = { queryKey: readonly string[] } | readonly string[];
