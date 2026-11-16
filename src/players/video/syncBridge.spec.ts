@@ -21,7 +21,8 @@ function fakeEngine() {
 		play: vi.fn(),
 		pause: vi.fn(),
 		time: vi.fn(),
-		item: vi.fn(() => ({ id: 'a', videoId: 'v-1', type: 'tv', listId: 'l-1', tmdbId: 7 })),
+		// The shape the server's /watch sends (read from a live playlist): snake_case, no camelCase twins.
+		item: vi.fn(() => ({ id: 986190, video_id: 'v-1', playlist_type: 'tv', video_type: 'tv', playlist_id: 60808, tmdb_id: 7, season: 1, episode: 3 })),
 		stop: vi.fn(),
 		audioTrack: vi.fn(() => ({ index: 1, track: { language: 'eng' } })),
 		subtitle: vi.fn(() => ({ index: 2, track: { language: 'nld', type: 'full' } })),
@@ -47,6 +48,7 @@ describe('the sync bridge reads the 2.x payloads', () => {
 		expect(body).toEqual(expect.objectContaining({
 			video_id: 'v-1',
 			playlist_type: 'tv',
+			playlist_id: 60808,
 			tmdb_id: 7,
 			time: 61,
 			audio: 'eng',

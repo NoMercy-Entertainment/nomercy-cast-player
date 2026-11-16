@@ -33,12 +33,15 @@ function throttle<T extends (...args: never[]) => void>(fn: T, ms: number): Thro
 
 type VideoEngineLike = NMVideoPlayer;
 
-// The server's wire item carries ids the player's item type does not name.
+// The server's /watch item carries ids the player's item type does not name,
+// in snake_case; the player passes them through unchanged.
 interface WireItem {
 	id: number | string;
-	videoId?: string;
+	video_id?: string;
+	playlist_type?: string;
+	playlist_id?: string | number;
+	tmdb_id?: string | number;
 	type?: string;
-	listId?: string | number;
 	tmdbId?: string | number;
 }
 
@@ -83,10 +86,10 @@ function bindOutbound(p: VideoEngineLike): void {
 			return;
 		guard('syncSetTime', socketStore.videoHub.value?.invoke('SetTime', {
 			// The server's VideoProgressRequest reads these snake_case names.
-			video_id: item.videoId,
-			playlist_type: item.type,
-			playlist_id: item.listId,
-			tmdb_id: item.tmdbId,
+			video_id: item.video_id,
+			playlist_type: item.playlist_type,
+			playlist_id: item.playlist_id,
+			tmdb_id: item.tmdb_id,
 			time: Math.round(seconds),
 			audio: p.audioTrack()?.track.language ?? '',
 			subtitle: p.subtitle()?.track.language ?? '',
