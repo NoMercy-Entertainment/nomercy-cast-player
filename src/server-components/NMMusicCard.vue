@@ -154,7 +154,7 @@ useFocusEntry({
 .letter {
 	font-size: 64px;
 	font-weight: 800;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	letter-spacing: -0.04em;
 	text-transform: uppercase;
 }

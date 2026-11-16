@@ -98,7 +98,7 @@
 	line-height: 26px;
 	letter-spacing: -0.005em;
 	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .nm-hero-title-sub {
 	font-size: 19px;
@@ -112,7 +112,7 @@
 	font-size: 14px;
 	font-weight: 500;
 	line-height: 20px;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
@@ -147,7 +147,7 @@
 /* LinkButton.kt:112-124,168-172: outline type, white text, 3 dp white .85 border on focus. */
 .nm-pill-primary {
 	background: transparent;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .nm-pill-primary:focus-visible,
 .nm-pill-primary:hover {
@@ -156,7 +156,7 @@
 }
 .nm-pill-secondary {
 	background: transparent;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	border-color: rgba(255, 255, 255, 0.18);
 }
 .nm-pill-secondary:focus-visible,
@@ -190,11 +190,11 @@
 }
 .nm-pill-sm-primary {
 	background: var(--color-primary, oklch(0.7 0.2 285));
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .nm-pill-sm-secondary {
 	background: rgba(255, 255, 255, 0.1);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 
 /* ─── Hide scrollbars on touch / TV ─────────────────────────────────── */
@@ -325,7 +325,7 @@
 	background: oklch(0.18 0.01 250 / 0.85);
 	border: 1px solid rgba(255, 255, 255, 0.18);
 	border-radius: 10px;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-family: inherit;
 	cursor: pointer;
 	outline: none;
@@ -352,7 +352,7 @@
 	padding: 24px;
 	max-width: 420px;
 	width: 90%;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .nm-dialog-title {

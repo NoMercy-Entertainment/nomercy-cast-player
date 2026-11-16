@@ -41,7 +41,7 @@
 .panel {
 	position: absolute;
 	inset: 0;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	z-index: 10;
 }
 .pre-screen {
@@ -139,7 +139,7 @@
 }
 .panel-button-secondary {
 	background: rgba(0, 0, 0, 0.7);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	border: 1px solid rgba(255, 255, 255, 0.25);
 }
 .panel-button-secondary:focus-visible,
@@ -191,13 +191,13 @@
 }
 .season-row.current {
 	background: rgba(255, 255, 255, 0.12);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	border-color: rgba(255, 255, 255, 0.3);
 }
 .season-row:focus-visible {
 	background: rgba(255, 255, 255, 0.18);
 	border-color: rgba(255, 255, 255, 0.85);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	outline-offset: 0;
 }
 .episode-list {
@@ -212,7 +212,7 @@
 	display: flex;
 	gap: 14px;
 	background: transparent;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	border: 3px solid transparent;
 	border-radius: 8px;
 	padding: 8px;
@@ -260,7 +260,7 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: flex-end;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-size: 11px;
 	font-weight: 500;
 	pointer-events: none;
@@ -335,7 +335,7 @@
 	margin: 0;
 	font-size: 16px;
 	font-weight: 600;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	letter-spacing: 0.02em;
 }
 .lang-section .track-row {
@@ -354,7 +354,7 @@
 }
 .lang-section .track-row.current {
 	background: rgba(255, 255, 255, 0.12);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	border-color: rgba(255, 255, 255, 0.4);
 }
 .lang-section .track-row.current::before {
@@ -365,7 +365,7 @@
 .lang-section .track-row:focus-visible {
 	background: rgba(255, 255, 255, 0.22);
 	border-color: rgba(255, 255, 255, 0.85);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	outline-offset: 0;
 }
 
@@ -377,7 +377,7 @@
 	bottom: 132px;
 	z-index: 6;
 	background: var(--cast-skip-bg);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	border: 1px solid rgba(255, 255, 255, 0.35);
 	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
 	animation: skip-prompt-in 220ms ease;
@@ -458,7 +458,7 @@
 	overflow: hidden;
 	font-size: 18px;
 	font-weight: 500;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
@@ -478,7 +478,7 @@
 	padding: 8px 16px;
 	border-radius: 8px;
 	background: rgba(0, 0, 0, 0.7);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-size: 16px;
 	pointer-events: none;
 	opacity: 0;
@@ -493,7 +493,7 @@
 	margin: 0;
 	font-size: 18px;
 	font-weight: 700;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
 }
 .osd-progress-row {
@@ -501,7 +501,7 @@
 	grid-template-columns: 64px 1fr 64px;
 	gap: 16px;
 	align-items: center;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .osd-time {
 	font-variant-numeric: tabular-nums;
@@ -569,7 +569,7 @@
 	gap: 12px;
 }
 .seek-time {
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-size: 16px;
 	font-weight: 600;
 	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);

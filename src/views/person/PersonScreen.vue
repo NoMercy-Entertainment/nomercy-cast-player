@@ -33,7 +33,7 @@ const id = computed(() => String(route.params.id ?? ''));
 .placeholder {
 	position: relative;
 	z-index: 1;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-size: 18px;
 }
 </style>

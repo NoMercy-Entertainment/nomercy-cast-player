@@ -400,7 +400,7 @@ function trackArtistText(track: MusicTrack): string {
 	gap: 32px;
 	padding: 72px 32px 32px;
 	height: 100%;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .header-col {
 	display: flex;
@@ -462,7 +462,7 @@ function trackArtistText(track: MusicTrack): string {
 	border: 2px solid transparent;
 	border-radius: 50%;
 	background: transparent;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	outline: none;
 	cursor: pointer;
 }
@@ -473,7 +473,7 @@ function trackArtistText(track: MusicTrack): string {
 /* Music list Play button — palette-tinted instead of white */
 .header-col :deep(.nm-pill-primary) {
 	background: var(--color-primary, oklch(0.7 0.2 285));
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .header-col :deep(.nm-pill-primary):focus-visible,
 .header-col :deep(.nm-pill-primary):hover {

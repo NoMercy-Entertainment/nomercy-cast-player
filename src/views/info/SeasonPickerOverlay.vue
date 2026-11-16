@@ -116,7 +116,7 @@ onBeforeUnmount(() => releases.forEach(release => release()));
 	border: 1px solid transparent;
 	border-radius: 8px;
 	background: transparent;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-size: 15px;
 	font-weight: 400;
 	text-align: left;

@@ -104,14 +104,14 @@ defineExpose({ focusSelected: () => group.focusByKey(`category-${props.selected}
 	opacity: 0;
 }
 .category-item.selected {
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-weight: 600;
 }
 .category-item.selected::before {
 	opacity: 0.25;
 }
 .category-item:focus-visible {
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	box-shadow: inset 0 0 0 3px var(--cast-white);
 }
 .category-item.selected:focus-visible::before {

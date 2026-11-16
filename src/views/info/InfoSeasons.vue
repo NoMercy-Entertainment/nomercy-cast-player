@@ -120,7 +120,7 @@ function close(): void {
 	border: 1px solid rgba(255, 255, 255, 0.18);
 	border-radius: 12px;
 	background: transparent;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	font-size: 14px;
 	font-weight: 500;
 	text-align: left;

@@ -76,7 +76,7 @@ useFocusEntry({
 	background: linear-gradient(180deg, var(--color-primary, oklch(0.7 0.2 285 / 0.4)) 0%, oklch(0 0 0 / 0.4) 100%);
 	border: 2px solid transparent;
 	border-radius: 999px;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	cursor: pointer;
 	font-family: inherit;
 	max-width: 360px;
@@ -97,7 +97,7 @@ useFocusEntry({
 	flex: 0 0 auto;
 	display: grid;
 	place-items: center;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .eq {
 	position: absolute;

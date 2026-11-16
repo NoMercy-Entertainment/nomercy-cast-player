@@ -85,7 +85,7 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 	inset: 0;
 	width: 60%;
 	padding: 0 16px 12px 40px;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;

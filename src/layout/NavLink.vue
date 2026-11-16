@@ -52,7 +52,7 @@ useFocusEntry({
 	border-radius: 20px;
 	font-size: 13px;
 	font-weight: 400;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	text-decoration: none;
 	background: oklch(0 0 0 / 0.6);
 	transition:
@@ -90,7 +90,7 @@ useFocusEntry({
 	place-items: center;
 	width: 20px;
 	height: 20px;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 }
 .label {
 	letter-spacing: 0.01em;

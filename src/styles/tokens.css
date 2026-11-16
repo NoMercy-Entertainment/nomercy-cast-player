@@ -27,6 +27,8 @@
 	/* NM ships no opaque white or black, and none of the skip prompt colors (SkipOverlay.kt:107-157). */
 	--cast-white: #fff;
 	--cast-black: #000;
+	/* KMP light text is onSurface = slate_1 (NoMercyTheme.kt:576), near white; NM's #EDEDED is dimmer. */
+	--cast-text-primary: var(--cast-white);
 	--cast-skip-bg: #262630eb;
 	--cast-skip-ink: #262630;
 }

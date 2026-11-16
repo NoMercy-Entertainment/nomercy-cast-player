@@ -161,7 +161,7 @@ useFocusEntry({
 	inset: 0;
 	width: 60%;
 	padding: 24px 40px 0;
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	display: flex;
 	flex-direction: column;
 	justify-content: center;

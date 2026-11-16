@@ -105,7 +105,7 @@ useFocusEntry({
 	border-radius: var(--radius-card);
 	background: var(--nm-surface);
 	border: 1px solid var(--color-primary, var(--cast-white));
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	text-decoration: none;
 	font-size: 16px;
 	font-weight: 500;

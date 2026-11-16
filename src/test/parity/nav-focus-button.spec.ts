@@ -86,7 +86,7 @@ describe('buttons match NMDetailActions.kt / LinkButton.kt', () => {
 		expect(b['line-height']).toBe('18px');
 		expect(b.gap).toBe('8px');
 		expect(b.background).toBe('transparent');
-		expect(decls(CSS, '.nm-pill-primary').color).toBe('var(--nm-text-primary)');
+		expect(decls(CSS, '.nm-pill-primary').color).toBe('var(--cast-text-primary)');
 		expect(decls(CSS, '.nm-pill-primary').background).toBe('transparent');
 	});
 

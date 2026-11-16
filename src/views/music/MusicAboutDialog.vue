@@ -89,7 +89,7 @@ onBeforeUnmount(() => releases.forEach(release => release()));
 	padding: 24px;
 	border-radius: 16px;
 	background: var(--nm-surface);
-	color: var(--nm-text-primary);
+	color: var(--cast-text-primary);
 	outline: none;
 }
 .about-dialog:focus-visible {
