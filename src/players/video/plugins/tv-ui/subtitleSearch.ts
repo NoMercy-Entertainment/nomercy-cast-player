@@ -78,8 +78,10 @@ export async function searchSubtitles(
 	}
 
 	query.set('language', language);
-	const path = `/api/v1/subtitles/search?${query.toString()}`;
-	const body = await apiFetch<{ data?: RawCandidate[] }>({ path, method: 'GET' });
+	const body = await apiFetch<{ data?: RawCandidate[] }>({
+		path: `/api/v1/subtitles/search?${query.toString()}`,
+		method: 'GET',
+	});
 
 	return (body.data ?? []).map((raw) => ({
 		id: raw.id,

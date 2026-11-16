@@ -8,21 +8,27 @@ import type { ComponentPayload } from './unwrapComponents';
 import { apiFetch } from '@/lib/http/client';
 import type { Component } from '@/server-components/types';
 
+// APK splits search into /search/video/tv and /search/music/tv: "music" has its own
+// endpoint, every other type uses the video one. Each takes ?query= (not ?q=).
+async function fetchSearchPage(type: string, encoded: string): Promise<ComponentPayload> {
+	if (type === 'music') {
+		return apiFetch<ComponentPayload>({
+			path: `/api/v1/search/music/tv?query=${encoded}`,
+			method: 'GET',
+		});
+	}
+
+	return apiFetch<ComponentPayload>({
+		path: `/api/v1/search/video/tv?query=${encoded}`,
+		method: 'GET',
+	});
+}
+
 async function fetchSearch(type: string, query: string): Promise<Component[]> {
 	if (query.trim().length < 3)
 		return [];
 
-	// APK splits search into /search/video/tv and /search/music/tv. We collapse
-	// "all", "movies", "tv shows" into the video endpoint; "music" hits its
-	// own endpoint. Each takes ?query= (not ?q=).
-	const segment = type === 'music'
-		? 'music/tv'
-		: 'video/tv';
-	const url = `/api/v1/search/${segment}?query=${encodeURIComponent(query)}`;
-	const response = await apiFetch<ComponentPayload>({
-		path: url,
-		method: 'GET',
-	});
+	const response = await fetchSearchPage(type, encodeURIComponent(query));
 
 	return unwrapComponents(response);
 }

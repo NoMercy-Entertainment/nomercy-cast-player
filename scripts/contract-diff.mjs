@@ -15,7 +15,7 @@ const QUOTED = /(?<q>['"`])(?<body>(?:\\.|(?!\k<q>)[^\\])*)\k<q>/;
 const SOURCE_FILE_RE = /\.(?:ts|tsx|vue)$/;
 const TEST_FILE_RE = /\.(?:test|spec)\.(?:ts|tsx)$/;
 const HUB_BINDING_RE = /\b(?:const|let)\s+(\w+)\s*=\s*socketStore\.(\w+Hub)\.value/g;
-const HUB_CALL_RE = /(?<receiver>(?:socketStore\.)?\w+(?:\.value)?)\s*\??\.\s*(?<kind>on|invoke|send)\s*\(\s*(?<q>['"`])(?<name>[^'"`]+)\k<q>/g;
+const HUB_CALL_RE = /(?<receiver>(?:socketStore\.)?\w+(?:\.value)?)\s*\??\.\s*(?<kind>on|invoke|send)\s*(?:<[^>()]*>\s*)?\(\s*(?<q>['"`])(?<name>[^'"`]+)\k<q>/g;
 const HUB_RECEIVER_RE = /(?:^|\.)(\w+Hub)(?:\.value)?$/;
 const VALUE_SUFFIX_RE = /\.value$/;
 const CONSTANT_RE = /\b(?:export\s+)?const\s+([A-Z][A-Z0-9_]*)\s*=\s*(?<q>['"`])(?<body>[^'"`$]*)\k<q>/g;
@@ -227,6 +227,7 @@ const SELF_TEST_HUB = [
 	[`socketStore.musicHub.value?.invoke('DirectMethod');`, { invokes: ['DirectMethod'] }],
 	[`const hub = socketStore.musicHub.value;\nhub.send("BoundSent");`, { invokes: ['BoundSent'] }],
 	['musicHub.value?.on(`TemplateEvent`, () => {});', { listens: ['TemplateEvent'] }],
+	[`const hub = socketStore.musicHub.value;\nhub.invoke<void>(\n\t'TypedMethod',\n\t1,\n);`, { invokes: ['TypedMethod'] }],
 ];
 
 const SELF_TEST_HELPER = `function bindFixture(hub: TypedHub): void {\n\thub.on('HelperEvent', () => {});\n}\nbindFixture(musicHub.value);`;
