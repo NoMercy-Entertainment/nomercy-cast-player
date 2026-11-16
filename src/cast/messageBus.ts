@@ -1,4 +1,7 @@
 import { buildDiagnosticsAnswer } from './diagnosticsAnswer';
+import { answerControl, isControlRequest } from './controlChannel';
+import type { ControlEngine } from './controlChannel';
+import { videoSyncBridge } from '@/players/video/syncBridge';
 import { NAMESPACE_GENERAL, NAMESPACE_STATUS } from './namespaces';
 import { resolveServerFromAppConfig } from '@/lib/resolveServer';
 import type { NamedServer } from '@/lib/resolveServer';
@@ -65,6 +68,12 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 	context = ctx;
 
 	ctx.addCustomMessageListener(NAMESPACE_GENERAL, (event) => {
+		if (isControlRequest(event.data)) {
+			void answerControl(event.data.control, videoSyncBridge.current() as unknown as ControlEngine | null)
+				.then(control => ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { control }))
+				.catch((err: unknown) => console.warn('[cast] control answer failed', err));
+			return;
+		}
 		if ((event.data as { diagnostics?: unknown } | null)?.diagnostics === true) {
 			try {
 				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { diagnostics: buildDiagnosticsAnswer() });
