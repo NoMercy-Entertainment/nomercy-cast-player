@@ -2,13 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h } from 'vue';
 import { mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
+import { EventEmitter, LifecycleRegistry } from '@nomercy-entertainment/nomercy-player-core';
 
 import { useDPad } from '@/composables/useDPad';
-import { mountEpisodeScreen } from '@/players/video/pluginPanels/EpisodeScreen';
-import { mountLanguageScreen } from '@/players/video/pluginPanels/LanguageScreen';
-import { mountPreScreen } from '@/players/video/pluginPanels/PreScreen';
-import { mountSeekContainer } from '@/players/video/pluginPanels/SeekContainer';
-import { TVOverlayPlugin } from '@/players/video/TVOverlayPlugin';
+import { TvUiPlugin } from '@/players/video/plugins/tv-ui';
 
 const back = vi.fn();
 const router = {
@@ -40,9 +37,70 @@ function pressBack(key: string): void {
 	}));
 }
 
-describe('back keys with a player panel open', () => {
+interface Item {
+	id: number;
+	title: string;
+	season: number;
+	episode: number;
+}
+
+class FakePlayer extends EventEmitter<Record<string, unknown>> {
+	container = document.createElement('div');
+	state = 'playing';
+	items: Item[] = [
+		{
+			id: 1,
+			title: 'One',
+			season: 1,
+			episode: 1,
+		},
+		{
+			id: 2,
+			title: 'Two',
+			season: 1,
+			episode: 2,
+		},
+	];
+
+	playState = (): string => this.state;
+	time = (): number => 10;
+	duration = (): number => 100;
+	queue = (): Item[] => this.items;
+	item = (): Item => this.items[0]!;
+	index = (): number => 0;
+	play = vi.fn<() => Promise<void>>(async () => {
+		this.state = 'playing';
+	});
+
+	pause = vi.fn<() => Promise<void>>(async () => {
+		this.state = 'paused';
+	});
+
+	restart = vi.fn<() => void>();
+}
+
+const registries: LifecycleRegistry[] = [];
+
+function startOverlay(player: FakePlayer, skipPreScreen: boolean, onExit: () => void): TvUiPlugin {
+	const plugin = new TvUiPlugin();
+	const lifecycle = new LifecycleRegistry();
+
+	registries.push(lifecycle);
+	plugin.initialize(player as never, { skipPreScreen, onExit }, lifecycle);
+	plugin.use();
+
+	return plugin;
+}
+
+function clickButton(label: string): void {
+	const buttons = Array.from(document.querySelectorAll<HTMLElement>('.tvui-pre-buttons .tvui-button'));
+
+	buttons.find((button) => button.textContent === label)!.click();
+}
+
+describe('back keys with a tv-ui panel open', () => {
 	let host: VueWrapper;
-	let parent: HTMLElement;
+	let player: FakePlayer;
 	const onExit = vi.fn();
 
 	beforeEach(() => {
@@ -50,128 +108,96 @@ describe('back keys with a player panel open', () => {
 		Element.prototype.scrollIntoView = vi.fn();
 		back.mockClear();
 		onExit.mockClear();
-		parent = document.createElement('div');
-		document.body.append(parent);
 		host = mount(Host);
+		player = new FakePlayer();
+		document.body.append(player.container);
 	});
 
 	afterEach(() => {
+		registries.splice(0).forEach((registry) => registry.dispose());
+		player.container.remove();
 		host.unmount();
-		parent.remove();
 	});
 
-	const panels: Array<[string, () => () => void]> = [
-		['language', () => mountLanguageScreen({
-			parent,
-			audioTracks: [{ id: 1, label: 'Track A' }],
-			subtitleTracks: [],
-			onPickAudio: () => {},
-			onPickSubtitle: () => {},
-			onExit,
-		} as never)],
-		['episode', () => mountEpisodeScreen({
-			parent,
-			episodes: [{
-				id: 1,
-				title: 'Episode A',
-				season: 1,
-				episode: 1,
-			}],
-			onPick: () => {},
-			onExit,
-		} as never)],
-		['pre', () => mountPreScreen({
-			parent,
-			title: 'Title A',
-			showEpisodes: false,
-			showLanguages: false,
-			onPlay: () => {},
-			onRestart: () => {},
-			onShowEpisodes: () => {},
-			onShowLanguages: () => {},
-			onExit,
-		})],
-		['seek', () => mountSeekContainer({
-			parent,
-			getCurrentTime: () => 10,
-			getDuration: () => 100,
-			onCommit: () => {},
-			onCancel: onExit,
-		})],
+	const dialogs: Array<[string, string, string]> = [
+		['language', '.tvui-languages', 'Audio and Subtitles'],
+		['episode', '.tvui-episodes', 'Episodes'],
 	];
 
-	for (const [name, mountPanel] of panels) {
+	for (const [name, selector, opener] of dialogs) {
 		for (const key of ['Escape', 'Back', 'GoBack']) {
-			it(`${key} closes the ${name} panel and stays on the route`, () => {
-				const unmount = mountPanel();
+			it(`${key} closes the ${name} dialog back to the pre-screen and stays on the route`, () => {
+				startOverlay(player, false, onExit);
+				clickButton(opener);
+				expect(document.querySelector(selector)).not.toBeNull();
 
-				try {
-					pressBack(key);
-					expect(onExit).toHaveBeenCalledTimes(1);
-					expect(back).not.toHaveBeenCalled();
-				} finally {
-					unmount();
-				}
+				pressBack(key);
+				expect(document.querySelector(selector)).toBeNull();
+				expect(document.querySelector('.tvui-pre-screen')).not.toBeNull();
+				expect(back).not.toHaveBeenCalled();
+				expect(onExit).not.toHaveBeenCalled();
 			});
 		}
 	}
 
-	it('leaves the route on Escape when no panel is open', () => {
+	for (const key of ['Escape', 'Back', 'GoBack']) {
+		it(`${key} on the pre-screen hands the exit to the player, not to the router`, () => {
+			startOverlay(player, false, onExit);
+			pressBack(key);
+			expect(onExit).toHaveBeenCalledTimes(1);
+			expect(back).not.toHaveBeenCalled();
+		});
+	}
+
+	it('Back cancels the seek strip and stays on the route', () => {
+		startOverlay(player, true, onExit);
+		window.dispatchEvent(new KeyboardEvent('keydown', {
+			key: 'ArrowRight',
+			bubbles: true,
+			cancelable: true,
+		}));
+
+		expect(document.querySelector('.tvui-seek-strip')).not.toBeNull();
+		pressBack('Escape');
+		expect(document.querySelector('.tvui-seek-strip')).toBeNull();
+		expect(back).not.toHaveBeenCalled();
+		expect(onExit).not.toHaveBeenCalled();
+	});
+
+	it('leaves the route on Escape once the player is gone', () => {
 		pressBack('Escape');
 		expect(back).toHaveBeenCalledTimes(1);
 	});
 });
 
-// The 2.x player has no overlay element, only the container it mounts into.
-function fakePlayer() {
-	const container = document.createElement('div');
-
-	document.body.append(container);
-
-	return {
-		container,
-		on: vi.fn(),
-		off: vi.fn(),
-		play: vi.fn(),
-		pause: vi.fn(),
-		time: vi.fn(() => 0),
-		duration: vi.fn(() => 0),
-		subtitles: vi.fn(() => []),
-		audioTracks: vi.fn(() => []),
-		qualityLevels: vi.fn(() => []),
-		chapters: vi.fn(() => []),
-	};
-}
-
 describe('back keys while the video plays with no panel open', () => {
 	let host: VueWrapper;
-	let player: ReturnType<typeof fakePlayer>;
-	let overlay: TVOverlayPlugin;
+	let player: FakePlayer;
 
 	beforeEach(() => {
 		Element.prototype.scrollIntoView = vi.fn();
 		back.mockClear();
 		host = mount(Host);
-		player = fakePlayer();
+		player = new FakePlayer();
+		document.body.append(player.container);
 		// Same wiring as VideoPlayer.vue: leaving the watch screen is router.back().
-		overlay = new TVOverlayPlugin(player as never, { skipPreScreen: true, onExit: () => router.back() });
-		overlay.attach();
+		startOverlay(player, true, () => router.back());
 	});
 
 	afterEach(() => {
-		overlay.detach();
+		registries.splice(0).forEach((registry) => registry.dispose());
 		player.container.remove();
 		host.unmount();
 	});
 
 	for (const key of ['Escape', 'Back', 'GoBack', 'BrowserBack']) {
 		it(`${key} pauses on the pre-screen and keeps the route; a second ${key} leaves`, () => {
-			expect(document.querySelector('.pre-screen')).toBeNull();
+			expect(document.querySelector('.tvui-pre-screen')).toBeNull();
 
 			pressBack(key);
 			expect(back).not.toHaveBeenCalled();
 			expect(player.pause).toHaveBeenCalledTimes(1);
-			expect(document.querySelector('.pre-screen')).not.toBeNull();
+			expect(document.querySelector('.tvui-pre-screen')).not.toBeNull();
 
 			pressBack(key);
 			expect(back).toHaveBeenCalledTimes(1);
@@ -179,7 +205,7 @@ describe('back keys while the video plays with no panel open', () => {
 	}
 
 	it('leaves the route on Escape once the player is gone', () => {
-		overlay.detach();
+		registries.splice(0).forEach((registry) => registry.dispose());
 		pressBack('Escape');
 		expect(back).toHaveBeenCalledTimes(1);
 		expect(player.pause).not.toHaveBeenCalled();

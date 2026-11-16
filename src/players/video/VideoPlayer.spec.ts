@@ -4,6 +4,15 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 type Handler = (data?: unknown) => void;
 
+interface PluginRef { id?: string }
+
+interface PluginOptions {
+	workerUrl?: string;
+	fallbackFont?: string;
+	skipPreScreen?: boolean;
+	onExit?: () => void;
+}
+
 // The 2.x surface the receiver uses: factory(id) returns the player before
 // setup(), plugins register on it, and setup(config) returns it.
 function makePlayer() {
@@ -14,7 +23,7 @@ function makePlayer() {
 	const player = {
 		options: undefined as unknown,
 		container: document.createElement('div'),
-		addPlugin: vi.fn(() => player),
+		addPlugin: vi.fn((_plugin: PluginRef, _options?: PluginOptions) => player),
 		setup: vi.fn((options: { playlist?: Array<{ id: string }> }) => {
 			player.options = options;
 			items = options.playlist ?? [];
@@ -370,9 +379,10 @@ describe('videoPlayer starts the cast watch session', () => {
 		await flushPromises();
 
 		const player = players[0]!;
-		const added = player.addPlugin.mock.calls as unknown as Array<[unknown, { workerUrl?: string; fallbackFont?: string }?]>;
+		const { TvUiPlugin } = await import('./plugins/tv-ui');
+		const added = player.addPlugin.mock.calls;
 
-		expect(added.map(([plugin]) => plugin)).toEqual([SubtitleOverlayPlugin, OctopusPlugin]);
+		expect(added.map(([plugin]) => plugin)).toEqual([SubtitleOverlayPlugin, OctopusPlugin, TvUiPlugin]);
 		const options = added[1]![1]!;
 
 		expect(options.workerUrl).toBe('/js/octopus/nomercy-libass-worker.js');
@@ -454,6 +464,56 @@ describe('videoPlayer starts the cast watch session', () => {
 		const seeks = player.time.mock.calls.filter((call) => call.length > 0);
 
 		expect(seeks).toEqual([[42]]);
+
+		wrapper.unmount();
+	});
+});
+
+describe('videoPlayer runs on the tv-ui plugin', () => {
+	async function mountWith(extra: { resumeAt?: number } = {}) {
+		players.length = 0;
+		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
+		const item = {
+			id: '1',
+			title: 'One',
+			file: 'https://example.invalid/one.m3u8',
+		};
+		const wrapper = mount(VideoPlayer, {
+			props: {
+				type: 'movie',
+				id: '1',
+				playlist: [item],
+				initialItem: item,
+				...extra,
+			},
+			global: { plugins: [router()] },
+		});
+
+		await flushPromises();
+
+		return { wrapper, player: players[0]! };
+	}
+
+	function tvUiCall(player: ReturnType<typeof makePlayer>) {
+		return player.addPlugin.mock.calls.find(([plugin]) => plugin.id === 'tv-ui');
+	}
+
+	it('registers tv-ui with the pre-screen on and an exit, and mounts no old overlay host', async () => {
+		const { wrapper, player } = await mountWith();
+		const call = tvUiCall(player);
+
+		expect(call).toBeDefined();
+		expect(call![1]?.skipPreScreen).toBe(false);
+		expect(call![1]?.onExit).toBeTypeOf('function');
+		expect(player.container.querySelector('.tv-overlay-host')).toBeNull();
+
+		wrapper.unmount();
+	});
+
+	it('skips the pre-screen when the cast hands over a position', async () => {
+		const { wrapper, player } = await mountWith({ resumeAt: 42 });
+
+		expect(tvUiCall(player)![1]?.skipPreScreen).toBe(true);
 
 		wrapper.unmount();
 	});

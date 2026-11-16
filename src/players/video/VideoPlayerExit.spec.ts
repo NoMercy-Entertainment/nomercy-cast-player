@@ -9,7 +9,13 @@ const { overlayOptions } = vi.hoisted(() => ({
 vi.mock('@nomercy-entertainment/nomercy-video-player', () => ({
 	default: () => {
 		const player = {
-			addPlugin: () => player,
+			addPlugin: (plugin: { id?: string }, options?: { onExit?: () => void }) => {
+				if (plugin.id === 'tv-ui' && options?.onExit) {
+					overlayOptions.push({ onExit: options.onExit });
+				}
+
+				return player;
+			},
 			setup: () => player,
 			on: () => {},
 			off: () => {},
@@ -25,17 +31,6 @@ vi.mock('@nomercy-entertainment/nomercy-video-player', () => ({
 
 vi.mock('@nomercy-entertainment/nomercy-video-player/plugins/subtitle-overlay', () => ({
 	SubtitleOverlayPlugin: class {},
-}));
-
-vi.mock('./TVOverlayPlugin', () => ({
-	TVOverlayPlugin: class {
-		constructor(_player: unknown, options: { onExit: () => void }) {
-			overlayOptions.push(options);
-		}
-
-		attach = vi.fn();
-		detach = vi.fn();
-	},
 }));
 
 const page = { template: '<div />' };

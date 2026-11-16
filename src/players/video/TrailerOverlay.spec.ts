@@ -22,10 +22,10 @@ const player = {
 	off: vi.fn(),
 	play: vi.fn(),
 	pause: vi.fn(),
-	time: vi.fn(() => 0),
+	time: vi.fn((_seconds?: number) => 0),
 	duration: vi.fn(() => 0),
-	subtitles: vi.fn(() => []),
-	subtitle: vi.fn(() => null),
+	subtitles: vi.fn((): Array<{ label: string }> => []),
+	subtitle: vi.fn((_index?: number | null): { index: number } | null => null),
 	togglePlayback: vi.fn(),
 	dispose: vi.fn(async () => {}),
 };
@@ -88,8 +88,86 @@ describe('the trailer on the receiver', () => {
 
 		await flushPromises();
 
-		expect(container.querySelector('.tv-overlay-host .playback-osd, .tv-overlay-host')).not.toBeNull();
+		expect(container.querySelector('.tv-overlay-host')).not.toBeNull();
 
+		wrapper.unmount();
+	});
+});
+
+describe('the trailer controls are the tv-ui panels', () => {
+	const trailer = {
+		videoId: 'placeholder-video',
+		title: 'Trailer',
+		url: 'https://example.invalid/trailer.mp4',
+		subtitles: [],
+	};
+
+	async function mountTrailer() {
+		const wrapper = mount(TrailerOverlay, {
+			props: { trailer, fallbackTitle: 'Fallback' },
+			global: { stubs: { Teleport: true } },
+		});
+
+		await flushPromises();
+
+		return wrapper;
+	}
+
+	function press(key: string): void {
+		window.dispatchEvent(new KeyboardEvent('keydown', {
+			key,
+			bubbles: true,
+			cancelable: true,
+		}));
+	}
+
+	it('draws the title in the tv-ui top bar and the progress in the tv-ui bottom bar', async () => {
+		const wrapper = await mountTrailer();
+
+		expect(container.querySelector('.tvui-top-bar .tvui-title')?.textContent).toBe('Trailer');
+		expect(container.querySelector('.tvui-bottom-bar .tvui-chapter-bar')).not.toBeNull();
+		expect(container.querySelector('.playback-osd')).toBeNull();
+
+		wrapper.unmount();
+	});
+
+	it('Left pauses and opens the tv-ui scrub strip, Enter seeks to the tile and plays', async () => {
+		player.duration.mockReturnValue(100);
+		player.time.mockReturnValue(25);
+		player.pause.mockClear();
+		player.play.mockClear();
+		const wrapper = await mountTrailer();
+
+		press('ArrowLeft');
+		expect(player.pause).toHaveBeenCalledTimes(1);
+		expect(container.querySelector('.tvui-seek-strip')).not.toBeNull();
+		expect(container.querySelector('.seek-container')).toBeNull();
+
+		press('ArrowRight');
+		press('Enter');
+		expect(player.time).toHaveBeenLastCalledWith(30);
+		expect(player.play).toHaveBeenCalledTimes(1);
+		expect(container.querySelector('.tvui-seek-strip')).toBeNull();
+
+		player.duration.mockReturnValue(0);
+		player.time.mockReturnValue(0);
+		wrapper.unmount();
+	});
+
+	it('the language key opens the subtitle picker and a pick selects that track', async () => {
+		player.subtitles.mockReturnValue([{ label: 'English' }, { label: 'Dutch' }]);
+		player.subtitle.mockClear();
+		const wrapper = await mountTrailer();
+
+		press('l');
+		const rows = Array.from(container.querySelectorAll<HTMLElement>('.tvui-languages .tvui-row'));
+
+		expect(rows.map((row) => row.textContent)).toEqual(['Off', 'English', 'Dutch']);
+		rows[2]!.click();
+		expect(player.subtitle).toHaveBeenCalledWith(1);
+		expect(container.querySelector('.tvui-languages')).toBeNull();
+
+		player.subtitles.mockReturnValue([]);
 		wrapper.unmount();
 	});
 });

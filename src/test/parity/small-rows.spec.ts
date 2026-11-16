@@ -6,7 +6,6 @@ import EmptyState from '@/components/feedback/EmptyState.vue';
 import { useDPad } from '@/composables/useDPad';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
-import { mountPlaybackOSD } from '@/players/video/pluginPanels/PlaybackOSD';
 import { focusStore } from '@/stores/focusStore';
 import { decls } from '../cssDecl';
 
@@ -23,22 +22,6 @@ afterEach(() => {
 describe('small rows match the KMP TV app', () => {
 	it('search.bar: 75 percent of the page width (SearchScreen.kt:114)', () => {
 		expect(decls('views/search/SearchScreen.vue', '.query-bar').width).toBe('75%');
-	});
-
-	it('player.osd.progress: 16 px round thumb on the played edge (ChapterProgressBar.kt:99-255)', () => {
-		const t = decls('styles/tv-safe.css', '.osd-bar-thumb');
-
-		expect([t.width, t.height, t['border-radius']]).toEqual(['16px', '16px', '50%']);
-		expect(decls('styles/tv-safe.css', '.osd-bar').overflow).toBeUndefined();
-		const handle = mountPlaybackOSD({
-			parent: document.body,
-			title: 'T',
-			getCurrentTime: () => 25,
-			getDuration: () => 100,
-		});
-
-		expect(document.querySelector<HTMLElement>('.osd-bar-thumb')?.style.left).toBe('25%');
-		handle.dispose();
 	});
 
 	it('nm.NMEmptyState: 48 px icon above the message (NMEmptyState.kt:53-59)', () => {
