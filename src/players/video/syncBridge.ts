@@ -56,19 +56,24 @@ function mediaLabel(p: VideoEngineLike): string | undefined {
 	return `${kind}-${item.tmdbId ?? item.id}`;
 }
 
+// The server can refuse a command. The refusal is one diagnostics line; playback state stays as it is.
+function guard(where: string, sent: Promise<unknown> | undefined): void {
+	void Promise.resolve(sent).catch((error: unknown) => recordSwallowed(where, error));
+}
+
 function bindOutbound(p: VideoEngineLike): void {
 	const onPlay = (): void => {
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, mediaLabel(p));
-		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'play', null);
+		guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'play', null));
 		playbackStore.video.applyPlayState(true);
 	};
 	const onPause = (): void => {
-		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'pause', null);
+		guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'pause', null));
 		playbackStore.video.applyPlayState(false);
 	};
 	const onSeek = (...args: unknown[]): void => {
 		const data = args[0] as { time: number };
-		void socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', { time: data.time });
+		guard('syncPlaybackCommand', socketStore.videoHub.value?.invoke('PlaybackCommand', 'seek', Math.round(data.time)));
 	};
 	const onTime = throttle((...args: unknown[]) => {
 		const seconds = (args[0] as { time?: number } | undefined)?.time ?? 0;
@@ -76,7 +81,7 @@ function bindOutbound(p: VideoEngineLike): void {
 		const item = p.item() as WireItem | undefined;
 		if (!item)
 			return;
-		void socketStore.videoHub.value?.invoke('SetTime', {
+		guard('syncSetTime', socketStore.videoHub.value?.invoke('SetTime', {
 			VideoId: item.videoId,
 			PlaylistType: item.type,
 			PlaylistId: item.listId,
@@ -85,7 +90,7 @@ function bindOutbound(p: VideoEngineLike): void {
 			Audio: p.audioTrack()?.track.language ?? '',
 			Subtitle: p.subtitle()?.track.language ?? '',
 			SubtitleType: p.subtitle()?.track.type ?? '',
-		});
+		}));
 	}, 5000);
 
 	p.on('play', onPlay);

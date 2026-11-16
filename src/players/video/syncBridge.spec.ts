@@ -1,7 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { videoSyncBridge } from './syncBridge';
 import { socketStore } from '@/stores/socketStore';
+import { playbackStore } from '@/stores/playbackStore';
+import { diagnosticsRing } from '@/lib/diagnostics/sink';
 
 type Handler = (data?: unknown) => void;
 
@@ -63,15 +65,16 @@ describe('the sync bridge reads the 2.x payloads', () => {
 		expect(engine.pause).not.toHaveBeenCalled();
 	});
 
-	it('sends the seek target from the seek payload', () => {
+	// cast#73: the server binds an object argument to nothing and fails the call; app-web and KMP send whole seconds.
+	it('sends the seek target as whole seconds, like app-web and KMP', () => {
 		const invoke = vi.fn();
 		socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
 		const engine = fakeEngine();
 		videoSyncBridge.attach(engine as never);
 
-		engine.fire('seek', { time: 33 });
+		engine.fire('seek', { time: 33.6 });
 
-		expect(invoke).toHaveBeenCalledWith('PlaybackCommand', 'seek', { time: 33 });
+		expect(invoke).toHaveBeenCalledWith('PlaybackCommand', 'seek', 34);
 	});
 
 	// SignalR binds by argument count: VideoHub.PlaybackCommand(command, data) refuses one argument.
@@ -84,6 +87,50 @@ describe('the sync bridge reads the 2.x payloads', () => {
 		engine.fire(event);
 
 		expect(invoke).toHaveBeenCalledWith('PlaybackCommand', event, null);
+	});
+
+	// The server can refuse a command (cast-player#73). The refusal is recorded, never left unhandled.
+	describe('a refused outbound command', () => {
+		const flush = (): Promise<void> => new Promise(resolve => setTimeout(resolve, 0));
+		const caught = () => diagnosticsRing.snapshot().filter(entry => entry.code === 'ErrorCaught');
+
+		beforeEach(() => {
+			diagnosticsRing.clear();
+		});
+
+		it.each([
+			['play', undefined, 'syncPlaybackCommand'],
+			['pause', undefined, 'syncPlaybackCommand'],
+			['seek', { time: 5 }, 'syncPlaybackCommand'],
+			['time', { time: 61.4 }, 'syncSetTime'],
+		])('records one line for a rejected %s and keeps the play state', async (event, payload, where) => {
+			const invoke = vi.fn(() => Promise.reject(new Error('refused')));
+			socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
+			const engine = fakeEngine();
+			videoSyncBridge.attach(engine as never);
+			const before = playbackStore.video.playing.value;
+
+			engine.fire(event, payload);
+			await flush();
+
+			expect(caught()).toHaveLength(1);
+			expect(caught()[0].label).toContain(where);
+			expect(playbackStore.video.playing.value).toBe(event === 'play' ? true : event === 'pause' ? false : before);
+		});
+
+		it('records nothing for a command the server accepted', async () => {
+			const invoke = vi.fn(() => Promise.resolve({ ok: true }));
+			socketStore.videoHub.value = { invoke, on: vi.fn(), off: vi.fn() } as never;
+			const engine = fakeEngine();
+			videoSyncBridge.attach(engine as never);
+
+			engine.fire('pause');
+			engine.fire('seek', { time: 5 });
+			await flush();
+
+			expect(invoke).toHaveBeenCalledTimes(2);
+			expect(caught()).toHaveLength(0);
+		});
 	});
 
 	it('applies an inbound Seek with time() and not the removed seek()', () => {
