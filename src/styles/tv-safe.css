@@ -26,16 +26,6 @@
 	outline: none;
 }
 
-[data-focusable].card:focus-visible {
-	transform: scale(1.05);
-	z-index: 2;
-}
-
-[data-focusable].card {
-	transition: transform var(--motion-fast);
-	will-change: transform;
-}
-
 .rail-track > [data-focusable]:focus-visible {
 	scroll-margin-inline: 25vw;
 }

@@ -10,7 +10,7 @@
 	--color-text-primary: oklch(0.96 0 0);
 	--color-text-secondary: oklch(0.7 0 0);
 	--color-accent: oklch(0.7 0.18 35);
-	--radius-card: 12px;
+	--radius-card: 6px;
 	--shadow-focus: 0 0 0 4px rgb(255 255 255 / 0.95);
 }
 

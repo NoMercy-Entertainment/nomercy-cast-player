@@ -10,14 +10,14 @@
 	--tv-safe-padding: clamp(36px, 4vw, 80px);
 	/* APK NMCarousel: 7 visible cards + 0.7 peek + 8dp spacing. On a 1280dp
 		screen that resolves to ~160dp card width. Matches APK density. */
-	--rail-card-width: 160px;
-	--rail-card-height: 240px;
+	--rail-card-width: calc((100vw - 48px) / 7.7);
+	--rail-card-height: calc(var(--rail-card-width) * 1.5);
 	--rail-card-gap: 8px;
 	--rail-header-height: 48px;
-	--topnav-height: 64px;
+	--topnav-height: 70px;
 	/* How far the rails reach up into the hero; the hero text stays clear of it. */
-	--hero-rails-overlap: 72px;
-	--hero-height: 62vh;
+	--hero-rails-overlap: 10px;
+	--hero-height: 264px;
 	--backdrop-blur: 32px;
 	--motion-fast: 150ms ease-out;
 	--motion-page: 200ms ease-out;

@@ -15,7 +15,7 @@
 	will-change: transform;
 }
 .nm-focus-scale:focus-visible {
-	transform: scale(1.06);
+	transform: none;
 	z-index: 2;
 }
 .nm-focus-scale-sm {
@@ -23,7 +23,7 @@
 	will-change: transform;
 }
 .nm-focus-scale-sm:focus-visible {
-	transform: scale(1.04);
+	transform: none;
 	z-index: 2;
 }
 
@@ -35,9 +35,7 @@
 }
 .nm-focus-scale:focus-visible .nm-focus-ring,
 .nm-focus-scale-sm:focus-visible .nm-focus-ring {
-	box-shadow:
-		0 0 0 2px var(--color-primary, oklch(0.7 0.2 285)),
-		0 12px 32px rgba(0, 0, 0, 0.6);
+	box-shadow: 0 0 0 2px #fff;
 }
 
 /* Border-style focus indicator (used on cards that don't have a separate
@@ -71,11 +69,11 @@
 	position: absolute;
 	inset: 0;
 	background: radial-gradient(
-		ellipse 130% 130% at 80% -10%,
+		ellipse 1987px 1728px at calc(100% - 187px) -450px,
 		transparent 0%,
-		transparent 35%,
-		rgba(0, 0, 0, 0.85) 75%,
-		rgba(0, 0, 0, 1) 100%
+		transparent 25%,
+		#000 37.5%,
+		#000 100%
 	);
 }
 
@@ -234,14 +232,14 @@
 .nm-hero-rails {
 	display: flex;
 	flex-direction: column;
-	gap: 24px;
-	padding: 8px 0 64px;
+	gap: 8px;
+	padding: 8px 0 120px;
 	/* APK overlap=72.dp keeps the rails peeking under the hero scrim */
 	margin-top: calc(-1 * var(--hero-rails-overlap));
 	position: relative;
 	z-index: 1;
 	overflow: auto;
-	height: 50vh;
+	height: calc(100% - 254px);
 	scrollbar-width: none;
 }
 .nm-hero-rails::-webkit-scrollbar {
