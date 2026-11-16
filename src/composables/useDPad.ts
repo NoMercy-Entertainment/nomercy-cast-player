@@ -82,7 +82,8 @@ export function useDPad(router: Router): void {
 				handled = active?.handleKey('right') ?? false;
 				break;
 			case 'Enter':
-				handled = focusStore.dispatchAction();
+				// TvNavigationBar.kt:331-336: a held OK never re-navigates from the nav bar.
+				handled = e.repeat && document.activeElement?.closest('.topnav') ? true : focusStore.dispatchAction();
 				break;
 			case 'Escape':
 			case 'Back':

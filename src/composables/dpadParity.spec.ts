@@ -9,9 +9,11 @@ import TopNavBar from '@/layout/TopNavBar.vue';
 import type { Component } from '@/server-components/types';
 import { decls } from '@/test/cssDecl';
 
+const push = vi.hoisted(() => vi.fn());
+
 vi.mock('vue-router', () => ({
 	useRoute: () => ({ path: '/', params: {} }),
-	useRouter: () => ({ push: vi.fn(), back: vi.fn(), replace: vi.fn(), currentRoute: { value: { path: '/' } } }),
+	useRouter: () => ({ push, back: vi.fn(), replace: vi.fn(), currentRoute: { value: { path: '/' } } }),
 }));
 
 vi.mock('@/queries/useMeQuery', () => ({
@@ -171,6 +173,20 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 		expect(document.activeElement).toBe(profile);
 		press('ArrowLeft');
 		expect(document.activeElement).toBe(links[links.length - 1]);
+	});
+
+	it('dpad.nav.ok: OK on a nav item navigates on the first press, never on key repeat (:331-336, :409-410)', async () => {
+		await boot([rail('r1', 4)]);
+		push.mockClear();
+		document.querySelector<HTMLElement>('.nav-link')!.focus();
+		const down = (repeat: boolean): void => {
+			document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', repeat, bubbles: true, cancelable: true }));
+		};
+		down(true);
+		down(true);
+		expect(push).not.toHaveBeenCalled();
+		down(false);
+		expect(push).toHaveBeenCalledTimes(1);
 	});
 
 	it('dpad.nav.down: DOWN from a nav item focuses the first card of the first rail', async () => {
