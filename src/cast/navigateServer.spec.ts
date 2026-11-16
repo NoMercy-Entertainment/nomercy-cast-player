@@ -120,6 +120,7 @@ describe('a cast from the phone plays from the right media server (cast-player#6
 		expect(push).not.toHaveBeenCalled();
 	});
 
+	// @spec CAST-002
 	it('skips an unreachable first server when the phone names none', async () => {
 		stubNetwork([SecondServer.serverBaseUrl]);
 
@@ -129,6 +130,7 @@ describe('a cast from the phone plays from the right media server (cast-player#6
 		expect(authStore.serverUrl.value).toBe(SecondServer.serverBaseUrl);
 	});
 
+	// @spec CAST-001
 	it('keeps the first server when every server answers', async () => {
 		stubNetwork([FirstServer.serverBaseUrl, SecondServer.serverBaseUrl]);
 
