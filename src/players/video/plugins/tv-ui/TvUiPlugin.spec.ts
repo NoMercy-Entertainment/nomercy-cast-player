@@ -546,7 +546,8 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 		const plain = document.createElement('div');
 
 		safezone.className = 'subtitle-safezone';
-		canvas.className = 'libassjs-canvas-parent';
+		// The mount nomercy-video-player's octopus plugin creates (plugins/octopus ensureFrame).
+		canvas.className = 'nomercy-libass-box';
 		plain.className = 'ass-plain-text';
 		overlay.append(safezone);
 		ctx.player.container.append(video, overlay, canvas, plain);

@@ -2,7 +2,17 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { episodeDialog, languageDialog, preScreen, settingsPanel } from './panels';
 import type { Choice, SettingsData, UiItem } from './panels';
-import { trackLabel } from './title';
+import { playingAudioIndex, trackLabel } from './title';
+
+// KMP shows the audio track that plays; the web player reports no selection until one is picked.
+describe('playingAudioIndex', () => {
+	it('x21 falls back to the default track, then the first, when nothing was picked', () => {
+		expect(playingAudioIndex(null, [{ label: 'English' }, { label: 'Japanese', default: true }])).toBe(1);
+		expect(playingAudioIndex(null, [{ label: 'English' }, { label: 'Japanese' }])).toBe(0);
+		expect(playingAudioIndex(1, [{ label: 'English', default: true }, { label: 'Japanese' }])).toBe(1);
+		expect(playingAudioIndex(null, [])).toBeNull();
+	});
+});
 
 // KMP PlayerSettingsScreen.kt:288-289 shows the track label the player core composes: "English (Full)".
 describe('trackLabel', () => {

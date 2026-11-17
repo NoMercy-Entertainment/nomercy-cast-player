@@ -60,6 +60,26 @@ export interface LabeledTrack {
 	label: string;
 	language?: string;
 	type?: string;
+	default?: boolean;
+}
+
+// The web player reports no audio selection until one is picked;
+// the stream then plays its default track, or the first.
+export function playingAudioIndex(
+	selected: number | null,
+	tracks: readonly LabeledTrack[],
+): number | null {
+	if (selected !== null)
+		return selected;
+
+	if (!tracks.length)
+		return null;
+
+	const preferred = tracks.findIndex((track) => track.default);
+
+	return preferred >= 0
+		? preferred
+		: 0;
 }
 
 // The track row text KMP shows (player core languageDisplayName + variant): "English (Full)", "Japanese".

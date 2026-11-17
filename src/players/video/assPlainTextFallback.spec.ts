@@ -113,6 +113,21 @@ describe('the plain-text fallback for a styled track', () => {
 		expect(text(player.container)).toBeNull();
 	});
 
+	// Living-room TV 2026-11-17: libass got ready after the timeout, and both renders stayed on screen.
+	it('removes the plain text when the renderer gets ready late', async () => {
+		const player = fakePlayer();
+
+		attachAssPlainTextFallback(player as never, { fetchText: async () => ASS, timeoutMs: 5000 });
+		player.fire('subtitle', { track: 0 });
+
+		await vi.advanceTimersByTimeAsync(5000);
+		expect(text(player.container)).not.toBeNull();
+
+		player.fire('plugin:octopus:renderer:ready', { url: 'x' });
+
+		expect(text(player.container)).toBeNull();
+	});
+
 	it('does nothing for a track that is not styled', async () => {
 		const fetchText = vi.fn(async () => ASS);
 		const player = fakePlayer('https://example.invalid/sub.eng.vtt');

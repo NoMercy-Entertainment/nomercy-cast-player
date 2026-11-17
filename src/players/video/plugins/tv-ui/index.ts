@@ -22,7 +22,7 @@ import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimes
 import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, SETTINGS_EASING, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
-import { trackLabel } from './title';
+import { playingAudioIndex, trackLabel } from './title';
 import type { LabeledTrack } from './title';
 import './style.css';
 
@@ -847,7 +847,10 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	// The first level is Auto; KMP's own level list holds only the real ones.
 	private trackChoices() {
 		const engine = this.engine;
-		const audioIndex = engine.audioTrack?.()?.index ?? null;
+		const audioIndex = playingAudioIndex(
+			engine.audioTrack?.()?.index ?? null,
+			engine.audioTracks?.() ?? [],
+		);
 		const subtitleIndex = engine.subtitle?.()?.index ?? null;
 		const quality = engine.quality?.();
 		const levelIndex = typeof quality === 'object'
@@ -1088,7 +1091,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		const layers = [
 			container?.querySelector<HTMLElement>('video'),
 			container?.querySelector<HTMLElement>('.subtitle-safezone'),
-			...(container?.querySelectorAll<HTMLElement>('.libassjs-canvas-parent, .ass-plain-text') ?? []),
+			...(container?.querySelectorAll<HTMLElement>('.nomercy-libass-box, .ass-plain-text') ?? []),
 			...this.root.querySelectorAll<HTMLElement>('.tvui-backdrop, .tvui-loading'),
 		];
 

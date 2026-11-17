@@ -155,7 +155,12 @@ export function attachAssPlainTextFallback(
 		timer = setTimeout(() => void activate(), timeoutMs);
 	};
 
-	const onReady = (): void => clearTimer();
+	// A renderer that gets ready after the timeout takes over; two renders never stay on screen.
+	const onReady = (): void => {
+		epoch++;
+		clearTimer();
+		clearText();
+	};
 
 	const onWarning = (data?: FallbackEvent): void => {
 		const code = data?.error?.code;
