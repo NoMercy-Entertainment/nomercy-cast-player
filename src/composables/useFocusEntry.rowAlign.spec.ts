@@ -37,6 +37,10 @@ function mountCard() {
 
 	const host = document.createElement('div');
 
+	// The row's own horizontal scroller (HorizontalRail.vue: .rail-track, padding 40 px).
+	host.className = 'rail-track';
+	host.style.paddingLeft = '40px';
+	host.getBoundingClientRect = () => rect(734, 180);
 	row.appendChild(host);
 
 	// The list's viewport starts at 254; row 2 sits 450 px down the list, its card 30 px under its top.
@@ -60,9 +64,23 @@ function mountCard() {
 	});
 
 	mount(Card, { attachTo: host });
-	(host.querySelector('button') as HTMLElement).getBoundingClientRect = () => rect(734, 180);
 
-	return { entry, port } as const satisfies { entry: FocusEntry; port: HTMLElement };
+	// The card sits 300 px from the track's left edge.
+	(host.querySelector('button') as HTMLElement).getBoundingClientRect = () => ({
+		...rect(734, 180),
+		left: 300,
+		x: 300,
+	});
+
+	return {
+		entry,
+		port,
+		track: host,
+	} as const satisfies {
+		entry: FocusEntry;
+		port: HTMLElement;
+		track: HTMLElement;
+	};
 }
 
 afterEach(() => {
@@ -83,16 +101,22 @@ describe('a focused card puts its row top at the list top padding (RowTopAlignLa
 		expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 442 }));
 	});
 
-	it('leaves the vertical axis of scrollIntoView alone, so it cannot fight the list scroll', () => {
+	// On the TV, scrollIntoView's block 'nearest' scrolled the list too (card bottom at the screen bottom)
+	// and won over the list scroll, so the row above stayed half visible under the hero.
+	it('scrolls the row track to the card and never calls scrollIntoView, so nothing fights the list scroll', () => {
 		const into = vi.fn();
 
 		Element.prototype.scrollIntoView = into;
-		const { entry, port } = mountCard();
+		const { entry, port, track } = mountCard();
+		const trackTo = vi.fn();
 
 		port.scrollTo = vi.fn() as unknown as HTMLElement['scrollTo'];
+		track.scrollTo = trackTo as unknown as HTMLElement['scrollTo'];
 
 		entry.focus();
 
-		expect(into).toHaveBeenCalledWith(expect.objectContaining({ block: 'nearest', inline: 'start' }));
+		expect(into).not.toHaveBeenCalled();
+		// 300 - 0 - 40: the card's left edge lands on the track's 40 px start padding.
+		expect(trackTo).toHaveBeenCalledWith(expect.objectContaining({ left: 260 }));
 	});
 });

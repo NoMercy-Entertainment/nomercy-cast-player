@@ -200,8 +200,8 @@ describe('a focused row anchors to the top of the list (VideoContentList.kt:594-
 		press('ArrowDown');
 
 		expect(cardsOf('r2')).toContain(document.activeElement);
-		// The list scroll itself puts the row top at the padding (useFocusEntry.rowAlign.spec.ts); scrollIntoView keeps the row axis.
-		expect(Element.prototype.scrollIntoView).toHaveBeenLastCalledWith(expect.objectContaining({ block: 'nearest', inline: 'start' }));
+		// The list and the row track scroll by hand (useFocusEntry.rowAlign.spec.ts); scrollIntoView would fight them.
+		expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
 		expect(decls('styles/components.css', '.nm-hero-rails')['scroll-padding-top']).toBe('8px');
 	});
 });

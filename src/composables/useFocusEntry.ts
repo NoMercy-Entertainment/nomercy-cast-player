@@ -81,13 +81,31 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 					(Number.parseFloat(getComputedStyle(port).scrollPaddingTop) || 0)
 					: null;
 
-				el.scrollIntoView({
-					behavior,
-					block: 'nearest',
-					inline: group?.type === 'horizontal'
-						? 'start'
-						: 'center',
-				});
+				const track = row
+					? el.closest<HTMLElement>('.rail-track')
+					: null;
+
+				// A rail card scrolls its track and the list by hand: scrollIntoView's block 'nearest'
+				// also scrolled the list on the TV and won over the list scroll.
+				if (track) {
+					const pad = Number.parseFloat(getComputedStyle(track).paddingLeft) || 0;
+					const left = track.scrollLeft + el.getBoundingClientRect().left -
+						track.getBoundingClientRect().left - pad;
+
+					if (typeof track.scrollTo === 'function') {
+						track.scrollTo({ left: Math.max(0, left), behavior });
+					} else {
+						track.scrollLeft = Math.max(0, left);
+					}
+				} else {
+					el.scrollIntoView({
+						behavior,
+						block: 'nearest',
+						inline: group?.type === 'horizontal'
+							? 'start'
+							: 'center',
+					});
+				}
 
 				// Chrome 92 stops one smooth scroll when another starts, so a move along the row leaves the list alone.
 				if (port && rowTop !== null && Math.abs(Math.max(0, rowTop) - port.scrollTop) >= 1) {

@@ -34,6 +34,15 @@ const CARD_PITCH = 126;
 
 // jsdom draws nothing: give every rail card a box that follows its track's scroll.
 function layOutRails(): void {
+	// The boxes below start at the track's 40 px padding (HorizontalRail.vue); jsdom does not load the SFC style.
+	if (!document.getElementById('rail-pad')) {
+		const style = document.createElement('style');
+
+		style.id = 'rail-pad';
+		style.textContent = '.rail-track { padding-left: 40px; }';
+		document.head.appendChild(style);
+	}
+
 	vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
 		const track = this.closest('.rail-track') as HTMLElement | null;
 
@@ -190,7 +199,8 @@ describe('d-pad on the rails matches TvCardViewHolder.kt and TvRowFocus.kt', () 
 		scrollIntoView.mockClear();
 		press('ArrowRight');
 		expect(cards.indexOf(document.activeElement as HTMLElement)).toBe(1);
-		expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ inline: 'start' }));
+		// The row track scrolls to the card start by hand (useFocusEntry.rowAlign.spec.ts).
+		expect(scrollIntoView).not.toHaveBeenCalled();
 	});
 });
 
@@ -244,10 +254,11 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 	});
 
 	it('dpad.nav.down: DOWN from a nav item focuses the first card of the first rail', async () => {
-		await boot([rail('r1', 4), rail('r2', 4)]);
+		// Fresh rail ids: a rail keeps its last card per id (NMCarousel.vue restorationKey).
+		await boot([rail('n1', 4), rail('n2', 4)]);
 		document.querySelector<HTMLElement>('.nav-link')!.focus();
 		press('ArrowDown');
-		expect(document.activeElement).toBe(cardsOf('r1')[0]);
+		expect(document.activeElement).toBe(cardsOf('n1')[0]);
 	});
 
 	it('dpad.card.up-down: UP from the first row reaches the top nav (TvRowFocus.kt)', async () => {
@@ -260,8 +271,9 @@ describe('d-pad on the top nav matches TvNavigationBar.kt', () => {
 
 describe('d-pad memory and first focus', () => {
 	it('dpad.initial: the first paint focuses the first card of the first row', async () => {
-		await boot([rail('r1', 4), rail('r2', 4)]);
-		expect(document.activeElement).toBe(cardsOf('r1')[0]);
+		// Fresh rail ids: a rail keeps its last card per id (NMCarousel.vue restorationKey).
+		await boot([rail('p1', 4), rail('p2', 4)]);
+		expect(document.activeElement).toBe(cardsOf('p1')[0]);
 		expect(cardIds().length).toBe(8);
 		expect(focusedLabel()).not.toBe('');
 	});
