@@ -167,7 +167,7 @@ describe('info.season-picker matches TvHomeAdapter.kt:395-420,449-473', () => {
 		const c = decls(f, '.season-chip');
 
 		expect(c.height).toBe('38px');
-		expect(c.width).toBe('calc((100vw - 40px - 42px - 24px) / 3 + 8px)');
+		expect(c.width).toBe('calc((100vw - 40px - 42px - 24px) / 3)');
 		expect(c.margin).toBe('0 0 12px 40px');
 		expect(c['border-radius']).toBe('12px');
 		expect(c.border).toBe('1px solid rgba(255, 255, 255, 0.18)');

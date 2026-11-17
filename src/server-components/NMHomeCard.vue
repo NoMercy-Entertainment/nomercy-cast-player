@@ -118,7 +118,7 @@ useFocusEntry({
 					tabindex="0"
 					@click.prevent="watchPath && router.push(watchPath)"
 				>
-					<MoooomIcon icon="nmPlay" width="16" height="16" />
+					<MoooomIcon icon="nmPlay" width="24" height="24" />
 					{{ t('components.cards.watch') }}
 				</button>
 				<button
@@ -130,7 +130,7 @@ useFocusEntry({
 					tabindex="0"
 					@click.prevent="detailsPath && router.push(detailsPath)"
 				>
-					<MoooomIcon icon="infoCircle" width="16" height="16" />
+					<MoooomIcon icon="infoCircle" width="24" height="24" />
 					{{ t('common.details') }}
 				</button>
 			</div>

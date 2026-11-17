@@ -104,7 +104,7 @@ describe('buttons match NMDetailActions.kt / LinkButton.kt', () => {
 		const f = decls(CSS, '.nm-pill-primary:focus-visible');
 
 		expect(f.border).toBe('3px solid rgba(255, 255, 255, 0.85)');
-		expect(f.background).toBe('rgba(255, 255, 255, 0.06)');
+		expect(f.background).toBe('rgba(0, 0, 0, 0.06)');
 		expect(f.transform).toBeUndefined();
 	});
 

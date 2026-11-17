@@ -131,31 +131,6 @@ const watchlistLabel = computed(() =>
 		: t('components.buttons.add_to_watchlist'),
 );
 
-const yearText = computed(() =>
-	info.value?.year
-		? String(info.value.year)
-		: '');
-const durationText = computed(() => {
-	const d = info.value?.duration;
-
-	if (typeof d === 'number')
-		return t('views.info.minutes', { count: Math.round(d / 60) });
-
-	return d
-		? String(d)
-		: '';
-});
-const ratingText = computed(() =>
-	typeof info.value?.voteAverage === 'number'
-		? `${info.value.voteAverage.toFixed(1)} / 10`
-		: '',
-);
-
-// The year, length and rating line takes the first line of the overview block, as a byline does.
-const showMeta = computed(() =>
-	!focusedTitle.value && Boolean(yearText.value || durationText.value || ratingText.value),
-);
-
 const actionsEl = ref<HTMLElement | null>(null);
 const actionsGroup = useFocusGroup({
 	type: 'vertical',
@@ -295,14 +270,7 @@ async function toggleWatchlist(): Promise<void> {
 			</div>
 
 			<div class="nm-hero-overview-block">
-				<div v-if="showMeta" class="meta-row">
-					<span v-if="yearText">{{ yearText }}</span>
-					<span v-if="durationText">·</span>
-					<span v-if="durationText">{{ durationText }}</span>
-					<span v-if="ratingText">·</span>
-					<span v-if="ratingText">{{ ratingText }}</span>
-				</div>
-				<p v-if="heroOverview" class="nm-hero-overview" :style="showMeta ? { '-webkit-line-clamp': 4 } : undefined">
+				<p v-if="heroOverview" class="nm-hero-overview">
 					{{ heroOverview }}
 				</p>
 			</div>
@@ -318,7 +286,7 @@ async function toggleWatchlist(): Promise<void> {
 					tabindex="0"
 					@click.prevent="watchPath && router.push(watchPath)"
 				>
-					<MoooomIcon icon="nmPlay" width="18" height="18" />
+					<MoooomIcon icon="nmPlay" width="24" height="24" />
 					{{ t('components.cards.watch') }}
 				</button>
 				<button
@@ -329,7 +297,7 @@ async function toggleWatchlist(): Promise<void> {
 					tabindex="0"
 					@click="openTrailer"
 				>
-					<MoooomIcon icon="playCircle" width="18" height="18" />
+					<MoooomIcon icon="playCircle" width="24" height="24" />
 					{{ t('info.watch_trailer') }}
 				</button>
 				<button
@@ -339,7 +307,7 @@ async function toggleWatchlist(): Promise<void> {
 					tabindex="0"
 					@click.prevent="toggleWatchlist"
 				>
-					<MoooomIcon :icon="info.watchlist ? 'bookmark' : 'bookmarkAdd'" width="18" height="18" />
+					<MoooomIcon :icon="info.watchlist ? 'bookmark' : 'bookmarkAdd'" width="24" height="24" />
 					{{ watchlistLabel }}
 				</button>
 			</div>
@@ -386,14 +354,6 @@ async function toggleWatchlist(): Promise<void> {
 	width: 60%;
 	padding: 0 16px 12px 40px;
 	box-sizing: border-box;
-}
-.meta-row {
-	display: flex;
-	gap: 8px;
-	font-size: 14px;
-	line-height: 20px;
-	color: oklch(0.85 0.01 250);
-	letter-spacing: 0.02em;
 }
 .info-list {
 	position: absolute;
