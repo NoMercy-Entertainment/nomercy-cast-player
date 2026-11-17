@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { hasContent } from './hasContent';
 import type { Component } from './types';
 
-const make = (component: string, props: unknown) => ({ id: 'x', component, props }) as unknown as Component;
+function make(component: string, props: unknown) {
+	return ({
+		id: 'x',
+		component,
+		props,
+	}) as unknown as Component;
+}
 
 // HasContent.kt:10-17 and NMComponents.kt:53-62.
 describe('hasContent matches the native dispatcher', () => {

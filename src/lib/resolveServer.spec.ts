@@ -53,6 +53,7 @@ describe('resolveServerFromAppConfig', () => {
 			screensaverDelay: { value: 'soon', updatedAt: 1 },
 			colorScheme: { value: 'purple', updatedAt: 1 },
 		})));
+
 		settingsStore.videoSeekStep.value = 10;
 		settingsStore.screensaverDelay.value = 5;
 

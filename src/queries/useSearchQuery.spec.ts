@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mount, flushPromises } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { defineComponent, ref } from 'vue';
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query';
 import { useSearchQuery } from './useSearchQuery';

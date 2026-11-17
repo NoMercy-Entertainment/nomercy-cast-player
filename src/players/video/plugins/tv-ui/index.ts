@@ -504,7 +504,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 	private seekByChapter(forward: boolean): void {
 		const starts = this.chapterList().map((chapter) => chapter.start);
-		const target = chapterSeekTarget(starts, this.engine.time(), forward, settingsStore.videoSeekStep.value);
+		const step = settingsStore.videoSeekStep.value;
+		const target = chapterSeekTarget(starts, this.engine.time(), forward, step);
 
 		this.engine.time(target);
 	}

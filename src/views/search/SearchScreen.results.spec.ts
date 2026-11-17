@@ -26,12 +26,24 @@ vi.mock('@/queries/useSearchQuery', () => ({
 	}),
 }));
 
-const emptyGrid = { id: 'g1', component: 'NMGrid', props: { id: 'g1', items: [] } } as unknown as Component;
-const unknown = { id: 'u1', component: 'NMMadeUp', props: { id: 'u1' } } as unknown as Component;
+const emptyGrid = {
+	id: 'g1',
+	component: 'NMGrid',
+	props: { id: 'g1', items: [] },
+} as unknown as Component;
+const unknown = {
+	id: 'u1',
+	component: 'NMMadeUp',
+	props: { id: 'u1' },
+} as unknown as Component;
 const filledGrid = {
 	id: 'g2',
 	component: 'NMGrid',
-	props: { id: 'g2', items: [{ id: 'c1', component: 'NMCard', props: { id: 'c1' } }] },
+	props: { id: 'g2', items: [{
+		id: 'c1',
+		component: 'NMCard',
+		props: { id: 'c1' },
+	}] },
 } as unknown as Component;
 
 // SearchViewModel.kt:29-32 waits 1250 ms and drops anything under 3 characters.
