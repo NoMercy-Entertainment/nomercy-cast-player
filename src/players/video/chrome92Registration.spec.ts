@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const native = Object.hasOwn;
+const nativeReplaceChildren = Element.prototype.replaceChildren;
 const IMPORT_LINE = /^import .+$/gm;
 
 interface Registered {
@@ -19,11 +20,17 @@ function restoreHasOwn(): void {
 		configurable: true,
 		writable: true,
 	});
+
+	Object.defineProperty(Element.prototype, 'replaceChildren', {
+		value: nativeReplaceChildren,
+		configurable: true,
+		writable: true,
+	});
 }
 
 // The three plugins the receiver player needs; each failed to register on the TV with
 // "Object.hasOwn is not a function" (the player library calls it, Chrome 93+).
-async function registered(withPolyfill: boolean): Promise<Registered> {
+async function registered(withPolyfill: boolean, withoutDom = false): Promise<Registered> {
 	const errors: string[] = [];
 	const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
 	const host = document.createElement('div');
@@ -45,6 +52,10 @@ async function registered(withPolyfill: boolean): Promise<Registered> {
 
 	// The test runner itself calls Object.hasOwn, so it is missing only while the plugins register.
 	Reflect.deleteProperty(Object, 'hasOwn');
+
+	if (withoutDom) {
+		Reflect.deleteProperty(Element.prototype, 'replaceChildren');
+	}
 
 	if (withPolyfill) {
 		installChrome92Polyfills();
@@ -132,5 +143,12 @@ describe('plugin registration on a browser without Object.hasOwn (Chrome 92)', (
 		const imports = readFileSync('src/main.ts', 'utf8').match(IMPORT_LINE) ?? [];
 
 		expect(imports[0]).toBe('import \'./lib/chrome92Polyfills\';');
+	});
+
+	it('registers TV controls when Chrome 80 also lacks DOM replaceChildren', async () => {
+		const result = await registered(true, true);
+
+		expect(result.errors).toEqual([]);
+		expect(result.tvUi).toBe(true);
 	});
 });

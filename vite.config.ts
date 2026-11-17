@@ -94,8 +94,8 @@ export default defineConfig(({ command, mode }) => {
 		},
 		build: {
 			outDir: 'docs',
-			target: 'es2022',
-			cssTarget: 'chrome92',
+			target: 'chrome80',
+			cssTarget: 'chrome80',
 			sourcemap: true,
 			rollupOptions: {
 				output: {

@@ -129,7 +129,8 @@ export function dropColorMixSupports(css) {
 	return out + css.slice(i);
 }
 
-export const chrome92Targets = { chrome: 92 << 16 };
+// Chrome 80 is the receiver's browser floor (older Cast firmware); the name stays for its callers.
+export const chrome92Targets = { chrome: 80 << 16 };
 
 export function chrome92Layers() {
 	return {
