@@ -61,7 +61,8 @@ export function routeRootKey(state: RootKeyState, key: KeyName): RootRoute {
 				? { action: 'rescheduleHide', consumed: false }
 				: { action: 'showControls', consumed: true };
 		case 'center':
-			return state.controlsVisible
+			// The focused pre-screen button takes Enter first (LinkButton.kt:137-142).
+			return state.controlsVisible || state.preScreen
 				? PASS
 				: { action: 'togglePlay', consumed: true };
 		case 'volumeUp':

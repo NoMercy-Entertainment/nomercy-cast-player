@@ -72,6 +72,10 @@ describe('routeRootKey (TvUiPlugin.kt:502-619)', () => {
 		expect(routeRootKey(base, 'center')).toEqual({ action: 'togglePlay', consumed: true });
 	});
 
+	it('k10b center on the pre-screen is left to the focused button', () => {
+		expect(routeRootKey({ ...base, preScreen: true }, 'center')).toEqual({ action: 'none', consumed: false });
+	});
+
 	it('k11 center with controls visible is not consumed', () => {
 		expect(routeRootKey({ ...base, controlsVisible: true }, 'center')).toEqual({ action: 'none', consumed: false });
 	});
