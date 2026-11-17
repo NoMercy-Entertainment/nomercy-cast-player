@@ -108,15 +108,26 @@ describe('the home page keeps its layout while the hero and the cards load', () 
 	});
 
 	it('leaves no hero space above a page without hero art (Music, positive control)', async () => {
-		const wrapper = mountScreen([{
-			id: 'albums',
-			component: 'NMCarousel',
+		// The hero seeds from the first card, art or not (NMLolomo.kt:194-198), so Music says it has none.
+		const wrapper = mount(HeroRailsView, {
 			props: {
-				id: 'albums',
-				title: 'Albums',
-				items: [album('00000000-0000-4000-8000-000000000002')],
+				restorationKey: 'layout-test-music',
+				hero: false,
+				data: [{
+					id: 'albums',
+					component: 'NMCarousel',
+					props: {
+						id: 'albums',
+						title: 'Albums',
+						items: [album('00000000-0000-4000-8000-000000000002')],
+					},
+				}] as unknown as Component[],
+				isLoading: false,
+				refetch: vi.fn(),
+				errorContext: 'Couldn\'t load home',
+				emptyMessage: 'Nothing here.',
 			},
-		}] as unknown as Component[]);
+		});
 
 		await nextTick();
 

@@ -169,10 +169,29 @@ describe('the music page never ends blank', () => {
 	});
 
 	it('shows the error and Try again when the request failed', async () => {
-		const wrapper = await screen({ data: undefined, error: new Error('timeout') });
+		vi.useFakeTimers();
 
-		expect(wrapper.text()).toContain('Couldn\'t load music');
-		expect(wrapper.text()).toContain('Try again');
+		try {
+			const wrapper = mount(HeroRailsView, {
+				props: {
+					restorationKey: 'music-start-error-test',
+					data: undefined,
+					isLoading: false,
+					error: new Error('timeout'),
+					refetch: vi.fn(),
+					errorContext: 'Couldn\'t load music',
+					emptyMessage: EMPTY_MESSAGE,
+				},
+			});
+
+			// NMLolomo.kt:288: the failure page waits 900 ms before it replaces the loading state.
+			await vi.advanceTimersByTimeAsync(900);
+
+			expect(wrapper.text()).toContain('Couldn\'t load music');
+			expect(wrapper.text()).toContain('Try again');
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
 
