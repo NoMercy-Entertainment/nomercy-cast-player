@@ -13,7 +13,11 @@ const POLL_INTERVAL_MS = 10_000;
 const MAX_POLLS = 30;
 
 // InfoScreen.kt:126-132: the catalog first, the info videos only when it is empty.
-export function useTrailerQuery(type: Ref<string>, id: Ref<string>, videos: Ref<InfoVideo[] | undefined>) {
+export function useTrailerQuery(
+	type: Ref<string>,
+	id: Ref<string>,
+	videos: Ref<InfoVideo[] | undefined>,
+) {
 	const fallback = computed(() => trailerCandidates(videos.value));
 	const enabled = computed(() => Boolean(authStore.accessToken.value));
 

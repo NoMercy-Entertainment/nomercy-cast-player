@@ -22,10 +22,18 @@ async function fetchFavorites(): Promise<Component[]> {
 	const items = cards.map((card) => ({
 		id: `${card.type}-${card.id}`,
 		component: 'NMCard',
-		props: { id: String(card.id), title: card.title, data: card },
+		props: {
+			id: String(card.id),
+			title: card.title,
+			data: card,
+		},
 	}) as const satisfies Component);
 
-	return [{ id: GRID_ID, component: 'NMGrid', props: { id: GRID_ID, items } }];
+	return [{
+		id: GRID_ID,
+		component: 'NMGrid',
+		props: { id: GRID_ID, items },
+	}];
 }
 
 export function useFavoritesQuery() {

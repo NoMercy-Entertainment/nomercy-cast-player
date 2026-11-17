@@ -26,7 +26,7 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-describe('HeroSelectionTiming.kt:33-44: a hero change holds 1400 ms', () => {
+describe('heroSelectionTiming.kt:33-44: a hero change holds 1400 ms', () => {
 	it('shows A at once and holds it until 1400 ms before B replaces it', async () => {
 		const { source, shown } = host();
 

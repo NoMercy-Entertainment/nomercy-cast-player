@@ -25,7 +25,7 @@ const selected = ref<number | null>(null);
 const open = ref(false);
 const chipEl = ref<HTMLElement | null>(null);
 
-type RowProps = { properties?: Record<string, string>; title?: string };
+interface RowProps { properties?: Record<string, string>; title?: string }
 
 const rowProps = (row: Component): RowProps => row.props as RowProps;
 const isSeasonsRow = (row: Component): boolean => rowProps(row).properties?.rowType === 'seasons';
@@ -34,24 +34,27 @@ const otherRows = computed(() => (props.rows ?? []).filter((r) => !isSeasonsRow(
 // InfoComponentMapping.kt:47-52: a collection and seasons never draw together.
 const seasonsAllowed = computed(() => !otherRows.value.some((r) => r.id === 'info-collection'));
 
-const options = computed(() => props.seasons.length
-	? props.seasons.map((s) => ({ number: s.season_number ?? 0, label: `${s.season_number ?? 0} - ${s.title ?? ''}` }))
-	: seasonRows.value.map((r) => ({
-			number: Number(rowProps(r).properties?.season_number ?? 0),
-			label: rowProps(r).title ?? '',
-		})));
+const options = computed(() =>
+	props.seasons.length
+		? props.seasons.map((s) => ({ number: s.season_number ?? 0, label: `${s.season_number ?? 0} - ${s.title ?? ''}` }))
+		: seasonRows.value.map((r) => ({
+				number: Number(rowProps(r).properties?.season_number ?? 0),
+				label: rowProps(r).title ?? '',
+			})));
 // InfoScreen.kt:167-172: season 1 opens first, else the first one (Specials is season 0).
 const currentNumber = computed(() =>
-	(options.value.find((o) => o.number === selected.value)
-		?? options.value.find((o) => o.number === 1)
-		?? options.value[0])?.number,
+	(options.value.find((o) => o.number === selected.value) ??
+		options.value.find((o) => o.number === 1) ??
+		options.value[0])?.number,
 );
 const current = computed(() => props.seasons.find((s) => s.season_number === currentNumber.value));
 const label = computed(() => options.value.find((o) => o.number === currentNumber.value)?.label ?? '');
 
 // The server's row for the selected season, found by its season_number property.
 function serverRail(number: number | undefined): Component | null {
-	const row = seasonRows.value.find((r) => Number(rowProps(r).properties?.season_number) === number);
+	const row = seasonRows.value.find(
+		(r) => Number(rowProps(r).properties?.season_number) === number,
+	);
 
 	if (!row)
 		return null;
@@ -62,7 +65,9 @@ function serverRail(number: number | undefined): Component | null {
 		...row,
 		props: {
 			...row.props,
-			title: options.value.length === 1 ? rowProps(row).title : undefined,
+			title: options.value.length === 1
+				? rowProps(row).title
+				: undefined,
 			items: items.map((item) => ({
 				...item,
 				props: { ...item.props, data: { ...(item.props as { data: object }).data, wide: true } },

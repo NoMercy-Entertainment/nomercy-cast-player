@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/vue-query';
 
-type Json = unknown;
+type Json = string | number | boolean | null | undefined | Json[] | { [key: string]: Json };
 
 // Any object of this link that already tracks a watchlist flag takes the new value.
 function patch(node: Json, link: string, value: boolean): Json {
@@ -43,13 +43,18 @@ function patch(node: Json, link: string, value: boolean): Json {
 		: node;
 }
 
-// NMDetailActions.kt:145 updateWatchlistInAllQueries: every cached query showing this title follows the toggle.
-export function updateWatchlistInAllQueries(client: QueryClient, link: string, value: boolean): void {
+// NMDetailActions.kt:145 updateWatchlistInAllQueries: every cached query of this title follows.
+export function updateWatchlistInAllQueries(
+	client: QueryClient,
+	link: string,
+	value: boolean,
+): void {
 	for (const query of client.getQueryCache().getAll()) {
-		const before = query.state.data;
+		const before = query.state.data as Json;
 		const after = patch(before, link, value);
 
-		if (after !== before)
+		if (after !== before) {
 			client.setQueryData(query.queryKey, after);
+		}
 	}
 }

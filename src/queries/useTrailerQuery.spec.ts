@@ -9,7 +9,12 @@ const { useTrailerQuery } = await import('./useTrailerQuery');
 
 const READY = {
 	success: true,
-	data: { videoId: 'abc12345678', cached: true, downloadUrl: 'https://example.test/t.webm', subtitles: [] },
+	data: {
+		videoId: 'abc12345678',
+		cached: true,
+		downloadUrl: 'https://example.test/t.webm',
+		subtitles: [],
+	},
 };
 
 function answer(body: unknown, ok = true) {
@@ -46,11 +51,12 @@ afterEach(() => {
 	authStore.accessToken.value = null;
 });
 
-describe('TrailerValidator.kt:171-189: the trailer catalog is asked first', () => {
+describe('trailerValidator.kt:171-189: the trailer catalog is asked first', () => {
 	it('a title with no info videos but a catalog entry gets its trailer', async () => {
-		fetchMock.mockImplementation((url: string) => url.includes('/trailers/tmdb/movie/12')
-			? answer({ results: [{ videoId: 'abc12345678' }] })
-			: answer(READY));
+		fetchMock.mockImplementation((url: string) =>
+			url.includes('/trailers/tmdb/movie/12')
+				? answer({ results: [{ videoId: 'abc12345678' }] })
+				: answer(READY));
 
 		const seen = run([]);
 
@@ -59,11 +65,16 @@ describe('TrailerValidator.kt:171-189: the trailer catalog is asked first', () =
 	});
 
 	it('an empty or failing catalog falls back to the info videos', async () => {
-		fetchMock.mockImplementation((url: string) => url.includes('/trailers/tmdb/')
-			? answer({}, false)
-			: answer(READY));
+		fetchMock.mockImplementation((url: string) =>
+			url.includes('/trailers/tmdb/')
+				? answer({}, false)
+				: answer(READY));
 
-		const seen = run([{ site: 'YouTube', type: 'Trailer', src: 'abc12345678' }]);
+		const seen = run([{
+			site: 'YouTube',
+			type: 'Trailer',
+			src: 'abc12345678',
+		}]);
 
 		await vi.waitFor(() => expect((seen.data as { state?: string } | undefined)?.state).toBe('available'));
 		await flushPromises();

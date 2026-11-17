@@ -92,7 +92,7 @@ describe('row 6: the person page draws the components the server sends', () => {
 		expect(seen.persistentHero?.poster).toBeUndefined();
 	});
 
-	it('PersonScreen.kt:92-96: the known-for palette colors the page only while auto theme colors are on', async () => {
+	it('personScreen.kt:92-96: the known-for palette colors the page only while auto theme colors are on', async () => {
 		const palette = { backdrop: { dominant: '#3a5fa0' } };
 		const colored = { ...hero, props: { data: { ...hero.props.data, color_palette: palette } } };
 		const accent = () => document.documentElement.style.getPropertyValue('--color-primary');
@@ -110,10 +110,22 @@ describe('row 6: the person page draws the components the server sends', () => {
 			id: '7',
 			name: 'Example Person',
 			biography: 'An old-server biography.',
-			known_for: [{ id: 1, title: 'Example Film', media_type: 'movie', link: '/movie/1', hasItem: true, backdrop: '/a.jpg' }],
+			known_for: [{
+				id: 1,
+				title: 'Example Film',
+				media_type: 'movie',
+				link: '/movie/1',
+				hasItem: true,
+				backdrop: '/a.jpg',
+			}],
 		});
 
 		expect(seen.data?.length).toBeGreaterThan(0);
-		expect(seen.persistentHero).toMatchObject({ title: 'Example Person', overview: 'An old-server biography.', backdrop: '/a.jpg' });
+
+		expect(seen.persistentHero).toMatchObject({
+			title: 'Example Person',
+			overview: 'An old-server biography.',
+			backdrop: '/a.jpg',
+		});
 	});
 });

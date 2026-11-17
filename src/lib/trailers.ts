@@ -78,7 +78,11 @@ export function trailerCandidates(videos: VideoRef[] | undefined): string[] {
 }
 
 // TrailerValidator.kt:171-189: catalog ids, best first and any provider; empty or an error means use the info videos.
-export async function catalogTrailerIds(type: string, id: string, accessToken: string): Promise<string[]> {
+export async function catalogTrailerIds(
+	type: string,
+	id: string,
+	accessToken: string,
+): Promise<string[]> {
 	try {
 		const res = await fetch(`${nomercyApiBase(accessToken)}/v1/trailers/tmdb/${type}/${id}`, {
 			headers: {

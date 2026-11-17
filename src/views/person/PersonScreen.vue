@@ -19,9 +19,18 @@ const { t } = useTranslation();
 const id = computed(() => String(route.params.id ?? ''));
 const { data, isLoading, error, refetch, isFetching } = usePersonQuery(id);
 
-const components = computed(() => (data.value?.kind === 'components' ? data.value.components : undefined));
-const legacy = computed(() => (data.value?.kind === 'legacy' ? data.value.person : undefined));
-const knownFor = computed(() => (legacy.value ? personHeroBackdrop(legacy.value) : null));
+const components = computed(() =>
+	data.value?.kind === 'components'
+		? data.value.components
+		: undefined);
+const legacy = computed(() =>
+	data.value?.kind === 'legacy'
+		? data.value.person
+		: undefined);
+const knownFor = computed(() =>
+	legacy.value
+		? personHeroBackdrop(legacy.value)
+		: null);
 
 const heroComponent = computed(() => components.value?.find((c) => c.component === 'NMHomeCard'));
 // tv/PersonScreen.kt:156 draws only the backdrop, never the profile photo.
@@ -66,6 +75,7 @@ watch(
 		: null),
 	{ immediate: true },
 );
+
 focusedCardStore.setThemeFollowsFocus(false);
 
 onBeforeUnmount(() => {

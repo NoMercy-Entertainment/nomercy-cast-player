@@ -220,6 +220,7 @@ async function toggleWatchlist(): Promise<void> {
 
 		return { ...prev, watchlist: newValue };
 	});
+
 	updateWatchlistInAllQueries(queryClient, link, newValue);
 
 	try {
@@ -238,6 +239,7 @@ async function toggleWatchlist(): Promise<void> {
 
 			return { ...prev, watchlist: !newValue };
 		});
+
 		updateWatchlistInAllQueries(queryClient, link, !newValue);
 	} finally {
 		isPostingWatchlist.value = false;

@@ -24,23 +24,24 @@ export function usePacedValue<T>(source: Ref<T>, holdMs = HERO_CHANGE_MS): Ref<T
 	}
 
 	function show(value: T): void {
-		if (value === shown.value)
-			return;
+		if (value === shown.value) return;
 
 		shown.value = value;
 		startHold();
 	}
 
 	watch(source, (next) => {
-		if (timer === null)
+		if (timer === null) {
 			show(next);
-		else
+		} else {
 			pending = { value: next };
+		}
 	});
 
 	onBeforeUnmount(() => {
-		if (timer !== null)
+		if (timer !== null) {
 			window.clearTimeout(timer);
+		}
 	});
 
 	return shown;

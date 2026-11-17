@@ -42,8 +42,8 @@ export interface PersonData {
 
 /** Components from a server that honors version=lolomo, the plain person object from an older one. */
 export type PersonPage =
-	| { kind: 'components'; components: Component[] }
-	| { kind: 'legacy'; person: PersonData };
+	| { kind: 'components'; components: Component[] } |
+	{ kind: 'legacy'; person: PersonData };
 
 type PersonPayload = ComponentPayload | PersonData | { data: PersonData };
 
@@ -58,8 +58,10 @@ async function fetchPerson(id: string): Promise<PersonPage> {
 	if (components.length > 0)
 		return { kind: 'components', components };
 
-	const body = response as { data?: unknown } | null;
-	const candidate = (body && 'data' in body && body.data ? body.data : response) as Partial<PersonData> | null;
+	const body = response as { data?: Partial<PersonData> } | null;
+	const candidate = (body && 'data' in body && body.data
+		? body.data
+		: response) as Partial<PersonData> | null;
 
 	if (candidate && !Array.isArray(candidate) && typeof candidate.name === 'string')
 		return { kind: 'legacy', person: candidate as PersonData };
