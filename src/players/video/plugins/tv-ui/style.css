@@ -670,3 +670,14 @@
 	opacity: 0.8;
 	font-size: 16px;
 }
+/* The libass package copies its source box's transform onto this child; the box already
+   carries the settings shrink, so a copy would apply it twice and outlive the close. */
+.nomercy-libass-box > .libassjs-canvas-parent {
+	transform: none !important;
+}
+/* Chrome 92 (the TV) has no cqi, so the overlay's font-size is dropped; the player fills the screen, so vw matches. */
+@supports not (width: 1cqi) {
+	.subtitle-overlay .subtitle-area {
+		font-size: clamp(14px, calc(var(--subtitle-scale, 1) * 2.5vw), 56px);
+	}
+}
