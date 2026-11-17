@@ -69,7 +69,16 @@ export function useNavFocusBridge(arg: FocusGroupHandle | BridgeArg): void {
 	});
 }
 
+// TvNavigationBar.kt:111-131: Up lands on the nav item of the current page, else the first item.
 export function focusTopnav(): boolean {
+	const active = document.querySelector<HTMLElement>('.topnav .nav-link.active');
+
+	if (active) {
+		active.focus();
+
+		return true;
+	}
+
 	for (const key of TOPNAV_RESTORATION_KEYS) {
 		if (focusStore.requestFocus(key))
 			return true;

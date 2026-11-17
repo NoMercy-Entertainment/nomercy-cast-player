@@ -65,11 +65,12 @@
 
 /* ─── Hero scrim (APK BackdropImageWithOverlay radial) ──────────────── */
 
+/* Radius is max(w,h) * 1.8 with scaleX 1.15 (BackdropImageWithOverlay.kt:263-270), so it follows the screen. */
 .nm-hero-scrim {
 	position: absolute;
 	inset: 0;
 	background: radial-gradient(
-		ellipse 1987px 1728px at calc(100% - 57px) -225px,
+		ellipse calc(max(100vw, 100vh) * 2.0698) calc(max(100vw, 100vh) * 1.8) at calc(100% - 5.9375vw) -23.4375vw,
 		transparent 0%,
 		transparent 25%,
 		var(--cast-black) 37.5%,
@@ -140,7 +141,6 @@
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 	-webkit-line-clamp: 5;
-	max-width: 600px;
 }
 
 /* ─── Pill button (Watch / Details / Play) ──────────────────────────── */

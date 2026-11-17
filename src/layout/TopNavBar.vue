@@ -50,7 +50,7 @@ useFocusGroup({
 	<header class="topnav">
 		<div class="leading">
 			<TvMiniPlayer v-if="hasActiveTrack" />
-			<AppLogoSquare class="brand-logo" />
+			<AppLogoSquare v-else class="brand-logo" />
 		</div>
 		<nav ref="navEl" class="nav-items">
 			<NavLink

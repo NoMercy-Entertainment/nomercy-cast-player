@@ -57,7 +57,7 @@ describe('hero scrim (BackdropImageWithOverlay.kt:253-285)', () => {
 		const bg = decls('styles/components.css', '.nm-hero-scrim').background;
 
 		expect(bg).toBe(
-			'radial-gradient( ellipse 1987px 1728px at calc(100% - 57px) -225px, transparent 0%, transparent 25%, var(--cast-black) 37.5%, var(--cast-black) 100% )',
+			'radial-gradient( ellipse calc(max(100vw, 100vh) * 2.0698) calc(max(100vw, 100vh) * 1.8) at calc(100% - 5.9375vw) -23.4375vw, transparent 0%, transparent 25%, var(--cast-black) 37.5%, var(--cast-black) 100% )',
 		);
 	});
 });

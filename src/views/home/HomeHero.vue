@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { BACKDROP_SIZE, buildImageUrl } from '@/lib/images/urls';
 import SplitTitleText from '@/components/text/SplitTitleText.vue';
 
@@ -21,8 +21,17 @@ const props = defineProps<{
 	card: FocusedCardData;
 }>();
 
+// NMLolomo.kt:169: only a backdrop is a hero backdrop; a card without one keeps the previous slide.
+const lastBackdrop = ref(props.card.backdrop);
+
+watch(() => props.card.backdrop, (next) => {
+	if (next) {
+		lastBackdrop.value = next;
+	}
+});
+
 const backdropUrl = computed(() =>
-	buildImageUrl(props.card.backdrop ?? props.card.poster ?? null, BACKDROP_SIZE),
+	buildImageUrl(props.card.backdrop ?? lastBackdrop.value ?? null, BACKDROP_SIZE),
 );
 
 const logoUrl = computed(() => buildImageUrl(props.card.logo ?? null, { width: 600 }));
@@ -36,7 +45,7 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 			<div :key="transitionKey" class="art">
 				<img
 					v-if="backdropUrl"
-					class="nm-cover-top"
+					class="nm-cover-center"
 					:src="backdropUrl"
 					:alt="card.title ?? ''"
 					loading="eager"
