@@ -43,7 +43,13 @@ const VERTICAL_DEBOUNCE_MS = 500;
 let pending: number | null = null;
 let lastNavDir: 'horizontal' | 'vertical' = 'horizontal';
 
+// The info page keeps its title's color while focus moves (InfoScreen.kt:181 SetThemeColor noRemove).
+let themeFollowsFocus = true;
+
 function applyPalette(card: FocusedCardData | null): void {
+	if (!themeFollowsFocus)
+		return;
+
 	const palette = card?.color_palette;
 
 	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
@@ -76,6 +82,9 @@ export const focusedCardStore = {
 		_activeCard.value = card;
 		_debouncedCard.value = card;
 		applyPalette(card);
+	},
+	setThemeFollowsFocus(follows: boolean): void {
+		themeFollowsFocus = follows;
 	},
 	setNavDirection(dir: 'horizontal' | 'vertical'): void {
 		lastNavDir = dir;

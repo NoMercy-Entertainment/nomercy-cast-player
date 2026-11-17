@@ -10,6 +10,7 @@ import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { BACKDROP_SIZE, buildImageUrl } from '@/lib/images/urls';
 import { applyThemeColor, clearThemeColor } from '@/lib/theme';
+import { focusedCardStore } from '@/stores/focusedCardStore';
 import SplitTitleText from '@/components/text/SplitTitleText.vue';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
@@ -53,15 +54,42 @@ watch(info, (next) => {
 	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
 }, { immediate: true });
 
+focusedCardStore.setThemeFollowsFocus(false);
+focusedCardStore.seed(null);
+
 onBeforeUnmount(() => {
+	focusedCardStore.setThemeFollowsFocus(true);
+	focusedCardStore.seed(null);
 	clearThemeColor();
 });
 
+// HeroCardGate.kt:18-21: a focused movie or tv card with a backdrop replaces the title's own hero.
+const focusedTitle = computed(() => {
+	const card = focusedCardStore.debouncedCard.value;
+
+	return card && (card.type === 'movie' || card.type === 'tv') && card.backdrop
+		? card
+		: null;
+});
+
+// The year, length and rating line takes the first line of the overview block, as a byline does (VideoMusicHeroSection.kt:162-171).
+const showMeta = computed(() => !focusedTitle.value && Boolean(yearText.value || durationText.value || ratingText.value));
+
+const heroTitle = computed(() => focusedTitle.value?.title ?? info.value?.title);
+const heroOverview = computed(() => focusedTitle.value
+	? focusedTitle.value.overview
+	: info.value?.overview);
+
 const backdropUrl = computed(() =>
-	buildImageUrl(info.value?.backdrop ?? null, BACKDROP_SIZE),
+	buildImageUrl(focusedTitle.value?.backdrop ?? info.value?.backdrop ?? null, BACKDROP_SIZE),
 );
 
-const logoUrl = computed(() => buildImageUrl(info.value?.logo ?? null, { width: 600 }));
+const logoUrl = computed(() => buildImageUrl(
+	focusedTitle.value
+		? (focusedTitle.value.logo ?? null)
+		: (info.value?.logo ?? null),
+	{ width: 600 },
+));
 
 const watchPath = computed(() => {
 	const link = info.value?.link;
@@ -237,7 +265,7 @@ async function toggleWatchlist(): Promise<void> {
 			<img
 				v-if="backdropUrl"
 				:src="backdropUrl"
-				:alt="info.title ?? ''"
+				:alt="heroTitle ?? ''"
 				loading="eager"
 				decoding="async"
 			>
@@ -245,32 +273,35 @@ async function toggleWatchlist(): Promise<void> {
 		</div>
 
 		<div class="hero-row">
-			<img
-				v-if="logoUrl"
-				class="nm-hero-logo"
-				:src="logoUrl"
-				:alt="info.title ?? ''"
-				loading="eager"
-				decoding="async"
-			>
-			<SplitTitleText
-				v-else
-				:title="info.title"
-				main-class="nm-hero-title-main"
-				subtitle-class="nm-hero-title-sub"
-			/>
-
-			<div v-if="yearText || durationText || ratingText" class="meta-row">
-				<span v-if="yearText">{{ yearText }}</span>
-				<span v-if="durationText">·</span>
-				<span v-if="durationText">{{ durationText }}</span>
-				<span v-if="ratingText">·</span>
-				<span v-if="ratingText">{{ ratingText }}</span>
+			<div class="nm-hero-title-block">
+				<img
+					v-if="logoUrl"
+					class="nm-hero-logo"
+					:src="logoUrl"
+					:alt="heroTitle ?? ''"
+					loading="eager"
+					decoding="async"
+				>
+				<SplitTitleText
+					v-else
+					:title="heroTitle"
+					main-class="nm-hero-title-main"
+					subtitle-class="nm-hero-title-sub"
+				/>
 			</div>
 
-			<p v-if="info.overview" class="nm-hero-overview">
-				{{ info.overview }}
-			</p>
+			<div class="nm-hero-overview-block">
+				<div v-if="showMeta" class="meta-row">
+					<span v-if="yearText">{{ yearText }}</span>
+					<span v-if="durationText">·</span>
+					<span v-if="durationText">{{ durationText }}</span>
+					<span v-if="ratingText">·</span>
+					<span v-if="ratingText">{{ ratingText }}</span>
+				</div>
+				<p v-if="heroOverview" class="nm-hero-overview" :style="showMeta ? { '-webkit-line-clamp': 4 } : undefined">
+					{{ heroOverview }}
+				</p>
+			</div>
 		</div>
 
 		<div ref="actionsEl" class="actions">
@@ -331,8 +362,7 @@ async function toggleWatchlist(): Promise<void> {
 }
 .backdrop {
 	position: absolute;
-	inset: 0 0 auto;
-	height: var(--hero-height);
+	inset: 0;
 }
 .backdrop img {
 	width: 100%;
@@ -345,6 +375,7 @@ async function toggleWatchlist(): Promise<void> {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
+	gap: 12px;
 	height: var(--hero-height);
 	width: 60%;
 	padding: 0 16px 12px 40px;
@@ -354,8 +385,8 @@ async function toggleWatchlist(): Promise<void> {
 	display: flex;
 	gap: 8px;
 	font-size: 14px;
+	line-height: 20px;
 	color: oklch(0.85 0.01 250);
-	margin-bottom: 12px;
 	letter-spacing: 0.02em;
 }
 .actions {
