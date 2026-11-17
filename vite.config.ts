@@ -80,6 +80,9 @@ export default defineConfig(({ command, mode }) => {
 			globals: true,
 			setupFiles: ['src/test/setup.ts'],
 			include: ['src/**/*.{test,spec}.{ts,vue}', 'eslint-rules/__tests__/*.spec.ts'],
+			// The first typed RuleTester case builds a TypeScript program; on a busy runner that
+			// passed 5 s and failed the Cloudflare deploy (run 44023747159).
+			testTimeout: 20000,
 			exclude: ['**/node_modules/**', '**/docs/**'],
 		},
 		// Chrome 92 on the Cast device reads no lab(), oklch() or @layer.
