@@ -304,45 +304,47 @@ async function toggleWatchlist(): Promise<void> {
 			</div>
 		</div>
 
-		<div ref="actionsEl" class="actions">
-			<button
-				v-if="watchPath"
-				ref="watchEl"
-				class="nm-pill nm-pill-primary"
-				data-focusable
-				tabindex="0"
-				@click.prevent="watchPath && router.push(watchPath)"
-			>
-				<MoooomIcon icon="nmPlay" width="18" height="18" />
-				{{ t('components.cards.watch') }}
-			</button>
-			<button
-				v-if="readyTrailer"
-				ref="trailerEl"
-				class="nm-pill nm-pill-secondary"
-				data-focusable
-				tabindex="0"
-				@click="openTrailer"
-			>
-				<MoooomIcon icon="playCircle" width="18" height="18" />
-				{{ t('info.watch_trailer') }}
-			</button>
-			<button
-				ref="watchlistEl"
-				class="nm-pill nm-pill-secondary"
-				data-focusable
-				tabindex="0"
-				@click.prevent="toggleWatchlist"
-			>
-				<MoooomIcon :icon="info.watchlist ? 'bookmark' : 'bookmarkAdd'" width="18" height="18" />
-				{{ watchlistLabel }}
-			</button>
+		<div class="info-list">
+			<div ref="actionsEl" class="actions">
+				<button
+					v-if="watchPath"
+					ref="watchEl"
+					class="nm-pill nm-pill-primary"
+					data-focusable
+					tabindex="0"
+					@click.prevent="watchPath && router.push(watchPath)"
+				>
+					<MoooomIcon icon="nmPlay" width="18" height="18" />
+					{{ t('components.cards.watch') }}
+				</button>
+				<button
+					v-if="readyTrailer"
+					ref="trailerEl"
+					class="nm-pill nm-pill-secondary"
+					data-focusable
+					tabindex="0"
+					@click="openTrailer"
+				>
+					<MoooomIcon icon="playCircle" width="18" height="18" />
+					{{ t('info.watch_trailer') }}
+				</button>
+				<button
+					ref="watchlistEl"
+					class="nm-pill nm-pill-secondary"
+					data-focusable
+					tabindex="0"
+					@click.prevent="toggleWatchlist"
+				>
+					<MoooomIcon :icon="info.watchlist ? 'bookmark' : 'bookmarkAdd'" width="18" height="18" />
+					{{ watchlistLabel }}
+				</button>
+			</div>
+			<InfoSeasons
+				v-if="info.seasons?.length || infoRows.length"
+				:seasons="info.seasons ?? []"
+				:rows="infoRows"
+			/>
 		</div>
-		<InfoSeasons
-			v-if="info.seasons?.length || infoRows.length"
-			:seasons="info.seasons ?? []"
-			:rows="infoRows"
-		/>
 		<TrailerOverlay
 			v-if="trailerOpen && readyTrailer"
 			:trailer="readyTrailer"
@@ -388,6 +390,20 @@ async function toggleWatchlist(): Promise<void> {
 	line-height: 20px;
 	color: oklch(0.85 0.01 250);
 	letter-spacing: 0.02em;
+}
+.info-list {
+	position: absolute;
+	top: var(--hero-height);
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 1;
+	overflow-y: auto;
+	padding-bottom: 120px;
+	scrollbar-width: none;
+}
+.info-list::-webkit-scrollbar {
+	display: none;
 }
 .actions {
 	position: relative;
