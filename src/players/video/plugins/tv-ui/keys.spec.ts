@@ -102,6 +102,11 @@ describe('sharedKeyAction (VideoChromeStoreAdapter.kt:181-188)', () => {
 	it('h04 center toggles play and pause', () =>
 		expect(sharedKeyAction('center')).toBe('togglePlay'));
 
+	it('h06 the Play button plays and the Pause button pauses', () => {
+		expect(sharedKeyAction('play')).toBe('play');
+		expect(sharedKeyAction('pause')).toBe('pause');
+	});
+
 	it('h05 everything else goes to the library key handler', () =>
 		expect(sharedKeyAction('other')).toBe('library'));
 });
@@ -109,6 +114,9 @@ describe('sharedKeyAction (VideoChromeStoreAdapter.kt:181-188)', () => {
 describe('media transport keys and platform Back codes (VideoChromeStoreAdapter.kt:166-189)', () => {
 	it.each([
 		['MediaPlayPause', 'playPause'],
+		// AndroidInputAdapter.kt:33-34: a remote's own Play and Pause buttons.
+		['MediaPlay', 'play'],
+		['MediaPause', 'pause'],
 		['MediaTrackNext', 'next'],
 		['MediaTrackPrevious', 'previous'],
 		['MediaStop', 'stop'],

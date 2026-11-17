@@ -573,6 +573,14 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 					: this.engine.play());
 
 				return true;
+			case 'play':
+				void this.engine.play();
+
+				return true;
+			case 'pause':
+				void this.engine.pause();
+
+				return true;
 			case 'next':
 				this.engine.next?.();
 

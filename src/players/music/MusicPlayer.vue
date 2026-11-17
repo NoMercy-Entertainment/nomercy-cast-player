@@ -2,7 +2,9 @@
 import { onBeforeUnmount, watch } from 'vue';
 import { musicSyncBridge } from './syncBridge';
 import type { MusicEngineLike } from './syncBridge';
+import { handleMusicMediaKey } from './mediaKeys';
 import { authStore } from '@/stores/authStore';
+import { playbackStore } from '@/stores/playbackStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
@@ -93,7 +95,19 @@ watch(
 	{ immediate: true },
 );
 
+// The remote's media keys reach music on every screen, once a track is loaded.
+function onMediaKey(event: KeyboardEvent): void {
+	const loaded = playbackStore.music.track.value != null;
+
+	handleMusicMediaKey(event, loaded
+		? musicSyncBridge.current()
+		: null, playbackStore.music.playing.value);
+}
+
+window.addEventListener('keydown', onMediaKey);
+
 onBeforeUnmount(() => {
+	window.removeEventListener('keydown', onMediaKey);
 	stoppedByUnmount = true;
 	musicSyncBridge.detach();
 	engine?.dispose?.();

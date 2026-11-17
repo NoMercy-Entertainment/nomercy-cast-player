@@ -1,4 +1,4 @@
-export type KeyName = 'left' | 'right' | 'up' | 'down' | 'center' | 'back' | 'volumeUp' | 'volumeDown' | 'volumeMute' | 'rewind' | 'fastForward' | 'playPause' | 'next' | 'previous' | 'stop' | 'other';
+export type KeyName = 'left' | 'right' | 'up' | 'down' | 'center' | 'back' | 'volumeUp' | 'volumeDown' | 'volumeMute' | 'rewind' | 'fastForward' | 'playPause' | 'play' | 'pause' | 'next' | 'previous' | 'stop' | 'other';
 
 const KEY_NAMES = {
 	ArrowLeft: 'left',
@@ -17,6 +17,9 @@ const KEY_NAMES = {
 	MediaRewind: 'rewind',
 	MediaFastForward: 'fastForward',
 	MediaPlayPause: 'playPause',
+	// AndroidInputAdapter.kt:33-34: a remote's own Play and Pause buttons.
+	MediaPlay: 'play',
+	MediaPause: 'pause',
 	MediaTrackNext: 'next',
 	MediaTrackPrevious: 'previous',
 	MediaStop: 'stop',
@@ -90,7 +93,7 @@ export function routeRootKey(state: RootKeyState, key: KeyName): RootRoute {
 	}
 }
 
-export type SharedAction = 'toggleMute' | 'seekBack' | 'seekForward' | 'togglePlay' | 'next' | 'previous' | 'stop' | 'library';
+export type SharedAction = 'toggleMute' | 'seekBack' | 'seekForward' | 'togglePlay' | 'play' | 'pause' | 'next' | 'previous' | 'stop' | 'library';
 
 // VideoChromeStoreAdapter.kt:173-190, the shared player key map.
 export function sharedKeyAction(key: KeyName): SharedAction {
@@ -100,6 +103,8 @@ export function sharedKeyAction(key: KeyName): SharedAction {
 		case 'fastForward': return 'seekForward';
 		case 'center':
 		case 'playPause': return 'togglePlay';
+		case 'play': return 'play';
+		case 'pause': return 'pause';
 		case 'next': return 'next';
 		case 'previous': return 'previous';
 		case 'stop': return 'stop';
