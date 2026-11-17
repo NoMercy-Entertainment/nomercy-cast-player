@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 
 /*
  * APK SearchKeyboard.KeyButton — square key with focus border + 1.06 scale,
@@ -11,6 +12,7 @@ import { useFocusEntry } from '@/composables/useFocusEntry';
 const props = defineProps<{
 	focusKey: string;
 	label: string;
+	icon?: string;
 	variant?: 'letter' | 'number' | 'hot' | 'mode' | 'mode-active';
 }>();
 
@@ -34,7 +36,10 @@ useFocusEntry({
 		data-focusable
 		tabindex="0"
 	>
-		{{ label }}
+		<MoooomIcon v-if="icon" :icon="icon" />
+		<template v-else>
+			{{ label }}
+		</template>
 	</button>
 </template>
 

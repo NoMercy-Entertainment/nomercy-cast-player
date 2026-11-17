@@ -50,7 +50,8 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 		<div class="kb-row utility-row">
 			<SearchKey
 				focus-key="kb-space"
-				label="⎵"
+				label=" "
+				icon="keyboard"
 				:aria-label="t('views.search.space')"
 				variant="hot"
 				class="span-2"
@@ -58,7 +59,8 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 			/>
 			<SearchKey
 				focus-key="kb-back"
-				label="⌫"
+				label=" "
+				icon="eraser"
 				:aria-label="t('views.search.backspace')"
 				variant="hot"
 				class="span-2"
@@ -66,14 +68,16 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 			/>
 			<SearchKey
 				focus-key="kb-video"
-				label="🎬"
+				label=" "
+				icon="film"
 				:aria-label="t('views.search_videos')"
 				:variant="mode === 'video' ? 'mode-active' : 'mode'"
 				@press="emit('mode', 'video')"
 			/>
 			<SearchKey
 				focus-key="kb-music"
-				label="🎵"
+				label=" "
+				icon="noteDouble"
 				:aria-label="t('views.search_music')"
 				:variant="mode === 'music' ? 'mode-active' : 'mode'"
 				@press="emit('mode', 'music')"
