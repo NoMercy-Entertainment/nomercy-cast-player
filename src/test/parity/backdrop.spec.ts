@@ -23,6 +23,16 @@ describe('the backdrop fills the screen like BackdropImageWithOverlay.kt', () =>
 	});
 });
 
+describe('the info rows scroll under a pinned hero (InfoScreen.kt:266-272)', () => {
+	it('the list starts at the hero height and clips its own scroll', () => {
+		const list = decls('views/info/InfoScreen.vue', '.info-list');
+
+		expect(list.position).toBe('absolute');
+		expect(list.top).toBe('var(--hero-height)');
+		expect(list['overflow-y']).toBe('auto');
+	});
+});
+
 describe('the hero text keeps fixed blocks like LeftColumn (VideoMusicHeroSection.kt:98-100)', () => {
 	it('the title block is 58 high and the overview block holds 5 lines', () => {
 		expect(decls(CSS, '.nm-hero-title-block').height).toBe('58px');
