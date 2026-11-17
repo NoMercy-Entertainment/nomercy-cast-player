@@ -17,7 +17,11 @@ function card(data: NMCardWrapper): Component {
 	return {
 		id: data.id,
 		component: 'NMCard',
-		props: { id: data.id, title: data.title, data },
+		props: {
+			id: data.id,
+			title: data.title,
+			data,
+		},
 	} as const satisfies Component;
 }
 
@@ -25,7 +29,11 @@ function carousel(id: string, title: string, items: Component[]): Component {
 	return {
 		id,
 		component: 'NMCarousel',
-		props: { id, title, items },
+		props: {
+			id,
+			title,
+			items,
+		},
 	} as const satisfies Component;
 }
 
@@ -83,8 +91,9 @@ function sortedCredits(people: InfoPerson[]): InfoPerson[] {
 	const byName = new Map<string, InfoPerson>();
 
 	for (const person of people) {
-		if (!byName.has(person.name))
+		if (!byName.has(person.name)) {
 			byName.set(person.name, person);
+		}
 	}
 
 	const order = (person: InfoPerson): number => {
@@ -94,6 +103,7 @@ function sortedCredits(people: InfoPerson[]): InfoPerson[] {
 			? Number.MAX_SAFE_INTEGER
 			: parsed;
 	};
+
 	const compare = (a: InfoPerson, b: InfoPerson): number =>
 		order(a) - order(b) || a.name.toLowerCase().localeCompare(b.name.toLowerCase());
 	const credits = [...byName.values()];
@@ -104,37 +114,30 @@ function sortedCredits(people: InfoPerson[]): InfoPerson[] {
 	];
 }
 
-function creditRow(id: string, title: string, people: InfoPerson[], subtitle: (person: InfoPerson) => string | null | undefined): Component[] {
-	const cards = distinctById(sortedCredits(people)
-		.map((person) => personCard(person, subtitle(person)))
-		.filter((c): c is NMCardWrapper => c !== null));
+function row(id: string, title: string, cards: Array<NMCardWrapper | null>): Component[] {
+	const present = cards.filter((c): c is NMCardWrapper => c !== null);
+	const unique = distinctById(present);
 
-	return cards.length > 0
-		? [carousel(id, title, cards.map(card))]
+	return unique.length > 0
+		? [carousel(id, title, unique.map(card))]
 		: [];
 }
 
+type Caption = (person: InfoPerson) => string | null | undefined;
+
+function creditCards(people: InfoPerson[], caption: Caption) {
+	return sortedCredits(people).map((person) => personCard(person, caption(person)));
+}
+
 export function buildInfoRows(info: InfoData, labels: InfoRowLabels): Component[] {
-	const rows: Component[] = [];
+	const collection = (info.collection ?? []).map(relatedCard);
+	const leads = [info.writer, info.director].filter((p): p is InfoPerson => Boolean(p));
+	const directorWriter = leads.map((person) => personCard(person, person.job ?? person.character));
 
-	const collection = distinctById((info.collection ?? [])
-		.map(relatedCard)
-		.filter((c): c is NMCardWrapper => c !== null));
-
-	if (collection.length > 0)
-		rows.push(carousel('info-collection', labels.collections, collection.map(card)));
-
-	const directorWriter = distinctById([info.writer, info.director]
-		.flatMap((person) => person
-			? [personCard(person, person.job ?? person.character)]
-			: [])
-		.filter((c): c is NMCardWrapper => c !== null));
-
-	if (directorWriter.length > 0)
-		rows.push(carousel('info-director-writer', labels.writerDirector, directorWriter.map(card)));
-
-	rows.push(...creditRow('info-cast', labels.cast, info.cast ?? [], (person) => person.character));
-	rows.push(...creditRow('info-crew', labels.crew, info.crew ?? [], (person) => person.job));
-
-	return rows;
+	return [
+		...row('info-collection', labels.collections, collection),
+		...row('info-director-writer', labels.writerDirector, directorWriter),
+		...row('info-cast', labels.cast, creditCards(info.cast ?? [], (p) => p.character)),
+		...row('info-crew', labels.crew, creditCards(info.crew ?? [], (p) => p.job)),
+	];
 }

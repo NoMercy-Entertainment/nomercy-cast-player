@@ -20,7 +20,12 @@ function card(id: string): Component {
 	return {
 		id,
 		component: 'NMCard',
-		props: { id, data: { id, title: id, link: `/movie/${id}`, poster: '/made-up.jpg' } },
+		props: { id, data: {
+			id,
+			title: id,
+			link: `/movie/${id}`,
+			poster: '/made-up.jpg',
+		} },
 	} as unknown as Component;
 }
 
@@ -28,7 +33,12 @@ function rail(id: string): Component {
 	return {
 		id,
 		component: 'NMCarousel',
-		props: { id, title: id, more_link: `/genres/${id}`, items: [card(`${id}-1`), card(`${id}-2`)] },
+		props: {
+			id,
+			title: id,
+			more_link: `/genres/${id}`,
+			items: [card(`${id}-1`), card(`${id}-2`)],
+		},
 	} as unknown as Component;
 }
 
@@ -44,6 +54,7 @@ async function home(): Promise<ReturnType<typeof mount>> {
 	const host = document.createElement('div');
 
 	document.body.appendChild(host);
+
 	wrapper = mount(HeroRailsView, {
 		attachTo: host,
 		props: {
@@ -55,6 +66,7 @@ async function home(): Promise<ReturnType<typeof mount>> {
 			emptyMessage: 'x',
 		},
 	});
+
 	await flushPromises();
 	await vi.dynamicImportSettled();
 	await flushPromises();
@@ -67,7 +79,7 @@ function press(dir: 'up' | 'down' | 'left' | 'right'): void {
 }
 
 describe('home D-pad rows (TvCardViewHolder.kt:405-421, TvHomeAdapter.kt:540-561)', () => {
-	it('DOWN from a card goes to the first card of the next row, not to this row\'s Show All', async () => {
+	it('down from a card goes to the first card of the next row, not to this row\'s Show All', async () => {
 		await home();
 		(document.querySelector('[data-rail-id="aa"] article') as HTMLElement).focus();
 		press('down');
@@ -76,7 +88,7 @@ describe('home D-pad rows (TvCardViewHolder.kt:405-421, TvHomeAdapter.kt:540-561
 		expect(document.activeElement?.classList.contains('show-all')).toBe(false);
 	});
 
-	it('DOWN from the last row stays on the card', async () => {
+	it('down from the last row stays on the card', async () => {
 		await home();
 		const first = document.querySelector('[data-rail-id="bb"] article') as HTMLElement;
 
@@ -86,7 +98,7 @@ describe('home D-pad rows (TvCardViewHolder.kt:405-421, TvHomeAdapter.kt:540-561
 		expect(document.activeElement).toBe(first);
 	});
 
-	it('RIGHT past the last card reaches Show All, the last card of the row', async () => {
+	it('right past the last card reaches Show All, the last card of the row', async () => {
 		await home();
 		const cards = document.querySelectorAll('[data-rail-id="aa"] article');
 
@@ -118,7 +130,7 @@ describe('hero follows focus at the native pace (HeroSelectionTiming.kt:27-33)',
 });
 
 describe('card focus ring is a 2 dp white inner stroke (TvCardViewHolder.kt:68-72)', () => {
-	it('NMCard draws it inside the poster, where contain: paint cannot clip it', () => {
+	it('the NMCard draws it inside the poster, where contain: paint cannot clip it', () => {
 		expect(decls('server-components/NMCard.vue', '.card:focus-visible .poster::after').border).toBe('2px solid var(--cast-white)');
 		expect(decls('server-components/NMCard.vue', '.card:focus-visible .poster')['box-shadow']).toBe('none');
 	});
@@ -130,7 +142,11 @@ describe('card focus ring is a 2 dp white inner stroke (TvCardViewHolder.kt:68-7
 
 describe('accent color picks like pickPaletteHex (PaletteColors.kt:60-84)', () => {
 	it('takes the dominant swatch first, skipping white and black', () => {
-		expect(pickPaletteColor({ dominant: '#FFFFFF', primary: '#6E3C28', darkVibrant: '#0000FF' })).toBe('#6E3C28');
+		expect(pickPaletteColor({
+			dominant: '#FFFFFF',
+			primary: '#6E3C28',
+			darkVibrant: '#0000FF',
+		})).toBe('#6E3C28');
 	});
 
 	it('rescales a swatch above the 120 brightness ceiling to 119', () => {

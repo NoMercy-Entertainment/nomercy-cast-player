@@ -178,7 +178,8 @@ describe('the trailer controls are the tv-ui panels', () => {
 // (the TV showed a 640x352 box), where the native PlayerSurface is fillMaxSize
 // (TrailerOverlayPlayer.kt:200-203).
 describe('the trailer video fills the screen like the native PlayerSurface', () => {
-	const source = readFileSync(resolve(process.cwd(), 'src/players/video/TrailerOverlay.vue'), 'utf8');
+	const file = resolve(process.cwd(), 'src/players/video/TrailerOverlay.vue');
+	const source = readFileSync(file, 'utf8');
 	const rule = source.match(/\.trailer-surface\s+:deep\(video\)\s*\{([^}]*)\}/)?.[1] ?? '';
 
 	it('has a rule for the player video element', () => {
