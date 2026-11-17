@@ -48,21 +48,25 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 
 		<Transition name="hero-fade">
 			<div :key="transitionKey" class="content">
-				<img
-					v-if="logoUrl"
-					class="nm-hero-logo"
-					:src="logoUrl"
-					:alt="card.title ?? ''"
-				>
-				<SplitTitleText
-					v-else
-					:title="card.title"
-					main-class="nm-hero-title-main"
-					subtitle-class="nm-hero-title-sub"
-				/>
-				<p v-if="card.overview" class="nm-hero-overview">
-					{{ card.overview }}
-				</p>
+				<div class="nm-hero-title-block">
+					<img
+						v-if="logoUrl"
+						class="nm-hero-logo"
+						:src="logoUrl"
+						:alt="card.title ?? ''"
+					>
+					<SplitTitleText
+						v-else
+						:title="card.title"
+						main-class="nm-hero-title-main"
+						subtitle-class="nm-hero-title-sub"
+					/>
+				</div>
+				<div class="nm-hero-overview-block">
+					<p v-if="card.overview" class="nm-hero-overview">
+						{{ card.overview }}
+					</p>
+				</div>
 			</div>
 		</Transition>
 	</section>
@@ -73,12 +77,16 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 	position: relative;
 	width: 100%;
 	height: var(--hero-height);
-	overflow: hidden;
 	background: oklch(0.12 0.01 250);
 }
+/* BackdropImageWithOverlay fills the screen; the rails and the hero text draw over it. */
 .art {
 	position: absolute;
-	inset: 0;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100vh;
+	overflow: hidden;
 }
 .content {
 	position: absolute;

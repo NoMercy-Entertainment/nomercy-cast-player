@@ -10,6 +10,7 @@ import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { BACKDROP_SIZE, buildImageUrl } from '@/lib/images/urls';
 import { applyThemeColor, clearThemeColor } from '@/lib/theme';
+import { focusedCardStore } from '@/stores/focusedCardStore';
 import SplitTitleText from '@/components/text/SplitTitleText.vue';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
@@ -19,6 +20,7 @@ import { QueryKeys } from '@/queries/keys';
 import { useTrailerQuery } from '@/queries/useTrailerQuery';
 import TrailerOverlay from '@/players/video/TrailerOverlay.vue';
 import InfoSeasons from './InfoSeasons.vue';
+import { buildInfoRows } from './infoRows';
 
 /*
  * Movie / TV detail page. Mirrors APK InfoScreen.kt:
@@ -52,15 +54,41 @@ watch(info, (next) => {
 	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
 }, { immediate: true });
 
+focusedCardStore.setThemeFollowsFocus(false);
+focusedCardStore.seed(null);
+
 onBeforeUnmount(() => {
+	focusedCardStore.setThemeFollowsFocus(true);
+	focusedCardStore.seed(null);
 	clearThemeColor();
 });
 
-const backdropUrl = computed(() =>
-	buildImageUrl(info.value?.backdrop ?? null, BACKDROP_SIZE),
+// HeroCardGate.kt:18-21: a focused movie or tv card with a backdrop replaces the title's own hero.
+const focusedTitle = computed(() => {
+	const card = focusedCardStore.debouncedCard.value;
+
+	return card && (card.type === 'movie' || card.type === 'tv') && card.backdrop
+		? card
+		: null;
+});
+
+const heroTitle = computed(() => focusedTitle.value?.title ?? info.value?.title);
+const heroOverview = computed(() =>
+	focusedTitle.value
+		? focusedTitle.value.overview
+		: info.value?.overview,
 );
 
-const logoUrl = computed(() => buildImageUrl(info.value?.logo ?? null, { width: 600 }));
+const backdropUrl = computed(() =>
+	buildImageUrl(focusedTitle.value?.backdrop ?? info.value?.backdrop ?? null, BACKDROP_SIZE),
+);
+
+const logoUrl = computed(() => buildImageUrl(
+	focusedTitle.value
+		? (focusedTitle.value.logo ?? null)
+		: (info.value?.logo ?? null),
+	{ width: 600 },
+));
 
 const watchPath = computed(() => {
 	const link = info.value?.link;
@@ -86,6 +114,17 @@ const readyTrailer = computed(() => {
 });
 const trailerOpen = ref(false);
 
+const infoRows = computed(() =>
+	info.value
+		? buildInfoRows(info.value, {
+				collections: t('views.info.collections'),
+				writerDirector: t('views.info.writer_director'),
+				cast: t('views.info.cast'),
+				crew: t('views.info.crew'),
+			})
+		: [],
+);
+
 const watchlistLabel = computed(() =>
 	info.value?.watchlist
 		? t('components.buttons.remove_from_watchlist')
@@ -110,6 +149,11 @@ const ratingText = computed(() =>
 	typeof info.value?.voteAverage === 'number'
 		? `${info.value.voteAverage.toFixed(1)} / 10`
 		: '',
+);
+
+// The year, length and rating line takes the first line of the overview block, as a byline does.
+const showMeta = computed(() =>
+	!focusedTitle.value && Boolean(yearText.value || durationText.value || ratingText.value),
 );
 
 const actionsEl = ref<HTMLElement | null>(null);
@@ -225,7 +269,7 @@ async function toggleWatchlist(): Promise<void> {
 			<img
 				v-if="backdropUrl"
 				:src="backdropUrl"
-				:alt="info.title ?? ''"
+				:alt="heroTitle ?? ''"
 				loading="eager"
 				decoding="async"
 			>
@@ -233,69 +277,78 @@ async function toggleWatchlist(): Promise<void> {
 		</div>
 
 		<div class="hero-row">
-			<img
-				v-if="logoUrl"
-				class="nm-hero-logo"
-				:src="logoUrl"
-				:alt="info.title ?? ''"
-				loading="eager"
-				decoding="async"
-			>
-			<SplitTitleText
-				v-else
-				:title="info.title"
-				main-class="nm-hero-title-main"
-				subtitle-class="nm-hero-title-sub"
-			/>
-
-			<div v-if="yearText || durationText || ratingText" class="meta-row">
-				<span v-if="yearText">{{ yearText }}</span>
-				<span v-if="durationText">·</span>
-				<span v-if="durationText">{{ durationText }}</span>
-				<span v-if="ratingText">·</span>
-				<span v-if="ratingText">{{ ratingText }}</span>
+			<div class="nm-hero-title-block">
+				<img
+					v-if="logoUrl"
+					class="nm-hero-logo"
+					:src="logoUrl"
+					:alt="heroTitle ?? ''"
+					loading="eager"
+					decoding="async"
+				>
+				<SplitTitleText
+					v-else
+					:title="heroTitle"
+					main-class="nm-hero-title-main"
+					subtitle-class="nm-hero-title-sub"
+				/>
 			</div>
 
-			<p v-if="info.overview" class="nm-hero-overview">
-				{{ info.overview }}
-			</p>
+			<div class="nm-hero-overview-block">
+				<div v-if="showMeta" class="meta-row">
+					<span v-if="yearText">{{ yearText }}</span>
+					<span v-if="durationText">·</span>
+					<span v-if="durationText">{{ durationText }}</span>
+					<span v-if="ratingText">·</span>
+					<span v-if="ratingText">{{ ratingText }}</span>
+				</div>
+				<p v-if="heroOverview" class="nm-hero-overview" :style="showMeta ? { '-webkit-line-clamp': 4 } : undefined">
+					{{ heroOverview }}
+				</p>
+			</div>
 		</div>
 
-		<div ref="actionsEl" class="actions">
-			<button
-				v-if="watchPath"
-				ref="watchEl"
-				class="nm-pill nm-pill-primary"
-				data-focusable
-				tabindex="0"
-				@click.prevent="watchPath && router.push(watchPath)"
-			>
-				<MoooomIcon icon="nmPlay" width="18" height="18" />
-				{{ t('components.cards.watch') }}
-			</button>
-			<button
-				v-if="readyTrailer"
-				ref="trailerEl"
-				class="nm-pill nm-pill-secondary"
-				data-focusable
-				tabindex="0"
-				@click="openTrailer"
-			>
-				<MoooomIcon icon="playCircle" width="18" height="18" />
-				{{ t('info.watch_trailer') }}
-			</button>
-			<button
-				ref="watchlistEl"
-				class="nm-pill nm-pill-secondary"
-				data-focusable
-				tabindex="0"
-				@click.prevent="toggleWatchlist"
-			>
-				<MoooomIcon :icon="info.watchlist ? 'bookmark' : 'bookmarkAdd'" width="18" height="18" />
-				{{ watchlistLabel }}
-			</button>
+		<div class="info-list">
+			<div ref="actionsEl" class="actions">
+				<button
+					v-if="watchPath"
+					ref="watchEl"
+					class="nm-pill nm-pill-primary"
+					data-focusable
+					tabindex="0"
+					@click.prevent="watchPath && router.push(watchPath)"
+				>
+					<MoooomIcon icon="nmPlay" width="18" height="18" />
+					{{ t('components.cards.watch') }}
+				</button>
+				<button
+					v-if="readyTrailer"
+					ref="trailerEl"
+					class="nm-pill nm-pill-secondary"
+					data-focusable
+					tabindex="0"
+					@click="openTrailer"
+				>
+					<MoooomIcon icon="playCircle" width="18" height="18" />
+					{{ t('info.watch_trailer') }}
+				</button>
+				<button
+					ref="watchlistEl"
+					class="nm-pill nm-pill-secondary"
+					data-focusable
+					tabindex="0"
+					@click.prevent="toggleWatchlist"
+				>
+					<MoooomIcon :icon="info.watchlist ? 'bookmark' : 'bookmarkAdd'" width="18" height="18" />
+					{{ watchlistLabel }}
+				</button>
+			</div>
+			<InfoSeasons
+				v-if="info.seasons?.length || infoRows.length"
+				:seasons="info.seasons ?? []"
+				:rows="infoRows"
+			/>
 		</div>
-		<InfoSeasons v-if="info.seasons?.length" :seasons="info.seasons" />
 		<TrailerOverlay
 			v-if="trailerOpen && readyTrailer"
 			:trailer="readyTrailer"
@@ -315,8 +368,7 @@ async function toggleWatchlist(): Promise<void> {
 }
 .backdrop {
 	position: absolute;
-	inset: 0 0 auto;
-	height: var(--hero-height);
+	inset: 0;
 }
 .backdrop img {
 	width: 100%;
@@ -329,6 +381,7 @@ async function toggleWatchlist(): Promise<void> {
 	display: flex;
 	flex-direction: column;
 	justify-content: flex-end;
+	gap: 12px;
 	height: var(--hero-height);
 	width: 60%;
 	padding: 0 16px 12px 40px;
@@ -338,9 +391,23 @@ async function toggleWatchlist(): Promise<void> {
 	display: flex;
 	gap: 8px;
 	font-size: 14px;
+	line-height: 20px;
 	color: oklch(0.85 0.01 250);
-	margin-bottom: 12px;
 	letter-spacing: 0.02em;
+}
+.info-list {
+	position: absolute;
+	top: var(--hero-height);
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 1;
+	overflow-y: auto;
+	padding-bottom: 120px;
+	scrollbar-width: none;
+}
+.info-list::-webkit-scrollbar {
+	display: none;
 }
 .actions {
 	position: relative;

@@ -37,12 +37,18 @@ export interface FocusedCardData {
 
 const _activeCard = ref<FocusedCardData | null>(null);
 const _debouncedCard = ref<FocusedCardData | null>(null);
-const HORIZONTAL_DEBOUNCE_MS = 650;
-const VERTICAL_DEBOUNCE_MS = 2000;
+// HeroSelectionTiming.kt:27-29: a move along a row updates the hero fast, a row change a touch later.
+const HORIZONTAL_DEBOUNCE_MS = 250;
+const VERTICAL_DEBOUNCE_MS = 500;
 let pending: number | null = null;
 let lastNavDir: 'horizontal' | 'vertical' = 'horizontal';
 
+// The info page keeps its title's color while focus moves (InfoScreen.kt:181 SetThemeColor noRemove).
+let themeFollowsFocus = true;
+
 function applyPalette(card: FocusedCardData | null): void {
+	if (!themeFollowsFocus) return;
+
 	const palette = card?.color_palette;
 
 	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
@@ -75,6 +81,9 @@ export const focusedCardStore = {
 		_activeCard.value = card;
 		_debouncedCard.value = card;
 		applyPalette(card);
+	},
+	setThemeFollowsFocus(follows: boolean): void {
+		themeFollowsFocus = follows;
 	},
 	setNavDirection(dir: 'horizontal' | 'vertical'): void {
 		lastNavDir = dir;

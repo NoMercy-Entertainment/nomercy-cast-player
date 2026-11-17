@@ -153,8 +153,12 @@ useFocusEntry({
 	border-radius: inherit;
 	pointer-events: none;
 }
+/* The ring sits inside the poster: .card's contain: paint would clip one drawn outside it. */
+.card:focus-visible .poster {
+	box-shadow: none;
+}
 .card:focus-visible .poster::after {
-	border-color: transparent;
+	border: 2px solid var(--cast-white);
 }
 .progress {
 	position: absolute;

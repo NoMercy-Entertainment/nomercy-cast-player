@@ -7,9 +7,13 @@
 	},
 	"views": {
 		"info": {
+			"cast": "Cast",
+			"collections": "Collections",
+			"crew": "Crew",
 			"load_error": "Couldn't load details",
 			"minutes": "{{count}} min",
-			"season": "Season"
+			"season": "Season",
+			"writer_director": "Writer & Director"
 		}
 	}
 }

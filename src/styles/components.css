@@ -69,7 +69,7 @@
 	position: absolute;
 	inset: 0;
 	background: radial-gradient(
-		ellipse 1987px 1728px at calc(100% - 187px) -450px,
+		ellipse 1987px 1728px at calc(100% - 57px) -225px,
 		transparent 0%,
 		transparent 25%,
 		var(--cast-black) 37.5%,
@@ -91,6 +91,17 @@
 	object-fit: contain;
 	object-position: left center;
 	filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
+}
+/* LeftColumn: the title and overview blocks keep their height, so the logo never moves with the text. */
+.nm-hero-title-block {
+	flex: none;
+	height: 58px;
+	display: flex;
+	align-items: center;
+}
+.nm-hero-overview-block {
+	flex: none;
+	height: 100px;
 }
 .nm-hero-title-main {
 	font-size: 28px;

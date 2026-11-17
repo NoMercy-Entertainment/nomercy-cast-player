@@ -136,7 +136,7 @@ describe('the music page never ends blank', () => {
 	});
 
 	it('lets the rails fill the screen below the nav when no hero art sits above them', async () => {
-		const wrapper = await screen({ data: [carousel('albums', [album('00000000-0000-4000-8000-000000000001')])] });
+		const wrapper = await screen({ hero: false, data: [carousel('albums', [album('00000000-0000-4000-8000-000000000001')])] });
 
 		expect(wrapper.find('.nm-hero-rails').classes()).toContain('nm-hero-rails--no-hero');
 	});

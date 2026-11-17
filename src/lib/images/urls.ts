@@ -145,8 +145,50 @@ export interface PaletteColors {
 
 const paletteCache = new WeakMap<PaletteColors, Map<string, string>>();
 
-function inRange(c: string | undefined, dark: number, light: number): boolean {
-	return !!c && !tooDark(c, dark) && !tooLight(c, light);
+function hexToInt(c: string): number {
+	const digits = c.length === 4
+		? `${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}`
+		: c.substring(1, 7);
+
+	return Number.parseInt(digits, 16);
+}
+
+function clampByte(v: number): number {
+	return Math.min(255, Math.max(0, v));
+}
+
+// PaletteColors.kt:100-110: lightness at or past these ends is the artwork's ink or paper, not its color.
+function isWhiteOrBlack(c: string): boolean {
+	const n = hexToInt(c);
+	const channels = [(n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF].map((v) => v / 255);
+	const lightness = (Math.max(...channels) + Math.min(...channels)) / 2;
+
+	return lightness <= 0.08 || lightness >= 0.9;
+}
+
+// PaletteColors.kt:60-84: the first usable swatch, scaled into the brightness range with one factor.
+function pickSwatch(c: string, dark: number, light: number): string {
+	const brightness = Math.floor(fastLuminosity(c));
+
+	if (brightness > dark && brightness < light)
+		return c;
+
+	if (brightness <= 0)
+		return '';
+
+	const target = brightness >= light
+		? light - 1
+		: dark + 1;
+	const factor = target / brightness;
+	const n = hexToInt(c);
+
+	const scale = (v: number): string => {
+		const scaled = Math.floor(v * factor + 0.5);
+
+		return clampByte(scaled).toString(16).toUpperCase().padStart(2, '0');
+	};
+
+	return `#${[(n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF].map(scale).join('')}`;
 }
 
 export function pickPaletteColor(
@@ -154,7 +196,7 @@ export function pickPaletteColor(
 	dark = 40,
 	light = 120,
 ): string {
-	if (!color_palette || !color_palette.darkVibrant) {
+	if (!color_palette) {
 		return '';
 	}
 
@@ -168,14 +210,17 @@ export function pickPaletteColor(
 			return cached;
 	}
 
-	const result = [
-		color_palette.darkVibrant,
-		color_palette.primary,
+	const first = [
 		color_palette.dominant,
+		color_palette.primary,
+		color_palette.darkVibrant,
 		color_palette.lightVibrant,
 		color_palette.darkMuted,
 		color_palette.lightMuted,
-	].find((c) => inRange(c, dark, light)) ?? '';
+	].find((c) => !!c && !isWhiteOrBlack(c));
+	const result = first
+		? pickSwatch(first, dark, light)
+		: '';
 
 	if (!cache) {
 		cache = new Map();

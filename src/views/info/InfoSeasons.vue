@@ -13,7 +13,11 @@ import SeasonPickerOverlay from './SeasonPickerOverlay.vue';
  * the info page. Its title is a season chip when there is more than one season,
  * and its cards are the selected season's episodes.
  */
-const props = defineProps<{ seasons: InfoSeason[] }>();
+const props = defineProps<{
+	seasons: InfoSeason[];
+	/** The rows after the seasons row: collection, writer and director, cast, crew. */
+	rows?: Component[];
+}>();
 
 const selected = ref<number | null>(null);
 const open = ref(false);
@@ -88,7 +92,7 @@ function close(): void {
 </script>
 
 <template>
-	<section v-if="props.seasons.length" class="info-seasons">
+	<section v-if="props.seasons.length || props.rows?.length" class="info-seasons">
 		<button
 			v-if="props.seasons.length > 1"
 			ref="chipEl"
@@ -102,7 +106,12 @@ function close(): void {
 			<span>{{ label }}</span>
 			<MoooomIcon icon="chevronDown" width="20" height="20" />
 		</button>
-		<Resolver :key="rail.id" :component="rail" />
+		<Resolver v-if="props.seasons.length" :key="rail.id" :component="rail" />
+		<Resolver
+			v-for="row in props.rows"
+			:key="row.id"
+			:component="row"
+		/>
 		<SeasonPickerOverlay
 			v-if="open"
 			:options="options"

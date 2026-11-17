@@ -11,7 +11,7 @@
 				<path
 					clip-rule="evenodd"
 					d="M19.377 32.271c-1.495 1.01-2.243 1.516-2.864 1.481a1.846 1.846 0 01-1.368-.726c-.376-.495-.376-1.398-.376-3.202V10.176c0-1.804 0-2.707.376-3.202a1.846 1.846 0 011.368-.726c.621-.035 1.369.47 2.864 1.48l14.54 9.824c1.212.82 1.819 1.23 2.031 1.745.185.45.185.956 0 1.406-.212.515-.819.925-2.032 1.745l-14.54 9.823zm23.392-25.81c.68 0 1.231.552 1.231 1.231v24.616c0 .68-.551 1.23-1.23 1.23h-2.924a1.23 1.23 0 01-1.23-1.23V7.692c0-.68.55-1.23 1.23-1.23h2.923z"
-					fill="var(--color-logo-back)"
+					fill="url(#logo-back)"
 					fill-rule="evenodd"
 				/>
 				<path
@@ -73,6 +73,16 @@
 		</g>
 		<defs>
 			<linearGradient
+				id="logo-back"
+				x1="0"
+				x2="1"
+				y1="0"
+				y2="0"
+			>
+				<stop stop-color="var(--color-primary)" />
+				<stop offset="1" stop-color="var(--color-primary)" stop-opacity="0.8" />
+			</linearGradient>
+			<linearGradient
 				id="paint0-:rq:"
 				gradientUnits="userSpaceOnUse"
 				x1="12.615"
@@ -123,9 +133,6 @@
 
 <style scoped>
 svg {
-	--color-logo-front: hsl(from var(--color-primary) h 50% 85%);
-	--color-logo-back: hsl(from var(--color-primary) h 50% 30%);
-	--color-logo-text: hsl(from var(--color-primary) h 50% 30%);
-	--color-logo-brand: hsl(from var(--color-primary) h 50% 85%);
+	--color-logo-front: #f5f2ff;
 }
 </style>

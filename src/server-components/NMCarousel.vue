@@ -36,14 +36,17 @@ function captureRail(instance: ComponentPublicInstance | Element | null): void {
 		: null;
 }
 
-useFocusGroup({
+const railGroup = useFocusGroup({
 	type: 'horizontal',
 	restorationKey: `carousel-${props.id}`,
 	containerEl,
 });
 
+// Show All is the last card of its row (TvHomeAdapter.kt:540-561), so it joins this row's group.
 useFocusEntry({
 	key: `${props.id}-show-all`,
+	group: railGroup,
+	order: Number.MAX_SAFE_INTEGER,
 	el: showAllEl,
 	onAction: () => {
 		if (props.data.more_link) {
@@ -130,7 +133,7 @@ useFocusEntry({
 }
 .show-all:focus-visible {
 	border-color: var(--cast-white);
-	box-shadow: 0 0 0 1px var(--cast-white);
+	box-shadow: inset 0 0 0 1px var(--cast-white);
 	outline: none;
 }
 .show-all-text {
