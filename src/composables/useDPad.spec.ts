@@ -236,12 +236,19 @@ describe('one Enter or arrow with a tv-ui panel open', () => {
 
 	it('activates the focused row once, not once per handler', () => {
 		const clicks: string[] = [];
+
 		const count = (event: Event): void => {
 			clicks.push((event.target as HTMLElement).className);
 		};
 
 		document.addEventListener('click', count, true);
-		document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+
+		document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', {
+			key: 'Enter',
+			bubbles: true,
+			cancelable: true,
+		}));
+
 		document.removeEventListener('click', count, true);
 
 		expect(clicks).toHaveLength(1);
