@@ -3,6 +3,7 @@ import { computed, nextTick, ref } from 'vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
+import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { InfoSeason } from '@/queries/useInfoQuery';
 import Resolver from '@/server-components/Resolver.vue';
 import type { Component } from '@/server-components/types';
@@ -14,8 +15,9 @@ import SeasonPickerOverlay from './SeasonPickerOverlay.vue';
  * and its cards are the selected season's episodes.
  */
 const props = defineProps<{
+	/** The info DTO's seasons: the picker options, and the episodes when the server sent no rows. */
 	seasons: InfoSeason[];
-	/** The rows after the seasons row: collection, writer and director, cast, crew. */
+	/** The rows: collection, per-season rows from the server, writer and director, cast, crew. */
 	rows?: Component[];
 }>();
 
@@ -23,18 +25,64 @@ const selected = ref<number | null>(null);
 const open = ref(false);
 const chipEl = ref<HTMLElement | null>(null);
 
-const options = computed(() =>
-	props.seasons.map((s) => ({ number: s.season_number ?? 0, label: `${s.season_number ?? 0} - ${s.title ?? ''}` })),
-);
-// InfoScreen.kt:167-172: season 1 opens first, else the first one (Specials is season 0).
-const current = computed(() =>
-	props.seasons.find((s) => s.season_number === selected.value) ??
-	props.seasons.find((s) => s.season_number === 1) ??
-	props.seasons[0],
-);
-const label = computed(() => options.value.find((o) => o.number === current.value?.season_number)?.label ?? '');
+interface RowProps { properties?: Record<string, string>; title?: string }
 
-const rail = computed(() => {
+const rowProps = (row: Component): RowProps => row.props as RowProps;
+const isSeasonsRow = (row: Component): boolean => rowProps(row).properties?.rowType === 'seasons';
+const seasonRows = computed(() => (props.rows ?? []).filter(isSeasonsRow));
+const otherRows = computed(() => (props.rows ?? []).filter((r) => !isSeasonsRow(r)));
+// InfoComponentMapping.kt:47-52: a collection and seasons never draw together.
+const seasonsAllowed = computed(() => !otherRows.value.some((r) => r.id === 'info-collection'));
+
+const options = computed(() =>
+	props.seasons.length
+		? props.seasons.map((s) => ({ number: s.season_number ?? 0, label: `${s.season_number ?? 0} - ${s.title ?? ''}` }))
+		: seasonRows.value.map((r) => ({
+				number: Number(rowProps(r).properties?.season_number ?? 0),
+				label: rowProps(r).title ?? '',
+			})));
+// InfoScreen.kt:167-172: season 1 opens first, else the first one (Specials is season 0).
+const currentNumber = computed(() =>
+	(options.value.find((o) => o.number === selected.value) ??
+		options.value.find((o) => o.number === 1) ??
+		options.value[0])?.number,
+);
+const current = computed(() => props.seasons.find((s) => s.season_number === currentNumber.value));
+const label = computed(() => options.value.find((o) => o.number === currentNumber.value)?.label ?? '');
+
+// The server's row for the selected season, found by its season_number property.
+function serverRail(number: number | undefined): Component | null {
+	const row = seasonRows.value.find(
+		(r) => Number(rowProps(r).properties?.season_number) === number,
+	);
+
+	if (!row)
+		return null;
+
+	const { items } = row.props as { items: Component[] };
+
+	return {
+		...row,
+		props: {
+			...row.props,
+			title: options.value.length === 1
+				? rowProps(row).title
+				: undefined,
+			items: items.map((item) => ({
+				...item,
+				props: { ...item.props, data: { ...(item.props as { data: object }).data, wide: true } },
+			})),
+		},
+	} as Component;
+}
+
+const rail = computed<Component | null>(() => {
+	if (!seasonsAllowed.value)
+		return null;
+
+	if (seasonRows.value.length)
+		return serverRail(currentNumber.value);
+
 	const season = current.value;
 	const id = `info-seasons-${season?.season_number ?? 0}`;
 	const items = (season?.episodes ?? [])
@@ -56,6 +104,10 @@ const rail = computed(() => {
 				},
 			},
 		}) as const satisfies Component);
+
+	// InfoComponentMapping.kt:55: a season without episodes adds no row, and the chip lives in that row.
+	if (!items.length)
+		return null;
 
 	return {
 		id,
@@ -102,9 +154,9 @@ function close(): void {
 </script>
 
 <template>
-	<section v-if="props.seasons.length || props.rows?.length" class="info-seasons">
+	<section v-if="rail || otherRows.length" class="info-seasons">
 		<button
-			v-if="props.seasons.length > 1"
+			v-if="rail && options.length > 1"
 			ref="chipEl"
 			class="season-chip"
 			type="button"
@@ -112,20 +164,21 @@ function close(): void {
 			tabindex="0"
 			aria-haspopup="listbox"
 			@click="open = true"
+			@focus="focusedCardStore.setActive(null)"
 		>
 			<span>{{ label }}</span>
 			<MoooomIcon icon="chevronDown" width="20" height="20" />
 		</button>
-		<Resolver v-if="props.seasons.length" :key="rail.id" :component="rail" />
+		<Resolver v-if="rail" :key="rail.id" :component="rail" />
 		<Resolver
-			v-for="row in props.rows"
+			v-for="row in otherRows"
 			:key="row.id"
 			:component="row"
 		/>
 		<SeasonPickerOverlay
 			v-if="open"
 			:options="options"
-			:selected="current?.season_number ?? null"
+			:selected="currentNumber ?? null"
 			@select="choose"
 			@close="close"
 		/>

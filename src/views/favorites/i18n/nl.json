@@ -1,0 +1,8 @@
+{
+	"views": {
+		"favorites": {
+			"empty": "Nog geen favorieten",
+			"load_error": "Je favorieten laden lukte niet"
+		}
+	}
+}

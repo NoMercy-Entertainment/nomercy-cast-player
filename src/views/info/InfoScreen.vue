@@ -7,6 +7,9 @@ import { useInfoQuery } from '@/queries/useInfoQuery';
 import type { InfoData } from '@/queries/useInfoQuery';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
+import { usePacedValue } from '@/composables/usePacedValue';
+import { updateWatchlistInAllQueries } from '@/lib/watchlistCache';
+import { settingsStore } from '@/stores/settingsStore';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { BACKDROP_SIZE, buildImageUrl } from '@/lib/images/urls';
 import { applyThemeColor, clearThemeColor } from '@/lib/theme';
@@ -17,6 +20,7 @@ import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { apiFetch } from '@/lib/http/client';
 import { QueryKeys } from '@/queries/keys';
+import { useInfoRowsQuery } from '@/queries/useInfoRowsQuery';
 import { useTrailerQuery } from '@/queries/useTrailerQuery';
 import TrailerOverlay from '@/players/video/TrailerOverlay.vue';
 import InfoSeasons from './InfoSeasons.vue';
@@ -44,14 +48,11 @@ const { data, isLoading, error, refetch } = useInfoQuery(type, id);
 
 const info = computed(() => data.value ?? null);
 
-// APK InfoScreen calls SetThemeColor(focusColor, noRemove = true) where
-// focusColor = pickPaletteColor(infoData.colorPalette.poster). Mirror
-// that here so the Watch / Trailer / Watchlist focus rings + scrim
-// gradients pick up the movie's poster palette.
-watch(info, (next) => {
-	const palette = next?.color_palette;
-
-	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
+// InfoScreen.kt:181-186: the poster palette only, and only while the auto theme setting is on.
+watch([info, settingsStore.useAutoThemeColors], ([next, auto]) => {
+	applyThemeColor(auto
+		? (next?.color_palette?.poster ?? null)
+		: null);
 }, { immediate: true });
 
 focusedCardStore.setThemeFollowsFocus(false);
@@ -64,13 +65,19 @@ onBeforeUnmount(() => {
 });
 
 // HeroCardGate.kt:18-21: a focused movie or tv card with a backdrop replaces the title's own hero.
-const focusedTitle = computed(() => {
+const wantedTitle = computed(() => {
 	const card = focusedCardStore.debouncedCard.value;
 
 	return card && (card.type === 'movie' || card.type === 'tv') && card.backdrop
 		? card
 		: null;
 });
+const focusedTitle = usePacedValue(wantedTitle);
+
+// NMDetailActions.kt:104: the actions row hands the hero back to the base title.
+function releaseHero(): void {
+	focusedCardStore.setActive(null);
+}
 
 const heroTitle = computed(() => focusedTitle.value?.title ?? info.value?.title);
 const heroOverview = computed(() =>
@@ -104,7 +111,7 @@ const watchPath = computed(() => {
 // Metadata listing a trailer is not a trailer. The button waits until the
 // API has one ready to play, as the KMP TV screen does, so it never opens
 // nothing.
-const trailerLookup = useTrailerQuery(computed(() => info.value?.videos));
+const trailerLookup = useTrailerQuery(type, id, computed(() => info.value?.videos));
 const readyTrailer = computed(() => {
 	const result = trailerLookup.data.value;
 
@@ -114,16 +121,21 @@ const readyTrailer = computed(() => {
 });
 const trailerOpen = ref(false);
 
-const infoRows = computed(() =>
-	info.value
+// The server's rows when it honors version=lolomo; older servers get the rows built here.
+const serverRows = useInfoRowsQuery(type, id);
+const infoRows = computed(() => {
+	if (serverRows.data.value)
+		return serverRows.data.value;
+
+	return info.value
 		? buildInfoRows(info.value, {
 				collections: t('views.info.collections'),
 				writerDirector: t('views.info.writer_director'),
 				cast: t('views.info.cast'),
 				crew: t('views.info.crew'),
 			})
-		: [],
-);
+		: [];
+});
 
 const watchlistLabel = computed(() =>
 	info.value?.watchlist
@@ -209,6 +221,8 @@ async function toggleWatchlist(): Promise<void> {
 		return { ...prev, watchlist: newValue };
 	});
 
+	updateWatchlistInAllQueries(queryClient, link, newValue);
+
 	try {
 		const cleanLink = link.replace(API_PREFIX, '').replace(LEADING_SLASH, '');
 
@@ -225,6 +239,8 @@ async function toggleWatchlist(): Promise<void> {
 
 			return { ...prev, watchlist: !newValue };
 		});
+
+		updateWatchlistInAllQueries(queryClient, link, !newValue);
 	} finally {
 		isPostingWatchlist.value = false;
 	}
@@ -252,32 +268,36 @@ async function toggleWatchlist(): Promise<void> {
 		</div>
 
 		<div class="hero-row">
-			<div class="nm-hero-title-block">
-				<img
-					v-if="logoUrl"
-					class="nm-hero-logo"
-					:src="logoUrl"
-					:alt="heroTitle ?? ''"
-					loading="eager"
-					decoding="async"
-				>
-				<SplitTitleText
-					v-else
-					:title="heroTitle"
-					main-class="nm-hero-title-main"
-					subtitle-class="nm-hero-title-sub"
-				/>
-			</div>
+			<Transition name="hero-fade" mode="out-in">
+				<div :key="`${heroTitle}|${logoUrl}`" class="nm-hero-title-block">
+					<img
+						v-if="logoUrl"
+						class="nm-hero-logo"
+						:src="logoUrl"
+						:alt="heroTitle ?? ''"
+						loading="eager"
+						decoding="async"
+					>
+					<SplitTitleText
+						v-else
+						:title="heroTitle"
+						main-class="nm-hero-title-main"
+						subtitle-class="nm-hero-title-sub"
+					/>
+				</div>
+			</Transition>
 
-			<div class="nm-hero-overview-block">
-				<p v-if="heroOverview" class="nm-hero-overview">
-					{{ heroOverview }}
-				</p>
-			</div>
+			<Transition name="hero-fade" mode="out-in">
+				<div :key="heroOverview ?? ''" class="nm-hero-overview-block">
+					<p v-if="heroOverview" class="nm-hero-overview">
+						{{ heroOverview }}
+					</p>
+				</div>
+			</Transition>
 		</div>
 
 		<div class="info-list">
-			<div ref="actionsEl" class="actions">
+			<div ref="actionsEl" class="actions" @focusin="releaseHero">
 				<button
 					v-if="watchPath"
 					ref="watchEl"
@@ -368,6 +388,14 @@ async function toggleWatchlist(): Promise<void> {
 }
 .info-list::-webkit-scrollbar {
 	display: none;
+}
+.hero-fade-enter-active,
+.hero-fade-leave-active {
+	transition: opacity 200ms;
+}
+.hero-fade-enter-from,
+.hero-fade-leave-to {
+	opacity: 0;
 }
 .actions {
 	position: relative;

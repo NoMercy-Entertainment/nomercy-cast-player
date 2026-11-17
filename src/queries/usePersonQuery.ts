@@ -3,8 +3,11 @@ import { computed } from 'vue';
 import type { Ref } from 'vue';
 import { QueryKeys } from './keys';
 import { queryConfigs } from './configs';
+import { unwrapComponents } from './unwrapComponents';
+import type { ComponentPayload } from './unwrapComponents';
 import { apiFetch } from '@/lib/http/client';
 import type { PaletteColors } from '@/lib/images/urls';
+import type { Component } from '@/server-components/types';
 
 /** PersonResponse.kt CreditItem and KnownFor, the fields the TV page reads. */
 export interface PersonCredit {
@@ -26,7 +29,7 @@ export interface PersonCredit {
 	color_palette?: { backdrop?: PaletteColors; poster?: PaletteColors };
 }
 
-/** PersonResponse.kt: GET person/{id} answers this object itself. */
+/** PersonResponse.kt: an older server answers this object itself. */
 export interface PersonData {
 	id: string;
 	name: string;
@@ -37,15 +40,33 @@ export interface PersonData {
 	combined_credits?: { cast?: PersonCredit[]; crew?: PersonCredit[] };
 }
 
-async function fetchPerson(id: string): Promise<PersonData> {
-	const response = await apiFetch<PersonData | { data: PersonData }>({
-		path: `/api/v1/person/${id}`,
+/** Components from a server that honors version=lolomo, the plain person object from an older one. */
+export type PersonPage =
+	| { kind: 'components'; components: Component[] } |
+	{ kind: 'legacy'; person: PersonData };
+
+type PersonPayload = ComponentPayload | PersonData | { data: PersonData };
+
+// Servers older than media-server dev f1ce58a7b ignore version and answer the person DTO.
+async function fetchPerson(id: string): Promise<PersonPage> {
+	const response = await apiFetch<PersonPayload>({
+		path: `/api/v1/person/${id}?version=lolomo`,
 		method: 'GET',
 	});
+	const components = unwrapComponents(response as ComponentPayload);
 
-	return 'data' in response && response.data
-		? response.data
-		: response as PersonData;
+	if (components.length > 0)
+		return { kind: 'components', components };
+
+	const body = response as { data?: Partial<PersonData> } | null;
+	const candidate = (body && 'data' in body && body.data
+		? body.data
+		: response) as Partial<PersonData> | null;
+
+	if (candidate && !Array.isArray(candidate) && typeof candidate.name === 'string')
+		return { kind: 'legacy', person: candidate as PersonData };
+
+	return { kind: 'components', components: [] };
 }
 
 export function usePersonQuery(id: Ref<string>) {
