@@ -46,6 +46,7 @@ useFocusEntry({
 	display: inline-flex;
 	align-items: center;
 	position: relative;
+	isolation: isolate;
 	gap: 10px;
 	padding: 4px 12px 4px 8px;
 	height: auto;
@@ -64,7 +65,7 @@ useFocusEntry({
 .nav-link::after {
 	content: '';
 	position: absolute;
-	inset: -8px;
+	inset: -6px;
 	border: 2px solid transparent;
 	border-radius: 24px;
 	pointer-events: none;
@@ -72,12 +73,22 @@ useFocusEntry({
 }
 .nav-link.icon-only {
 	width: 36px;
-	padding: 0;
+	padding: 4px 0;
 	justify-content: center;
 }
 .nav-link.active {
-	background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.2)), var(--color-primary, oklch(0.7 0.2 285));
+	background: transparent;
 	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+/* TvNavigationBar.kt:285-287: primary fading to primary at 80 % alpha. */
+.nav-link.active::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	border-radius: inherit;
+	background: var(--color-primary, oklch(0.7 0.2 285));
+	-webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.8));
 }
 .nav-link:focus-visible {
 	outline: none;
@@ -93,6 +104,7 @@ useFocusEntry({
 	color: var(--cast-text-primary);
 }
 .label {
-	letter-spacing: 0.01em;
+	line-height: 24px;
+	letter-spacing: 0.5px;
 }
 </style>

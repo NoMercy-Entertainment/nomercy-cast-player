@@ -102,7 +102,7 @@ useFocusEntry({
 	margin: 0;
 	font-size: 14px;
 	font-weight: 500;
-	letter-spacing: -0.005em;
+	letter-spacing: 0;
 	color: oklch(1 0 0);
 }
 .show-all {
@@ -113,12 +113,14 @@ useFocusEntry({
 	width: var(--rail-card-width, 180px);
 	aspect-ratio: 2/3;
 	border-radius: var(--radius-card);
-	background: var(--nm-surface);
+	background: var(--cast-show-all-bg);
 	border: 1px solid var(--color-primary, var(--cast-white));
 	color: var(--cast-text-primary);
 	text-decoration: none;
 	font-size: 16px;
 	font-weight: 500;
+	line-height: normal;
+	letter-spacing: 0;
 	text-align: center;
 	padding: 12px;
 	cursor: pointer;
@@ -138,9 +140,5 @@ useFocusEntry({
 }
 .show-all-text {
 	white-space: pre-line;
-	display: -webkit-box;
-	-webkit-line-clamp: 3;
-	-webkit-box-orient: vertical;
-	overflow: hidden;
 }
 </style>

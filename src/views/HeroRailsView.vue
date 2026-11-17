@@ -37,7 +37,9 @@ const props = withDefaults(defineProps<{
 	skeletonCount?: number;
 	// A page without hero art (Music) says so; it then seeds no hero and keeps no hero room.
 	hero?: boolean;
-}>(), { hero: true });
+	// Music rows are Compose carousels in KMP: their title and gap differ from the video rows.
+	music?: boolean;
+}>(), { hero: true, music: false });
 
 const { t } = useTranslation();
 
@@ -107,7 +109,10 @@ if (props.hero) {
 		/>
 		<template v-else>
 			<HomeHero v-if="heroCard" :card="heroCard" />
-			<div class="nm-hero-rails" :class="{ 'nm-hero-rails--no-hero': !heroCard }">
+			<div
+				class="nm-hero-rails"
+				:class="{ 'nm-hero-rails--no-hero': !heroCard, 'nm-hero-rails--music': music }"
+			>
 				<Resolver
 					v-for="component in components"
 					:key="component.id"

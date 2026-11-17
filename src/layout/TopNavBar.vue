@@ -126,12 +126,11 @@ useFocusGroup({
 	width: 52px;
 	height: 52px;
 	object-fit: contain;
-	filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 .nav-items {
 	display: flex;
 	justify-content: center;
-	gap: 16px;
+	gap: 28px;
 	padding: 4px 16px 8px;
 }
 .trailing {

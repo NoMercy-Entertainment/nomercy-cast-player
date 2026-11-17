@@ -90,7 +90,6 @@
 	max-height: 58px;
 	object-fit: contain;
 	object-position: left center;
-	filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.7));
 }
 /* LeftColumn: the title and overview blocks keep their height, so the logo never moves with the text. */
 .nm-hero-title-block {
@@ -107,29 +106,28 @@
 	font-size: 28px;
 	font-weight: 600;
 	line-height: 26px;
-	letter-spacing: -0.005em;
-	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+	letter-spacing: 0;
 	color: var(--cast-text-primary);
 }
 .nm-hero-title-sub {
 	font-size: 19px;
 	font-weight: 500;
 	line-height: 24px;
-	color: oklch(0.92 0.005 250);
-	text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+	letter-spacing: 0;
+	color: var(--cast-text-primary);
 }
 .nm-hero-overview {
 	margin: 0;
 	font-size: 14px;
 	font-weight: 500;
 	line-height: 20px;
+	letter-spacing: 0.25px;
 	color: var(--cast-text-primary);
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 	-webkit-line-clamp: 5;
 	max-width: 600px;
-	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 /* ─── Pill button (Watch / Details / Play) ──────────────────────────── */
@@ -264,6 +262,16 @@
 	margin-top: 0;
 	padding-top: calc(var(--topnav-height) + 24px);
 	height: 100%;
+}
+/* Music rows are Compose NMCarousel: bodyLarge title, 2 dp to the cards (NMCarousel.kt:262-281). */
+.nm-hero-rails.nm-hero-rails--music .rail-header h2 {
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 24px;
+	letter-spacing: 0.5px;
+}
+.nm-hero-rails.nm-hero-rails--music .rail-section {
+	gap: 2px;
 }
 .nm-hero-rails > .rail-section {
 	scroll-margin-top: 120px;

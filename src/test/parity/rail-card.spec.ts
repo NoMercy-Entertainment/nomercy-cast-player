@@ -35,7 +35,7 @@ describe('cards match item_card_poster.xml / TvCardViewHolder.kt', () => {
 		expect(a['font-size']).toBe('16px');
 		expect(a['font-weight']).toBe('500');
 		expect(a.padding).toBe('12px');
-		expect(a.background).toBe('var(--nm-surface)');
+		expect(a.background).toBe('var(--cast-show-all-bg)');
 		expect(a.border).toBe('1px solid var(--color-primary, var(--cast-white))');
 		const f = decls(CAROUSEL, '.show-all:focus-visible');
 
@@ -46,7 +46,7 @@ describe('cards match item_card_poster.xml / TvCardViewHolder.kt', () => {
 	it('card.poster: resting 1 px palette stroke, replaced by the white ring on focus (:79-102)', () => {
 		const n = 'server-components/NMCard.vue';
 
-		expect(decls(n, '.poster::after').border).toBe('1px solid var(--card-accent, rgba(255, 255, 255, 0.18))');
+		expect(decls(n, '.poster::after').border).toBe('1px solid var(--card-accent, var(--color-primary, var(--cast-accent)))');
 		expect(decls(n, '.card:focus-visible .poster::after').border).toBe('2px solid var(--cast-white)');
 	});
 

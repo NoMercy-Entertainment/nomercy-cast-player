@@ -7,7 +7,7 @@ const CSS = 'styles/components.css';
 describe('nav matches TvNavigationBar.kt', () => {
 	it('nav.bar: pad 36, center gap 16 and pad 4/16/8 (:140-146,:178,:186)', () => {
 		expect(decls('layout/TopNavBar.vue', '.topnav').padding).toBe('0 36px');
-		expect(decls('layout/TopNavBar.vue', '.nav-items').gap).toBe('16px');
+		expect(decls('layout/TopNavBar.vue', '.nav-items').gap).toBe('28px');
 		expect(decls('layout/TopNavBar.vue', '.nav-items').padding).toBe('4px 16px 8px');
 	});
 
@@ -25,7 +25,8 @@ describe('nav matches TvNavigationBar.kt', () => {
 		expect(decls(NAV, '.nav-link.icon-only').width).toBe('36px');
 		const a = decls(NAV, '.nav-link.active');
 
-		expect(a.background).toBe('linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.2)), var(--color-primary, oklch(0.7 0.2 285))');
+		expect(a.background).toBe('transparent');
+		expect(decls(NAV, '.nav-link.active::before').background).toBe('var(--color-primary, oklch(0.7 0.2 285))');
 		expect(a['box-shadow']).toBe('0 6px 16px rgba(0, 0, 0, 0.35)');
 	});
 
@@ -33,7 +34,7 @@ describe('nav matches TvNavigationBar.kt', () => {
 		const c = decls('layout/ProfileChip.vue', '.profile-chip:focus-visible');
 
 		expect(c.transform).toBeUndefined();
-		expect(c.background).toContain('var(--color-primary');
+		expect(decls('layout/ProfileChip.vue', '.profile-chip:focus-visible::before').background).toContain('var(--color-primary');
 		expect(decls('layout/ProfileChip.vue', '.profile-chip')['box-shadow']).toBe('0 2px 4px rgba(0, 0, 0, 0.3)');
 	});
 
@@ -52,7 +53,7 @@ describe('nav matches TvNavigationBar.kt', () => {
 		expect(decls('styles/tv-safe.css', '.nav-link[data-focusable]:focus-visible')).toEqual({});
 		const r = decls(NAV, '.nav-link::after');
 
-		expect(r.inset).toBe('-8px');
+		expect(r.inset).toBe('-6px');
 		expect(r['border-radius']).toBe('24px');
 		expect(decls(NAV, '.nav-link:focus-visible::after')['border-color']).toBe('var(--color-primary, oklch(0.7 0.2 285))');
 	});

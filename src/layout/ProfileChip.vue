@@ -91,6 +91,8 @@ useFocusEntry({
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	padding: 0;
 	cursor: pointer;
+	position: relative;
+	isolation: isolate;
 	overflow: hidden;
 	outline: none;
 	transition: background var(--motion-fast);
@@ -98,7 +100,16 @@ useFocusEntry({
 	place-items: center;
 }
 .profile-chip:focus-visible {
-	background: linear-gradient(135deg, var(--color-primary, oklch(0.7 0.2 285)), oklch(0 0 0 / 0.6));
+	background: transparent;
+}
+/* TvNavigationBar.kt:224-229: primary fading to primary at 80 % alpha. */
+.profile-chip:focus-visible::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: var(--color-primary, oklch(0.7 0.2 285));
+	-webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.8));
 }
 .avatar {
 	width: 100%;

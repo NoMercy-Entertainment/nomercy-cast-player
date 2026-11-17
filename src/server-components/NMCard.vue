@@ -149,7 +149,7 @@ useFocusEntry({
 	content: '';
 	position: absolute;
 	inset: 0;
-	border: 1px solid var(--card-accent, rgba(255, 255, 255, 0.18));
+	border: 1px solid var(--card-accent, var(--color-primary, var(--cast-accent)));
 	border-radius: inherit;
 	pointer-events: none;
 }
@@ -174,6 +174,8 @@ useFocusEntry({
 	background: rgba(26, 26, 26, 0.749);
 	color: var(--cast-text-primary);
 	font-weight: 500;
+	line-height: normal;
+	letter-spacing: 0;
 }
 .caption p {
 	margin: 0;

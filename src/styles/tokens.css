@@ -33,6 +33,8 @@
 	--cast-bg-base: #11181c;
 	--cast-text-secondary: #f8f9fa;
 	--cast-accent: #8e4ec6;
+	/* The Show All card (TvCardViewHolder.kt:195). */
+	--cast-show-all-bg: #1a1a1a;
 	--cast-skip-bg: #262630eb;
 	--cast-skip-ink: #262630;
 }

@@ -147,6 +147,7 @@ useFocusEntry({
 .cover {
 	width: 100%;
 	aspect-ratio: 1 / 1;
+	margin: 4px;
 	border-radius: var(--radius-card);
 	overflow: hidden;
 	background: oklch(0.18 0.01 250);
@@ -165,21 +166,25 @@ useFocusEntry({
 	text-transform: uppercase;
 }
 .meta {
-	padding: 0 4px;
+	padding: 8px 4px;
 }
 .name {
 	margin: 0;
-	font-size: 14px;
-	font-weight: 600;
-	line-height: 1.2;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 16px;
+	letter-spacing: 0.5px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 .subtitle {
-	margin: 4px 0 0;
-	font-size: 12px;
-	color: var(--color-text-secondary);
+	margin: 2px 0 0;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 16px;
+	letter-spacing: 0.5px;
+	opacity: 0.7;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;

@@ -22,6 +22,7 @@ const { data, isLoading, error, refetch, isFetching } = useMusicStartQuery();
 		:empty-message="t('views.music.start_empty')"
 		:skeleton-count="2"
 		:hero="false"
+		music
 	>
 		<template #rails-end>
 			<PluginSlot kind="music" slot-name="home-row" />

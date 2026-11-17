@@ -29,6 +29,14 @@ body,
 	overflow: hidden;
 }
 
+/* A plain Compose Text is Material 3 bodyLarge; a TextView twin resets it. */
+body {
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 24px;
+	letter-spacing: 0.5px;
+}
+
 .cast-receiver-root {
 	background: black;
 }
