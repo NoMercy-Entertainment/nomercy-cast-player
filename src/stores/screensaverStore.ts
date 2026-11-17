@@ -1,18 +1,17 @@
 import { ref } from 'vue';
 import { playbackStore } from './playbackStore';
+import { settingsStore } from './settingsStore';
 
 /**
  * Idle / screensaver state per spec §12.11.
  *
  * - Idle timer resets on every D-pad keydown via useDPad.
- * - At IDLE_TIMEOUT_MS the screensaver activates (UI dims to ambient).
+ * - After the account's screensaverDelay minutes the screensaver activates (UI dims to ambient).
  * - During active video playback the screensaver is SUPPRESSED — user
  *   is intentionally watching even without interacting.
  * - Music keeps playing during screensaver; the album-art hero stays
  *   visible as ambient art (Spotify style).
  */
-
-const IDLE_TIMEOUT_MS = 5 * 60_000;
 
 const active = ref(false);
 let idleTimer: number | null = null;
@@ -32,7 +31,7 @@ function resetIdle(): void {
 		if (playbackStore.video.playing.value) return;
 
 		active.value = true;
-	}, IDLE_TIMEOUT_MS);
+	}, settingsStore.screensaverDelay.value * 60_000);
 }
 
 function deactivate(): void {

@@ -103,7 +103,6 @@ const DEFAULT_STYLE = {
 const AUTO_HIDE_MS = 5000;
 const WATCHDOG_MS = 500;
 const VOLUME_MS = 2000;
-const SEEK_STEP_SECONDS = 10;
 const NAMED_STYLE_CHOICES = {
 	edgeStyle: {
 		field: 'edgeStyle',
@@ -505,7 +504,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 	private seekByChapter(forward: boolean): void {
 		const starts = this.chapterList().map((chapter) => chapter.start);
-		const target = chapterSeekTarget(starts, this.engine.time(), forward, SEEK_STEP_SECONDS);
+		const target = chapterSeekTarget(starts, this.engine.time(), forward, settingsStore.videoSeekStep.value);
 
 		this.engine.time(target);
 	}

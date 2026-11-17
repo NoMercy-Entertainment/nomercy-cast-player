@@ -1,4 +1,5 @@
 import { nomercyApiBase } from '@/lib/nomercyApi';
+import { applySyncedSettings } from '@/lib/syncedSettings';
 import type { JsonValue } from '@/types/cast';
 
 /**
@@ -102,6 +103,7 @@ export async function resolveServerFromAppConfig(
 	const config = await fetchAppConfig(accessToken);
 
 	onStep('server');
+	applySyncedSettings(config?.settings);
 	const servers = config?.servers ?? [];
 	const languages = {
 		defaultSubtitleLanguage: languageSetting(config?.settings, 'defaultSubtitleLanguage'),
