@@ -1,4 +1,7 @@
+import { watch } from 'vue';
+import type { WatchStopHandle } from 'vue';
 import { throttle } from '@/lib/throttle';
+import type { TypedHub } from '@/lib/signalr/hubs';
 import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import type { ConnectedDeviceSnapshot, CurrentTrackSnapshot } from '@/stores/playbackStore';
@@ -320,16 +323,20 @@ function applyServerState(
 	}
 }
 
+function stateOf(payload: StatePayload | null): PlayerState | null | undefined {
+	if (!payload?.events)
+		return payload;
+
+	return [...payload.events].reverse().find((entry) => entry.type === 'PlayerStateChanged')?.event?.state;
+}
+
 function bindInbound(p: MusicEngineLike): void {
 	const hub = socketStore.musicHub.value;
 
 	if (!hub) return;
 
 	const onState = (payload: StatePayload | null): void => {
-		const changed = [...payload?.events ?? []].reverse().find((entry) => entry.type === 'PlayerStateChanged');
-		const state = payload?.events
-			? changed?.event?.state
-			: payload;
+		const state = stateOf(payload);
 		const wasOwn = activeDeviceId === castDeviceId();
 
 		activeDeviceId = state?.device_id ?? null;
@@ -404,3 +411,58 @@ export const musicSyncBridge = {
 		return engine;
 	},
 };
+
+export interface MusicCastList {
+	list_type: string;
+	list_id: string;
+	track_id?: string;
+}
+
+async function startCastPlayback(
+	hub: TypedHub,
+	state: PlayerState | null | undefined,
+	list: MusicCastList,
+): Promise<void> {
+	try {
+		if (!state?.item) {
+			if (list.track_id) {
+				await hub.invoke('StartPlaybackCommand', list.list_type, list.list_id, list.track_id);
+			}
+
+			return;
+		}
+
+		// Play only claims a session no device owns; ChangeDeviceCommand is not used
+		// because a server reads this receiver as a sleeping TV and relaunches it.
+		if (!state.device_id || state.device_id === castDeviceId()) {
+			await hub.invoke('PlaybackCommand', 'play', null);
+		}
+	} catch (error) {
+		recordSwallowed('claimMusicCast', error);
+	}
+}
+
+// A play_music cast only launches this receiver, and the sender releases the
+// session. The first state MusicHub pushes after connect says who owns it now.
+export function claimMusicCast(list: MusicCastList): void {
+	let bound: TypedHub | null = null;
+	let stop: WatchStopHandle | null = null;
+
+	const onState = (payload: StatePayload | null): void => {
+		const hub = bound;
+
+		stop?.();
+		hub?.off('MusicPlayerState', onState);
+		bound = null;
+
+		if (hub) {
+			void startCastPlayback(hub, stateOf(payload), list);
+		}
+	};
+
+	stop = watch(socketStore.musicHub, (hub) => {
+		bound?.off('MusicPlayerState', onState);
+		bound = hub;
+		hub?.on('MusicPlayerState', onState);
+	}, { immediate: true });
+}

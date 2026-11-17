@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import type { Router } from 'vue-router';
 import type { CastIntent } from '@/types/cast';
+import { claimMusicCast } from '@/players/music/syncBridge';
 
 /**
  * Navigation store — translates LAUNCH intents and post-LAUNCH sender pushes
@@ -67,7 +68,8 @@ export function dispatchInitialIntent(intent: CastIntent, router: Router): void 
 
 			break;
 		case 'play_music':
-			// Music player route lands in Phase 8.
+			claimMusicCast(intent);
+
 			void router.push({
 				path: '/now-playing',
 				query: {
