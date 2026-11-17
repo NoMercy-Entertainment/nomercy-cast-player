@@ -90,8 +90,10 @@ useFocusEntry({
 	background: var(--color-primary, oklch(0.7 0.2 285));
 	-webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.8));
 }
+/* tv-safe.css focus rule sets border-radius: inherit; the pill keeps its own capsule. */
 .nav-link:focus-visible {
 	outline: none;
+	border-radius: 20px;
 }
 .nav-link:focus-visible::after {
 	border-color: var(--color-primary, oklch(0.7 0.2 285));
