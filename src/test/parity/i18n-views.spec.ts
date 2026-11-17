@@ -17,8 +17,6 @@ const rows: I18nRow[] = [
 	['views/profile/AppSettingsScreen.vue', 'Use auto theme col', 'views.profile.auto_theme', 'Use auto theme colors'],
 	['views/profile/AppSettingsScreen.vue', 'Nothing leaves this device', 'views.profile.diag_send_now_hint', 'Nothing leaves this device until you choose this'],
 	['views/profile/AppSettingsScreen.vue', '\'Sending…\'', 'views.profile.diag_sending', 'Sending…'],
-	['views/search/SearchScreen.vue', 'Start typing to search.', 'views.search.start_typing', 'Start typing to search.'],
-	['views/search/SearchScreen.vue', 'No results for "', 'views.search.no_results', 'No results for "{{query}}".'],
 	['views/search/SearchKeyboard.vue', 'aria-label="Backspace"', 'views.search.backspace', 'Backspace'],
 	['views/search/SearchKeyboard.vue', 'aria-label="Search videos"', 'views.search_videos', 'Search videos', 'Video\'s zoeken'],
 	['views/splash/ReadyToCastScreen.vue', 'Connecting to your server…', 'views.splash.connecting_server', 'Connecting to your server…'],

@@ -7,8 +7,6 @@
 			"placeholder_music": "Song, album or artist…",
 			"space": "Space",
 			"backspace": "Backspace",
-			"start_typing": "Start typing to search.",
-			"no_results": "No results for \"{{query}}\".",
 			"error": "Couldn't search"
 		}
 	}

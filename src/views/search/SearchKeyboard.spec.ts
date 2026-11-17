@@ -9,7 +9,7 @@ describe('the search keyboard draws its utility keys with Moooom icons', () => {
 		const wrapper = mount(SearchKeyboard, { props: { mode: 'video' } });
 		const button = wrapper.get(`[aria-label="${focusKeyLabel}"]`);
 
-		return { button, icon: button.find('svg.moooom-icon').exists() ? button.get('svg.moooom-icon').attributes('data-icon') : undefined };
+		return { button, icon: button.element.querySelector('svg.moooom-icon')?.getAttribute('data-icon') };
 	};
 
 	it.each([

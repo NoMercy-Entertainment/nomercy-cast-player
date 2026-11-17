@@ -5,7 +5,7 @@ import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { useSearchQuery } from '@/queries/useSearchQuery';
 import Resolver from '@/server-components/Resolver.vue';
-import Skeleton from '@/components/feedback/Skeleton.vue';
+import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import SearchKeyboard from './SearchKeyboard.vue';
@@ -87,13 +87,9 @@ function setMode(next: 'video' | 'music'): void {
 			</header>
 
 			<div class="results nm-no-scrollbar">
-				<template v-if="!debouncedQuery">
-					<p class="hint">
-						{{ t('views.search.start_typing') }}
-					</p>
-				</template>
+				<template v-if="!debouncedQuery" />
 				<template v-else-if="isLoading">
-					<Skeleton type="rail" :count="6" />
+					<LoadingIndicator />
 				</template>
 				<template v-else-if="error">
 					<ErrorPanel
@@ -102,11 +98,7 @@ function setMode(next: 'video' | 'music'): void {
 						:context="t('views.search.error')"
 					/>
 				</template>
-				<template v-else-if="components.length === 0">
-					<p class="hint">
-						{{ t('views.search.no_results', { query: debouncedQuery }) }}
-					</p>
-				</template>
+				<template v-else-if="components.length === 0" />
 				<template v-else>
 					<Resolver
 						v-for="c in components"
@@ -176,10 +168,6 @@ function setMode(next: 'video' | 'music'): void {
 	display: flex;
 	flex-direction: column;
 	gap: 24px;
-}
-.hint {
-	color: var(--color-text-secondary);
-	font-size: 18px;
 }
 .refresh-hint {
 	color: var(--color-text-secondary);
