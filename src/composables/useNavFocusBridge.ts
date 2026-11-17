@@ -69,7 +69,16 @@ export function useNavFocusBridge(arg: FocusGroupHandle | BridgeArg): void {
 	});
 }
 
+// TvNavigationBar.kt:109-131: UP and BACK land on the selected tab, else the first item.
 export function focusTopnav(): boolean {
+	const selected = document.querySelector<HTMLElement>('.topnav .nav-link.active');
+
+	if (selected) {
+		selected.focus();
+
+		return true;
+	}
+
 	for (const key of TOPNAV_RESTORATION_KEYS) {
 		if (focusStore.requestFocus(key))
 			return true;
