@@ -1,27 +1,7 @@
-/* TV-safe area + focus ring rules per spec §10.13.
- * Browser-native focus ring; we don't paint our own. */
+/* TV-safe area rules per spec §10.13. */
 
+/* Each focusable draws its own KMP focus; Chrome 92 cannot round an outline, so none is added here. */
 [data-focusable]:focus-visible {
-	outline: var(--focus-ring-width) solid var(--focus-ring-color);
-	outline-offset: var(--focus-ring-offset);
-	border-radius: inherit;
-}
-
-/*
- * Components that paint their own palette-tinted focus indicator
- * (NMCard / NMMusicCard / track rows / etc.) suppress the white global
- * outline so we don't draw a double ring. The local component CSS owns
- * focus styling for these classes.
- */
-.card[data-focusable]:focus-visible,
-.music-card[data-focusable]:focus-visible,
-.music-home-card[data-focusable]:focus-visible,
-.hero-card[data-focusable]:focus-visible,
-.episode-card[data-focusable]:focus-visible,
-.genre-card[data-focusable]:focus-visible,
-.top-result[data-focusable]:focus-visible,
-.track-row[data-focusable]:focus-visible,
-.season-row[data-focusable]:focus-visible {
 	outline: none;
 }
 

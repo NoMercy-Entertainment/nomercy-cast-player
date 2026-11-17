@@ -112,6 +112,10 @@ useFocusEntry({
 	border-radius: inherit;
 	pointer-events: none;
 }
+/* TvCardViewHolder.kt:79-102: the white ring replaces the stroke, inside the cover. */
+.group-card:focus-visible .cover::after {
+	border: 2px solid var(--cast-white);
+}
 .cover img {
 	position: relative;
 	width: 100%;
