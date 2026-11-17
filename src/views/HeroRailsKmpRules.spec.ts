@@ -178,6 +178,39 @@ describe('the hero only shows for pages with carousels (NMLolomo.kt:74-75)', () 
 	});
 });
 
+describe('down from the nav enters the first visible row (VideoContentList.kt:87-105)', () => {
+	it('focuses the row that is on screen when the page is scrolled', async () => {
+		const wrapper = mount(HeroRailsView, {
+			attachTo: document.body,
+			props: {
+				restorationKey: `kmp-nav-down-${Math.random()}`,
+				data: [page([[card('a')], [card('b')]])],
+				isLoading: false,
+				refetch: vi.fn(),
+				errorContext: 'LOAD FAILED',
+				emptyMessage: 'EMPTY',
+			},
+		});
+
+		await settle();
+		(document.activeElement as HTMLElement | null)?.blur();
+
+		const rect = (top: number, bottom: number): DOMRect => ({ top, bottom } as DOMRect);
+		const scrollport = wrapper.get('.nm-hero-rails').element;
+		const [first, second] = wrapper.findAll('.rail-section').map((s) => s.element);
+
+		vi.spyOn(scrollport, 'getBoundingClientRect').mockReturnValue(rect(100, 540));
+		vi.spyOn(first as Element, 'getBoundingClientRect').mockReturnValue(rect(-200, 60));
+		vi.spyOn(second as Element, 'getBoundingClientRect').mockReturnValue(rect(110, 300));
+
+		window.dispatchEvent(new CustomEvent('cast-receiver:nav-down'));
+		await settle();
+
+		expect(second?.contains(document.activeElement)).toBe(true);
+		wrapper.unmount();
+	});
+});
+
 describe('the hero re-seeds on every page change (NMLolomo.kt:194-216)', () => {
 	it('shows the first card of the new page, not the last focused card of the old one', async () => {
 		focusedCardStore.seed({
