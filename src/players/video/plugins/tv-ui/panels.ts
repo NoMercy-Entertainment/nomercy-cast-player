@@ -130,6 +130,16 @@ export function topBar(opts: {
 	return { root, focus: () => settings.focus() } as const satisfies Panel;
 }
 
+// WatchScreen.kt:626-660: the title stays at the top right while the settings sidebar is open.
+export function stickyTitle(item: UiItem | undefined): HTMLElement {
+	const { title, subtitle } = titleAndSubtitle(item, t);
+	const second = subtitle
+		? el('div', 'tvui-subtitle', subtitle)
+		: false;
+
+	return el('div', 'tvui-sticky-title', el('div', 'tvui-titles', el('div', 'tvui-title', title), second));
+}
+
 export interface BottomBarState {
 	playing: boolean;
 	time: number;

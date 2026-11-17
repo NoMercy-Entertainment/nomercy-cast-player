@@ -513,3 +513,42 @@ describe('focus watchdog (TvUiPlugin.kt:424-485)', () => {
 		expect(root.contains(document.activeElement)).toBe(true);
 	});
 });
+
+describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)', () => {
+	function openSettings() {
+		const ctx = setup();
+		const video = document.createElement('video');
+		const safezone = document.createElement('div');
+		const overlay = document.createElement('div');
+
+		safezone.className = 'subtitle-safezone';
+		overlay.append(safezone);
+		ctx.player.container.append(video, overlay);
+		ctx.player.length = 0;
+		ctx.player.emit('item', { item: ctx.player.items[0], index: 0 });
+		ctx.player.emit('pause');
+		ctx.root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
+
+		return { ...ctx, video, safezone };
+	}
+
+	it('shrinks the video, the subtitle layer, the backdrop and the loading layer together', () => {
+		const { root, video, safezone } = openSettings();
+		const layers = [video, safezone, root.querySelector<HTMLElement>('.tvui-backdrop')!, root.querySelector<HTMLElement>('.tvui-loading')!];
+
+		expect(layers.map((layer) => layer.style.transform.includes('scale('))).toEqual([true, true, true, true]);
+	});
+
+	it('puts every layer back when the sidebar closes', () => {
+		const { root, video, safezone } = openSettings();
+
+		root.querySelector<HTMLElement>('.tvui-sidebar-header button')!.click();
+		expect([video.style.transform, safezone.style.transform]).toEqual(['', '']);
+	});
+
+	it('keeps the title at the top while the sidebar is open', () => {
+		const { root } = openSettings();
+
+		expect(root.querySelector('.tvui-sticky-title .tvui-title')?.textContent).toBe('One');
+	});
+});

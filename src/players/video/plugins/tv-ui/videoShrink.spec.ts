@@ -15,3 +15,14 @@ describe('video shrink beside the settings sidebar', () => {
 		expect(videoShrink(600).scale).toBe(0.5);
 	});
 });
+
+// WatchScreen.kt:550-551: the picture centers between the title bottom and the screen bottom.
+describe('vertical center below the title', () => {
+	it('shifts the picture half the title bottom down', () => {
+		expect(videoShrink(960, 69).translateY).toBe(34.5);
+	});
+
+	it('does not shift before the title is measured', () => {
+		expect(videoShrink(960).translateY).toBe(0);
+	});
+});

@@ -14,12 +14,12 @@ import { mediaAbsentClaims } from './errors';
 import { keyOf, routeRootKey, sharedKeyAction } from './keys';
 import type { KeyName } from './keys';
 import { backdropLayer, centerMessage, loadingLayer, showBackdrop, showLoading, skipPrompt } from './overlays';
-import { bottomBar, episodeDialog, errorDialog, languageDialog, messageDialog, preScreen, seekStrip, settingsPanel, subtitleSearchPanel, topBar, volumeIndicator } from './panels';
+import { bottomBar, episodeDialog, errorDialog, languageDialog, messageDialog, preScreen, seekStrip, settingsPanel, stickyTitle, subtitleSearchPanel, topBar, volumeIndicator } from './panels';
 import type { BottomBarHandle, Choice, Panel, SearchView, SeekStripHandle, UiItem } from './panels';
 import { downloadSubtitle, isRateLimited, searchSubtitles, searchTarget } from './subtitleSearch';
 import type { SubtitleCandidate } from './subtitleSearch';
 import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './seek';
-import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, videoShrink } from './settingsModel';
+import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, SETTINGS_EASING, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
 import './style.css';
@@ -1079,23 +1079,43 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		return pills;
 	}
 
-	// The picture moves aside for the sidebar, as TvUiPlugin.videoTransform does on KMP.
-	private shrinkVideo(open: boolean): void {
-		const video = this.root.parentElement?.querySelector('video');
+	// The whole picture moves aside for the sidebar: WatchScreen.kt:508-560 and TvUiPlugin.videoTransform.
+	private shrinkPicture(open: boolean): void {
+		const container = this.root.parentElement;
+		const layers = [
+			container?.querySelector<HTMLElement>('video'),
+			container?.querySelector<HTMLElement>('.subtitle-safezone'),
+			...this.root.querySelectorAll<HTMLElement>('.tvui-backdrop, .tvui-loading'),
+		];
 
-		if (!video) return;
+		const titleBottom = open
+			? this.titleBottom()
+			: 0;
 
-		const { scale, translateX, radius } = videoShrink(this.root.clientWidth || window.innerWidth);
+		const { scale, translateX, translateY, radius } = videoShrink(this.root.clientWidth || window.innerWidth, titleBottom);
 
-		video.style.transition = `transform ${SETTINGS_ANIM_MS}ms, border-radius ${SETTINGS_ANIM_MS}ms`;
+		for (const layer of layers) {
+			if (!layer) continue;
 
-		video.style.borderRadius = open
-			? `${radius}px`
-			: '0';
+			layer.style.transition = `transform ${SETTINGS_ANIM_MS}ms ${SETTINGS_EASING}, border-radius ${SETTINGS_ANIM_MS}ms ${SETTINGS_EASING}`;
 
-		video.style.transform = open
-			? `translateX(${translateX}px) scale(${scale})`
-			: '';
+			layer.style.borderRadius = open
+				? `${radius}px`
+				: '0';
+
+			layer.style.transform = open
+				? `translate(${translateX}px, ${translateY}px) scale(${scale})`
+				: '';
+		}
+	}
+
+	// Bottom of the title text inside its 32px padding, relative to the player: WatchScreen.kt:654-656.
+	private titleBottom(): number {
+		const titles = this.root.querySelector('.tvui-sticky-title .tvui-titles');
+
+		return titles
+			? titles.getBoundingClientRect().bottom - this.root.getBoundingClientRect().top
+			: 0;
 	}
 
 	private refresh(): void {
@@ -1167,6 +1187,10 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			parts.push(dialog.root);
 		}
 
+		if (this.settings) {
+			parts.push(stickyTitle(current));
+		}
+
 		if (this.volumeShown) {
 			parts.push(volumeIndicator(this.volumeShown.volume, this.volumeShown.muted));
 		}
@@ -1176,9 +1200,10 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		if (this.settingsFresh) {
 			this.settingsFresh = false;
 			this.root.querySelector('.tvui-settings')?.classList.add('tvui-settings-enter');
+			this.root.querySelector('.tvui-sticky-title')?.classList.add('tvui-sticky-title-enter');
 		}
 
-		this.shrinkVideo(this.settings !== null);
+		this.shrinkPicture(this.settings !== null);
 		this.updateBar();
 		dialog?.focus();
 

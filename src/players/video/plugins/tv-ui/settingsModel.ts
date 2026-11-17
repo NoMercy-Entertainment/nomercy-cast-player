@@ -19,8 +19,11 @@ const VIDEO_MARGIN_RIGHT = 48;
 
 export const SETTINGS_ANIM_MS = 400;
 
+// Compose's default tween easing (FastOutSlowInEasing), used by every native settings animation.
+export const SETTINGS_EASING = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
 // WatchScreen.kt:508-560: scale and shift that fit the picture right of the sidebar.
-export function videoShrink(width: number) {
+export function videoShrink(width: number, titleBottom = 0) {
 	const available = width - SIDEBAR_WIDTH - VIDEO_MARGIN - VIDEO_MARGIN_RIGHT;
 	const scale = Math.min(Math.max(available / width, 0.5), 1);
 	const translateX = SIDEBAR_WIDTH + VIDEO_MARGIN + available / 2 - width / 2;
@@ -28,6 +31,8 @@ export function videoShrink(width: number) {
 	return {
 		scale,
 		translateX,
+		// Centered between the title bottom and the screen bottom; 0 until the title is measured.
+		translateY: titleBottom / 2,
 		radius: 16,
 	} as const satisfies Record<string, number>;
 }
