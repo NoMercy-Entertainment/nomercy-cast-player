@@ -5,6 +5,8 @@ import { defineComponent, h, ref } from 'vue';
 import MusicListScreen from './MusicListScreen.vue';
 import { socketStore } from '@/stores/socketStore';
 import { focusStore } from '@/stores/focusStore';
+import { playbackStore } from '@/stores/playbackStore';
+import { musicSyncBridge } from '@/players/music/syncBridge';
 import { useDPad } from '@/composables/useDPad';
 
 const push = vi.fn();
@@ -39,7 +41,7 @@ function screen(): ReturnType<typeof mount> {
 	return mount(MusicListScreen);
 }
 
-describe('pressing Play only opens Now Playing once playback actually starts', () => {
+describe('pressing Play announces the start to the server and stays on the list', () => {
 	beforeEach(() => {
 		push.mockClear();
 	});
@@ -89,20 +91,7 @@ describe('pressing Play only opens Now Playing once playback actually starts', (
 		await flushPromises();
 
 		expect(invoke).toHaveBeenCalledWith('StartPlaybackCommand', 'album', 'alb-1', 'trk-1');
-		expect(push).toHaveBeenCalledWith('/now-playing');
-	});
-
-	it('navigates to Now Playing once the start command succeeds', async () => {
-		socketStore.musicHub.value = {
-			invoke: vi.fn(async () => undefined),
-		} as unknown as typeof socketStore.musicHub.value;
-
-		const wrapper = screen();
-
-		await wrapper.find('[aria-label="Play"]').trigger('click');
-		await flushPromises();
-
-		expect(push).toHaveBeenCalledWith('/now-playing');
+		expect(push).not.toHaveBeenCalled();
 	});
 });
 
@@ -143,7 +132,7 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 
 		expect(invoke).toHaveBeenCalledTimes(1);
 		expect(invoke).toHaveBeenCalledWith('StartPlaybackCommand', 'album', 'alb-1', 'trk-2');
-		expect(push).toHaveBeenCalledWith('/now-playing');
+		expect(push).not.toHaveBeenCalled();
 	});
 
 	it('starts track 2 once when OK is pressed on its row', async () => {
@@ -187,6 +176,118 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 		await flushPromises();
 
 		expect(document.activeElement).toBe(document.body.querySelector('[aria-label="Play"]'));
+	});
+});
+
+describe('the list page plays on this device like the KMP list screen', () => {
+	const playTrack = vi.fn();
+	const engine = { playTrack, play: vi.fn(), pause: vi.fn() };
+	const original = listData.value;
+
+	beforeEach(() => {
+		push.mockClear();
+		playTrack.mockClear();
+		vi.spyOn(musicSyncBridge, 'current').mockReturnValue(engine as never);
+		playbackStore.music.applyTrack(null, []);
+		playbackStore.music.applyList(null);
+		playbackStore.music.applyPlayState(false);
+		socketStore.musicHub.value = { invoke: vi.fn(async () => ({ ok: true })) } as never;
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+		listData.value = original;
+		socketStore.musicHub.value = null;
+	});
+
+	it('music-01: a track click loads the clicked track and the whole list into the engine', async () => {
+		const wrapper = screen();
+
+		await wrapper.findAll('.track-row')[1]!.trigger('click');
+		await flushPromises();
+
+		expect(playTrack).toHaveBeenCalledTimes(1);
+		expect(playTrack.mock.calls[0]![0]).toMatchObject({ id: 'trk-2' });
+		expect((playTrack.mock.calls[0]![1] as Array<{ id: string }>).map((t) => t.id)).toEqual(['trk-1', 'trk-2']);
+	});
+
+	it('music-03: starting a track keeps the user on the list', async () => {
+		const wrapper = screen();
+
+		await wrapper.findAll('.track-row')[0]!.trigger('click');
+		await wrapper.find('[aria-label="Play"]').trigger('click');
+		await flushPromises();
+
+		expect(push).not.toHaveBeenCalled();
+	});
+
+	it('music-04: a track playing from another list leaves Play as Play', () => {
+		listData.value = { ...original, link: 'music/albums/alb-1' } as never;
+		playbackStore.music.applyTrack({ id: 'trk-1', name: 'One' } as never, []);
+		playbackStore.music.applyPlayState(true);
+		playbackStore.music.applyList('music/playlists/other');
+
+		const wrapper = screen();
+
+		expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
+		expect(wrapper.find('[aria-label="Pause"]').exists()).toBe(false);
+	});
+
+	it('music-04: the same list shows Pause while it plays and has no Resume label', () => {
+		listData.value = { ...original, link: 'music/albums/alb-1' } as never;
+		playbackStore.music.applyTrack({ id: 'trk-1', name: 'One' } as never, []);
+		playbackStore.music.applyList('music/albums/alb-1');
+		playbackStore.music.applyPlayState(true);
+
+		const wrapper = screen();
+
+		expect(wrapper.find('[aria-label="Pause"]').exists()).toBe(true);
+
+		playbackStore.music.applyPlayState(false);
+
+		return wrapper.vm.$nextTick().then(() => {
+			expect(wrapper.find('[aria-label="Play"]').exists()).toBe(true);
+			expect(wrapper.text()).not.toContain('Resume');
+		});
+	});
+
+	it('music-04: Play is disabled when the list has no tracks', () => {
+		listData.value = { ...original, tracks: [] } as never;
+
+		const wrapper = screen();
+
+		expect(wrapper.find('[aria-label="Play"]').attributes('disabled')).toBeDefined();
+	});
+
+	it('music-06: the header reads Type - year with no count, duration or column header', () => {
+		listData.value = { ...original, type: 'albums', year: 2020 } as never;
+
+		const wrapper = screen();
+
+		expect(wrapper.find('.kind').text()).toBe('Album');
+		expect(wrapper.find('.year').text()).toBe('2020');
+		expect(wrapper.find('.tracks-head').exists()).toBe(false);
+		expect(wrapper.find('.track-row .duration').exists()).toBe(false);
+	});
+
+	it('music-06: a missing year falls back to the first track album year', () => {
+		listData.value = {
+			...original,
+			type: 'album',
+			tracks: [{ id: 't', title: 'T', album_track: [{ year: 1999 }] }],
+		} as never;
+
+		const wrapper = screen();
+
+		expect(wrapper.find('.year').text()).toBe('1999');
+	});
+
+	it('music-21: an overview without a description shows no About button', () => {
+		listData.value = { ...original, overview: 'Only an overview' } as never;
+
+		const wrapper = screen();
+
+		expect(wrapper.find('[aria-label="About"]').exists()).toBe(false);
 	});
 });
 
