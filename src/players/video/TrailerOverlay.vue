@@ -524,12 +524,20 @@ onBeforeUnmount(() => {
 	position: fixed;
 	inset: 0;
 	z-index: 200;
+	padding: 32px;
 	background: black;
 }
 .trailer-surface {
 	position: relative;
 	width: 100%;
 	height: 100%;
+}
+.trailer-surface :deep(video) {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
 .trailer-focus {
 	position: absolute;
