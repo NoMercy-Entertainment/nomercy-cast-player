@@ -67,26 +67,32 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 			el.focus({ preventScroll: !scroll });
 
 			if (scroll) {
+				const behavior = focusStore.isRestoringFocus()
+					? 'instant'
+					: 'smooth';
 				// RowTopAlignLayoutManager: a row's top, title included, sits at the list's top padding.
 				const row = group?.type === 'horizontal'
 					? el.closest<HTMLElement>('.nm-hero-rails > .rail-section')
 					: null;
-
-				if (row) {
-					el.style.scrollMarginTop = `${el.getBoundingClientRect().top - row.getBoundingClientRect().top}px`;
-				}
+				const port = row?.parentElement;
+				// Chrome 92 (the TV) ignores scroll-margin and scroll-padding here, so the list top is set by hand.
+				const rowTop = row && port
+					? port.scrollTop + row.getBoundingClientRect().top - port.getBoundingClientRect().top -
+					(Number.parseFloat(getComputedStyle(port).scrollPaddingTop) || 0)
+					: null;
 
 				el.scrollIntoView({
-					behavior: focusStore.isRestoringFocus()
-						? 'instant'
-						: 'smooth',
-					block: row
-						? 'start'
-						: 'nearest',
+					behavior,
+					block: 'nearest',
 					inline: group?.type === 'horizontal'
 						? 'start'
 						: 'center',
 				});
+
+				// Chrome 92 stops one smooth scroll when another starts, so a move along the row leaves the list alone.
+				if (port && rowTop !== null && Math.abs(Math.max(0, rowTop) - port.scrollTop) >= 1) {
+					port.scrollTo({ top: Math.max(0, rowTop), behavior });
+				}
 			}
 
 			opts.onFocus?.();

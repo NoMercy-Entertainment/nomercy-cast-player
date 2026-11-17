@@ -1,0 +1,98 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mount } from '@vue/test-utils';
+import { defineComponent, h, ref } from 'vue';
+import { useFocusEntry } from '@/composables/useFocusEntry';
+import type { FocusEntry } from '@/composables/useFocusEntry';
+
+// The TV's Chrome 92 ignores scroll-margin and scroll-padding in scrollIntoView, so a row landed
+// 34 px high (its title under the hero) and row 0 never scrolled back to 0. RowTopAlignLayoutManager
+// puts the row top at the list's top padding: the list scroll is set explicitly.
+
+function rect(top: number, height: number): DOMRect {
+	return {
+		top,
+		bottom: top + height,
+		left: 0,
+		right: 960,
+		width: 960,
+		height,
+		x: 0,
+		y: top,
+		toJSON: () => ({}),
+	};
+}
+
+function mountCard() {
+	const port = document.createElement('div');
+
+	port.className = 'nm-hero-rails';
+	port.style.scrollPaddingTop = '8px';
+	port.scrollTop = 0;
+	document.body.appendChild(port);
+
+	const row = document.createElement('section');
+
+	row.className = 'rail-section';
+	port.appendChild(row);
+
+	const host = document.createElement('div');
+
+	row.appendChild(host);
+
+	// The list's viewport starts at 254; row 2 sits 450 px down the list, its card 30 px under its top.
+	port.getBoundingClientRect = () => rect(254, 286);
+	row.getBoundingClientRect = () => rect(704, 220);
+
+	let entry!: FocusEntry;
+
+	const Card = defineComponent({
+		setup() {
+			const el = ref<HTMLElement | null>(null);
+
+			entry = useFocusEntry({
+				key: 'card',
+				el,
+				group: { type: 'horizontal', register: () => () => undefined },
+			});
+
+			return () => h('button', { ref: el, 'data-focusable': '' });
+		},
+	});
+
+	mount(Card, { attachTo: host });
+	(host.querySelector('button') as HTMLElement).getBoundingClientRect = () => rect(734, 180);
+
+	return { entry, port } as const satisfies { entry: FocusEntry; port: HTMLElement };
+}
+
+afterEach(() => {
+	document.body.innerHTML = '';
+});
+
+describe('a focused card puts its row top at the list top padding (RowTopAlignLayoutManager)', () => {
+	it('scrolls the list itself, not through scroll-margin', () => {
+		Element.prototype.scrollIntoView = vi.fn();
+		const { entry, port } = mountCard();
+		const scrollTo = vi.fn();
+
+		port.scrollTo = scrollTo as unknown as HTMLElement['scrollTo'];
+
+		entry.focus();
+
+		// 704 - 254 - 8 = 442: the row top lands 8 px under the list top on every engine.
+		expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 442 }));
+	});
+
+	it('leaves the vertical axis of scrollIntoView alone, so it cannot fight the list scroll', () => {
+		const into = vi.fn();
+
+		Element.prototype.scrollIntoView = into;
+		const { entry, port } = mountCard();
+
+		port.scrollTo = vi.fn() as unknown as HTMLElement['scrollTo'];
+
+		entry.focus();
+
+		expect(into).toHaveBeenCalledWith(expect.objectContaining({ block: 'nearest', inline: 'start' }));
+	});
+});
