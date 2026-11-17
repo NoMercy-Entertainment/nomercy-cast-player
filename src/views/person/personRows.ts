@@ -23,7 +23,11 @@ function card(data: NMCardWrapper): Component {
 	return {
 		id: data.id,
 		component: 'NMCard',
-		props: { id: data.id, title: data.title, data },
+		props: {
+			id: data.id,
+			title: data.title,
+			data,
+		},
 	} as const satisfies Component;
 }
 
@@ -34,10 +38,10 @@ function distinctCards(credits: PersonCredit[], subtitle: (c: PersonCredit) => s
 	for (const c of credits) {
 		const id = String(c.id);
 
-		if (!c.link || seen.has(id))
-			continue;
+		if (!c.link || seen.has(id)) continue;
 
 		seen.add(id);
+
 		out.push(card({
 			id,
 			title: c.title ?? c.name ?? '',
@@ -69,12 +73,14 @@ export function buildPersonRows(person: PersonData, labels: PersonRowLabels): Co
 		[labels.creator, crew.filter((c) => has(c.job, 'Creator'))],
 	];
 	const rows: Array<[string, string, Component[]]> = [
-		['person-known-for', labels.knownFor, distinctCards(person.known_for ?? [], (c) => c.character ?? undefined)],
-		...groups.map(([title, credits], index): [string, string, Component[]] => [
+		['person-known-for', labels.knownFor, distinctCards(person.known_for ?? [], (c) =>
+			c.character ?? undefined)],
+		...groups.map(([title, credits], index) => [
 			`person-group-${index}`,
 			title,
-			distinctCards(credits, (c) => c.character ?? c.job ?? undefined),
-		]),
+			distinctCards(credits, (c) =>
+				c.character ?? c.job ?? undefined),
+		] as const satisfies readonly [string, string, Component[]]),
 	];
 
 	return rows
@@ -82,7 +88,11 @@ export function buildPersonRows(person: PersonData, labels: PersonRowLabels): Co
 		.map(([id, title, items]) => ({
 			id,
 			component: 'NMCarousel',
-			props: { id, title, items },
+			props: {
+				id,
+				title,
+				items,
+			},
 		}) as const satisfies Component);
 }
 

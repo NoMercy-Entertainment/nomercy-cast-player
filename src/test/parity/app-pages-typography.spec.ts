@@ -17,7 +17,7 @@ describe('row 0: a plain Compose Text is Material 3 bodyLarge (16/24, spacing 0.
 		expect(b['font-weight']).toBe('400');
 	});
 
-	it('Android View TextView twins reset spacing and line height (item_card_poster.xml, item_tv_row.xml)', () => {
+	it('android View TextView twins reset spacing and line height (item_card_poster.xml, item_tv_row.xml)', () => {
 		expect(decls(CARD, '.caption')['letter-spacing']).toBe('0');
 		expect(decls(CARD, '.caption')['line-height']).toBe('normal');
 		expect(decls(CAROUSEL, '.show-all')['letter-spacing']).toBe('0');
@@ -59,6 +59,7 @@ describe('row 1: top nav bar matches TvNavigationBar.kt', () => {
 		const p = 'layout/ProfileChip.vue';
 
 		expect(decls(p, '.profile-chip:focus-visible').background).toBe('transparent');
+
 		expect(decls(p, '.profile-chip:focus-visible::before')['-webkit-mask-image']).toBe(
 			'linear-gradient(90deg, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0.8))',
 		);
@@ -74,8 +75,9 @@ describe('row 2: hero text matches VideoMusicHeroSection.kt', () => {
 	});
 
 	it('no text or logo shadow (:131-160,:173-194)', () => {
-		for (const s of ['.nm-hero-title-main', '.nm-hero-title-sub', '.nm-hero-overview'])
+		for (const s of ['.nm-hero-title-main', '.nm-hero-title-sub', '.nm-hero-overview']) {
 			expect(decls(CSS, s)['text-shadow']).toBeUndefined();
+		}
 
 		expect(decls(CSS, '.nm-hero-logo').filter).toBeUndefined();
 	});
@@ -106,7 +108,7 @@ describe('row 4: cards (TvCardViewHolder.kt:86-102,190-196; NMMusicCard.kt:192,2
 		expect(decls(CARD, '.poster::after').border).toBe('1px solid var(--card-accent, var(--color-primary, var(--cast-accent)))');
 	});
 
-	it('Show All: #1A1A1A, no line clamp', () => {
+	it('show All: #1A1A1A, no line clamp', () => {
 		expect(decls(CAROUSEL, '.show-all').background).toBe('var(--cast-show-all-bg)');
 		expect(decls('styles/tokens.css', ':root')['--cast-show-all-bg']).toBe('#1a1a1a');
 		expect(decls(CAROUSEL, '.show-all-text')['-webkit-line-clamp']).toBeUndefined();

@@ -17,7 +17,10 @@ const { t } = useTranslation();
 const id = computed(() => String(route.params.id ?? ''));
 const { data, isLoading, error, refetch, isFetching } = usePersonQuery(id);
 
-const knownFor = computed(() => (data.value ? personHeroBackdrop(data.value) : null));
+const knownFor = computed(() =>
+	data.value
+		? personHeroBackdrop(data.value)
+		: null);
 const hero = computed(() =>
 	data.value
 		? {
@@ -46,6 +49,7 @@ const rows = computed(() =>
 // PersonScreen.kt:56-60: the page color is the known-for backdrop palette.
 watch(knownFor, (next) => applyThemeColor(next?.color_palette?.backdrop ?? null), { immediate: true });
 focusedCardStore.setThemeFollowsFocus(false);
+
 onBeforeUnmount(() => {
 	focusedCardStore.setThemeFollowsFocus(true);
 	clearThemeColor();

@@ -15,27 +15,53 @@ Element.prototype.scrollIntoView = vi.fn();
 
 const { default: InfoScreen } = await import('@/views/info/InfoScreen.vue');
 
-const episode = (id: number, season: number) => ({
-	id,
-	episode_number: 1,
-	season_number: season,
-	title: `Episode ${id}`,
-	still: null,
-	link: `/tv/9/watch?season=${season}&episode=1`,
-});
+function episode(id: number, season: number) {
+	return {
+		id,
+		episode_number: 1,
+		season_number: season,
+		title: `Episode ${id}`,
+		still: null,
+		link: `/tv/9/watch?season=${season}&episode=1`,
+	};
+}
 
 const SPECIALS_FIRST = [
-	{ id: 10, season_number: 0, title: 'Specials', episodes: [episode(1, 0)] },
-	{ id: 11, season_number: 1, title: 'Season One', episodes: [episode(2, 1)] },
-	{ id: 12, season_number: 2, title: 'Season Two', episodes: [episode(3, 2)] },
+	{
+		id: 10,
+		season_number: 0,
+		title: 'Specials',
+		episodes: [episode(1, 0)],
+	},
+	{
+		id: 11,
+		season_number: 1,
+		title: 'Season One',
+		episodes: [episode(2, 1)],
+	},
+	{
+		id: 12,
+		season_number: 2,
+		title: 'Season Two',
+		episodes: [episode(3, 2)],
+	},
 ];
 
 let wrapper: VueWrapper;
 
 async function boot(seasons: unknown[], extra: Record<string, unknown> = {}): Promise<void> {
 	apiFetch.mockResolvedValue({
-		data: { id: '9', title: 'Example Show', link: '/tv/9', type: 'tv', watchlist: false, seasons, ...extra },
+		data: {
+			id: '9',
+			title: 'Example Show',
+			link: '/tv/9',
+			type: 'tv',
+			watchlist: false,
+			seasons,
+			...extra,
+		},
 	});
+
 	const router = createRouter({ history: createWebHistory(), routes: [] });
 
 	wrapper = mount(InfoScreen, {
@@ -43,6 +69,7 @@ async function boot(seasons: unknown[], extra: Record<string, unknown> = {}): Pr
 		attachTo: document.body,
 		global: { plugins: [VueQueryPlugin, router] },
 	});
+
 	await vi.waitFor(() => expect(document.querySelector('.nm-pill')).not.toBeNull());
 	await flushPromises();
 	await vi.dynamicImportSettled();
@@ -57,7 +84,13 @@ afterEach(() => {
 
 describe('row 5: info page matches InfoScreen.kt and LinkButton.kt', () => {
 	it('the hero is the title only: no year, length and rating line (VideoMusicHeroSection.kt:36-44)', async () => {
-		await boot([], { year: 2001, duration: 5400, voteAverage: 7.5, overview: 'Example overview.' });
+		await boot([], {
+			year: 2001,
+			duration: 5400,
+			voteAverage: 7.5,
+			overview: 'Example overview.',
+		});
+
 		expect(document.querySelector('.meta-row')).toBeNull();
 		expect(document.querySelector('.nm-hero-overview')?.getAttribute('style') ?? '').not.toContain('line-clamp');
 	});

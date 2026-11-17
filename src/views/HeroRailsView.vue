@@ -42,7 +42,11 @@ const props = withDefaults(defineProps<{
 	music?: boolean;
 	// A page about one subject (Person) keeps this hero whatever has focus; its rows start flush below it.
 	persistentHero?: FocusedCardData;
-}>(), { hero: true, music: false, persistentHero: undefined });
+}>(), {
+	hero: true,
+	music: false,
+	persistentHero: undefined,
+});
 
 const { t } = useTranslation();
 

@@ -17,12 +17,31 @@ const { useHeroSeed } = await import('@/composables/useHeroSeed');
 const { focusedCardStore } = await import('@/stores/focusedCardStore');
 const { default: HomeHero } = await import('@/views/home/HomeHero.vue');
 
-const carousel = (id: string, items: unknown[]) => ({ id, component: 'NMCarousel', props: { id, title: id, items } });
-const musicCard = (id: string) => ({
-	id,
-	component: 'NMMusicCard',
-	props: { id, data: { id, name: `Name ${id}`, artist: 'Example Artist', cover: `/${id}.jpg`, description: 'About it.' } },
-});
+function carousel(id: string, items: unknown[]) {
+	return {
+		id,
+		component: 'NMCarousel',
+		props: {
+			id,
+			title: id,
+			items,
+		},
+	};
+}
+
+function musicCard(id: string) {
+	return {
+		id,
+		component: 'NMMusicCard',
+		props: { id, data: {
+			id,
+			name: `Name ${id}`,
+			artist: 'Example Artist',
+			cover: `/${id}.jpg`,
+			description: 'About it.',
+		} },
+	};
+}
 
 afterEach(() => {
 	apiFetch.mockReset();
@@ -33,11 +52,16 @@ describe('row 7: music start matches MusicStartScreen.kt via TvLolomoScreen', ()
 	it('asks for the lolomo layout and draws only carousels with content (MusicStartRepository.kt:38, HasContent.kt:38-48)', async () => {
 		apiFetch.mockResolvedValue({
 			data: [
-				{ id: 'tile', component: 'NMMusicHomeCard', props: { id: 'tile', data: { id: 'tile' } } },
+				{
+					id: 'tile',
+					component: 'NMMusicHomeCard',
+					props: { id: 'tile', data: { id: 'tile' } },
+				},
 				carousel('empty', []),
 				carousel('rows', [musicCard('a')]),
 			],
 		});
+
 		const seen = ref<unknown>();
 		const Host = defineComponent({
 			setup() {
@@ -78,7 +102,12 @@ describe('row 7: music start matches MusicStartScreen.kt via TvLolomoScreen', ()
 	});
 
 	it('the hero shows the artist byline on line 1 of the overview block (VideoMusicHeroSection.kt:171-183)', () => {
-		const wrapper = mount(HomeHero, { props: { card: { id: 'a', title: 'Name a', artist: 'Example Artist', overview: 'About it.' } } });
+		const wrapper = mount(HomeHero, { props: { card: {
+			id: 'a',
+			title: 'Name a',
+			artist: 'Example Artist',
+			overview: 'About it.',
+		} } });
 
 		expect(wrapper.get('.nm-hero-byline').text()).toBe('Example Artist');
 		const b = decls('styles/components.css', '.nm-hero-byline');

@@ -28,9 +28,9 @@ const options = computed(() =>
 );
 // InfoScreen.kt:167-172: season 1 opens first, else the first one (Specials is season 0).
 const current = computed(() =>
-	props.seasons.find((s) => s.season_number === selected.value)
-	?? props.seasons.find((s) => s.season_number === 1)
-	?? props.seasons[0],
+	props.seasons.find((s) => s.season_number === selected.value) ??
+	props.seasons.find((s) => s.season_number === 1) ??
+	props.seasons[0],
 );
 const label = computed(() => options.value.find((o) => o.number === current.value?.season_number)?.label ?? '');
 
@@ -61,7 +61,13 @@ const rail = computed(() => {
 		id,
 		component: 'NMCarousel',
 		// With one season there is no chip, so the row title names it (InfoComponentMapping.kt:56-62).
-		props: { id, items, title: props.seasons.length === 1 ? label.value : undefined },
+		props: {
+			id,
+			items,
+			title: props.seasons.length === 1
+				? label.value
+				: undefined,
+		},
 	} as const satisfies Component;
 });
 

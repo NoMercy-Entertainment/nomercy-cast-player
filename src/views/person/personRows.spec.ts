@@ -13,21 +13,27 @@ const labels = {
 	creator: 'Creator',
 };
 
-const credit = (id: number, extra: Record<string, unknown> = {}) => ({
-	id,
-	title: `Title ${id}`,
-	link: `/movie/${id}`,
-	media_type: 'movie',
-	hasItem: true,
-	...extra,
-});
+function credit(id: number, extra: Record<string, unknown> = {}) {
+	return {
+		id,
+		title: `Title ${id}`,
+		link: `/movie/${id}`,
+		media_type: 'movie',
+		hasItem: true,
+		...extra,
+	};
+}
 
 const person: PersonData = {
 	id: '1',
 	name: 'Example Person',
 	biography: 'An example biography.',
 	profile: '/profile.jpg',
-	known_for: [credit(1, { backdrop: '/a.jpg', vote_count: 5, character: 'Lead' }), credit(2, { backdrop: '/b.jpg', vote_count: 9 }), credit(1)],
+	known_for: [credit(1, {
+		backdrop: '/a.jpg',
+		vote_count: 5,
+		character: 'Lead',
+	}), credit(2, { backdrop: '/b.jpg', vote_count: 9 }), credit(1)],
 	combined_credits: {
 		cast: [credit(3, { character: 'Cameo' }), credit(4, { hasItem: false })],
 		crew: [
@@ -73,7 +79,12 @@ describe('row 6: person page matches PersonScreen.kt and PersonComponentMapping.
 	});
 
 	it('an empty group draws no row', () => {
-		const rows = buildPersonRows({ id: '2', name: 'Other', known_for: [], combined_credits: { cast: [], crew: [] } }, labels);
+		const rows = buildPersonRows({
+			id: '2',
+			name: 'Other',
+			known_for: [],
+			combined_credits: { cast: [], crew: [] },
+		}, labels);
 
 		expect(rows).toEqual([]);
 	});

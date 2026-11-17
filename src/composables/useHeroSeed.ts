@@ -26,7 +26,7 @@ interface MusicSeed extends FocusedCardData {
 	description?: string;
 }
 
-export function musicHero(card: MusicSeed): FocusedCardData {
+export function musicHero(card: MusicSeed) {
 	return {
 		id: card.id,
 		title: card.name ?? card.title,
@@ -37,7 +37,7 @@ export function musicHero(card: MusicSeed): FocusedCardData {
 		link: card.link,
 		type: card.type,
 		color_palette: card.color_palette,
-	};
+	} as const satisfies FocusedCardData;
 }
 
 // Home is a lolomo of carousels of cards, so the first card sits two levels down.
