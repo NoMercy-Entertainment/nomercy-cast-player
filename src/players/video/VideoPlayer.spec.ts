@@ -128,7 +128,6 @@ describe('videoPlayer starts the cast watch session', () => {
 
 		expect(player.setup).toHaveBeenCalledWith(expect.objectContaining({
 			playlist: [item],
-			autoPlay: true,
 		}));
 
 		expect(player.queue()).toHaveLength(1);
@@ -537,6 +536,23 @@ describe('videoPlayer runs on the tv-ui plugin', () => {
 		const { wrapper, player } = await mountWith({ resumeAt: 42 });
 
 		expect(tvUiCall(player)![1]?.skipPreScreen).toBe(true);
+
+		wrapper.unmount();
+	});
+
+	// WatchScreen.kt:425-435: autoplay only when the pre-screen is skipped, or the film starts under it.
+	it('holds playback for the pre-screen when the user opens a title on the TV', async () => {
+		const { wrapper, player } = await mountWith();
+
+		expect(player.setup).toHaveBeenCalledWith(expect.objectContaining({ autoPlay: false }));
+
+		wrapper.unmount();
+	});
+
+	it('starts playback at once for a cast', async () => {
+		const { wrapper, player } = await mountWith({ isCast: true });
+
+		expect(player.setup).toHaveBeenCalledWith(expect.objectContaining({ autoPlay: true }));
 
 		wrapper.unmount();
 	});

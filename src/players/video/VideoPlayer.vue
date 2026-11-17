@@ -188,8 +188,10 @@ onMounted(async () => {
 		});
 
 		// A cast, or a handed-over position, starts playback at once, with no pre-screen.
+		const skipPreScreen = props.isCast === true || (typeof props.resumeAt === 'number' && props.resumeAt > 0);
+
 		player.addPlugin(TvUiPlugin, {
-			skipPreScreen: props.isCast === true || (typeof props.resumeAt === 'number' && props.resumeAt > 0),
+			skipPreScreen,
 			onExit: () => leaveToPreviousOrHome(router),
 		});
 
@@ -202,7 +204,8 @@ onMounted(async () => {
 			// The server sends media paths relative to itself; posters are TMDB paths.
 			baseUrl: authStore.serverUrl.value ?? undefined,
 			baseImageUrl: `${TMDB_BASE}/original`,
-			autoPlay: true,
+			// Otherwise the pre-screen's Play starts it (KMP WatchScreen.kt:425-435).
+			autoPlay: skipPreScreen,
 			language: authStore.locale.value ?? 'en',
 			// The account's synced pick: this player has no stored choice of its own.
 			defaultSubtitleLanguage: authStore.defaultSubtitleLanguage.value ?? undefined,
