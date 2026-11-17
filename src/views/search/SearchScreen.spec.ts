@@ -61,7 +61,7 @@ describe('search when the search request fails', () => {
 
 		await wrapper.vm.$nextTick();
 
-		vi.advanceTimersByTime(300);
+		vi.advanceTimersByTime(1300);
 		await wrapper.vm.$nextTick();
 
 		const text = wrapper.text();

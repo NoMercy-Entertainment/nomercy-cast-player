@@ -6,6 +6,7 @@ import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { useSearchQuery } from '@/queries/useSearchQuery';
 import Resolver from '@/server-components/Resolver.vue';
+import { hasContent } from '@/server-components/hasContent';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
@@ -41,9 +42,12 @@ watch(queryStr, (val) => {
 		window.clearTimeout(debounceTimer);
 	}
 
+	// SearchViewModel.kt:29-32: 1250 ms after the last key, and nothing under 3 characters.
 	debounceTimer = window.setTimeout(() => {
-		debouncedQuery.value = val;
-	}, 250);
+		debouncedQuery.value = val.length >= 3
+			? val
+			: '';
+	}, 1250);
 });
 
 const placeholder = computed(() =>
@@ -55,8 +59,9 @@ const queryType = computed(() =>
 	mode.value === 'music'
 		? 'music'
 		: 'all');
-const { data, isLoading, isFetching, error, refetch } = useSearchQuery(queryType, debouncedQuery);
+const { data, isLoading, error, refetch } = useSearchQuery(queryType, debouncedQuery);
 const components = computed(() => data.value ?? []);
+const visible = computed(() => components.value.filter(hasContent));
 
 function appendLetter(l: string): void {
 	queryStr.value += l;
@@ -94,6 +99,13 @@ function setMode(next: 'video' | 'music'): void {
 
 			<div class="results nm-no-scrollbar">
 				<template v-if="!debouncedQuery" />
+				<template v-else-if="components.length > 0">
+					<Resolver
+						v-for="c in visible"
+						:key="c.id"
+						:component="c"
+					/>
+				</template>
 				<template v-else-if="isLoading">
 					<LoadingIndicator />
 				</template>
@@ -103,17 +115,6 @@ function setMode(next: 'video' | 'music'): void {
 						:retry="() => refetch()"
 						:context="t('views.search.error')"
 					/>
-				</template>
-				<template v-else-if="components.length === 0" />
-				<template v-else>
-					<Resolver
-						v-for="c in components"
-						:key="c.id"
-						:component="c"
-					/>
-					<p v-if="isFetching" class="refresh-hint">
-						{{ t('views.refreshing') }}
-					</p>
 				</template>
 			</div>
 		</section>
@@ -176,9 +177,5 @@ function setMode(next: 'video' | 'music'): void {
 	display: flex;
 	flex-direction: column;
 	gap: 24px;
-}
-.refresh-hint {
-	color: var(--color-text-secondary);
-	font-size: 13px;
 }
 </style>

@@ -100,7 +100,8 @@ export function useDPad(router: Router): void {
 				handled = move('right');
 				break;
 			case 'Enter':
-				// A held OK acts once (TvNavigationBar.kt:331-336); repeats are consumed.
+				// TvNavigationBar.kt:331-336, AppSettingsScreen.kt:1552 and SearchKeyboard.kt:141-205:
+				// a held OK acts once, on the first press.
 				handled = e.repeat
 					? true
 					: focusStore.dispatchAction();

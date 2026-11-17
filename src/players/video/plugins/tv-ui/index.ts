@@ -117,7 +117,6 @@ const DEFAULT_STYLE = {
 const AUTO_HIDE_MS = 5000;
 const WATCHDOG_MS = 500;
 const VOLUME_MS = 2000;
-const SEEK_STEP_SECONDS = 10;
 // SkipOverlay.kt:190,224: the pill shows for 10 s and takes focus 200 ms after it appears.
 const SKIP_VISIBLE_MS = 10_000;
 const SKIP_FOCUS_MS = 200;
@@ -593,7 +592,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 	private seekByChapter(forward: boolean): void {
 		const starts = this.chapterList().map((chapter) => chapter.start);
-		const target = chapterSeekTarget(starts, this.engine.time(), forward, SEEK_STEP_SECONDS);
+		const step = settingsStore.videoSeekStep.value;
+		const target = chapterSeekTarget(starts, this.engine.time(), forward, step);
 
 		this.engine.time(target);
 	}

@@ -141,6 +141,27 @@ describe('oK runs the focused action once', () => {
 		expect(settingsStore.subtitleHints.value).toBe(false);
 	});
 
+	// AppSettingsScreen.kt:1552 needs repeatCount == 0; SearchKeyboard.kt types a held OK once.
+	it('does not run the action again while OK is held', () => {
+		const run = vi.fn();
+		const wrapper = mount(ActionOnly, { attachTo: document.body, props: { onRun: run } });
+		const button = wrapper.find('button').element;
+
+		button.focus();
+
+		for (const repeat of [false, true, true]) {
+			button.dispatchEvent(new KeyboardEvent('keydown', {
+				key: 'Enter',
+				repeat,
+				bubbles: true,
+				cancelable: true,
+			}));
+		}
+
+		expect(run).toHaveBeenCalledTimes(1);
+		wrapper.unmount();
+	});
+
 	it('control: an element with only an action runs it once', () => {
 		const run = vi.fn();
 		const wrapper = mount(ActionOnly, { attachTo: document.body, props: { onRun: run } });

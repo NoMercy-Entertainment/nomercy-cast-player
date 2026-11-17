@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveServerFromAppConfig } from './resolveServer';
+import { syncedSettings } from './syncedSettings';
+import { settingsStore } from '@/stores/settingsStore';
 
 function appConfig(settings?: Record<string, unknown>): Response {
 	return new Response(JSON.stringify({
@@ -24,6 +26,42 @@ describe('resolveServerFromAppConfig', () => {
 
 		expect(server?.defaultSubtitleLanguage).toBe('eng');
 		expect(server?.defaultAudioLanguage).toBe('jpn');
+	});
+
+	// SyncedSettingsRegistry.kt:60-83 lists 22 keys; SettingsSyncEngine.kt:304-337 applies a valid server value.
+	it('applies the account\'s synced settings to the receiver', async () => {
+		vi.stubGlobal('fetch', vi.fn(async () => appConfig({
+			autoSkipChapters: { value: true, updatedAt: 1 },
+			autoThemeColors: { value: false, updatedAt: 1 },
+			videoSeekStep: { value: 30, updatedAt: 1 },
+			screensaverDelay: { value: 1, updatedAt: 1 },
+			colorScheme: { value: 'light', updatedAt: 1 },
+		})));
+
+		await resolveServerFromAppConfig('token');
+
+		expect(settingsStore.autoSkipChapters.value).toBe(true);
+		expect(settingsStore.useAutoThemeColors.value).toBe(false);
+		expect(settingsStore.videoSeekStep.value).toBe(30);
+		expect(settingsStore.screensaverDelay.value).toBe(1);
+		expect(syncedSettings.value.colorScheme).toBe('light');
+	});
+
+	it('skips a synced value outside its range or type, as the native validators do', async () => {
+		vi.stubGlobal('fetch', vi.fn(async () => appConfig({
+			videoSeekStep: { value: 500, updatedAt: 1 },
+			screensaverDelay: { value: 'soon', updatedAt: 1 },
+			colorScheme: { value: 'purple', updatedAt: 1 },
+		})));
+
+		settingsStore.videoSeekStep.value = 10;
+		settingsStore.screensaverDelay.value = 5;
+
+		await resolveServerFromAppConfig('token');
+
+		expect(settingsStore.videoSeekStep.value).toBe(10);
+		expect(settingsStore.screensaverDelay.value).toBe(5);
+		expect(syncedSettings.value.colorScheme).toBeUndefined();
 	});
 
 	it('reads no language from an empty or missing setting', async () => {

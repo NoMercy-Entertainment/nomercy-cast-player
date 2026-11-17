@@ -51,6 +51,10 @@ const subtitleHints = ref(stored.subtitleHints);
 // Opt-in: only an explicit true uploads a crash report.
 const crashReports = ref(stored.crashReports === true);
 
+// SyncedSettingsRegistry.kt:67-68, SharedMainScreen.kt:168: account values, defaults 10 s and 5 min.
+const videoSeekStep = ref(10);
+const screensaverDelay = ref(5);
+
 function persist(): void {
 	try {
 		const data = {
@@ -81,4 +85,6 @@ export const settingsStore = {
 	useAutoThemeColors,
 	subtitleHints,
 	crashReports,
+	videoSeekStep,
+	screensaverDelay,
 };
