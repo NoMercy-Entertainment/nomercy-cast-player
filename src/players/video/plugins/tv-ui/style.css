@@ -579,8 +579,7 @@
 }
 .tvui-skip {
 	position: absolute;
-	right: 52px;
-	bottom: 140px;
+	bottom: 132px;
 	background: var(--cast-skip-bg);
 	color: var(--cast-white);
 	padding: 10px 20px;
@@ -592,17 +591,53 @@
 	color: var(--cast-skip-ink);
 	outline: 0;
 }
-.tvui-skip + .tvui-skip {
-	bottom: 200px;
+.tvui-skip-start {
+	left: 52px;
 }
+.tvui-skip-end {
+	right: 52px;
+}
+/* SubtitleSearchDialog.kt:108-124: a centered card, 420 to 640 wide, on a 0.85 dim. */
 .tvui-search {
-	align-items: flex-start;
+	align-items: center;
+	justify-content: center;
+	background: rgb(0 0 0 / 0.85);
 }
 .tvui-search-card {
 	width: 640px;
+	min-width: 420px;
+	padding: 28px;
+	border-radius: 16px;
+	border: 1px solid rgb(255 255 255 / 0.14);
+	background: var(--cast-show-all-bg);
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+}
+/* ErrorOverlay.kt:106-135: a centered card over the picture, no dim behind it. */
+.tvui-error {
+	background: transparent;
+}
+.tvui-error-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 32px;
+	border-radius: 16px;
+	background: var(--cast-surface-variant);
+}
+.tvui-error-card > .tvui-icon {
+	width: 64px;
+	height: 64px;
+	margin-bottom: 16px;
+	color: var(--cast-accent);
+}
+/* ContentRatingBadge.kt:55-63: 32 by 24, tinted to the text color. */
+.tvui-rating {
+	width: 32px;
+	height: 24px;
+	object-fit: contain;
+	filter: brightness(0) invert(1);
 }
 .tvui-result-language {
 	font-weight: 600;

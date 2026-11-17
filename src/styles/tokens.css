@@ -35,6 +35,8 @@
 	--cast-accent: #8e4ec6;
 	/* The Show All card (TvCardViewHolder.kt:195). */
 	--cast-show-all-bg: #1a1a1a;
+	/* The error card (ErrorOverlay.kt:128): surfaceVariant, slate_11 in the dark scheme (NoMercyTheme.kt:577). */
+	--cast-surface-variant: #687076;
 	--cast-skip-bg: #262630eb;
 	--cast-skip-ink: #262630;
 }
