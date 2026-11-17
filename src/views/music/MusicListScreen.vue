@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { useFocusEntry } from '@/composables/useFocusEntry';
+import { useAutoRetry } from '@/composables/useAutoRetry';
 import { useMusicListQuery } from '@/queries/useMusicListQuery';
 import type { MusicTrack } from '@/queries/useMusicListQuery';
 import { buildImageUrl, SQUARE_SIZE } from '@/lib/images/urls';
@@ -34,6 +35,18 @@ const type = computed(() => String(route.params.type ?? ''));
 const id = computed(() => String(route.params.id ?? ''));
 
 const { data, isLoading, error, refetch } = useMusicListQuery(type, id);
+
+// A canceled request is not a failure: the page keeps loading or keeps its list.
+const shownError = computed(() => {
+	const err = error.value as Error | null;
+
+	return err && err.name !== 'AbortError'
+		? err
+		: null;
+});
+
+// Same 15 s self-retry as the other music pages (TvLolomoScreen FAILURE_RETRY_MS).
+useAutoRetry({ error: shownError, refetch: () => refetch() });
 
 const list = computed(() => data.value ?? null);
 const coverUrl = computed(() => buildImageUrl(list.value?.cover ?? null, SQUARE_SIZE));
@@ -325,10 +338,10 @@ function trackArtistText(track: MusicTrack): string {
 </script>
 
 <template>
-	<LoadingIndicator v-if="isLoading && !list" />
+	<LoadingIndicator v-if="(isLoading || (error && !shownError)) && !list" />
 	<ErrorPanel
-		v-else-if="error"
-		:error="error as Error"
+		v-else-if="shownError"
+		:error="shownError"
 		:retry="() => refetch()"
 		:context="t('views.music.list_error')"
 	/>

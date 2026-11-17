@@ -95,6 +95,27 @@ describe('the receiver http client records every request', () => {
 		await expect(apiFetch({ path: '/api/v1/home' })).rejects.toBeTruthy();
 	}, 20_000);
 
+	it('names a timeout as a timeout, never as an abort by the user', async () => {
+		vi.useFakeTimers();
+
+		vi.stubGlobal('fetch', vi.fn((_url: string, init?: RequestInit) => new Promise((_resolve, reject) => {
+			init?.signal?.addEventListener('abort', () => {
+				reject(new DOMException('The user aborted a request.', 'AbortError'));
+			});
+		})));
+
+		try {
+			const pending = apiFetch({ path: '/api/v1/home' });
+			const outcome = pending.catch((error: Error) => error) as Promise<Error>;
+
+			await vi.advanceTimersByTimeAsync(15_001);
+
+			expect((await outcome).message).toBe('Request timed out');
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it('still sends and still obeys the caller abort on a TV browser without AbortSignal.any or AbortSignal.timeout', async () => {
 		const { any, timeout } = AbortSignal;
 

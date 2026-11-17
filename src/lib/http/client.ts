@@ -77,7 +77,7 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 	// See specs/nomercy-app-kmp/diagnostics-capture-everything.md.
 	const startedAt = performance.now();
 
-	const { signal, clear } = withTimeout(opts.signal, 15_000);
+	const { signal, clear, timedOut } = withTimeout(opts.signal, 15_000);
 
 	try {
 		const response = await fetch(buildUrl(opts.path), {
@@ -92,6 +92,11 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 	} catch (error) {
 		clear();
 		recordCompleted(opts, 0, startedAt);
+
+		// Our own timeout reads as "The user aborted a request." in the browser; say what it was.
+		if (timedOut())
+			throw new Error('Request timed out', { cause: error });
+
 		throw error;
 	}
 }
@@ -101,8 +106,12 @@ async function singleAttempt(opts: FetchOptions): Promise<Response> {
 // On success the timer keeps running: it also ends a body that stalls mid-read.
 function withTimeout(callerSignal: AbortSignal | null | undefined, ms: number) {
 	const controller = new AbortController();
+	let fired = false;
 	const abort = (): void => controller.abort();
-	const timer = setTimeout(abort, ms);
+	const timer = setTimeout(() => {
+		fired = true;
+		abort();
+	}, ms);
 
 	if (callerSignal?.aborted) {
 		abort();
@@ -116,7 +125,12 @@ function withTimeout(callerSignal: AbortSignal | null | undefined, ms: number) {
 			clearTimeout(timer);
 			callerSignal?.removeEventListener('abort', abort);
 		},
-	} as const satisfies { signal: AbortSignal; clear: () => void };
+		timedOut: () => fired,
+	} as const satisfies {
+		signal: AbortSignal;
+		clear: () => void;
+		timedOut: () => boolean;
+	};
 }
 
 function recordCompleted(opts: FetchOptions, status: number, startedAt: number): void {
