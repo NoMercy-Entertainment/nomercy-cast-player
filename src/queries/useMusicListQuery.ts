@@ -5,9 +5,10 @@ import { QueryKeys } from './keys';
 import { queryConfigs } from './configs';
 import { apiFetch } from '@/lib/http/client';
 
+// The server names lists and tracks with `name` (KMP MusicList.kt:12).
 export interface MusicTrack {
 	id?: string;
-	title?: string;
+	name?: string;
 	disc?: number | string;
 	track?: number | string;
 	duration?: number | string;
@@ -22,7 +23,7 @@ export interface MusicTrack {
 export interface MusicListData {
 	id?: string;
 	type?: string;
-	title?: string;
+	name?: string;
 	cover?: string;
 	overview?: string;
 	description?: string;

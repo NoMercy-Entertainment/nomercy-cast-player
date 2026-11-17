@@ -338,10 +338,10 @@ function trackArtistText(track: MusicTrack): string {
 	<section v-else-if="list" ref="containerEl" class="music-list-screen">
 		<div class="header-col">
 			<div class="cover">
-				<img v-if="coverUrl" :src="coverUrl" :alt="list.title ?? ''">
+				<img v-if="coverUrl" :src="coverUrl" :alt="list.name ?? ''">
 			</div>
 			<h1 class="title">
-				{{ list.title }}
+				{{ list.name }}
 			</h1>
 			<p class="meta">
 				<span class="kind">{{ kindText }}</span>
@@ -407,7 +407,7 @@ function trackArtistText(track: MusicTrack): string {
 			</p>
 			<MusicAboutDialog
 				v-if="aboutOpen"
-				:name="list.title"
+				:name="list.name"
 				:description="aboutText"
 				@close="aboutOpen = false"
 			/>
@@ -429,7 +429,7 @@ function trackArtistText(track: MusicTrack): string {
 					<span class="track-num">{{ index + 1 }}</span>
 					<div class="track-meta">
 						<p class="track-title">
-							{{ track.title }}
+							{{ track.name }}
 						</p>
 						<p v-if="trackArtistText(track)" class="track-artist">
 							{{ trackArtistText(track) }}

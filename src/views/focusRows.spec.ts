@@ -68,8 +68,8 @@ vi.mock('@/queries/useMusicListQuery', () => ({
 	useMusicListQuery: () => ({
 		data: ref({
 			id: 'alb-1',
-			title: 'Test Album',
-			tracks: [{ id: 'trk-1', title: 'Track One' }],
+			name: 'Test Album',
+			tracks: [{ id: 'trk-1', name: 'Track One' }],
 		}),
 		isLoading: ref(false),
 		error: ref(null),

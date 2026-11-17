@@ -16,12 +16,17 @@ vi.mock('vue-router', () => ({
 	useRouter: () => ({ push }),
 }));
 
+// The server's shape: lists and tracks carry `name` (KMP MusicList.kt:12, PlaylistItem).
 const listData = ref({
 	id: 'alb-1',
-	title: 'Test Album',
+	name: 'Test Album',
 	tracks: [
-		{ id: 'trk-1', title: 'Track One' },
-		{ id: 'trk-2', title: 'Track Two' },
+		{
+			id: 'trk-1',
+			name: 'Track One',
+			artist_track: [{ id: 'a1', name: 'Band' }],
+		},
+		{ id: 'trk-2', name: 'Track Two' },
 	],
 });
 
@@ -286,7 +291,7 @@ describe('the list page plays on this device like the KMP list screen', () => {
 			type: 'album',
 			tracks: [{
 				id: 't',
-				title: 'T',
+				name: 'T',
 				album_track: [{ year: 1999 }],
 			}],
 		} as never;
@@ -294,6 +299,16 @@ describe('the list page plays on this device like the KMP list screen', () => {
 		const wrapper = screen();
 
 		expect(wrapper.find('.year').text()).toBe('1999');
+	});
+
+	it('music-10: the header and every row show the server name, the artist under it', () => {
+		listData.value = original as never;
+
+		const wrapper = screen();
+
+		expect(wrapper.find('h1.title').text()).toBe('Test Album');
+		expect(wrapper.findAll('.track-title').map((row) => row.text())).toEqual(['Track One', 'Track Two']);
+		expect(wrapper.find('.track-artist').text()).toBe('Band');
 	});
 
 	it('music-21: an overview without a description shows no About button', () => {

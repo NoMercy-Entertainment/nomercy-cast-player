@@ -22,13 +22,13 @@ const LIST = {
 	data: {
 		id: '00000000-0000-4000-8000-000000000001',
 		type: 'album',
-		title: 'Example Album',
+		name: 'Example Album',
 		description: 'About this example album.',
 		link: '/music/albums/00000000-0000-4000-8000-000000000001',
 		favorite: false,
 		tracks: [{
 			id: 't1',
-			title: 'First',
+			name: 'First',
 			duration: 100,
 		}],
 	},
