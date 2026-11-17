@@ -68,6 +68,11 @@ export function useDPad(router: Router): void {
 			return;
 		}
 
+		// A mounted player routes its own keys; running both handlers moved focus and clicked twice.
+		if (document.querySelector(PLAYER_SELECTOR)) {
+			return;
+		}
+
 		const active = focusStore.activeGroup();
 		let handled = false;
 

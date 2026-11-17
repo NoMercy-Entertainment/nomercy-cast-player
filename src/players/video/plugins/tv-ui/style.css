@@ -163,6 +163,47 @@
 .tvui-selected {
 	background: rgb(255 255 255 / 0.12);
 }
+.tvui-row-text {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+.tvui-sidebar .tvui-row {
+	padding: 10px 12px;
+	border-radius: 8px;
+	font-size: 14px;
+}
+.tvui-sidebar .tvui-row:focus-visible {
+	outline: 0;
+	box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.85);
+	background: rgb(255 255 255 / 0.06);
+}
+.tvui-sidebar-header .tvui-icon-button:focus-visible {
+	outline: 0;
+	border-radius: 8px;
+	box-shadow: inset 0 0 0 2px rgb(255 255 255 / 0.85);
+	background: rgb(255 255 255 / 0.06);
+}
+.tvui-sidebar .tvui-selected {
+	background: transparent;
+}
+.tvui-sidebar .tvui-row-value {
+	font-size: 12px;
+}
+.tvui-settings-enter {
+	animation: tvui-settings-in 400ms ease-out;
+}
+@keyframes tvui-settings-in {
+	from {
+		opacity: 0;
+		transform: translateX(-100%);
+	}
+}
+.tvui-sidebar-header .tvui-icon-button {
+	border-radius: 8px;
+	padding: 6px;
+}
 .tvui-pre-info {
 	align-self: center;
 	display: flex;

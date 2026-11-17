@@ -214,3 +214,43 @@ describe('back keys while the video plays with no panel open', () => {
 		expect(player.pause).not.toHaveBeenCalled();
 	});
 });
+
+describe('one Enter or arrow with a tv-ui panel open', () => {
+	let host: VueWrapper;
+	let player: FakePlayer;
+
+	beforeEach(() => {
+		Element.prototype.scrollIntoView = vi.fn();
+		host = mount(Host);
+		player = new FakePlayer();
+		document.body.append(player.container);
+		startOverlay(player, false, vi.fn());
+		clickButton('Audio and Subtitles');
+	});
+
+	afterEach(() => {
+		registries.splice(0).forEach((registry) => registry.dispose());
+		player.container.remove();
+		host.unmount();
+	});
+
+	it('activates the focused row once, not once per handler', () => {
+		const clicks: string[] = [];
+
+		const count = (event: Event): void => {
+			clicks.push((event.target as HTMLElement).className);
+		};
+
+		document.addEventListener('click', count, true);
+
+		document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', {
+			key: 'Enter',
+			bubbles: true,
+			cancelable: true,
+		}));
+
+		document.removeEventListener('click', count, true);
+
+		expect(clicks).toHaveLength(1);
+	});
+});
