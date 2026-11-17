@@ -1,3 +1,4 @@
+import { buildImageUrl } from '@/lib/images/urls';
 import { el, focusable, formatTime, icon, t } from './dom';
 import type { IconName } from './dom';
 import { episodeLabel, titleAndSubtitle } from './title';
@@ -304,11 +305,19 @@ export function seekStrip(
 }
 
 // PreScreenDialog.kt:137-148: the show logo, at most 220 wide, in the 72 tall title block.
-function preLogo(url: string, alt: string): HTMLElement {
+// A logo that cannot load gives way to the text title, as KMP's AsyncImage error slot does.
+function preHeading(logo: string | undefined, title: string): HTMLElement {
+	const text = () => el('h1', 'tvui-pre-title', title);
+	const url = buildImageUrl(logo, { width: 440 });
+
+	if (!url)
+		return text();
+
 	const image = el('img', 'tvui-pre-logo');
 
 	image.setAttribute('src', url);
-	image.setAttribute('alt', alt);
+	image.setAttribute('alt', title);
+	image.addEventListener('error', () => image.replaceWith(text()), { once: true });
 
 	return image;
 }
@@ -351,9 +360,7 @@ export function preScreen(opts: {
 	const episode = el('div', 'tvui-pre-episode', tag, el('span', 'tvui-pre-episode-title', item?.title ?? ''));
 	const overview = el('p', 'tvui-pre-overview', item?.description ?? item?.overview ?? '');
 	const actions = el('div', 'tvui-pre-buttons', ...buttons);
-	const heading = item?.logo
-		? preLogo(item.logo, title)
-		: el('h1', 'tvui-pre-title', title);
+	const heading = preHeading(item?.logo, title);
 
 	const info = el('div', 'tvui-pre-info', el('div', 'tvui-pre-heading', heading), meta, episode, overview, actions);
 	const root = el('div', 'tvui-dialog tvui-pre-screen', info);
@@ -387,8 +394,10 @@ function episodeCard(
 	const card = row('', index === current, () =>
 		onPick(index));
 
-	if (item.image) {
-		art.style.backgroundImage = `url("${item.image}")`;
+	const still = buildImageUrl(item.image, { width: 360 });
+
+	if (still) {
+		art.style.backgroundImage = `url("${still}")`;
 	}
 
 	text.append(el('div', 'tvui-card-overview', item.description ?? item.overview ?? ''));

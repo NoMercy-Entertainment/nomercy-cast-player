@@ -1,3 +1,4 @@
+import { buildImageUrl } from '@/lib/images/urls';
 import { el, focusable, t } from './dom';
 
 export interface FirstFrameState {
@@ -19,8 +20,10 @@ export function showLoading(state: FirstFrameState & { playing: boolean }): bool
 function layer(className: string, image: string | null): HTMLElement {
 	const node = el('div', className);
 
-	if (image) {
-		node.style.backgroundImage = `url("${image}")`;
+	const url = buildImageUrl(image);
+
+	if (url) {
+		node.style.backgroundImage = `url("${url}")`;
 	}
 
 	return node;

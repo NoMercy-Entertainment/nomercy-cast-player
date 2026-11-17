@@ -132,6 +132,42 @@ describe('pre-screen matches PreScreenDialog.kt', () => {
 	});
 });
 
+// The playlist sends raw TMDB paths; on the living-room TV the logo and every still failed to load.
+describe('images resolve like the rest of the receiver', () => {
+	const raw = {
+		...item,
+		logo: '/ngnl-logo.png',
+		image: '/ngnl-still.jpg',
+	} as const satisfies UiItem;
+
+	it('x22 the pre-screen logo loads from TMDB', () => {
+		const { root } = preScreen({ ...options, item: raw });
+
+		expect(root.querySelector('img.tvui-pre-logo')?.getAttribute('src'))
+			.toMatch(/^https:\/\/image\.tmdb\.org\/t\/p\/\w+\/ngnl-logo\.png$/);
+	});
+
+	it('x23 the episode still loads from TMDB', () => {
+		const { root } = episodeDialog({
+			items: [raw],
+			currentIndex: 0,
+			onPick: noop,
+		});
+		const art = root.querySelector<HTMLElement>('.tvui-card-art');
+
+		expect(art?.style.backgroundImage).toContain('https://image.tmdb.org/t/p/');
+	});
+
+	it('x24 a logo that fails to load gives way to the text title', () => {
+		const { root } = preScreen({ ...options, item: raw });
+
+		root.querySelector('img.tvui-pre-logo')?.dispatchEvent(new Event('error'));
+
+		expect(root.querySelector('img.tvui-pre-logo')).toBeNull();
+		expect(root.querySelector('.tvui-pre-title')?.textContent).toBe('No Game No Life');
+	});
+});
+
 // EpisodeCard.kt:123-165 and :200-231.
 describe('episodes match EpisodeDialog.kt', () => {
 	it('x08 the still carries the S#E# label and the duration', () => {
