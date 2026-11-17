@@ -24,6 +24,11 @@ describe('the Info screen watchlist button on a cold load', () => {
 				return Promise.resolve({ status: 'ok' });
 			}
 
+			// The rows request: a server that ignores version=lolomo sends no components.
+			if (path.includes('version=lolomo')) {
+				return Promise.resolve(null);
+			}
+
 			return new Promise((resolve) => {
 				resolveInfo = resolve;
 			});

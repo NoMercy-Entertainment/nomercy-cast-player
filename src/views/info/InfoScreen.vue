@@ -17,6 +17,7 @@ import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { apiFetch } from '@/lib/http/client';
 import { QueryKeys } from '@/queries/keys';
+import { useInfoRowsQuery } from '@/queries/useInfoRowsQuery';
 import { useTrailerQuery } from '@/queries/useTrailerQuery';
 import TrailerOverlay from '@/players/video/TrailerOverlay.vue';
 import InfoSeasons from './InfoSeasons.vue';
@@ -114,16 +115,21 @@ const readyTrailer = computed(() => {
 });
 const trailerOpen = ref(false);
 
-const infoRows = computed(() =>
-	info.value
+// The server's rows when it honors version=lolomo; older servers get the rows built here.
+const serverRows = useInfoRowsQuery(type, id);
+const infoRows = computed(() => {
+	if (serverRows.data.value)
+		return serverRows.data.value;
+
+	return info.value
 		? buildInfoRows(info.value, {
 				collections: t('views.info.collections'),
 				writerDirector: t('views.info.writer_director'),
 				cast: t('views.info.cast'),
 				crew: t('views.info.crew'),
 			})
-		: [],
-);
+		: [];
+});
 
 const watchlistLabel = computed(() =>
 	info.value?.watchlist

@@ -12,6 +12,7 @@ export const QueryKeys = {
 	libraries: () => ['libraries'] as const,
 	cardItems: (link: string) => ['card-items', link] as const,
 	info: (type: string, id: string) => ['info', type, id] as const,
+	infoRows: (type: string, id: string) => ['info', type, id, 'rows'] as const,
 	available: (type: string, id: string) => ['info', type, id, 'available'] as const,
 	person: (id: string) => ['person', id] as const,
 	serverInfo: () => ['dashboard', 'server', 'info'] as const,
