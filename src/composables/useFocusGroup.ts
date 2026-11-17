@@ -22,6 +22,8 @@ export interface FocusGroupOptions {
 	containerEl?: Ref<HTMLElement | null>;
 	/** Don't auto-focus the first child on mount. */
 	autoFocus?: boolean;
+	/** A zone (selector) whose focus the first entry after mount or activation takes over, as KMP row 0's first bind does. */
+	takeFocusFrom?: string;
 }
 
 /**
@@ -316,6 +318,9 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		return el.matches('[data-focusable], button, a[href], input, textarea, select, [tabindex="0"]');
 	}
 
+	// The first focus of this mount or activation is still to be placed.
+	let entryPending = true;
+
 	function attemptAutoFocus(): void {
 		if (opts.autoFocus === false) return;
 
@@ -324,24 +329,37 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		// First group whose microtask runs and finds nothing focused wins;
 		// later siblings short-circuit on the focusableActiveElement guard.
 		queueMicrotask(() => {
-			if (focusableActiveElement()) return;
+			// TvHomeAdapter.kt:195,642-645: the page a nav press opened claims focus once its first row is drawn.
+			const fromZone = entryPending &&
+				opts.takeFocusFrom !== undefined &&
+				document.activeElement?.closest(opts.takeFocusFrom) != null;
+
+			if (focusableActiveElement() && !fromZone) return;
 
 			if (parent && parent.containsFocused()) return;
 
 			if (opts.restorationKey) {
 				const restored = focusStore.consumeRestoration(opts.restorationKey);
 
-				if (restored && focusStore.restoreFocus(() => handle.focusByKey(restored))) return;
+				if (restored && focusStore.restoreFocus(() => handle.focusByKey(restored))) {
+					entryPending = false;
+
+					return;
+				}
 			}
 
-			if (opts.initialFocusKey && handle.focusByKey(opts.initialFocusKey)) return;
+			if (opts.initialFocusKey && handle.focusByKey(opts.initialFocusKey)) {
+				entryPending = false;
+
+				return;
+			}
 
 			// Top-level page groups (no parent) always fall through to first.
 			// Nested groups skip the fallback so the parent's proxy walk wins
 			// — if the parent group decides this is the active sub-group,
 			// it'll call this group's focusFirst via the proxy entry below.
-			if (!parent) {
-				focusStore.autoFocus(() => handle.focusFirst());
+			if (!parent && focusStore.autoFocus(() => handle.focusFirst())) {
+				entryPending = false;
 			}
 		});
 	}
@@ -396,6 +414,10 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 	// entries / two proxy registrations for the same group.
 	if (getCurrentInstance()) {
 		onActivated(() => {
+			if (!isActive) {
+				entryPending = true;
+			}
+
 			activate();
 			attemptAutoFocus();
 		});

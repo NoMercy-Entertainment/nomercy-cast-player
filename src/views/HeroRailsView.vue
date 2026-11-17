@@ -55,6 +55,7 @@ const railsGroup = useFocusGroup({
 	type: 'vertical',
 	restorationKey: props.restorationKey,
 	containerEl,
+	takeFocusFrom: '.topnav',
 	onEscape: (dir) =>
 		dir === 'up'
 			? focusTopnav()
