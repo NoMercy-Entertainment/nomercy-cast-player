@@ -1,7 +1,5 @@
 import { mount } from '@vue/test-utils';
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { decls } from '../test/cssDecl';
 import AppLogoSquare from './AppLogoSquare.vue';
 
@@ -17,9 +15,9 @@ describe('the nav app logo wears the native colors', () => {
 
 		expect(back?.attributes('fill')).toBe('url(#logo-back)');
 
-		const stops = wrapper.findAll('#logo-back stop').map((s) => s.attributes('stop-opacity') ?? '1');
+		const stops = wrapper.findAll('#logo-back stop');
 
-		expect(stops).toEqual(['1', '0.8']);
-		expect(readFileSync(fileURLToPath(new URL('./AppLogoSquare.vue', import.meta.url)), 'utf8')).toContain('stop-color="var(--color-primary)"');
+		expect(stops.map((s) => s.attributes('stop-opacity') ?? '1')).toEqual(['1', '0.8']);
+		expect(stops.map((s) => s.attributes('stop-color'))).toEqual(['var(--color-primary)', 'var(--color-primary)']);
 	});
 });
