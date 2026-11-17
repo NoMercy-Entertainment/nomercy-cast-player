@@ -13,12 +13,13 @@ import { authStore } from '@/stores/authStore';
 import { TMDB_BASE } from '@/lib/images/urls';
 import { playbackStore } from '@/stores/playbackStore';
 import type { PlaylistItem } from '@/queries/usePlaylistQuery';
+import type { WatchType } from '@/stores/playbackStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import type { DiagnosticsCodeValue } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
 const props = defineProps<{
-	type: 'movie' | 'tv';
+	type: WatchType;
 	id: string;
 	resumeAt?: number;
 	/** The route carried cast=true: a cast plays at once, with no pre-screen. */

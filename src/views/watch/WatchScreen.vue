@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import type { LocationQueryValue } from 'vue-router';
 import { useTranslation } from 'i18next-vue';
 import { usePlaylistQuery } from '@/queries/usePlaylistQuery';
+import type { WatchType } from '@/stores/playbackStore';
 import { invalidateAfterPlayback } from '@/lib/queryShim';
 import { playbackStore } from '@/stores/playbackStore';
 import VideoPlayer from '@/players/video/VideoPlayer.vue';
@@ -20,7 +21,7 @@ const props = defineProps<{
 const { t } = useTranslation();
 const route = useRoute();
 const type = computed(
-	() => (props.type ?? String(route.params.type ?? '')) as 'movie' | 'tv',
+	() => (props.type ?? String(route.params.type ?? '')) as WatchType,
 );
 const id = computed(() => props.id ?? String(route.params.id ?? ''));
 const resumeAt = computed(() => {

@@ -46,8 +46,11 @@ export interface CurrentTrackSnapshot {
 
 export type RepeatMode = 'off' | 'all' | 'one';
 
+/** Every type the server answers /{type}/{id}/watch for (CardData.cs:119-219). */
+export type WatchType = 'movie' | 'tv' | 'collection' | 'specials';
+
 export interface CurrentVideoSnapshot {
-	type: 'movie' | 'tv';
+	type: WatchType;
 	id: string;
 	title: string;
 	duration_ms?: number;

@@ -40,6 +40,20 @@ const routes: RouteRecordRaw[] = [
 		component: () => import('@/views/watch/WatchScreen.vue'),
 		props: (route) => ({ type: 'tv', id: route.params.id }),
 	},
+	// A continue watching card links a collection or a special to /watch too (CardData.cs:119,171);
+	// KMP Route.kt:90 plays every /{type}/{id}/watch.
+	{
+		path: '/collection/:id/watch',
+		name: 'watch-collection',
+		component: () => import('@/views/watch/WatchScreen.vue'),
+		props: (route) => ({ type: 'collection', id: route.params.id }),
+	},
+	{
+		path: '/specials/:id/watch',
+		name: 'watch-specials',
+		component: () => import('@/views/watch/WatchScreen.vue'),
+		props: (route) => ({ type: 'specials', id: route.params.id }),
+	},
 	{
 		// Legacy /watch/:type/:id for sender-injected play_video intents
 		// from navStore.dispatchInitialIntent (CastIntent.play_video).
