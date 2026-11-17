@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, toRef, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, toRef, watch } from 'vue';
 import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
@@ -63,17 +63,69 @@ const railsGroup = useFocusGroup({
 
 useNavFocusBridge({ handle: railsGroup, containerEl });
 
-const components = computed<Component[]>(() => props.data ?? []);
+// The TV page is the lolomo alone: a top-level NMHomeCard is dropped (HasContent.kt:38-48).
+const components = computed<Component[]>(() =>
+	(props.data ?? []).filter((c) => props.music || c.component !== 'NMHomeCard'),
+);
 const isInitialLoad = computed(() => props.isLoading && !props.data);
 const errVal = computed(() => props.error ?? null);
+
+function hasCarousel(list: Component[]): boolean {
+	return list.some((c) => {
+		if (c.component === 'NMCarousel')
+			return true;
+
+		const items = (c.props as { items?: Component[] }).items;
+
+		return Array.isArray(items) && hasCarousel(items);
+	});
+}
+
+// NMLolomo.kt:74-75: showHero = hasCarousels && hero != "none".
+const showHero = computed(() =>
+	props.hero &&
+	hasCarousel(components.value) &&
+	!components.value.some((c) => c.component === 'NMLolomo' && (c.props as { hero?: string }).hero === 'none'),
+);
 const heroCard = computed(() => {
 	if (props.persistentHero)
 		return props.persistentHero;
 
-	return props.hero
+	return showHero.value
 		? focusedCardStore.debouncedCard.value
 		: null;
 });
+
+// NMLolomo.kt:83-92: the error page needs no data and a 900 ms settle; rows already drawn stay.
+const FAILURE_SETTLE_MS = 900;
+const hasFailed = computed(() => Boolean(errVal.value) && !props.data?.length && !props.isLoading);
+const showFailure = ref(false);
+let settleTimer: number | null = null;
+
+watch(hasFailed, (failed) => {
+	if (settleTimer !== null) {
+		window.clearTimeout(settleTimer);
+		settleTimer = null;
+	}
+
+	if (!failed) {
+		showFailure.value = false;
+
+		return;
+	}
+
+	settleTimer = window.setTimeout(() => {
+		showFailure.value = true;
+		settleTimer = null;
+	}, FAILURE_SETTLE_MS);
+}, { immediate: true });
+
+onBeforeUnmount(() => {
+	if (settleTimer !== null) {
+		window.clearTimeout(settleTimer);
+	}
+});
+
 const skeletonRailCount = computed(() => props.skeletonCount ?? 3);
 
 const errorRef = toRef(props, 'error');
@@ -96,12 +148,12 @@ if (props.hero) {
 <template>
 	<div ref="containerEl" class="nm-hero-rails-screen">
 		<ErrorPanel
-			v-if="errVal"
+			v-if="showFailure && errVal"
 			:error="errVal"
 			:retry="refetch"
 			:context="errorContext"
 		/>
-		<template v-else-if="isInitialLoad">
+		<template v-else-if="isInitialLoad || hasFailed">
 			<div v-if="hero" class="nm-hero-room" aria-hidden="true" />
 			<div class="nm-hero-rails" :class="{ 'nm-hero-rails--no-hero': !hero }">
 				<Skeleton

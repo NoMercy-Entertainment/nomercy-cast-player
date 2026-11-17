@@ -54,7 +54,27 @@ export function useNavFocusBridge(arg: FocusGroupHandle | BridgeArg): void {
 		return false;
 	};
 
+	// VideoContentList.kt:87-105: Down from the nav enters the first row on screen, not row 0.
+	const focusFirstVisibleRow = (): boolean => {
+		const container = containerRef?.value;
+		const port = container?.querySelector<HTMLElement>('.nm-hero-rails');
+		const rows = Array.from(container?.querySelectorAll<HTMLElement>('.rail-section') ?? []);
+		const top = port?.getBoundingClientRect().top ?? 0;
+		const row = rows.find((r) => r.getBoundingClientRect().bottom > top);
+
+		if (!row || row === rows[0])
+			return false;
+
+		const card = row.querySelector<HTMLElement>('[data-focusable]:not([disabled])');
+
+		card?.focus();
+
+		return Boolean(card);
+	};
+
 	const onNavDown = (): void => {
+		if (focusFirstVisibleRow()) return;
+
 		// TvRowFocus.kt:60-96: DOWN from the nav lands on the first card fully in view.
 		if (handle?.enterFirst?.() || handle?.focusFirst()) return;
 

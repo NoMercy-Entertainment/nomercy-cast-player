@@ -52,7 +52,16 @@ export interface ContainerWrapper {
 	more_link_text?: string;
 	context_menu_items?: ContextMenuItem[];
 	url?: string;
-	properties?: { columns?: number };
+	// "none" on a lolomo hides the hero (NMLolomo.kt:74-75).
+	hero?: string;
+	properties?: {
+		columns?: number;
+		spacing?: number;
+		paddingTop?: number;
+		paddingEnd?: number;
+		paddingBottom?: number;
+		paddingStart?: number;
+	};
 }
 
 export type NMGridWrapper = ContainerWrapper;

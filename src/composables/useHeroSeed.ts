@@ -40,54 +40,52 @@ export function musicHero(card: MusicSeed) {
 	} as const satisfies FocusedCardData;
 }
 
-// Home is a lolomo of carousels of cards, so the first card sits two levels down.
+// Home is a lolomo of carousels of cards. The hero starts on the first card of the first row, art or not (NMLolomo.kt:194-198).
 function firstCard(items: SeedItem[]): FocusedCardData | null {
 	for (const item of items) {
+		const nested = item.props?.items;
+
+		if (Array.isArray(nested)) {
+			const found = firstCard(nested);
+
+			if (found)
+				return found;
+
+			continue;
+		}
+
 		const data = item.props?.data;
 
-		if (data && (data.backdrop || data.poster))
-			return data;
+		if (!data) continue;
 
 		// A music card draws its cover as the hero backdrop (NMLolomo.kt:151-162).
-		if (data && (data as MusicSeed).cover)
-			return musicHero(data as MusicSeed);
-
-		const nested = item.props?.items;
-		const found = Array.isArray(nested)
-			? firstCard(nested)
-			: null;
-
-		if (found)
-			return found;
+		return (data as MusicSeed).cover && !data.backdrop && !data.poster
+			? musicHero(data as MusicSeed)
+			: data;
 	}
 
 	return null;
 }
 
 export function useHeroSeed(components: Ref<Component[]>): void {
-	const seedCard = computed<FocusedCardData | null>(() => {
-		for (const c of components.value) {
-			if (!c.props || typeof c.props !== 'object') continue;
+	const seedCard = computed<FocusedCardData | null>(() =>
+		firstCard(components.value as SeedItem[]),
+	);
 
-			const items = (c.props as { items?: SeedItem[] }).items;
-
-			if (!Array.isArray(items) || items.length === 0) continue;
-
-			const found = firstCard(items);
-
-			if (found)
-				return found;
-		}
-
-		return null;
-	});
+	// LaunchedEffect(rows): a new page re-seeds, a refetch of the same first card does not.
+	let seededKey: string | null = null;
 
 	watch(
 		seedCard,
 		(card) => {
-			if (card && !focusedCardStore.activeCard.value) {
-				focusedCardStore.seed(card);
-			}
+			if (!card) return;
+
+			const key = `${card.id ?? ''}|${card.title ?? ''}`;
+
+			if (key === seededKey) return;
+
+			seededKey = key;
+			focusedCardStore.seed(card);
 		},
 		{ immediate: true },
 	);

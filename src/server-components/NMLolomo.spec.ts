@@ -3,6 +3,32 @@ import { describe, expect, it, vi } from 'vitest';
 
 const { default: Resolver } = await import('./Resolver.vue');
 
+// NMComponents.kt:44: NMLolomo is a bare Column of its items, so a title the server sends draws nowhere.
+describe('an NMLolomo with a title', () => {
+	it('draws no heading', async () => {
+		const wrapper = mount(Resolver, {
+			props: {
+				component: {
+					id: 'lolomo2',
+					component: 'NMLolomo',
+					props: {
+						id: 'lolomo2',
+						title: 'For You',
+						items: [{
+							id: 'row',
+							component: 'NMCarousel',
+							props: { id: 'row', items: [] },
+						}],
+					},
+				},
+			},
+		});
+
+		await vi.waitFor(() => expect(wrapper.find('.container-section').exists()).toBe(true), { timeout: 10_000 });
+		expect(wrapper.find('h2').exists()).toBe(false);
+	});
+});
+
 describe('an NMLolomo component from the server', () => {
 	it('draws its NMCarousel items like NMContainer does, instead of drawing nothing', async () => {
 		const wrapper = mount(Resolver, {
