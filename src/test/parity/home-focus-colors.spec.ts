@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 
 import HeroRailsView from '@/views/HeroRailsView.vue';
 import { nextTick } from 'vue';
+import { decls } from '../cssDecl';
 import { focusStore } from '@/stores/focusStore';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import { pickPaletteColor } from '@/lib/images/urls';
@@ -113,6 +114,17 @@ describe('hero follows focus at the native pace (HeroSelectionTiming.kt:27-33)',
 
 		expect(focusedCardStore.debouncedCard.value?.id).toBe('v');
 		vi.useRealTimers();
+	});
+});
+
+describe('card focus ring is a 2 dp white inner stroke (TvCardViewHolder.kt:68-72)', () => {
+	it('NMCard draws it inside the poster, where contain: paint cannot clip it', () => {
+		expect(decls('server-components/NMCard.vue', '.card:focus-visible .poster::after').border).toBe('2px solid var(--cast-white)');
+		expect(decls('server-components/NMCard.vue', '.card:focus-visible .poster')['box-shadow']).toBe('none');
+	});
+
+	it('the Show All card rings inside as well', () => {
+		expect(decls('server-components/NMCarousel.vue', '.show-all:focus-visible')['box-shadow']).toBe('inset 0 0 0 1px var(--cast-white)');
 	});
 });
 
