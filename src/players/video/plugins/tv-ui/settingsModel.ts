@@ -4,6 +4,20 @@ export const FONT_SIZE_CHOICES = [18, 20, 24, 28, 32, 36] as const;
 export const BACKGROUND_CHOICES = [0, 0.25, 0.5, 0.75, 1] as const;
 const ENTER_GUARD_MS = 300;
 
+// TextTrackStyle.kt:121-135 SubtitleFont; the stacks equal app-web subtitleStyles.ts fontFamilies.
+export const FONT_CHOICES = [
+	{ name: 'ReithSans', stack: 'ReithSans, sans-serif' },
+	{ name: 'Arial', stack: 'Arial, sans-serif' },
+	{ name: 'Courier New', stack: 'Courier New, monospace' },
+	{ name: 'Georgia', stack: 'Georgia, serif' },
+	{ name: 'Verdana', stack: 'Verdana, sans-serif' },
+] as const satisfies ReadonlyArray<{ name: string; stack: string }>;
+
+// The family before the comma names the font in both stored forms (SubtitleFont.fromStack).
+export function fontName(stack: string): string {
+	return (stack.split(',')[0] ?? '').trim();
+}
+
 export interface MainRow {
 	id: 'audio' | 'subtitle' | 'subtitleStyle' | 'quality' | 'autoSkip' | 'restart';
 	enabled: boolean;

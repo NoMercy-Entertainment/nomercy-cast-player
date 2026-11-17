@@ -19,7 +19,7 @@ import type { BottomBarHandle, Choice, Panel, SearchView, SeekStripHandle, UiIte
 import { downloadSubtitle, isRateLimited, searchSubtitles, searchTarget } from './subtitleSearch';
 import type { SubtitleCandidate } from './subtitleSearch';
 import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './seek';
-import { BACKGROUND_CHOICES, FONT_SIZE_CHOICES } from './settingsModel';
+import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
 import './style.css';
@@ -821,6 +821,14 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			}));
 		}
 
+		if (prop === 'fontFamily') {
+			return FONT_CHOICES.map((font) => ({
+				label: font.name,
+				selected: fontName(current.fontFamily).toLowerCase() === font.name.toLowerCase(),
+				onPick: apply({ fontFamily: font.stack }),
+			}));
+		}
+
 		if (prop !== 'edgeStyle' && prop !== 'textColor')
 			return [];
 
@@ -915,7 +923,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				},
 				autoSkip: settingsStore.autoSkipChapters.value,
 				style: {
-					font: view.fontFamily,
+					font: fontName(view.fontFamily),
 					size: view.fontSize,
 					edge: view.edgeStyle,
 					color: view.fontColor,
