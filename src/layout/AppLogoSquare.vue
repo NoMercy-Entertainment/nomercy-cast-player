@@ -72,7 +72,13 @@
 			</g>
 		</g>
 		<defs>
-			<linearGradient id="logo-back" x1="0" x2="1" y1="0" y2="0">
+			<linearGradient
+				id="logo-back"
+				x1="0"
+				x2="1"
+				y1="0"
+				y2="0"
+			>
 				<stop stop-color="var(--color-primary)" />
 				<stop offset="1" stop-color="var(--color-primary)" stop-opacity="0.8" />
 			</linearGradient>

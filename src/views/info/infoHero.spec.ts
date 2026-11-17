@@ -3,7 +3,7 @@ import { mount } from '@vue/test-utils';
 import { createRouter, createWebHistory } from 'vue-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const apiFetch = vi.fn();
+const apiFetch = vi.fn<(options: Record<string, unknown>) => Promise<unknown>>();
 
 vi.mock('@/lib/http/client', () => ({
 	apiFetch: (options: Record<string, unknown>) => apiFetch(options),
@@ -50,12 +50,23 @@ describe('the info hero follows a focused title card like InfoScreen.kt', () => 
 
 		expect(wrapper.get('.hero-row').text()).toContain('Base Title');
 
-		focusedCardStore.setActive({ type: 'movie', title: 'Part Two', overview: 'Second overview.', backdrop: '/two.jpg' });
+		focusedCardStore.setActive({
+			type: 'movie',
+			title: 'Part Two',
+			overview: 'Second overview.',
+			backdrop: '/two.jpg',
+		});
+
 		await vi.waitFor(() => expect(wrapper.get('.hero-row').text()).toContain('Part Two'));
 		expect(wrapper.get('.hero-row').text()).toContain('Second overview.');
 		expect(wrapper.get('.backdrop img').attributes('src')).toContain('/two.jpg');
 
-		focusedCardStore.setActive({ type: 'person', title: 'Some Person', backdrop: '/p.jpg' });
+		focusedCardStore.setActive({
+			type: 'person',
+			title: 'Some Person',
+			backdrop: '/p.jpg',
+		});
+
 		await vi.waitFor(() => expect(wrapper.get('.hero-row').text()).toContain('Base Title'));
 	});
 

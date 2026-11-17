@@ -72,13 +72,12 @@ const focusedTitle = computed(() => {
 		: null;
 });
 
-// The year, length and rating line takes the first line of the overview block, as a byline does (VideoMusicHeroSection.kt:162-171).
-const showMeta = computed(() => !focusedTitle.value && Boolean(yearText.value || durationText.value || ratingText.value));
-
 const heroTitle = computed(() => focusedTitle.value?.title ?? info.value?.title);
-const heroOverview = computed(() => focusedTitle.value
-	? focusedTitle.value.overview
-	: info.value?.overview);
+const heroOverview = computed(() =>
+	focusedTitle.value
+		? focusedTitle.value.overview
+		: info.value?.overview,
+);
 
 const backdropUrl = computed(() =>
 	buildImageUrl(focusedTitle.value?.backdrop ?? info.value?.backdrop ?? null, BACKDROP_SIZE),
@@ -150,6 +149,11 @@ const ratingText = computed(() =>
 	typeof info.value?.voteAverage === 'number'
 		? `${info.value.voteAverage.toFixed(1)} / 10`
 		: '',
+);
+
+// The year, length and rating line takes the first line of the overview block, as a byline does.
+const showMeta = computed(() =>
+	!focusedTitle.value && Boolean(yearText.value || durationText.value || ratingText.value),
 );
 
 const actionsEl = ref<HTMLElement | null>(null);

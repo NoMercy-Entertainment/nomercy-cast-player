@@ -47,8 +47,7 @@ let lastNavDir: 'horizontal' | 'vertical' = 'horizontal';
 let themeFollowsFocus = true;
 
 function applyPalette(card: FocusedCardData | null): void {
-	if (!themeFollowsFocus)
-		return;
+	if (!themeFollowsFocus) return;
 
 	const palette = card?.color_palette;
 
