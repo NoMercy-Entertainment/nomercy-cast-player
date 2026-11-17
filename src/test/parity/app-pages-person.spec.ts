@@ -33,6 +33,7 @@ vi.mock('@/views/HeroRailsView.vue', () => ({
 }));
 
 const { default: router } = await import('@/router');
+const { settingsStore } = await import('@/stores/settingsStore');
 const { default: PersonScreen } = await import('@/views/person/PersonScreen.vue');
 
 const hero = {
@@ -89,6 +90,19 @@ describe('row 6: the person page draws the components the server sends', () => {
 
 		expect(seen.persistentHero).toMatchObject({ title: 'Example Person', backdrop: '/known-for.jpg' });
 		expect(seen.persistentHero?.poster).toBeUndefined();
+	});
+
+	it('PersonScreen.kt:92-96: the known-for palette colors the page only while auto theme colors are on', async () => {
+		const palette = { backdrop: { dominant: '#3a5fa0' } };
+		const colored = { ...hero, props: { data: { ...hero.props.data, color_palette: palette } } };
+		const accent = () => document.documentElement.style.getPropertyValue('--color-primary');
+
+		settingsStore.useAutoThemeColors.value = false;
+		await mountWith({ data: [colored, rows] });
+		expect(accent()).toBe('');
+
+		settingsStore.useAutoThemeColors.value = true;
+		await vi.waitFor(() => expect(accent()).not.toBe(''));
 	});
 
 	it('an older server that answers the plain person object gets the rows built on the client', async () => {

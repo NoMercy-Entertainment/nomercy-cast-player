@@ -3,6 +3,7 @@ import { computed, nextTick, ref } from 'vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
+import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { InfoSeason } from '@/queries/useInfoQuery';
 import Resolver from '@/server-components/Resolver.vue';
 import type { Component } from '@/server-components/types';
@@ -158,6 +159,7 @@ function close(): void {
 			tabindex="0"
 			aria-haspopup="listbox"
 			@click="open = true"
+			@focus="focusedCardStore.setActive(null)"
 		>
 			<span>{{ label }}</span>
 			<MoooomIcon icon="chevronDown" width="20" height="20" />

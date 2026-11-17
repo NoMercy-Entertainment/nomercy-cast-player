@@ -5,6 +5,7 @@ import { useTranslation } from 'i18next-vue';
 import { usePersonQuery } from '@/queries/usePersonQuery';
 import { applyThemeColor, clearThemeColor } from '@/lib/theme';
 import { focusedCardStore } from '@/stores/focusedCardStore';
+import { settingsStore } from '@/stores/settingsStore';
 import type { FocusedCardData } from '@/stores/focusedCardStore';
 import HeroRailsView from '@/views/HeroRailsView.vue';
 import { buildPersonRows, personHeroBackdrop } from './personRows';
@@ -59,8 +60,10 @@ const rows = computed(() => {
 
 // PersonScreen.kt:56-60: the page color is the known-for backdrop palette.
 watch(
-	[hero, knownFor],
-	([next, credit]) => applyThemeColor((next?.color_palette ?? credit?.color_palette)?.backdrop ?? null),
+	[hero, knownFor, settingsStore.useAutoThemeColors],
+	([next, credit, auto]) => applyThemeColor(auto
+		? ((next?.color_palette ?? credit?.color_palette)?.backdrop ?? null)
+		: null),
 	{ immediate: true },
 );
 focusedCardStore.setThemeFollowsFocus(false);
