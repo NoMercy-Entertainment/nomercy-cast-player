@@ -41,23 +41,37 @@ interface MusicEvents {
 	queue: RawTrack[] | undefined;
 	shuffle: boolean;
 	repeat: 'off' | 'all' | 'one';
+	canplay: undefined;
+	error: undefined;
 }
 
 export interface MusicEngineLike {
 	on: <K extends keyof MusicEvents>(event: K, handler: (payload: MusicEvents[K]) => void) => void;
 	off: <K extends keyof MusicEvents>(event: K, handler?: (payload: MusicEvents[K]) => void) => void;
-	play: () => void;
+	play: () => void | Promise<void>;
 	pause: () => void;
 	next: () => void;
 	previous: () => void;
 	seek: (seconds: number) => void;
 	volume?: (percent: number) => void;
 	currentTrack?: () => CurrentTrackSnapshot;
+	currentSong?: { id?: string | number } | null;
+	playTrack?: (track: ServerTrack, tracks?: ServerTrack[]) => void;
+}
+
+interface ServerTrack {
+	id: string | number;
+	path?: string;
+	plugin_id?: string | null;
 }
 
 interface PlayerState {
 	device_id?: string | null;
 	device_volumes?: Record<string, number>;
+	is_playing?: boolean;
+	item?: ServerTrack | null;
+	playlist?: ServerTrack[];
+	progress_ms?: number;
 }
 
 // The wire is a bare state or an { events: [{ event: { state } }] } envelope.
@@ -111,6 +125,10 @@ function trackLabel(p: MusicEngineLike): string | undefined {
 // The device the server last named active in a MusicPlayerState push.
 let activeDeviceId: string | null = null;
 
+// Set while a server track loads into the engine; its autoplay and pause are
+// the engine's own, not the user's, and the target position waits for canplay.
+let pendingLoad: { seconds: number; playing: boolean } | null = null;
+
 // MusicHub takes one PlaybackCommand(command, data) for every transport action
 // (MusicPlaybackCommandHandler: play, pause, seek in seconds, next, previous).
 // It applies the command to the user's one music session whoever sends it, so
@@ -128,13 +146,17 @@ function bindOutbound(p: MusicEngineLike): void {
 		const label = trackLabel(p);
 
 		recordDiagnostic(DiagnosticsCategory.Playback, DiagnosticsCode.PlaybackStarted, 0, 0, 0, label);
-		sendCommand('play');
+
+		if (pendingLoad === null) {
+			sendCommand('play');
+		}
+
 		playbackStore.music.applyPlayState(true);
 	};
 
 	const onPause = (audio: MusicEvents['pause']): void => {
-		// The audio element also pauses when a track runs out; that is not a user pause.
-		if (!audio?.ended) {
+		// The audio element also pauses when a track runs out or is swapped; neither is a user pause.
+		if (!audio?.ended && pendingLoad === null) {
 			sendCommand('pause');
 		}
 
@@ -241,6 +263,63 @@ function applyOwnVolume(p: MusicEngineLike, payload: StatePayload | null): void 
 	}
 }
 
+async function playEngine(p: MusicEngineLike): Promise<void> {
+	try {
+		await p.play();
+	} catch (error) {
+		recordSwallowed('musicEnginePlay', error);
+	}
+}
+
+// MusicHub names the device and the track but never pushes audio, so this
+// device loads, seeks and plays the track itself while it is the active one.
+function applyServerState(
+	p: MusicEngineLike,
+	state: PlayerState | null | undefined,
+	wasOwn: boolean,
+): void {
+	if (activeDeviceId !== castDeviceId()) {
+		if (wasOwn) {
+			pendingLoad = null;
+			p.pause();
+		}
+
+		return;
+	}
+
+	const item = state?.item;
+
+	if (!item?.path || item.plugin_id) return;
+
+	const target = { seconds: (state?.progress_ms ?? 0) / 1000, playing: state?.is_playing === true };
+
+	if (String(p.currentSong?.id) !== String(item.id)) {
+		const rest = (state?.playlist ?? []).filter((track) => String(track.id) !== String(item.id));
+		const queue = [item, ...rest];
+
+		pendingLoad = target;
+		p.playTrack?.(item, queue);
+
+		return;
+	}
+
+	if (pendingLoad !== null) {
+		pendingLoad = target;
+
+		return;
+	}
+
+	if (!wasOwn) {
+		p.seek(target.seconds);
+	}
+
+	if (target.playing) {
+		void playEngine(p);
+	} else {
+		p.pause();
+	}
+}
+
 function bindInbound(p: MusicEngineLike): void {
 	const hub = socketStore.musicHub.value;
 
@@ -251,10 +330,37 @@ function bindInbound(p: MusicEngineLike): void {
 		const state = payload?.events
 			? changed?.event?.state
 			: payload;
+		const wasOwn = activeDeviceId === castDeviceId();
 
 		activeDeviceId = state?.device_id ?? null;
 		applyOwnVolume(p, payload);
+		applyServerState(p, state, wasOwn);
 	};
+
+	const onCanPlay = (): void => {
+		const target = pendingLoad;
+
+		pendingLoad = null;
+
+		if (!target) return;
+
+		if (target.seconds > 0) {
+			p.seek(target.seconds);
+		}
+
+		if (target.playing) {
+			void playEngine(p);
+		} else {
+			p.pause();
+		}
+	};
+
+	const onLoadFailed = (): void => {
+		pendingLoad = null;
+	};
+
+	p.on('canplay', onCanPlay);
+	p.on('error', onLoadFailed);
 
 	const onConnectedDevices = (devices: ConnectedDeviceSnapshot[] | undefined): void => {
 		playbackStore.music.applyConnectedDevices(devices ?? []);
@@ -264,6 +370,8 @@ function bindInbound(p: MusicEngineLike): void {
 	hub.on('ConnectedDevicesState', onConnectedDevices);
 
 	unsubs.push(
+		() => p.off('canplay', onCanPlay),
+		() => p.off('error', onLoadFailed),
 		() => hub.off('MusicPlayerState', onState),
 		() => hub.off('ConnectedDevicesState', onConnectedDevices),
 	);
@@ -290,6 +398,7 @@ export const musicSyncBridge = {
 
 		engine = null;
 		activeDeviceId = null;
+		pendingLoad = null;
 	},
 	current(): MusicEngineLike | null {
 		return engine;

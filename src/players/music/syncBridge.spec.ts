@@ -135,3 +135,106 @@ describe('musicSyncBridge outbound calls', () => {
 		expect(invoke).toHaveBeenCalledExactlyOnceWith('CurrentTimeForItemCommand', 42.5, '4821');
 	});
 });
+
+// The audio engine is a plain local player: nothing loads the server's track
+// into it. When the server names this receiver, the bridge must load, seek and
+// play the track, or the screen shows a song that makes no sound.
+describe('musicSyncBridge when the server names this receiver', () => {
+	const hubHandlers = new Map<string, (...args: unknown[]) => void>();
+	const invoke = vi.fn<(...args: unknown[]) => Promise<undefined>>(async () => undefined);
+	const track = (id: string) => ({
+		id,
+		path: `/music/${id}.flac`,
+	});
+	const item = track('track-a');
+	const next = track('track-b');
+	const trackEngine = () => ({
+		...fakeEngine(),
+		playTrack: vi.fn<(track: unknown, tracks?: unknown[]) => void>(),
+		play: vi.fn<() => void>(),
+		pause: vi.fn<() => void>(),
+		seek: vi.fn<(seconds: number) => void>(),
+		currentSong: null as { id: string } | null,
+	});
+	let engine: ReturnType<typeof trackEngine>;
+
+	function push(device: string, extra: Record<string, unknown> = {}): void {
+		const state = {
+			device_id: device,
+			is_playing: true,
+			item,
+			playlist: [],
+			progress_ms: 0,
+			...extra,
+		};
+
+		hubHandlers.get('MusicPlayerState')?.({ events: [{ type: 'PlayerStateChanged', event: { state } }] });
+	}
+
+	beforeEach(() => {
+		invoke.mockClear();
+		hubHandlers.clear();
+
+		socketStore.musicHub.value = {
+			invoke,
+			on: (event: string, handler: (...args: unknown[]) => void) => hubHandlers.set(event, handler),
+			off: () => {},
+		} as never;
+
+		engine = trackEngine();
+		musicSyncBridge.attach(engine as never);
+	});
+
+	afterEach(() => {
+		musicSyncBridge.detach();
+		socketStore.musicHub.value = null as never;
+	});
+
+	it('loads the track with its queue, then seeks and plays once it can play', () => {
+		push(castDeviceId(), { playlist: [item, next], progress_ms: 24000 });
+
+		expect(engine.playTrack).toHaveBeenCalledExactlyOnceWith(item, [item, next]);
+
+		engine.emit('canplay');
+
+		expect(engine.seek).toHaveBeenCalledExactlyOnceWith(24);
+		expect(engine.play).toHaveBeenCalledOnce();
+	});
+
+	it('leaves the loaded track paused when the session is paused', () => {
+		push(castDeviceId(), { is_playing: false, playlist: [next] });
+		engine.emit('canplay');
+
+		expect(engine.playTrack).toHaveBeenCalledExactlyOnceWith(item, [item, next]);
+		expect(engine.pause).toHaveBeenCalledOnce();
+		expect(engine.play).not.toHaveBeenCalled();
+	});
+
+	it('does not reload the track the engine already holds', () => {
+		engine.currentSong = { id: 'track-a' };
+		push(castDeviceId(), { progress_ms: 1000 });
+
+		expect(engine.playTrack).not.toHaveBeenCalled();
+		expect(engine.play).toHaveBeenCalledOnce();
+	});
+
+	it('loads nothing while another device is active', () => {
+		push('phone-1');
+
+		expect(engine.playTrack).not.toHaveBeenCalled();
+	});
+
+	it('pauses when the server hands playback to another device', () => {
+		push(castDeviceId());
+		push('phone-1');
+
+		expect(engine.pause).toHaveBeenCalledOnce();
+	});
+
+	it('does not report the pause the engine fires while it swaps the track', () => {
+		push(castDeviceId());
+		engine.emit('pause');
+
+		expect(invoke).not.toHaveBeenCalled();
+	});
+});
