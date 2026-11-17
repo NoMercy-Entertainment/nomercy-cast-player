@@ -54,7 +54,14 @@ export interface ContainerWrapper {
 	url?: string;
 	// "none" on a lolomo hides the hero (NMLolomo.kt:74-75).
 	hero?: string;
-	properties?: { columns?: number };
+	properties?: {
+		columns?: number;
+		spacing?: number;
+		paddingTop?: number;
+		paddingEnd?: number;
+		paddingBottom?: number;
+		paddingStart?: number;
+	};
 }
 
 export type NMGridWrapper = ContainerWrapper;

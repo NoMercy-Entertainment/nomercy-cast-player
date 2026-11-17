@@ -17,7 +17,26 @@ const { t } = useTranslation();
 const router = useRouter();
 const containerEl = ref<HTMLElement | null>(null);
 const moreLinkEl = ref<HTMLElement | null>(null);
-const columns = (props.data.properties?.columns as number | undefined) ?? 6;
+// NMGrid.kt:41-66: TV columns clamp to 4..6 (default 2); spacing and padding come from properties.
+const TV_MIN_COLUMNS = 4;
+const TV_MAX_COLUMNS = 6;
+const serverColumns = props.data.properties?.columns ?? 2;
+const columns = Math.min(TV_MAX_COLUMNS, Math.max(TV_MIN_COLUMNS, serverColumns));
+
+function px(value: number | undefined): string | undefined {
+	return typeof value === 'number'
+		? `${value}px`
+		: undefined;
+}
+
+const trackStyle = {
+	'--cols': columns,
+	gap: px(props.data.properties?.spacing),
+	paddingTop: px(props.data.properties?.paddingTop),
+	paddingRight: px(props.data.properties?.paddingEnd),
+	paddingBottom: px(props.data.properties?.paddingBottom),
+	paddingLeft: px(props.data.properties?.paddingStart),
+};
 
 useFocusGroup({
 	type: 'grid',
@@ -54,7 +73,7 @@ useFocusEntry({
 			</button>
 		</header>
 
-		<div ref="containerEl" class="grid-track" :style="{ '--cols': columns }">
+		<div ref="containerEl" class="grid-track" :style="trackStyle">
 			<Resolver v-for="item in props.data.items" :key="item.id" :component="item" />
 		</div>
 	</section>
