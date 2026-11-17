@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { BACKDROP_SIZE, buildImageUrl } from '@/lib/images/urls';
+import { HERO_CHANGE_MS } from '@/stores/focusedCardStore';
 import SplitTitleText from '@/components/text/SplitTitleText.vue';
 
 /*
@@ -37,23 +38,124 @@ const backdropUrl = computed(() =>
 const logoUrl = computed(() => buildImageUrl(props.card.logo ?? null, { width: 600 }));
 
 const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
+
+// BackdropImageWithOverlay.kt:83-129: preload, wipe in from the right, a running wipe always
+// finishes, and only the newest request follows. The bottom layer is the shown image.
+const WIPE_MS = HERO_CHANGE_MS;
+
+interface Layer { url: string; key: number }
+
+let layerKey = 0;
+const initial = backdropUrl.value;
+const layers = ref<Layer[]>(initial
+	? [{ url: initial, key: layerKey++ }]
+	: []);
+const phase = ref<'armed' | 'running'>('armed');
+
+let busy = false;
+let pending: string | null = null;
+let disposed = false;
+let finishWipe: (() => void) | null = null;
+
+function preload(url: string): Promise<void> {
+	return new Promise((resolve) => {
+		const image = new Image();
+
+		image.src = url;
+		(image.decode?.() ?? Promise.resolve()).then(resolve, resolve);
+	});
+}
+
+function nextFrame(): Promise<void> {
+	return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
+
+function wipeDone(): Promise<void> {
+	return new Promise((resolve) => {
+		const timer = window.setTimeout(done, WIPE_MS + 50);
+
+		function done() {
+			window.clearTimeout(timer);
+			finishWipe = null;
+			resolve();
+		}
+
+		finishWipe = done;
+	});
+}
+
+async function wipeTo(url: string): Promise<void> {
+	busy = true;
+
+	await preload(url);
+
+	if (!disposed) {
+		if (layers.value.length === 0) {
+			layers.value = [{ url, key: layerKey++ }];
+		} else if (layers.value[0]?.url !== url) {
+			phase.value = 'armed';
+			layers.value = [...layers.value, { url, key: layerKey++ }];
+			// Let the new layer draw before the clock starts, or a cold TV eats the wipe into a snap.
+			await nextFrame();
+			await nextFrame();
+			phase.value = 'running';
+			await wipeDone();
+			layers.value = layers.value.slice(1);
+		}
+	}
+
+	busy = false;
+
+	const next = pending;
+
+	pending = null;
+
+	if (!disposed && next && next !== layers.value[0]?.url) {
+		void wipeTo(next);
+	}
+}
+
+watch(backdropUrl, (next) => {
+	if (!next) return;
+
+	if (busy) {
+		pending = next;
+
+		return;
+	}
+
+	void wipeTo(next);
+});
+
+onBeforeUnmount(() => {
+	disposed = true;
+	finishWipe?.();
+});
 </script>
 
 <template>
 	<section class="hero">
-		<Transition name="hero-fade">
-			<div :key="transitionKey" class="art">
-				<img
-					v-if="backdropUrl"
-					class="nm-cover-center"
-					:src="backdropUrl"
-					:alt="card.title ?? ''"
-					loading="eager"
-					decoding="async"
-				>
-				<div class="nm-hero-scrim" />
+		<div class="art">
+			<div
+				v-for="(layer, index) in layers"
+				:key="layer.key"
+				class="hero-layer"
+				:class="index > 0 ? phase : undefined"
+				@animationend="index > 0 && finishWipe?.()"
+			>
+				<div class="hero-layer-art">
+					<img
+						class="nm-cover-center"
+						:src="layer.url"
+						:alt="card.title ?? ''"
+						loading="eager"
+						decoding="async"
+					>
+				</div>
+				<div v-if="index > 0" class="hero-band" />
 			</div>
-		</Transition>
+			<div class="nm-hero-scrim" />
+		</div>
 
 		<Transition name="hero-fade">
 			<div :key="transitionKey" class="content">
@@ -110,6 +212,57 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 	flex-direction: column;
 	justify-content: flex-end;
 	gap: 12px;
+}
+
+/* Edge leans 0.35 x height (BackdropImageWithOverlay.kt:165): 19.29deg = atan(0.35), 35vh = lean. */
+.hero-layer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	transform-origin: 0 0;
+}
+.hero-layer-art {
+	width: 100vw;
+	height: 100%;
+	transform-origin: 0 0;
+}
+.hero-layer.armed,
+.hero-layer.running {
+	width: calc(100vw + 72vh);
+	will-change: transform;
+	transform: translate3d(calc(100vw + 35vh), 0, 0) skewX(-19.29deg);
+}
+.hero-layer.armed .hero-layer-art,
+.hero-layer.running .hero-layer-art {
+	transform: translate3d(calc(-100vw - 35vh), 0, 0) skewX(19.29deg);
+}
+.hero-layer.running {
+	animation: hero-wipe-edge 1400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.hero-layer.running .hero-layer-art {
+	animation: hero-wipe-art 1400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.hero-band {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 40px;
+	height: 100%;
+	background: var(--color-primary);
+	opacity: 0.85;
+}
+@keyframes hero-wipe-edge {
+	to {
+		transform: translate3d(-35vh, 0, 0) skewX(-19.29deg);
+	}
+}
+@keyframes hero-wipe-art {
+	to {
+		transform: translate3d(35vh, 0, 0) skewX(19.29deg);
+	}
 }
 
 .hero-fade-enter-active,

@@ -47,7 +47,7 @@ function applyPalette(card: FocusedCardData | null): void {
 }
 
 // HeroSelectionTiming.kt:33,40-43 pacedHero: a change shows at once, then holds, and only the newest card follows.
-const HERO_CHANGE_MS = 1400;
+export const HERO_CHANGE_MS = 1400;
 let holdTimer: number | null = null;
 let held: { card: FocusedCardData | null } | null = null;
 
