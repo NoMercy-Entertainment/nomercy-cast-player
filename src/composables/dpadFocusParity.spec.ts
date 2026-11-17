@@ -7,6 +7,7 @@ import { useDPad } from '@/composables/useDPad';
 import HeroRailsView from '@/views/HeroRailsView.vue';
 import TopNavBar from '@/layout/TopNavBar.vue';
 import type { Component } from '@/server-components/types';
+import { decls } from '@/test/cssDecl';
 
 const route = vi.hoisted(() => ({ path: '/' }));
 const back = vi.hoisted(() => vi.fn());
@@ -188,6 +189,19 @@ describe('down from the nav enters the first card fully in view (TvRowFocus.kt:6
 
 		expect(document.activeElement).toBe(cardsOf('r1')[3]);
 		vi.restoreAllMocks();
+	});
+});
+
+describe('a focused row anchors to the top of the list (VideoContentList.kt:594-597, 650-661)', () => {
+	it('scrolls the row to the block start, under the 8 px list padding', async () => {
+		await boot('/', [rail('r1', 4), rail('r2', 4), rail('r3', 4)]);
+		cardsOf('r1')[0]!.focus();
+		(Element.prototype.scrollIntoView as ReturnType<typeof vi.fn>).mockClear();
+		press('ArrowDown');
+
+		expect(cardsOf('r2')).toContain(document.activeElement);
+		expect(Element.prototype.scrollIntoView).toHaveBeenLastCalledWith(expect.objectContaining({ block: 'start' }));
+		expect(decls('styles/components.css', '.nm-hero-rails')['scroll-padding-top']).toBe('8px');
 	});
 });
 
