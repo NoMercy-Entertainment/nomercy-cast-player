@@ -94,8 +94,9 @@ export function useDPad(router: Router): void {
 				handled = active?.handleKey('right') ?? false;
 				break;
 			case 'Enter':
-				// TvNavigationBar.kt:331-336: a held OK never re-navigates from the nav bar.
-				handled = e.repeat && document.activeElement?.closest('.topnav')
+				// TvNavigationBar.kt:331-336, AppSettingsScreen.kt:1552 and SearchKeyboard.kt:141-205:
+				// a held OK acts once, on the first press.
+				handled = e.repeat
 					? true
 					: focusStore.dispatchAction();
 
