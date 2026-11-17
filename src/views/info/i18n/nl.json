@@ -7,9 +7,13 @@
 	},
 	"views": {
 		"info": {
+			"cast": "Cast",
+			"collections": "Collecties",
+			"crew": "Crew",
 			"load_error": "Details laden lukte niet",
 			"minutes": "{{count}} min",
-			"season": "Seizoen"
+			"season": "Seizoen",
+			"writer_director": "Schrijver & Regisseur"
 		}
 	}
 }

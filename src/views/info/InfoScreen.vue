@@ -19,6 +19,7 @@ import { QueryKeys } from '@/queries/keys';
 import { useTrailerQuery } from '@/queries/useTrailerQuery';
 import TrailerOverlay from '@/players/video/TrailerOverlay.vue';
 import InfoSeasons from './InfoSeasons.vue';
+import { buildInfoRows } from './infoRows';
 
 /*
  * Movie / TV detail page. Mirrors APK InfoScreen.kt:
@@ -85,6 +86,17 @@ const readyTrailer = computed(() => {
 		: null;
 });
 const trailerOpen = ref(false);
+
+const infoRows = computed(() =>
+	info.value
+		? buildInfoRows(info.value, {
+				collections: t('views.info.collections'),
+				writerDirector: t('views.info.writer_director'),
+				cast: t('views.info.cast'),
+				crew: t('views.info.crew'),
+			})
+		: [],
+);
 
 const watchlistLabel = computed(() =>
 	info.value?.watchlist
@@ -295,7 +307,11 @@ async function toggleWatchlist(): Promise<void> {
 				{{ watchlistLabel }}
 			</button>
 		</div>
-		<InfoSeasons v-if="info.seasons?.length" :seasons="info.seasons" />
+		<InfoSeasons
+			v-if="info.seasons?.length || infoRows.length"
+			:seasons="info.seasons ?? []"
+			:rows="infoRows"
+		/>
 		<TrailerOverlay
 			v-if="trailerOpen && readyTrailer"
 			:trailer="readyTrailer"

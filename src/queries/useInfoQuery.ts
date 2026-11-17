@@ -39,6 +39,38 @@ export interface InfoSeason {
 	episodes?: InfoEpisode[];
 }
 
+/** Person on the wire (InfoResponse.kt Person): a cast or crew credit, writer or director. */
+export interface InfoPerson {
+	id: number;
+	name: string;
+	link: string;
+	profile?: string | null;
+	character?: string | null;
+	job?: string | null;
+	known_for_department?: string | null;
+	order?: string | null;
+	color_palette?: InfoColorPalettes;
+}
+
+/** A collection member (InfoResponse.kt Related). */
+export interface InfoRelated {
+	id: number;
+	title?: string | null;
+	overview?: string | null;
+	link: string;
+	media_type: string;
+	poster?: string | null;
+	backdrop?: string | null;
+	logo?: string | null;
+	year?: number | null;
+	duration?: number | null;
+	have_items?: number | null;
+	number_of_items?: number | null;
+	color_palette?: InfoColorPalettes;
+}
+
+type InfoColorPalettes = NonNullable<InfoData['color_palette']>;
+
 export interface InfoData {
 	id?: string;
 	title?: string;
@@ -59,9 +91,12 @@ export interface InfoData {
 	duration?: number | string;
 	type?: string;
 	media_type?: string;
-	director?: string | string[];
-	writer?: string | string[];
-	creator?: string | string[];
+	director?: InfoPerson | null;
+	writer?: InfoPerson | null;
+	creator?: InfoPerson | null;
+	cast?: InfoPerson[];
+	crew?: InfoPerson[];
+	collection?: InfoRelated[];
 	rating?: string;
 	voteAverage?: number;
 	genres?: Array<{ id?: number; name?: string }>;
