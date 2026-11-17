@@ -1085,6 +1085,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		const layers = [
 			container?.querySelector<HTMLElement>('video'),
 			container?.querySelector<HTMLElement>('.subtitle-safezone'),
+			...(container?.querySelectorAll<HTMLElement>('.libassjs-canvas-parent, .ass-plain-text') ?? []),
 			...this.root.querySelectorAll<HTMLElement>('.tvui-backdrop, .tvui-loading'),
 		];
 

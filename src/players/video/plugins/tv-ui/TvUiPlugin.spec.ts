@@ -542,9 +542,14 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 		const safezone = document.createElement('div');
 		const overlay = document.createElement('div');
 
+		const canvas = document.createElement('div');
+		const plain = document.createElement('div');
+
 		safezone.className = 'subtitle-safezone';
+		canvas.className = 'libassjs-canvas-parent';
+		plain.className = 'ass-plain-text';
 		overlay.append(safezone);
-		ctx.player.container.append(video, overlay);
+		ctx.player.container.append(video, overlay, canvas, plain);
 		ctx.player.length = 0;
 		ctx.player.emit('item', { item: ctx.player.items[0], index: 0 });
 		ctx.player.emit('pause');
@@ -554,8 +559,16 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 			...ctx,
 			video,
 			safezone,
+			canvas,
+			plain,
 		};
 	}
+
+	it('x17 the libass canvas and the plain-text fallback shrink inside the frame', () => {
+		const { canvas, plain } = openSettings();
+
+		expect([canvas, plain].map((layer) => layer.style.transform.includes('scale('))).toEqual([true, true]);
+	});
 
 	it('shrinks the video, the subtitle layer, the backdrop and the loading layer together', () => {
 		const { root, video, safezone } = openSettings();
