@@ -66,3 +66,21 @@ describe('the hero is paced like the native hero', () => {
 		expect(focusedCardStore.debouncedCard.value?.id).toBe('A');
 	});
 });
+
+// NMLolomo.kt:150-172: a music hero takes its cover palette, a video hero its poster palette.
+describe('the theme color follows the hero card palette', () => {
+	const color = (): string => document.documentElement.style.getPropertyValue('--color-primary');
+
+	it('a music card sets the theme from its cover', () => {
+		focusedCardStore.setThemeFollowsFocus(true);
+		focusedCardStore.seed({ id: 'artist', color_palette: { cover: { dominant: '#3A5F7A' } } });
+
+		expect(color()).toBe('#3A5F7A');
+	});
+
+	it('a video card sets the theme from its poster (positive control)', () => {
+		focusedCardStore.seed({ id: 'movie', color_palette: { poster: { dominant: '#7A3A3A' } } });
+
+		expect(color()).toBe('#7A3A3A');
+	});
+});

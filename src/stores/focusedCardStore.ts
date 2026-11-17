@@ -42,7 +42,8 @@ function applyPalette(card: FocusedCardData | null): void {
 
 	const palette = card?.color_palette;
 
-	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
+	// NMLolomo.kt:150-172: a video hero takes its poster palette, a music hero its cover.
+	applyThemeColor(palette?.poster ?? palette?.cover ?? null);
 }
 
 // HeroSelectionTiming.kt:33,40-43 pacedHero: a change shows at once, then holds, and only the newest card follows.
