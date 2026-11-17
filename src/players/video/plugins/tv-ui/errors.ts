@@ -15,6 +15,25 @@ const MESSAGE_GROUPS = [
 	[['live', 'stall'], 'player_error_live'],
 ] as const satisfies ReadonlyArray<readonly [readonly string[], string]>;
 
+// LiveTranscodeError.kt:65-76 transcodeReasonRes: one reason line per failure kind.
+const TRANSCODE_REASONS = [
+	[['DiskFull'], 'transcode_reason_disk_full'],
+	[['HardwareFailure', 'HardwareUnavailable'], 'transcode_reason_hardware'],
+	[['InputNotFound'], 'transcode_reason_input_not_found'],
+	[['InputCorrupt'], 'transcode_reason_input_corrupt'],
+	[['InputUnsupported', 'CodecUnavailable', 'ProfileInvalid'], 'transcode_reason_unsupported'],
+	[['Timeout'], 'transcode_reason_timeout'],
+	[['NetworkPathUnavailable', 'NetworkPathTimeout', 'NetworkPathPermission'], 'transcode_reason_storage'],
+	[['ResourceExhausted'], 'transcode_reason_busy'],
+	[['InputDrmProtected'], 'transcode_reason_protected'],
+] as const satisfies ReadonlyArray<readonly [readonly string[], string]>;
+
+export const LIVE_TRANSCODE_FAILED = 'live-transcode/failed';
+
+export function transcodeReasonKey(kind: string | undefined): string {
+	return TRANSCODE_REASONS.find(([kinds]) => (kinds as readonly string[]).includes(kind ?? ''))?.[1] ?? 'transcode_reason_generic';
+}
+
 export function errorMessageKey(error: string | null | undefined): string {
 	if (!error)
 		return 'error_unknown';

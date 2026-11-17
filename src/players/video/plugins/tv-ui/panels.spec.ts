@@ -527,3 +527,79 @@ describe('subtitle dialog (SubtitleDialog.kt, the trailer picker)', () => {
 		detach();
 	});
 });
+
+describe('scrub progress (TVBottomBar.kt:109,128)', () => {
+	it('osd-07 the remaining time and the chapter fill follow the scrubbed time', () => {
+		const bar = bottomBar(() => undefined);
+
+		bar.update({
+			playing: false,
+			time: 10,
+			override: 600,
+			duration: 3600,
+			buffered: 0,
+			chapters: [],
+		});
+
+		const times = Array.from(bar.root.querySelectorAll('.tvui-time')).map((node) => node.textContent);
+		const fill = bar.root.querySelector<HTMLElement>('.tvui-chapter-fill')!;
+
+		expect(times).toEqual(['10:00', '50:00']);
+		expect(Number.parseFloat(fill.style.width)).toBeCloseTo(16.7, 1);
+	});
+});
+
+describe('error card, episode labels and rating (ErrorOverlay.kt:105-154, EpisodeDialog.kt:47-130, PreScreenDialog.kt:194-211)', () => {
+	const noop = () => undefined;
+	const bare = {
+		playlistSize: 1,
+		episodeCount: 0,
+		onPlay: noop,
+		onRestart: noop,
+		onLanguage: noop,
+		onEpisodes: noop,
+	} as const;
+
+	it('osd-11 a transcode failure shows the reason for its kind and the error icon', () => {
+		const dialog = errorDialog('live-transcode/failed', true, noop, noop, 'DiskFull');
+
+		expect(dialog.root.querySelector('.tvui-message-body')?.textContent).toBe('The server is out of disk space.');
+		expect(dialog.root.querySelector('[data-icon="playerError"]')).not.toBeNull();
+		expect(dialog.root.querySelector('.tvui-error-card')).not.toBeNull();
+	});
+
+	it('osd-11 an unknown transcode kind shows the generic reason', () => {
+		const dialog = errorDialog('live-transcode/failed', true, noop, noop, 'Nope');
+
+		expect(dialog.root.querySelector('.tvui-message-body')?.textContent).toBe('The server could not prepare this video. Try again.');
+	});
+
+	it('osd-14 a collection playlist labels its rail Collection and a special one Extras', () => {
+		const rail = (extra: Partial<UiItem>) => episodeDialog({
+			items: [{
+				title: 'A',
+				season: 1,
+				episode: 1,
+				...extra,
+			}],
+			currentIndex: 0,
+			onPick: noop,
+		}).root.querySelector('.tvui-seasons .tvui-row-label')?.textContent;
+
+		expect(rail({ playlistType: 'collection' })).toBe('Collection');
+		expect(rail({ videoType: 'special' })).toBe('Extras');
+		expect(rail({})).toBe('Season 1');
+	});
+
+	it('osd-15 the pre-screen draws the content rating badge from item.rating', () => {
+		const dialog = preScreen({ ...bare, item: { title: 'A', rating: { iso_3166_1: 'NL', rating: '12' } } });
+		const badge = dialog.root.querySelector<HTMLImageElement>('.tvui-rating');
+
+		expect(badge?.getAttribute('alt')).toBe('NL');
+		expect(badge?.getAttribute('src')).toContain('/NL/NL_12.svg');
+	});
+
+	it('osd-15 no rating draws no badge', () => {
+		expect(preScreen({ ...bare, item: { title: 'A' } }).root.querySelector('.tvui-rating')).toBeNull();
+	});
+});

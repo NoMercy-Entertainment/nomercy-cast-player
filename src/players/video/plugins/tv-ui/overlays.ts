@@ -59,8 +59,9 @@ export function centerMessage(text: string): HTMLElement {
 	return node;
 }
 
-export function skipPrompt(label: string, onSkip: () => void): HTMLElement {
-	const node = focusable(el('button', 'tvui-button tvui-skip', label), onSkip);
+// SkipOverlay.kt:263-275: an intro lands bottom-start, an outro bottom-end.
+export function skipPrompt(label: string, side: 'start' | 'end', onSkip: () => void): HTMLElement {
+	const node = focusable(el('button', `tvui-button tvui-skip tvui-skip-${side}`, label), onSkip);
 
 	node.dataset.skipPrompt = 'true';
 

@@ -27,7 +27,7 @@ type PlayerLike = Pick<NMVideoPlayer, 'time' | 'item' | 'chapters'> & {
 interface SkipChapter { id: string; type?: string; endTime?: number; startTime?: number }
 
 // Server chapter files name the intro and credits by title.
-function chapterType(title: string): string | undefined {
+export function chapterType(title: string): string | undefined {
 	const lower = title.toLowerCase();
 
 	if (lower.includes('intro') || lower.includes('opening'))

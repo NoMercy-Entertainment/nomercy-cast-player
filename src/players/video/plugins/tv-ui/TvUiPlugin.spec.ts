@@ -18,6 +18,7 @@ interface Item {
 	id: number;
 	title: string;
 	image?: string;
+	backdrop?: string;
 	video_id?: string;
 	video_type?: string;
 	tmdb_id?: number;
@@ -71,8 +72,16 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 	buffered = (): number => this.bufferedTo;
 	queue = (): Item[] => this.items;
 	item = (): Item => this.items[0]!;
-	index = (): number => 0;
-	chapters = (): never[] => [];
+	at = 0;
+	index = (): number => this.at;
+	chapterList: Array<{
+		index: number;
+		title: string;
+		start: number;
+		end: number;
+	}> = [];
+
+	chapters = () => this.chapterList;
 	play = vi.fn<() => Promise<void>>(async () => {
 		this.calls.push('play');
 		this.state = 'playing';
@@ -96,10 +105,19 @@ class FakePlayer extends EventEmitter<Record<string, unknown>> {
 	};
 
 	subtitles = (): never[] => [];
-	audioTracks = (): never[] => [];
+	audioList: Array<{ label: string; language: string }> = [];
+	audioPicked: { index: number } | null = null;
+	audioTracks = () => this.audioList;
 	qualityLevels = (): Level[] => this.levels;
 	subtitle = (): null => null;
-	audioTrack = (): null => null;
+	audioTrack = (index?: number) => {
+		if (index !== undefined) {
+			this.audioPicked = { index };
+		}
+
+		return this.audioPicked;
+	};
+
 	quality = (): string => 'auto';
 	subtitleStyle = vi.fn<(patch?: Record<string, string>) => Record<string, never>>(() => ({}));
 	volume = (): number => 30;
@@ -157,6 +175,9 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 	it('shows a skip pill for chapter-skip-available, a click seeks to the chapter end and clears it', () => {
 		const { player, root } = setup();
 
+		player.state = 'playing';
+		player.at = 1;
+
 		player.emit('chapter-skip-available', {
 			type: 'intro',
 			startTime: 5,
@@ -172,13 +193,15 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 	it('chapter-skip-clear removes the pill', () => {
 		const { player, root } = setup();
 
+		player.state = 'playing';
+		player.at = 1;
 		player.emit('chapter-skip-available', { type: 'credits', endTime: 90 });
-		expect(pill(root)?.textContent).toBe('Skip credits');
+		expect(pill(root)?.textContent).toBe('Skip outro');
 		player.emit('chapter-skip-clear');
 		expect(pill(root)).toBeNull();
 	});
 
-	it('offers the next episode inside the credits and advances once at the content end', () => {
+	it('osd-04 draws no next-episode pill and never advances by itself (SkipOverlay.kt, TvUiPlugin.kt)', () => {
 		const { player, root } = setup();
 
 		player.items[0]!.skip_segments = [{
@@ -189,18 +212,21 @@ describe('chapter skip and next-episode prompts (TVOverlayPlugin.ts:88-91, :156-
 
 		player.now = 85;
 		player.emit('time', { time: 85 });
-		expect(pill(root)?.textContent).toBe('Next episode');
+		expect(pill(root)).toBeNull();
 		player.now = 96;
 		player.emit('time', { time: 96 });
 		player.emit('time', { time: 97 });
-		expect(player.next).toHaveBeenCalledTimes(1);
+		expect(player.next).not.toHaveBeenCalled();
 	});
 
 	it('hides the pill while the settings panel is open (SkipOverlay unmounts)', () => {
 		const { player, root } = setup();
 
-		player.emit('pause');
+		player.state = 'playing';
+		player.at = 1;
 		player.emit('chapter-skip-available', { type: 'intro', endTime: 40 });
+		press('ArrowUp');
+		expect(pill(root)).not.toBeNull();
 		root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
 		expect(root.querySelector('.tvui-settings')).not.toBeNull();
 		expect(pill(root)).toBeNull();
@@ -599,5 +625,219 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 		const { root } = openSettings();
 
 		expect(root.querySelector('.tvui-sticky-title .tvui-title')?.textContent).toBe('One');
+	});
+});
+
+describe('skip pill (SkipOverlay.kt:68-275)', () => {
+	const intro = {
+		type: 'intro',
+		startTime: 0,
+		endTime: 30,
+	} as const;
+
+	function ready() {
+		const ctx = setup();
+
+		ctx.player.state = 'playing';
+		ctx.player.at = 1;
+
+		return ctx;
+	}
+
+	it('osd-01 OK on the visible pill skips instead of pausing (SkipOverlay.kt:221-227)', () => {
+		const { player, root } = ready();
+
+		player.emit('chapter-skip-available', intro);
+		vi.advanceTimersByTime(250);
+		expect(document.activeElement).toBe(pill(root));
+		press('Enter');
+		expect(player.seeks).toEqual([30]);
+		expect(player.pause).not.toHaveBeenCalled();
+	});
+
+	it('osd-02 an intro pill sits at the start, an outro pill at the end, and it reads Skip outro', () => {
+		const { player, root } = ready();
+
+		player.emit('chapter-skip-available', intro);
+		expect(pill(root)?.classList.contains('tvui-skip-start')).toBe(true);
+		player.emit('chapter-skip-available', { type: 'credits', endTime: 90 });
+		expect(pill(root)?.classList.contains('tvui-skip-end')).toBe(true);
+		expect(pill(root)?.textContent).toBe('Skip outro');
+	});
+
+	it('osd-02 the pill leaves after 10 s and the same chapter does not bring it back', () => {
+		const { player, root } = ready();
+
+		player.emit('chapter-skip-available', intro);
+		expect(pill(root)).not.toBeNull();
+		vi.advanceTimersByTime(10_000);
+		expect(pill(root)).toBeNull();
+		player.emit('pause');
+		player.emit('play');
+		expect(pill(root)).toBeNull();
+	});
+
+	it('osd-02 the pill shows only while playing', () => {
+		const { player, root } = ready();
+
+		player.state = 'paused';
+		player.emit('chapter-skip-available', intro);
+		expect(pill(root)).toBeNull();
+		player.state = 'playing';
+		player.emit('play');
+		expect(pill(root)).not.toBeNull();
+	});
+
+	it('osd-03 an outro in the last chapter goes to the next item', () => {
+		const { player, root } = ready();
+
+		player.at = 0;
+		player.now = 85;
+
+		player.chapterList = [
+			{
+				index: 0,
+				title: 'Episode',
+				start: 0,
+				end: 80,
+			},
+			{
+				index: 1,
+				title: 'Credits',
+				start: 80,
+				end: 100,
+			},
+		];
+
+		player.emit('chapter-skip-available', {
+			type: 'credits',
+			startTime: 80,
+			endTime: 100,
+		});
+
+		pill(root)!.click();
+		expect(player.next).toHaveBeenCalledTimes(1);
+		expect(player.seeks).toEqual([]);
+	});
+
+	it('osd-03 an intro seeks to the next playable chapter start', () => {
+		const { player, root } = ready();
+
+		player.now = 5;
+
+		player.chapterList = [
+			{
+				index: 0,
+				title: 'Intro',
+				start: 0,
+				end: 30,
+			},
+			{
+				index: 1,
+				title: 'Episode',
+				start: 31,
+				end: 100,
+			},
+		];
+
+		player.emit('chapter-skip-available', intro);
+		pill(root)!.click();
+		expect(player.seeks).toEqual([31]);
+		expect(player.next).not.toHaveBeenCalled();
+	});
+
+	it('osd-03 the first item hides its pill in the first half, the last item in the second half', () => {
+		const { player, root } = ready();
+
+		player.at = 0;
+		player.now = 5;
+		player.emit('chapter-skip-available', intro);
+		expect(pill(root)).toBeNull();
+		player.at = 1;
+		player.now = 80;
+		player.emit('chapter-skip-available', { type: 'credits', endTime: 100 });
+		expect(pill(root)).toBeNull();
+	});
+});
+
+describe('focus (TvUiPlugin.kt:743-765)', () => {
+	it('osd-05 a state change keeps focus on the control the viewer chose', () => {
+		const { player, root } = setup();
+
+		player.emit('pause');
+		const settings = root.querySelector<HTMLElement>('.tvui-top-bar button')!;
+
+		settings.focus();
+		player.emit('display-message', { text: 'Subtitles off' });
+		expect(document.activeElement).toBe(root.querySelector('.tvui-top-bar button'));
+	});
+
+	it('osd-06 scrubbing keeps focus on the scrub strip, not the play button', () => {
+		const { player, root } = setup();
+
+		player.emit('pause');
+		press('ArrowRight');
+		vi.advanceTimersByTime(600);
+		expect(document.activeElement).toBe(root.querySelector('.tvui-seek-strip'));
+	});
+
+	it('osd-16 a held OK key does not click again (Compose clicks once, on key up)', () => {
+		const { player } = setup({ skipPreScreen: false });
+
+		window.dispatchEvent(new KeyboardEvent('keydown', {
+			key: 'Enter',
+			repeat: true,
+			bubbles: true,
+			cancelable: true,
+		}));
+
+		expect(player.play).not.toHaveBeenCalled();
+	});
+});
+
+describe('dialogs and overlays (LanguageDialog.kt:45-129, ErrorOverlay.kt:92, TvUiPlugin.kt:624)', () => {
+	it('osd-09 picking an audio track moves the check mark at once', () => {
+		const { player, root } = setup({ skipPreScreen: false });
+
+		player.audioList = [{ label: 'English', language: 'en' }, { label: 'Japanese', language: 'ja' }];
+
+		Array.from(root.querySelectorAll<HTMLElement>('.tvui-pre-buttons button'))
+			.find((button) => button.textContent?.includes('Audio'))!
+			.click();
+
+		const row = (name: string): HTMLElement => Array.from(root.querySelectorAll<HTMLElement>('.tvui-row'))
+			.find((node) => node.textContent?.includes(name))!;
+
+		expect(row('English').classList.contains('tvui-selected')).toBe(true);
+		row('Japanese').click();
+		expect(row('Japanese').classList.contains('tvui-selected')).toBe(true);
+		expect(row('English').classList.contains('tvui-selected')).toBe(false);
+	});
+
+	it('osd-12 an error clears when playback recovers', () => {
+		const { player, root } = setup();
+
+		player.emit('error', { message: 'boom' });
+		expect(root.querySelector('.tvui-error-card')).not.toBeNull();
+		player.state = 'playing';
+		player.emit('play');
+		expect(root.querySelector('.tvui-error-card')).toBeNull();
+	});
+
+	it('osd-19 the backdrop and the loading overlay both use the item image', () => {
+		const { player, root } = setup();
+
+		player.items[0]!.backdrop = '/backdrop.jpg';
+		player.length = 0;
+		player.emit('item', { item: player.items[0], index: 0 });
+		expect(root.querySelector<HTMLElement>('.tvui-backdrop')?.style.backgroundImage).toContain('one.jpg');
+	});
+
+	it('osd-17 the play-pause media key toggles playback', () => {
+		const { player } = setup();
+
+		player.state = 'playing';
+		press('MediaPlayPause');
+		expect(player.pause).toHaveBeenCalledTimes(1);
 	});
 });

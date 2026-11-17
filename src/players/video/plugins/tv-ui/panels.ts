@@ -3,7 +3,7 @@ import { el, focusable, formatTime, icon, t } from './dom';
 import type { IconName } from './dom';
 import { episodeLabel, titleAndSubtitle } from './title';
 import type { TitledItem } from './title';
-import { errorHintKey, errorMessageKey } from './errors';
+import { errorHintKey, errorMessageKey, transcodeReasonKey } from './errors';
 import {
 	BACKGROUND_CHOICES,
 	FONT_SIZE_CHOICES,
@@ -29,6 +29,8 @@ export interface UiItem extends TitledItem {
 	year?: number;
 	duration?: number;
 	seasonName?: string;
+	// The library types it as a label; the server's playlist sends the content rating object.
+	rating?: string | number | ContentRating;
 	progress?: { time?: number };
 	tracks?: Array<{
 		kind?: string;
@@ -188,6 +190,7 @@ function chapterSegment(
 	chapter: { start: number; end: number },
 	index: number,
 	state: BottomBarState,
+	shown: number,
 ): HTMLElement {
 	const span = Math.max(chapter.end - chapter.start, 0);
 	const fill = el('div', 'tvui-chapter-fill');
@@ -195,7 +198,7 @@ function chapterSegment(
 		? span / state.duration
 		: 1;
 
-	fill.style.width = `${fillShare(state.time, chapter.start, chapter.end) * 100}%`;
+	fill.style.width = `${fillShare(shown, chapter.start, chapter.end) * 100}%`;
 	const segment = el('div', 'tvui-chapter', fill);
 
 	segment.style.flexGrow = String(grow);
@@ -231,10 +234,15 @@ export function bottomBar(onPlayPause: () => void) {
 			: 'play'));
 
 		playPause.setAttribute('aria-label', label);
-		elapsed.textContent = formatTime(state.override ?? state.time);
-		remaining.textContent = formatTime(Math.max(state.duration - state.time, 0));
+		// TVBottomBar.kt:109,128: the fill and the remaining time follow the scrubbed time too.
+		const shown = state.override ?? state.time;
+
+		elapsed.textContent = formatTime(shown);
+		remaining.textContent = formatTime(Math.max(state.duration - shown, 0));
 		bar.setAttribute('aria-valuetext', t('player_seek_position', spoken));
-		bar.replaceChildren(...segments.map((chapter, index) => chapterSegment(chapter, index, state)));
+
+		bar.replaceChildren(...segments.map((chapter, index) =>
+			chapterSegment(chapter, index, state, shown)));
 	};
 
 	return {
@@ -327,6 +335,37 @@ function preHeading(logo: string | undefined, title: string): HTMLElement {
 	return image;
 }
 
+// ContentRatingBadge.kt:46-63: the kijkwijzer SVG for the country and rating, drawn 32 by 24.
+const RATING_BASE = 'https://pub-a68768bb5b1045f296df9ea56bd53a7f.r2.dev/kijkwijzer';
+
+interface ContentRating {
+	iso_3166_1?: string;
+	rating?: string | number;
+	image?: string;
+}
+
+function ratingBadge(value: UiItem['rating']): HTMLElement | false {
+	const rating = typeof value === 'object'
+		? value
+		: null;
+
+	const country = rating?.iso_3166_1;
+
+	if (!rating || !country)
+		return false;
+
+	const src = rating.image
+		? `${RATING_BASE}${rating.image}`
+		: `${RATING_BASE}/${country}/${country}_${rating.rating}.svg`;
+
+	const badge = el('img', 'tvui-rating');
+
+	badge.setAttribute('src', src);
+	badge.setAttribute('alt', country);
+
+	return badge;
+}
+
 export function preScreen(opts: {
 	item?: UiItem;
 	playlistSize: number;
@@ -361,7 +400,7 @@ export function preScreen(opts: {
 		? el('span', 'tvui-pre-episode-label', label)
 		: false;
 
-	const meta = el('div', 'tvui-meta', count);
+	const meta = el('div', 'tvui-meta', ratingBadge(item?.rating), count);
 	const episode = el('div', 'tvui-pre-episode', tag, el('span', 'tvui-pre-episode-title', item?.title ?? ''));
 	const overview = el('p', 'tvui-pre-overview', item?.description ?? item?.overview ?? '');
 	const actions = el('div', 'tvui-pre-buttons', ...buttons);
@@ -424,9 +463,20 @@ function episodeCard(
 
 const EPISODE_SCROLL_OFFSET = 162;
 
-function seasonName(season: number, item: UiItem): string {
+function isKind(item: UiItem, kind: string): boolean {
+	return item.playlistType === kind || item.videoType === kind;
+}
+
+// EpisodeDialog.kt:47-50,122-130: a collection or special playlist has no real seasons.
+function seasonName(season: number, item: UiItem, nonSeasonal: boolean): string {
 	if (item.seasonName)
 		return item.seasonName;
+
+	if (nonSeasonal && isKind(item, 'collection'))
+		return t('player_collection');
+
+	if (nonSeasonal && isKind(item, 'special'))
+		return t('player_extras');
 
 	return season === 0
 		? t('player_extras')
@@ -446,6 +496,8 @@ export function episodeDialog(opts: {
 		}
 	}
 
+	const head = opts.items[0];
+	const nonSeasonal = head !== undefined && (isKind(head, 'collection') || isKind(head, 'special'));
 	const browsing = opts.items[opts.currentIndex]?.season ?? 1;
 	const { currentIndex, onPick } = opts;
 	const cards = opts.items.map((item, index) => episodeCard(item, index, currentIndex, onPick));
@@ -453,7 +505,7 @@ export function episodeDialog(opts: {
 		const first = opts.items.findIndex((i) => i.season === season);
 
 		// EpisodeDialog.kt:131-143: a scroll rail, so no check mark.
-		return row(seasonName(season, item), season === browsing, () =>
+		return row(seasonName(season, item, nonSeasonal), season === browsing, () =>
 			cards[first]?.focus(), '', null, false, false);
 	});
 
@@ -676,14 +728,19 @@ export function messageDialog(opts: {
 	return { root, focus: () => buttons[0]?.focus() } as const satisfies Panel;
 }
 
+// ErrorOverlay.kt:106-229: a centered card over the picture; a transcode failure names its reason.
 export function errorDialog(
 	error: string | null,
 	transcodeFailed: boolean,
 	onRetry: () => void,
 	onExit: () => void,
+	transcodeKind?: string,
 ): Panel {
 	const hint = errorHintKey(error);
-	const message = t(errorMessageKey(error));
+	const message = transcodeFailed
+		? t(transcodeReasonKey(transcodeKind))
+		: t(errorMessageKey(error));
+
 	const title = transcodeFailed
 		? t('transcode_error_title')
 		: t('error_playback');
@@ -702,6 +759,12 @@ export function errorDialog(
 
 		panel.root.querySelector('.tvui-message-body')?.after(detail);
 	}
+
+	const card = el('div', 'tvui-error-card', icon('playerError'));
+
+	card.append(...Array.from(panel.root.childNodes));
+	panel.root.classList.add('tvui-error');
+	panel.root.append(card);
 
 	return panel;
 }
