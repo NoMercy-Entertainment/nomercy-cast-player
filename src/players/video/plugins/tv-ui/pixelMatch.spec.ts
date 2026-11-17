@@ -2,6 +2,29 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { episodeDialog, languageDialog, preScreen, settingsPanel } from './panels';
 import type { Choice, SettingsData, UiItem } from './panels';
+import { trackLabel } from './title';
+
+// KMP PlayerSettingsScreen.kt:288-289 shows the track label the player core composes: "English (Full)".
+describe('trackLabel', () => {
+	it('x18 names the language and the variant like KMP', () => {
+		expect(trackLabel({ language: 'eng', label: 'full' }, 'en')).toBe('English (Full)');
+
+		expect(trackLabel({
+			language: 'eng',
+			label: 'signs',
+			type: 'signs',
+		}, 'en')).toBe('English (Signs)');
+	});
+
+	it('x19 names an audio track by its language when the label is empty', () => {
+		expect(trackLabel({ language: 'eng', label: '' }, 'en')).toBe('English');
+		expect(trackLabel({ language: 'jpn', label: 'jpn' }, 'en')).toBe('Japanese');
+	});
+
+	it('x20 keeps the raw label when the language is unknown', () => {
+		expect(trackLabel({ label: 'Commentary' }, 'en')).toBe('Commentary');
+	});
+});
 
 // The vitest css option blanks imported stylesheets, so the source is read directly.
 const css = readFileSync('src/players/video/plugins/tv-ui/style.css', 'utf8');

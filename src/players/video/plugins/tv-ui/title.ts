@@ -36,6 +36,46 @@ export function episodeLabel(item: TitledItem, t: Translate): string | null {
 	return null;
 }
 
+// Codes Intl.DisplayNames does not know (nomercy-video-player desktop-ui/data/language-names.ts).
+const ISO3_QUIRKS = new Map<string, string>([['bra', 'pt-BR'], ['pob', 'pt-BR']]);
+
+function languageName(code: string | undefined, locale: string): string | null {
+	if (!code)
+		return null;
+
+	const bcp47 = ISO3_QUIRKS.get(code) ?? code;
+
+	try {
+		const name = new Intl.DisplayNames([locale, 'en'], { type: 'language', fallback: 'none' }).of(bcp47);
+
+		return name && name !== bcp47 && name !== code
+			? name
+			: null;
+	} catch {
+		return null;
+	}
+}
+
+export interface LabeledTrack {
+	label: string;
+	language?: string;
+	type?: string;
+}
+
+// The track row text KMP shows (player core languageDisplayName + variant): "English (Full)", "Japanese".
+export function trackLabel(track: LabeledTrack, locale: string): string {
+	const language = languageName(track.language, locale);
+	const raw = track.label.trim();
+	const variant = (track.type ?? raw).trim();
+	const isVariant = variant !== '' && variant.toLowerCase() !== track.language?.toLowerCase() &&
+		variant.toLowerCase() !== language?.toLowerCase();
+
+	if (language && isVariant)
+		return `${language} (${variant.charAt(0).toUpperCase()}${variant.slice(1)})`;
+
+	return language ?? raw;
+}
+
 export function titleAndSubtitle(
 	item: TitledItem | undefined,
 	t: Translate,

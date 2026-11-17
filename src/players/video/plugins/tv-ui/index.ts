@@ -22,6 +22,8 @@ import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimes
 import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, SETTINGS_EASING, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
+import { trackLabel } from './title';
+import type { LabeledTrack } from './title';
 import './style.css';
 
 export interface TvUiOptions {
@@ -66,9 +68,9 @@ interface Engine {
 	time: (seconds?: number) => number;
 	duration: () => number;
 	chapters?: () => Array<{ start: number; end?: number }>;
-	audioTracks?: () => Array<{ label: string }>;
+	audioTracks?: () => LabeledTrack[];
 	audioTrack?: (index?: number) => { index: number } | null | undefined;
-	subtitles?: () => Array<{ label: string }>;
+	subtitles?: () => LabeledTrack[];
 	subtitle?: (index?: number | null) => { index: number } | null | undefined;
 	qualityLevels?: () => Array<{ index: number; label: string }>;
 	quality?: (value?: number | 'auto') => { index: number } | string | undefined;
@@ -852,8 +854,9 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			? quality.index
 			: -1;
 
-		const audioLabels = engine.audioTracks?.().map((track) => track.label);
-		const subtitleLabels = engine.subtitles?.().map((track) => track.label);
+		const locale = i18next.language || 'en';
+		const audioLabels = engine.audioTracks?.().map((track) => trackLabel(track, locale));
+		const subtitleLabels = engine.subtitles?.().map((track) => trackLabel(track, locale));
 		const levelLabels = engine.qualityLevels?.().map((level) => level.label);
 		const off = {
 			label: t('dialog_subtitle_off'),
