@@ -35,7 +35,7 @@ describe('the results area draws only what the native SearchScreen draws', () =>
 		letters.forEach((letter) => wrapper.findComponent(SearchKeyboard).vm.$emit('type', letter));
 
 		await wrapper.vm.$nextTick();
-		vi.advanceTimersByTime(300);
+		vi.advanceTimersByTime(1300);
 		await wrapper.vm.$nextTick();
 
 		return wrapper;

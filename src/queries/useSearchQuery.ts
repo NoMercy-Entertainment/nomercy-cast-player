@@ -25,7 +25,7 @@ async function fetchSearchPage(type: string, encoded: string): Promise<Component
 }
 
 async function fetchSearch(type: string, query: string): Promise<Component[]> {
-	if (query.trim().length < 3)
+	if (query.length < 3)
 		return [];
 
 	const response = await fetchSearchPage(type, encodeURIComponent(query));
@@ -39,7 +39,9 @@ export function useSearchQuery(type: Ref<string>, queryStr: Ref<string>) {
 	return useQuery({
 		queryKey,
 		queryFn: () => fetchSearch(type.value, queryStr.value),
-		enabled: computed(() => queryStr.value.trim().length >= 3),
+		enabled: computed(() => queryStr.value.length >= 3),
 		...queryConfigs.realtime,
+		// SearchScreen.kt:55-62: every new query or type is fetched again, never served stale.
+		staleTime: 0,
 	});
 }
