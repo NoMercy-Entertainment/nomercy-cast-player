@@ -1,5 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 // The first Intl.DisplayNames took 12.4 s on the CI runner (28 ms locally), so
 // it is built here with its own limit instead of inside the 5 s test.
@@ -169,5 +171,28 @@ describe('the trailer controls are the tv-ui panels', () => {
 
 		player.subtitles.mockReturnValue([]);
 		wrapper.unmount();
+	});
+});
+
+// The player appends a bare <video>. Without a rule it keeps its own pixel size at the top left
+// (the TV showed a 640x352 box), where the native PlayerSurface is fillMaxSize
+// (TrailerOverlayPlayer.kt:200-203).
+describe('the trailer video fills the screen like the native PlayerSurface', () => {
+	const source = readFileSync(resolve(process.cwd(), 'src/players/video/TrailerOverlay.vue'), 'utf8');
+	const rule = source.match(/\.trailer-surface\s+:deep\(video\)\s*\{([^}]*)\}/)?.[1] ?? '';
+
+	it('has a rule for the player video element', () => {
+		expect(rule).not.toBe('');
+	});
+
+	it('pins the video to the surface at full size and keeps the picture whole', () => {
+		expect(rule).toMatch(/position:\s*absolute/);
+		expect(rule).toMatch(/width:\s*100%/);
+		expect(rule).toMatch(/height:\s*100%/);
+		expect(rule).toMatch(/object-fit:\s*contain/);
+	});
+
+	it('insets the player 32 px like the native black box (TrailerOverlayPlayer.kt:190-194)', () => {
+		expect(source).toMatch(/\.trailer-overlay\s*\{[^}]*padding:\s*32px/);
 	});
 });
