@@ -54,10 +54,9 @@ const server = http.createServer((req, res) => {
 	if (!fs.existsSync(file) || fs.statSync(file).isDirectory())
 		file = path.join(selectedRoot, 'index.html');
 	res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream');
-	let body = fs.readFileSync(file);
-	if (file.endsWith('index.html'))
-		body = body.toString().replace(/<script\s+src="https:\/\/www\.gstatic\.com[^>]+><\/script>/g, '');
-	res.end(body);
+	// Block remote CAF without rewriting HTML. Old engines need unsafe-eval for the WASM probe.
+	res.setHeader('Content-Security-Policy', 'script-src \'self\' \'unsafe-inline\' \'unsafe-eval\'');
+	res.end(fs.readFileSync(file));
 });
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 (async () => {
@@ -128,6 +127,22 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 			ws.send(JSON.stringify({ id, method, params }));
 		});
 		const evaluate = async expression => (await call('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })).result;
+		const invoke = async (functionDeclaration, values) => {
+			// Bind to the current page after navigation; transport values as CDP data, never source.
+			const { result: target } = await call('Runtime.evaluate', { expression: 'globalThis' });
+			try {
+				return (await call('Runtime.callFunctionOn', {
+					objectId: target.objectId,
+					functionDeclaration,
+					arguments: values.map(value => ({ value })),
+					returnByValue: true,
+					awaitPromise: true,
+				})).result;
+			}
+			finally {
+				await call('Runtime.releaseObject', { objectId: target.objectId });
+			}
+		};
 		await call('Runtime.enable');
 		await call('Page.enable');
 		await call('Emulation.setDeviceMetricsOverride', { width: 1920, height: 1080, deviceScaleFactor: 1, mobile: false });
@@ -136,7 +151,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 		await delay(5000);
 		const after = await evaluate('({ua:navigator.userAgent,hasOwn:typeof Object.hasOwn,at:typeof Array.prototype.at,replaceAll:typeof String.prototype.replaceAll,appChildren:document.querySelector("#app")?.children.length,text:document.body.innerText.slice(0,1200),aspectRatio:CSS.supports("aspect-ratio","1"),focusVisible:CSS.supports("selector(:focus-visible)")})');
 		const assetModules = fs.readdirSync(path.join(root, 'assets')).filter(name => name.endsWith('.js'));
-		const imports = await evaluate(`(async()=>{const files=${JSON.stringify(assetModules)};const results=[];for(const name of files){try{await import("/assets/"+name);results.push({name,ok:true});}catch(error){results.push({name,ok:false,error:String(error)});}}return results;})()`);
+		const imports = await invoke('async function(files){const results=[];for(const name of files){try{await import("/assets/"+name);results.push({name,ok:true});}catch(error){results.push({name,ok:false,error:String(error)});}}return results;}', [assetModules]);
 		const behavior = await evaluate('(()=>{const tests={};const check=(name,fn)=>{try{tests[name]=fn()===true;}catch(error){tests[name]=String(error);}};check("atNegative",()=>[1,2,3].at(-1)===3);check("atBounds",()=>[].at(0)===undefined&&[1].at(Infinity)===undefined);check("atGeneric",()=>Array.prototype.at.call({0:"a",1:"b",length:2},-1)==="b");check("replaceAllTokens",()=>"aba".replaceAll("a","[$&]")==="[a]b[a]");check("replaceAllEmpty",()=>"ab".replaceAll("","-")==="-a-b-");check("replaceAllNonGlobal",()=>{try{"a".replaceAll(/a/,"b");return false;}catch(e){return e instanceof TypeError;}});check("ownNullPrototype",()=>!Object.hasOwn(Object.create(null),"toString"));return tests;})()');
 		const wasm = await evaluate('(async()=>{try{const buffer=await(await fetch("/js/octopus/nomercy-libass-worker.wasm")).arrayBuffer();let compileError;try{await WebAssembly.compile(buffer);}catch(error){compileError=String(error);}return {bytes:buffer.byteLength,valid:WebAssembly.validate(buffer),compileError};}catch(error){return {error:String(error)};}})()');
 		const moduleFailures = imports.value?.filter(result => !result.ok) || [];
@@ -147,7 +162,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 		// A trusted keyboard event puts native :focus-visible into keyboard modality.
 		await call('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
 		await call('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', windowsVirtualKeyCode: 9 });
-		const layout = process.argv[5] ? await evaluate(JSON.parse(fs.readFileSync(process.argv[5], 'utf8')).expression) : null;
+		const fixture = process.argv[5] ? JSON.parse(fs.readFileSync(process.argv[5], 'utf8')) : null;
+		const layout = fixture ? await invoke(fixture.functionDeclaration, fixture.args) : null;
 		let playerProof;
 		if (proofRoot) {
 			await call('Page.navigate', { url: `http://127.0.0.1:${server.address().port}/__proof/` });
@@ -165,7 +181,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 		const playerPassed = playerProof?.value?.passed === true;
 		const productionLayoutPassed = previewChecks.value?.length === 3 && previewChecks.value.every(result => result.pass === true);
 		const passed = previewPassed && layoutPassed && productionLayoutPassed && playerPassed;
-		const report = { root, buildSha256, artifactFileCount: artifactFiles.length, mode: 'local non-CAF preview, external DNS blocked', before: before.value, after: after.value, moduleCount: assetModules.length, moduleFailures, apiBehavior: behavior.value, previewGeometry: previewGeometry.value, previewChecks: previewChecks.value, layout: layout?.value, playerProof: playerProof?.value ?? playerProof, subtitleWasm: wasm.value, exceptions, previewPassed, layoutPassed, productionLayoutPassed, playerPassed, passed };
+		const report = { root, buildSha256, artifactFileCount: artifactFiles.length, mode: 'local preview, external scripts and DNS blocked', before: before.value, after: after.value, moduleCount: assetModules.length, moduleFailures, apiBehavior: behavior.value, previewGeometry: previewGeometry.value, previewChecks: previewChecks.value, layout: layout?.value, playerProof: playerProof?.value ?? playerProof, subtitleWasm: wasm.value, exceptions, previewPassed, layoutPassed, productionLayoutPassed, playerPassed, passed };
 		fs.writeFileSync(output, JSON.stringify(report, null, 2));
 		console.log(JSON.stringify({ ...report, previewGeometry: undefined, moduleFailures: moduleFailures.slice(0, 3), totalModuleFailures: moduleFailures.length, exceptions: exceptions.map(e => e.exception?.description || e.text) }, null, 2));
 		const shot = await call('Page.captureScreenshot', { format: 'png' });
