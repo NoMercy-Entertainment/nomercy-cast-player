@@ -142,7 +142,7 @@ describe('back from content goes to the nav first (VideoContentList.kt:519-533, 
 });
 
 describe('up from the first row lands on the selected tab (TvNavigationBar.kt:109-131)', () => {
-	it('ArrowUp on the music screen focuses the Music tab, not Home', async () => {
+	it('arrow up on the music screen focuses the Music tab, not Home', async () => {
 		await boot('/music', [rail('r1', 4)]);
 		cardsOf('r1')[0]!.focus();
 		press('ArrowUp');
@@ -153,7 +153,7 @@ describe('up from the first row lands on the selected tab (TvNavigationBar.kt:10
 });
 
 describe('every edge key is consumed (TvCardViewHolder.kt:358-382, TvRowFocus.kt:123-128)', () => {
-	it('LEFT on the first card, RIGHT on the last card and DOWN on the last row are prevented', async () => {
+	it('left on the first card, right on the last card and down on the last row are prevented', async () => {
 		await boot('/', [rail('r1', 4), rail('r2', 4)]);
 		const first = cardsOf('r1');
 
@@ -209,6 +209,7 @@ describe('a held OK acts once (TvNavigationBar.kt:331-336)', () => {
 	it('key repeat on a card does not fire the card action again', async () => {
 		await boot('/', [rail('r1', 4)]);
 		const card = cardsOf('r1')[0]!;
+
 		push.mockClear();
 		card.focus();
 		press('Enter');
