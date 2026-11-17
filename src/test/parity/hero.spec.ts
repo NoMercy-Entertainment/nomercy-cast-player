@@ -44,8 +44,8 @@ describe('info header follows the hero (InfoScreen.kt:213,260)', () => {
 		expect(r['justify-content']).toBe('flex-end');
 	});
 
-	it('info.backdrop: hero-height box, same scrim as the home hero', () => {
-		expect(decls('views/info/InfoScreen.vue', '.backdrop').height).toBe('var(--hero-height)');
+	it('info.backdrop: full screen behind the rows (InfoScreen.kt:259-260), same scrim as the home hero', () => {
+		expect(decls('views/info/InfoScreen.vue', '.backdrop').inset).toBe('0');
 		expect(decls('views/info/InfoScreen.vue', '.scrim')).toEqual({});
 	});
 });
