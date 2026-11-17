@@ -616,6 +616,18 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 		expect([video.style.willChange, safezone.style.willChange]).toEqual(['transform', 'transform']);
 	});
 
+	// WatchScreen.kt:514-518: one tween per open; a redraw while the menu is open must not retarget it.
+	it('keeps one shrink target while the sidebar stays open, so a redraw never restarts the animation', () => {
+		const { player, video } = openSettings();
+		const first = video.style.transform;
+
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 960, 120));
+		player.emit('pause');
+
+		expect(video.style.transform).toBe(first);
+		vi.restoreAllMocks();
+	});
+
 	it('puts every layer back when the sidebar closes', () => {
 		const { root, video, safezone } = openSettings();
 

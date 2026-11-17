@@ -111,8 +111,21 @@ export function moveFocus(root: HTMLElement, direction: Direction): boolean {
 		}
 	}
 
-	best?.focus();
-	best?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+	// A list entered from outside takes its tracked card (EpisodeDialog.kt focusEntersAt).
+	const list = best?.closest<HTMLElement>('[data-entry]');
+
+	if (best && list && !list.contains(from)) {
+		best = list.querySelectorAll<HTMLElement>('[data-focusable]')[Number(list.dataset.entry)] ?? best;
+	}
+
+	// preventScroll: a plain focus() jumps the list; LazyColumn scrolls only as far as needed, animated.
+	best?.focus({ preventScroll: true });
+
+	best?.scrollIntoView({
+		behavior: 'smooth',
+		block: 'nearest',
+		inline: 'nearest',
+	});
 
 	return best !== null;
 }

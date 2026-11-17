@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { moveFocus } from './dom';
 import { centerMessage, loadingLayer } from './overlays';
 import { bottomBar, episodeDialog, errorDialog, languageDialog, messageDialog, preScreen, settingsPanel, subtitleDialog, topBar } from './panels';
 import type { Choice, SettingsData, UiItem } from './panels';
@@ -387,6 +388,106 @@ describe('episode dialog (EpisodeDialog.kt)', () => {
 		expect(document.activeElement).toBe(dialog.root.querySelector('.tvui-seasons .tvui-row'));
 		dialog.root.querySelectorAll<HTMLElement>('.tvui-card')[2]!.click();
 		expect(picked).toEqual([2]);
+		detach();
+	});
+
+	// EpisodeDialog.kt:85-90,135-142: a season row scrolls the list to its first card and keeps focus on the rail.
+	it('e04 a season row scrolls its first card 162 px under the list padding, smoothly, and keeps focus', () => {
+		const dialog = episodeDialog({
+			items,
+			currentIndex: 1,
+			onPick: () => undefined,
+		});
+		const detach = attached(dialog.root);
+		const list = dialog.root.querySelector<HTMLElement>('.tvui-episode-list')!;
+		const scrollTo = vi.fn();
+
+		list.scrollTo = scrollTo as unknown as HTMLElement['scrollTo'];
+		Object.defineProperty(dialog.root.querySelectorAll('.tvui-card')[2], 'offsetTop', { value: 500 });
+		dialog.focus();
+
+		const seasonTwo = dialog.root.querySelectorAll<HTMLElement>('.tvui-seasons .tvui-row')[2]!;
+
+		seasonTwo.focus();
+		seasonTwo.click();
+
+		expect(scrollTo).toHaveBeenLastCalledWith({ top: 338, behavior: 'smooth' });
+		expect(document.activeElement).toBe(seasonTwo);
+		expect(list.dataset.entry).toBe('2');
+		detach();
+	});
+
+	// EpisodeDialog.kt:159,183-187: RIGHT from the rail enters at the tracked card, not the nearest one.
+	it('e05 the list is entered at the tracked card', () => {
+		const dialog = episodeDialog({
+			items,
+			currentIndex: 1,
+			onPick: () => undefined,
+		});
+		const detach = attached(dialog.root);
+		const cards = dialog.root.querySelectorAll<HTMLElement>('.tvui-card');
+
+		dialog.focus();
+		expect(dialog.root.querySelector<HTMLElement>('.tvui-episode-list')!.dataset.entry).toBe('1');
+		cards[2]!.focus();
+		expect(dialog.root.querySelector<HTMLElement>('.tvui-episode-list')!.dataset.entry).toBe('2');
+		detach();
+	});
+
+	function laidOut() {
+		const dialog = episodeDialog({
+			items,
+			currentIndex: 2,
+			onPick: () => undefined,
+		});
+		const detach = attached(dialog.root);
+		const seasons = Array.from(dialog.root.querySelectorAll<HTMLElement>('.tvui-seasons .tvui-row'));
+		const cards = Array.from(dialog.root.querySelectorAll<HTMLElement>('.tvui-card'));
+
+		seasons.forEach((row, i) => {
+			row.getBoundingClientRect = () => new DOMRect(0, 200 + i * 52, 200, 44);
+		});
+
+		cards.forEach((card, i) => {
+			card.getBoundingClientRect = () => new DOMRect(300, 200 + i * 120, 600, 110);
+			card.scrollIntoView = vi.fn();
+		});
+
+		return {
+			dialog,
+			detach,
+			seasons,
+			cards,
+		} as const;
+	}
+
+	// LazyColumn brings a focused card into view with an animated, minimal scroll; a plain focus() jumps it.
+	it('e06 a card move scrolls the list smoothly and only as far as needed', () => {
+		const { dialog, detach, cards } = laidOut();
+		const focus = vi.spyOn(cards[1]!, 'focus');
+
+		cards[0]!.focus();
+		moveFocus(dialog.root, 'down');
+
+		expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+
+		expect(cards[1]!.scrollIntoView).toHaveBeenCalledWith({
+			behavior: 'smooth',
+			block: 'nearest',
+			inline: 'nearest',
+		});
+
+		detach();
+	});
+
+	it('e07 RIGHT from a season row lands on the tracked card', () => {
+		const { dialog, detach, seasons, cards } = laidOut();
+
+		dialog.focus();
+		seasons[0]!.focus();
+		moveFocus(dialog.root, 'right');
+
+		expect(document.activeElement).toBe(cards[2]);
 		detach();
 	});
 });

@@ -501,15 +501,32 @@ export function episodeDialog(opts: {
 	const browsing = opts.items[opts.currentIndex]?.season ?? 1;
 	const { currentIndex, onPick } = opts;
 	const cards = opts.items.map((item, index) => episodeCard(item, index, currentIndex, onPick));
-	const seasonRows = [...seasons.entries()].map(([season, item]) => {
-		const first = opts.items.findIndex((i) => i.season === season);
-
-		// EpisodeDialog.kt:131-143: a scroll rail, so no check mark.
-		return row(seasonName(season, item, nonSeasonal), season === browsing, () =>
-			cards[first]?.focus(), '', null, false, false);
-	});
-
 	const list = el('div', 'tvui-episode-list', ...cards);
+	const offsetOf = (card: HTMLElement): number =>
+		Math.max(0, card.offsetTop - list.offsetTop - EPISODE_SCROLL_OFFSET);
+
+	// EpisodeDialog.kt:83,159,183-187: the card the list is entered at, the playing one at first.
+	list.dataset.entry = String(cards[currentIndex]
+		? currentIndex
+		: 0);
+
+	cards.forEach((card, index) => card.addEventListener('focus', () => {
+		list.dataset.entry = String(index);
+	}));
+
+	const seasonRows = [...seasons.entries()].map(([season, item]) => {
+		const first = Math.max(0, opts.items.findIndex((i) => i.season === season));
+
+		// EpisodeDialog.kt:85-90,131-143: a scroll rail with no check mark; focus stays on the row.
+		return row(seasonName(season, item, nonSeasonal), season === browsing, () => {
+			const card = cards[first];
+
+			if (!card) return;
+
+			list.dataset.entry = String(first);
+			list.scrollTo({ top: offsetOf(card), behavior: 'smooth' });
+		}, '', null, false, false);
+	});
 	const root = el('div', 'tvui-dialog tvui-episodes', el('div', 'tvui-seasons', ...seasonRows), list);
 
 	// EpisodeDialog.kt:43,92-100: the first season row takes focus; the current card lands 110 px below the 52 px padding.
@@ -519,7 +536,7 @@ export function episodeDialog(opts: {
 		(seasonRows[0] ?? target)?.focus({ preventScroll: true });
 
 		list.scrollTop = target
-			? target.offsetTop - list.offsetTop - EPISODE_SCROLL_OFFSET
+			? offsetOf(target)
 			: 0;
 	};
 

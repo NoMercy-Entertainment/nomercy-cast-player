@@ -169,6 +169,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	private languageOpen = false;
 	private searchOpen = false;
 	private settings: SettingsNav | null = null;
+	private shrinkOpen = false;
+	private shrinkTarget: { transform: string; radius: number } | null = null;
 	private settingsFresh = false;
 	private seekMode = false;
 	private controlsVisible = false;
@@ -1306,12 +1308,22 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			...this.root.querySelectorAll<HTMLElement>('.tvui-backdrop, .tvui-loading'),
 		];
 
-		const titleBottom = open
-			? this.titleBottom()
-			: 0;
+		const changed = open !== this.shrinkOpen;
 
-		const width = this.root.clientWidth || window.innerWidth;
-		const { scale, translateX, translateY, radius } = videoShrink(width, titleBottom);
+		this.shrinkOpen = open;
+
+		// WatchScreen.kt:514-518: one tween per open. A redraw keeps the target, so it never restarts.
+		if (open && (changed || !this.shrinkTarget)) {
+			const width = this.root.clientWidth || window.innerWidth;
+			const { scale, translateX, translateY, radius } = videoShrink(width, this.titleBottom());
+
+			this.shrinkTarget = { transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`, radius };
+		}
+
+		const transform = open
+			? this.shrinkTarget!.transform
+			: '';
+		const radius = this.shrinkTarget?.radius ?? 0;
 
 		// WatchScreen.kt:587: the picture keeps its black; the app background shows around it.
 		if (container) {
@@ -1330,18 +1342,21 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 		// Only the transform animates: Chrome 92 repaints a video on every frame of a radius transition.
 		for (const layer of layers) {
-			if (!layer) continue;
+			// A layer already at the target is mid-tween or settled: touching it would restart the tween.
+			if (!layer || layer.style.transform === transform) continue;
 
-			layer.style.transition = `transform ${SETTINGS_ANIM_MS}ms ${SETTINGS_EASING}`;
+			// A layer drawn fresh while the menu stays open takes its place at once.
+			layer.style.transition = changed
+				? `transform ${SETTINGS_ANIM_MS}ms ${SETTINGS_EASING}`
+				: 'none';
+
 			layer.style.willChange = 'transform';
 
 			if (open) {
 				layer.style.borderRadius = `${radius}px`;
 			}
 
-			layer.style.transform = open
-				? `translate(${translateX}px, ${translateY}px) scale(${scale})`
-				: '';
+			layer.style.transform = transform;
 		}
 
 		// The corners square off once the picture is full size again.
