@@ -191,6 +191,15 @@
 .tvui-sidebar .tvui-row-value {
 	font-size: 12px;
 }
+.tvui-settings-enter {
+	animation: tvui-settings-in 400ms ease-out;
+}
+@keyframes tvui-settings-in {
+	from {
+		opacity: 0;
+		transform: translateX(-100%);
+	}
+}
 .tvui-sidebar-header .tvui-icon-button {
 	border-radius: 8px;
 	padding: 6px;

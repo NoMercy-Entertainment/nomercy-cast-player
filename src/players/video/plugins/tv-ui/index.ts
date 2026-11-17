@@ -19,7 +19,7 @@ import type { BottomBarHandle, Choice, Panel, SearchView, SeekStripHandle, UiIte
 import { downloadSubtitle, isRateLimited, searchSubtitles, searchTarget } from './subtitleSearch';
 import type { SubtitleCandidate } from './subtitleSearch';
 import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './seek';
-import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName } from './settingsModel';
+import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, SETTINGS_ANIM_MS, fontName, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
 import './style.css';
@@ -148,6 +148,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	private languageOpen = false;
 	private searchOpen = false;
 	private settings: SettingsNav | null = null;
+	private settingsFresh = false;
 	private seekMode = false;
 	private controlsVisible = false;
 	private remote = false;
@@ -1078,6 +1079,24 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		return pills;
 	}
 
+	// The picture moves aside for the sidebar, as TvUiPlugin.videoTransform does on KMP.
+	private shrinkVideo(open: boolean): void {
+		const video = this.root.parentElement?.querySelector('video');
+
+		if (!video) return;
+
+		const { scale, translateX, radius } = videoShrink(this.root.clientWidth || window.innerWidth);
+
+		video.style.transition = `transform ${SETTINGS_ANIM_MS}ms, border-radius ${SETTINGS_ANIM_MS}ms`;
+		video.style.borderRadius = open
+			? `${radius}px`
+			: '0';
+
+		video.style.transform = open
+			? `translateX(${translateX}px) scale(${scale})`
+			: '';
+	}
+
 	private refresh(): void {
 		if (!this.root) return;
 
@@ -1113,6 +1132,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			const openSettings = this.act(() => {
 				this.settings = { pane: 'main', styleProp: null };
 				this.controlsVisible = false;
+				this.settingsFresh = true;
 				this.enteredAt = performance.now();
 				this.emit('settings', { open: true });
 			});
@@ -1151,6 +1171,12 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		}
 
 		this.root.replaceChildren(...parts, el('span', 'tvui-sr', ''));
+		if (this.settingsFresh) {
+			this.settingsFresh = false;
+			this.root.querySelector('.tvui-settings')?.classList.add('tvui-settings-enter');
+		}
+
+		this.shrinkVideo(this.settings !== null);
 		this.updateBar();
 		dialog?.focus();
 
