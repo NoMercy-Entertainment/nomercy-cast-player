@@ -41,6 +41,21 @@ describe('the results area draws only what the native SearchScreen draws', () =>
 		return wrapper;
 	};
 
+	// SearchScreen.kt:60 requests focus on the A key as soon as the screen is composed.
+	it('puts focus on the A key when the screen opens, even from the top nav', async () => {
+		const nav = document.createElement('a');
+
+		nav.href = '#nav';
+		document.body.append(nav);
+		nav.focus();
+		const wrapper = mount(SearchScreen, { attachTo: document.body });
+
+		await wrapper.vm.$nextTick();
+
+		expect(document.activeElement?.textContent?.trim()).toBe('A');
+		wrapper.unmount();
+	});
+
 	it('says nothing before anything is typed', () => {
 		const wrapper = mount(SearchScreen);
 

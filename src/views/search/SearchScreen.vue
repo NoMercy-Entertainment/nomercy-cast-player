@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { focusStore } from '@/stores/focusStore';
 import { useTranslation } from 'i18next-vue';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
@@ -23,6 +24,11 @@ const screenGroup = useFocusGroup({
 });
 
 useNavFocusBridge({ handle: screenGroup, containerEl });
+
+// SearchScreen.kt:60: the A key takes focus on entry, also from the top nav.
+onMounted(() => {
+	queueMicrotask(() => focusStore.requestFocus('kb-a'));
+});
 
 const queryStr = ref('');
 const debouncedQuery = ref('');
