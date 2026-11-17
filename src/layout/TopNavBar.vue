@@ -118,6 +118,8 @@ useFocusGroup({
 	height: var(--topnav-height);
 }
 .leading {
+	/* A grid column's minimum is its content; the 360 px pill must shrink to its fifth, as Compose does. */
+	min-width: 0;
 	display: flex;
 	align-items: center;
 	justify-content: flex-start;

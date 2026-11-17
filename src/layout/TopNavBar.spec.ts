@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
+import { defineComponent, h } from 'vue';
 import TopNavBar from './TopNavBar.vue';
+import { useDPad } from '@/composables/useDPad';
+import { decls } from '@/test/cssDecl';
 import { focusTopnav } from '@/composables/useNavFocusBridge';
 import { playbackStore } from '@/stores/playbackStore';
 import type { CurrentTrackSnapshot } from '@/stores/playbackStore';
@@ -44,6 +47,55 @@ describe('the mini player replaces the logo (TvNavigationBar.kt:156-173)', () =>
 		await flushPromises();
 
 		expect(wrapper.find('.brand-logo').exists()).toBe(false);
+	});
+});
+
+describe('the mini player is the first stop of the bar (TvNavigationBar.kt:156-173)', () => {
+	const Shell = defineComponent({
+		setup() {
+			useDPad({
+				back: vi.fn(),
+				replace: vi.fn(),
+				currentRoute: { value: route },
+			} as never);
+
+			return () => h(TopNavBar);
+		},
+	});
+
+	function press(key: string): void {
+		(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', {
+			key,
+			bubbles: true,
+			cancelable: true,
+		}));
+	}
+
+	// The pill mounts only once a song plays, after the nav items registered.
+	it('left from Home reaches a mini player that appeared later', async () => {
+		const wrapper = mount(Shell, { attachTo: document.body });
+
+		await flushPromises();
+
+		playbackStore.music.applyTrack({
+			id: 't1',
+			name: 'Song',
+			artist: 'Artist',
+		} as CurrentTrackSnapshot, []);
+
+		await flushPromises();
+
+		wrapper.find<HTMLElement>('.nav-link').element.focus();
+		press('ArrowLeft');
+		await flushPromises();
+
+		expect(document.activeElement?.classList.contains('mini-player')).toBe(true);
+		wrapper.unmount();
+	});
+
+	it('the pill takes the leading fifth of the bar instead of pushing the tabs', () => {
+		expect(decls('layout/TopNavBar.vue', '.leading')['min-width']).toBe('0');
+		expect(decls('layout/TvMiniPlayer.vue', '.mini-player')['max-width']).toBe('100%');
 	});
 });
 

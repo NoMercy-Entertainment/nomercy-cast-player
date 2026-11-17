@@ -25,6 +25,8 @@ const el = ref<HTMLElement | null>(null);
 useFocusEntry({
 	key: 'topnav-mini-player',
 	el,
+	// It mounts once a song plays, after the tabs registered; it still sits left of Home.
+	order: -1,
 	onAction: () => {
 		router.push('/now-playing');
 	},
@@ -80,6 +82,7 @@ useFocusEntry({
 	cursor: pointer;
 	font-family: inherit;
 	width: 360px;
+	max-width: 100%;
 	min-width: 0;
 	outline: none;
 	transition: border-color var(--motion-fast);
