@@ -273,6 +273,15 @@ onBeforeUnmount(() => {
 	position: relative;
 }
 
+/* The TV UI plugin ships no video rule; without this a 4:3 film overflows the screen. */
+.video-player-root :deep(video) {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+}
+
 :global(.tv-overlay-host) {
 	position: absolute;
 	inset: 0;
