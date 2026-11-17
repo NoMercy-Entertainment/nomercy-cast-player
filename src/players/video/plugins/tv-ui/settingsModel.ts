@@ -16,6 +16,7 @@ export const FONT_CHOICES = [
 const SIDEBAR_WIDTH = 320;
 const VIDEO_MARGIN = 24;
 const VIDEO_MARGIN_RIGHT = 48;
+
 export const SETTINGS_ANIM_MS = 400;
 
 // WatchScreen.kt:508-560: scale and shift that fit the picture right of the sidebar.
@@ -24,7 +25,11 @@ export function videoShrink(width: number) {
 	const scale = Math.min(Math.max(available / width, 0.5), 1);
 	const translateX = SIDEBAR_WIDTH + VIDEO_MARGIN + available / 2 - width / 2;
 
-	return { scale, translateX, radius: 16 } as const satisfies Record<string, number>;
+	return {
+		scale,
+		translateX,
+		radius: 16,
+	} as const satisfies Record<string, number>;
 }
 
 // The family before the comma names the font in both stored forms (SubtitleFont.fromStack).

@@ -19,7 +19,7 @@ import type { BottomBarHandle, Choice, Panel, SearchView, SeekStripHandle, UiIte
 import { downloadSubtitle, isRateLimited, searchSubtitles, searchTarget } from './subtitleSearch';
 import type { SubtitleCandidate } from './subtitleSearch';
 import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './seek';
-import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, SETTINGS_ANIM_MS, fontName, videoShrink } from './settingsModel';
+import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
 import './style.css';
@@ -1088,6 +1088,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		const { scale, translateX, radius } = videoShrink(this.root.clientWidth || window.innerWidth);
 
 		video.style.transition = `transform ${SETTINGS_ANIM_MS}ms, border-radius ${SETTINGS_ANIM_MS}ms`;
+
 		video.style.borderRadius = open
 			? `${radius}px`
 			: '0';
@@ -1171,6 +1172,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		}
 
 		this.root.replaceChildren(...parts, el('span', 'tvui-sr', ''));
+
 		if (this.settingsFresh) {
 			this.settingsFresh = false;
 			this.root.querySelector('.tvui-settings')?.classList.add('tvui-settings-enter');
