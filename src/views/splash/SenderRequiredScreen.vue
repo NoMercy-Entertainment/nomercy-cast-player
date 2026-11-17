@@ -45,8 +45,7 @@ useFocusGroup({ type: 'modal', initialFocusKey: 'cast-again-retry' });
 			<p v-else class="instructions">
 				<span>{{ t('views.splash.expired') }}</span>
 				<br>
-				<span class="emphasis">{{ t('nav.chromecast') }}</span>
-				<span> {{ t('views.splash.button_to_continue') }}</span>
+				<span class="emphasis">{{ t('nav.chromecast') }}</span>{{ ' ' }}<span>{{ t('views.splash.button_to_continue') }}</span>
 			</p>
 
 			<div v-if="retry" class="actions">
