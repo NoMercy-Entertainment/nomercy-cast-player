@@ -83,7 +83,10 @@ useFocusEntry({
 		focusedCardStore.setActive({
 			id: props.id,
 			title: props.data.name,
-			poster: props.data.cover,
+			overview: props.data.description,
+			artist: props.data.artist,
+			backdrop: props.data.cover,
+			logo: props.data.logo,
 			link: props.data.link,
 			type: cardType.value,
 			color_palette: props.data.color_palette ?? props.data.colorPalette,

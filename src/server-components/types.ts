@@ -109,6 +109,8 @@ export interface NMMusicCardWrapper {
 	artist?: string;
 	album?: string;
 	cover?: string;
+	description?: string;
+	logo?: string;
 	link?: string;
 	duration?: string;
 	favorite?: boolean;

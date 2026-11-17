@@ -63,7 +63,10 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 					/>
 				</div>
 				<div class="nm-hero-overview-block">
-					<p v-if="card.overview" class="nm-hero-overview">
+					<p v-if="card.artist" class="nm-hero-byline">
+						{{ card.artist }}
+					</p>
+					<p v-if="card.overview" class="nm-hero-overview" :style="card.artist ? { '-webkit-line-clamp': 4 } : undefined">
 						{{ card.overview }}
 					</p>
 				</div>

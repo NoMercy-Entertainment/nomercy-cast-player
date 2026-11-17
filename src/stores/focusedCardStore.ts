@@ -9,6 +9,8 @@ export interface FocusedCardData {
 	poster?: string;
 	logo?: string;
 	link?: string;
+	// The artist byline of a music hero (VideoMusicHeroSection.kt:171-183).
+	artist?: string;
 	year?: number | string;
 	type?: string;
 	have_items?: number;

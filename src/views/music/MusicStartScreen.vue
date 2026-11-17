@@ -21,7 +21,6 @@ const { data, isLoading, error, refetch, isFetching } = useMusicStartQuery();
 		:error-context="t('views.music.start_error_load')"
 		:empty-message="t('views.music.start_empty')"
 		:skeleton-count="2"
-		:hero="false"
 		music
 	>
 		<template #rails-end>

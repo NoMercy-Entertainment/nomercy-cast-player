@@ -20,6 +20,26 @@ interface SeedItem {
 	};
 }
 
+interface MusicSeed extends FocusedCardData {
+	name?: string;
+	cover?: string;
+	description?: string;
+}
+
+export function musicHero(card: MusicSeed): FocusedCardData {
+	return {
+		id: card.id,
+		title: card.name ?? card.title,
+		overview: card.description ?? card.overview,
+		backdrop: card.cover,
+		logo: card.logo,
+		artist: card.artist,
+		link: card.link,
+		type: card.type,
+		color_palette: card.color_palette,
+	};
+}
+
 // Home is a lolomo of carousels of cards, so the first card sits two levels down.
 function firstCard(items: SeedItem[]): FocusedCardData | null {
 	for (const item of items) {
@@ -27,6 +47,10 @@ function firstCard(items: SeedItem[]): FocusedCardData | null {
 
 		if (data && (data.backdrop || data.poster))
 			return data;
+
+		// A music card draws its cover as the hero backdrop (NMLolomo.kt:151-162).
+		if (data && (data as MusicSeed).cover)
+			return musicHero(data as MusicSeed);
 
 		const nested = item.props?.items;
 		const found = Array.isArray(nested)

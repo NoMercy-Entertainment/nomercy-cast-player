@@ -116,6 +116,19 @@
 	letter-spacing: 0;
 	color: var(--cast-text-primary);
 }
+/* VideoMusicHeroSection.kt:171-183: bodyMedium SemiBold at 80 %, one line. */
+.nm-hero-byline {
+	margin: 0;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 20px;
+	letter-spacing: 0.25px;
+	opacity: 0.8;
+	color: var(--cast-text-primary);
+}
 .nm-hero-overview {
 	margin: 0;
 	font-size: 14px;
