@@ -105,7 +105,7 @@ const watchPath = computed(() => {
 // Metadata listing a trailer is not a trailer. The button waits until the
 // API has one ready to play, as the KMP TV screen does, so it never opens
 // nothing.
-const trailerLookup = useTrailerQuery(computed(() => info.value?.videos));
+const trailerLookup = useTrailerQuery(type, id, computed(() => info.value?.videos));
 const readyTrailer = computed(() => {
 	const result = trailerLookup.data.value;
 

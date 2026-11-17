@@ -77,6 +77,27 @@ export function trailerCandidates(videos: VideoRef[] | undefined): string[] {
 		.filter((id): id is string => id !== null);
 }
 
+// TrailerValidator.kt:171-189: catalog ids, best first and any provider; empty or an error means use the info videos.
+export async function catalogTrailerIds(type: string, id: string, accessToken: string): Promise<string[]> {
+	try {
+		const res = await fetch(`${nomercyApiBase(accessToken)}/v1/trailers/tmdb/${type}/${id}`, {
+			headers: {
+				Authorization: `Bearer ${accessToken}`,
+				Accept: 'application/json',
+			},
+		});
+
+		if (!res.ok)
+			return [];
+
+		const body = await res.json() as { results?: Array<{ videoId?: string }> };
+
+		return (body.results ?? []).map((r) => r.videoId).filter((v): v is string => Boolean(v));
+	} catch {
+		return [];
+	}
+}
+
 export function toLookup(body: WireResponse | null) {
 	if (!body?.success)
 		return { state: 'unavailable' } as const satisfies TrailerLookup;
