@@ -41,9 +41,7 @@ useFocusEntry({
 	group: controlsGroup,
 	el: shuffleEl,
 	onAction: () => {
-		const next = !playbackStore.music.shuffle.value;
-
-		playbackStore.music.applyShuffle(next);
+		musicSyncBridge.setShuffle(!playbackStore.music.shuffle.value);
 	},
 });
 
