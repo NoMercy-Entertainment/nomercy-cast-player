@@ -34,6 +34,12 @@ export interface FocusedCardData {
 			dark?: string;
 			primary?: string;
 		};
+		still?: {
+			dominant?: string;
+			light?: string;
+			dark?: string;
+			primary?: string;
+		};
 	};
 }
 

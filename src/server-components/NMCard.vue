@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import FallbackPoster from '@/components/cards/FallbackPoster.vue';
 import { BACKDROP_SIZE, buildImageUrl, pickPaletteColor, POSTER_SIZE } from '@/lib/images/urls';
-import type { PaletteColors } from '@/lib/images/urls';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { NMCardWrapper, Update } from './types';
 
@@ -32,9 +31,15 @@ const imageUrl = computed(() => buildImageUrl(imageSource.value, props.data.wide
 	? BACKDROP_SIZE
 	: POSTER_SIZE));
 
-const accent = computed(() => pickPaletteColor(
-	(props.data.color_palette ?? props.data.colorPalette) as PaletteColors | undefined,
-));
+// TvCardViewHolder.kt:86-102: the palette of the image the card shows; the page accent when it has none.
+const accent = computed(() => {
+	const palette = props.data.color_palette ?? props.data.colorPalette;
+	const shown = props.data.wide
+		? palette?.still ?? palette?.backdrop ?? palette?.poster
+		: palette?.poster ?? palette?.backdrop;
+
+	return pickPaletteColor(shown);
+});
 
 const progressPct = computed(() => {
 	const p = props.data.progress;
