@@ -22,7 +22,7 @@ function resolve(value: string | undefined): string | undefined {
 }
 
 // The receiver's light ink is KMP's onSurface, slate_1 #fbfcfd (NoMercyTheme.kt:576, :544, :473), not NM's #EDEDED.
-// These 49 declarations were #fff before the NM token pass and map to --cast-text-primary.
+// These 48 declarations were #fff before the NM token pass and map to --cast-text-primary.
 const WHITE_TEXT: [string, string][] = [
 	['components/text/SplitTitleText.vue', '.split-main'],
 	['layout/NavLink.vue', '.nav-link'],
@@ -67,7 +67,6 @@ const WHITE_TEXT: [string, string][] = [
 	['views/music/MusicListScreen.vue', '.music-list-screen'],
 	['views/music/MusicListScreen.vue', '.icon-btn'],
 	['views/music/MusicListScreen.vue', '.header-col :deep(.nm-pill-primary)'],
-	['views/person/PersonScreen.vue', '.placeholder'],
 	['views/profile/AboutScreen.vue', '.about-card'],
 	['views/profile/ProfileScreen.vue', '.avatar-fallback'],
 	['views/profile/ServerInfoScreen.vue', '.card'],
@@ -80,8 +79,8 @@ describe('receiver light text is KMP onSurface (NoMercyTheme.kt:576)', () => {
 		expect(own['--cast-text-primary']).toBe('var(--cast-white)');
 	});
 
-	it('lists 49 spots', () => {
-		expect(WHITE_TEXT).toHaveLength(49);
+	it('lists 48 spots', () => {
+		expect(WHITE_TEXT).toHaveLength(48);
 	});
 
 	it.each(WHITE_TEXT)('%s %s computes to white', (file, selector) => {

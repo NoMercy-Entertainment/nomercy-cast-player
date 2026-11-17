@@ -1,0 +1,15 @@
+{
+	"views": {
+		"person": {
+			"acting": "Acting",
+			"creator": "Creator",
+			"crew": "Crew",
+			"directing": "Director",
+			"empty": "Nothing to show for this person yet.",
+			"known_for": "Known for",
+			"load_error": "Couldn't load this person",
+			"production": "Production",
+			"writing": "Writing"
+		}
+	}
+}

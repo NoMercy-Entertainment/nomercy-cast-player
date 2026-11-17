@@ -136,7 +136,7 @@ const routes: RouteRecordRaw[] = [
 			{
 				path: 'person/:id',
 				name: 'person',
-				redirect: { name: 'home' },
+				component: () => import('@/views/person/PersonScreen.vue'),
 			},
 			{
 				path: 'music',

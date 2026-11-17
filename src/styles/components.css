@@ -278,6 +278,11 @@
 .nm-hero-rails.nm-hero-rails--music .rail-section {
 	gap: 2px;
 }
+/* PersonScreen.kt:128: the list starts at the hero height, with no overlap. */
+.nm-hero-rails.nm-hero-rails--flush {
+	margin-top: 0;
+	height: calc(100% - var(--hero-height));
+}
 .nm-hero-rails > .rail-section {
 	scroll-margin-top: 120px;
 	scroll-margin-bottom: 80px;

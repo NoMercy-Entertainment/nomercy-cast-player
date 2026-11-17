@@ -11,6 +11,7 @@ import EmptyState from '@/components/feedback/EmptyState.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import HomeHero from '@/views/home/HomeHero.vue';
 import { focusedCardStore } from '@/stores/focusedCardStore';
+import type { FocusedCardData } from '@/stores/focusedCardStore';
 import { drawsContent } from '@/server-components/types';
 import type { Component } from '@/server-components/types';
 
@@ -39,7 +40,9 @@ const props = withDefaults(defineProps<{
 	hero?: boolean;
 	// Music rows are Compose carousels in KMP: their title and gap differ from the video rows.
 	music?: boolean;
-}>(), { hero: true, music: false });
+	// A page about one subject (Person) keeps this hero whatever has focus; its rows start flush below it.
+	persistentHero?: FocusedCardData;
+}>(), { hero: true, music: false, persistentHero: undefined });
 
 const { t } = useTranslation();
 
@@ -59,10 +62,14 @@ useNavFocusBridge({ handle: railsGroup, containerEl });
 const components = computed<Component[]>(() => props.data ?? []);
 const isInitialLoad = computed(() => props.isLoading && !props.data);
 const errVal = computed(() => props.error ?? null);
-const heroCard = computed(() =>
-	props.hero
+const heroCard = computed(() => {
+	if (props.persistentHero)
+		return props.persistentHero;
+
+	return props.hero
 		? focusedCardStore.debouncedCard.value
-		: null);
+		: null;
+});
 const skeletonRailCount = computed(() => props.skeletonCount ?? 3);
 
 const errorRef = toRef(props, 'error');
@@ -111,7 +118,11 @@ if (props.hero) {
 			<HomeHero v-if="heroCard" :card="heroCard" />
 			<div
 				class="nm-hero-rails"
-				:class="{ 'nm-hero-rails--no-hero': !heroCard, 'nm-hero-rails--music': music }"
+				:class="{
+					'nm-hero-rails--no-hero': !heroCard,
+					'nm-hero-rails--music': music,
+					'nm-hero-rails--flush': Boolean(persistentHero),
+				}"
 			>
 				<Resolver
 					v-for="component in components"
