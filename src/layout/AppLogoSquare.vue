@@ -79,8 +79,9 @@
 				y1="0"
 				y2="0"
 			>
-				<stop stop-color="var(--color-primary)" />
-				<stop offset="1" stop-color="var(--color-primary)" stop-opacity="0.8" />
+				<!-- An attribute never resolves var(); the style does. -->
+				<stop style="stop-color: var(--color-primary)" />
+				<stop offset="1" style="stop-color: var(--color-primary)" stop-opacity="0.8" />
 			</linearGradient>
 			<linearGradient
 				id="paint0-:rq:"
