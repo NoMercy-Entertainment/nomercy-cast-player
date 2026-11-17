@@ -514,6 +514,24 @@ describe('focus watchdog (TvUiPlugin.kt:424-485)', () => {
 	});
 });
 
+// PlayerSettingsScreen.kt:661-703: the style rows show translated edge and color names.
+describe('subtitle style pane values', () => {
+	it('shows the edge and color as translated names, not tokens', () => {
+		const { player, root } = setup();
+
+		player.emit('pause');
+		root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
+		Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row'))
+			.find((row) => row.textContent?.startsWith('Subtitle style'))!.click();
+		vi.advanceTimersByTime(400);
+
+		const values = Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row-value')).map((node) => node.textContent);
+
+		expect(values).toContain('White');
+		expect(values).toContain('None');
+	});
+});
+
 describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)', () => {
 	function openSettings() {
 		const ctx = setup();

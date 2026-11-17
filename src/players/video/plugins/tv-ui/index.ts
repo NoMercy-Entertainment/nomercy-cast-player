@@ -926,8 +926,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				style: {
 					font: fontName(view.fontFamily),
 					size: view.fontSize,
-					edge: view.edgeStyle,
-					color: view.fontColor,
+					edge: t(`subtitle_style_edge_${view.edgeStyle}`),
+					color: t(`subtitle_style_color_${view.fontColor}`),
 					background: view.backgroundOpacity,
 				},
 				styleChoices: (prop) => this.styleChoices(prop),
