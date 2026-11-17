@@ -5,7 +5,6 @@ import { useTranslation } from 'i18next-vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { playbackStore } from '@/stores/playbackStore';
-import { buildImageUrl } from '@/lib/images/urls';
 
 /*
  * APK MiniPlayerTv: 40dp pill with palette-gradient background, 40dp
@@ -18,7 +17,6 @@ const router = useRouter();
 
 const track = computed(() => playbackStore.music.track.value);
 const isPlaying = computed(() => playbackStore.music.playing.value);
-const coverUrl = computed(() => buildImageUrl(track.value?.cover ?? null, { width: 96 }));
 const title = computed(() => track.value?.name ?? '');
 const artist = computed(() => track.value?.artist ?? '');
 
@@ -44,7 +42,6 @@ useFocusEntry({
 		@click.prevent="router.push('/now-playing')"
 	>
 		<div class="art">
-			<img v-if="coverUrl" class="nm-cover-top" :src="coverUrl" :alt="title">
 			<div v-if="isPlaying" class="eq" aria-hidden="true">
 				<span />
 				<span />
@@ -82,7 +79,7 @@ useFocusEntry({
 	color: var(--cast-text-primary);
 	cursor: pointer;
 	font-family: inherit;
-	max-width: 360px;
+	width: 360px;
 	min-width: 0;
 	outline: none;
 	transition: border-color var(--motion-fast);
@@ -151,7 +148,7 @@ useFocusEntry({
 	margin: 0;
 	font-size: 10px;
 	line-height: 12px;
-	font-weight: 700;
+	font-weight: 500;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
