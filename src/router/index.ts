@@ -128,6 +128,17 @@ const routes: RouteRecordRaw[] = [
 				props: (route) => ({ type: 'special', id: route.params.id }),
 			},
 			{
+				path: 'favorites',
+				name: 'favorites',
+				component: () => import('@/views/favorites/FavoritesScreen.vue'),
+			},
+			{
+				path: 'specials/:id',
+				name: 'info-specials',
+				component: () => import('@/views/info/InfoScreen.vue'),
+				props: (route) => ({ type: 'specials', id: route.params.id }),
+			},
+			{
 				path: 'collection/:id',
 				name: 'info-collection',
 				component: () => import('@/views/info/InfoScreen.vue'),

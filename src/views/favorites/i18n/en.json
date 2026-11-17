@@ -1,0 +1,8 @@
+{
+	"views": {
+		"favorites": {
+			"empty": "No favorites yet",
+			"load_error": "Couldn't load your favorites"
+		}
+	}
+}
