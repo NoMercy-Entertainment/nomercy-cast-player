@@ -22,7 +22,7 @@ import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimes
 import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, SETTINGS_EASING, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
-import { playingAudioIndex, subtitleLabel, trackLabel, wireOrder } from './title';
+import { playingAudioIndex, qualityValue, subtitleLabel, trackLabel, wireOrder } from './title';
 import type { LabeledTrack } from './title';
 import './style.css';
 
@@ -924,7 +924,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				subtitles: subtitles.map(toMain),
 				audio: audio.map(toMain),
 				values: {
-					quality: levels.find((l) => l.selected)?.label ?? t('player_quality_auto'),
+					quality: qualityValue(levels, t('player_quality_auto')),
 					subtitle: subtitles.find((s) => s.selected)?.label ?? t('dialog_subtitle_off'),
 					audio: audio.find((a) => a.selected)?.label ?? '',
 				},

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { episodeDialog, languageDialog, preScreen, settingsPanel } from './panels';
 import type { Choice, SettingsData, UiItem } from './panels';
-import { playingAudioIndex, subtitleLabel, trackLabel, wireOrder } from './title';
+import { playingAudioIndex, qualityValue, subtitleLabel, trackLabel, wireOrder } from './title';
 
 // KMP shows the audio track that plays; the web player reports no selection until one is picked.
 describe('playingAudioIndex', () => {
@@ -33,6 +33,16 @@ describe('trackLabel', () => {
 
 	it('x20 keeps the raw label when the language is unknown', () => {
 		expect(trackLabel({ label: 'Commentary' }, 'en')).toBe('Commentary');
+	});
+});
+
+// PlayerSettingsScreen.kt:287,294-297: with one real level, Auto resolves to it.
+describe('qualityValue', () => {
+	it('x29 names the only level, else the picked one, else Auto', () => {
+		expect(qualityValue([pick('Auto', true), pick('1080p')], 'Auto')).toBe('1080p');
+		expect(qualityValue([pick('Auto', true), pick('1080p'), pick('720p')], 'Auto')).toBe('Auto');
+		expect(qualityValue([pick('Auto'), pick('1080p'), pick('720p', true)], 'Auto')).toBe('720p');
+		expect(qualityValue([], 'Auto')).toBe('Auto');
 	});
 });
 
@@ -69,7 +79,7 @@ describe('wireOrder', () => {
 });
 
 // The vitest css option blanks imported stylesheets, so the source is read directly.
-const css = readFileSync('src/players/video/plugins/tv-ui/style.css', 'utf8');
+const css = `\n${readFileSync('src/players/video/plugins/tv-ui/style.css', 'utf8')}`;
 
 function rule(selector: string): string {
 	const start = css.indexOf(`\n${selector} {`);
@@ -118,6 +128,24 @@ describe('pre-screen matches PreScreenDialog.kt', () => {
 
 		expect(root.querySelector('img.tvui-pre-logo')?.getAttribute('src')).toBe(item.logo);
 		expect(root.querySelector('.tvui-pre-title')).toBeNull();
+	});
+
+	// PreScreenDialog.kt:133-148: the logo fills the 72 dp block, Fit and centered (TMDBImage.kt:51).
+	it('x30 the logo fits a 72 px box, centered like Compose', () => {
+		const block = rule('.tvui-pre-logo');
+
+		expect(block).toContain('height: 72px');
+		expect(block).toContain('object-position: left center');
+	});
+
+	// Material 3 letter spacing: plain Text is bodyLarge 0.5; PreScreenDialog.kt:153-283 picks headline, bodySmall, bodyMedium.
+	it('x31 letter spacing follows the Material 3 style of each text', () => {
+		expect(rule('.tvui-root')).toContain('letter-spacing: 0.5px');
+		expect(rule('.tvui-pre-title')).toContain('letter-spacing: 0');
+		expect(rule('.tvui-meta')).toContain('letter-spacing: 0');
+		expect(rule('.tvui-pre-episode-title')).toContain('letter-spacing: 0');
+		expect(rule('.tvui-pre-episode-label')).toContain('letter-spacing: 0.4px');
+		expect(rule('.tvui-pre-overview')).toContain('letter-spacing: 0.25px');
 	});
 
 	it('x02 without a logo the text title shows', () => {

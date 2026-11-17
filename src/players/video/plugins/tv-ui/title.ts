@@ -96,6 +96,20 @@ export function trackLabel(track: LabeledTrack, locale: string): string {
 	return language ?? raw;
 }
 
+// `levels` starts with Auto; with one real level Auto resolves to it (PlayerSettingsScreen.kt:287,294-297).
+export function qualityValue(
+	levels: ReadonlyArray<{ label: string; selected: boolean }>,
+	autoLabel: string,
+): string {
+	const real = levels.slice(1);
+
+	if (real.length === 1 && real[0]) {
+		return real[0].label;
+	}
+
+	return levels.find((level) => level.selected)?.label ?? autoLabel;
+}
+
 const SUBTITLE_KINDS = [
 	[['sdh'], 'SDH'],
 	[['sign', 'signs'], 'Signs'],

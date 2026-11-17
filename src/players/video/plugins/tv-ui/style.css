@@ -4,6 +4,7 @@
 	z-index: 10;
 	color: var(--cast-white);
 	font-size: 18px;
+	letter-spacing: 0.5px;
 }
 .tvui-icon {
 	display: inline-flex;
@@ -294,13 +295,14 @@
 	font-size: 28px;
 	font-weight: 600;
 	line-height: 26px;
+	letter-spacing: 0;
 	margin: 0;
 }
 .tvui-pre-logo {
 	max-width: 220px;
-	max-height: 72px;
+	height: 72px;
 	object-fit: contain;
-	object-position: left bottom;
+	object-position: left center;
 }
 .tvui-pre-episode {
 	display: flex;
@@ -311,6 +313,7 @@
 	padding-right: 8px;
 	font-size: 14px;
 	font-weight: 500;
+	letter-spacing: 0.4px;
 }
 .tvui-pre-episode-title {
 	overflow: hidden;
@@ -318,6 +321,7 @@
 	text-overflow: ellipsis;
 	font-size: 22px;
 	font-weight: 500;
+	letter-spacing: 0;
 }
 .tvui-pre-overview {
 	height: 80px;
@@ -326,6 +330,7 @@
 	display: -webkit-box;
 	-webkit-box-orient: vertical;
 	-webkit-line-clamp: 4;
+	letter-spacing: 0.25px;
 	font-size: 16px;
 	font-weight: 500;
 	line-height: 20px;
@@ -360,6 +365,7 @@
 	font-size: 14px;
 	font-weight: 500;
 	line-height: 20px;
+	letter-spacing: 0;
 }
 .tvui-settings {
 	position: absolute;
