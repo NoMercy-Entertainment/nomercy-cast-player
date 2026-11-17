@@ -153,7 +153,9 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 		// The ack tells the phone the TV took the route, so a handler sends it after its checks.
 		const ack = (): void => {
 			try {
-				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { ack: true, route: payload.route });
+				const reply = { ack: true, route: payload.route } as const;
+
+				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, reply);
 			} catch (err) {
 				console.warn('[cast] ack send failed', err);
 			}

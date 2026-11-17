@@ -21,6 +21,8 @@ import type { LaunchCustomData } from '@/types/cast';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
 import { recordDiagnostic } from '@/lib/diagnostics/sink';
 
+const WatchPath = /^\/(?:movie|tv)\/[^/]+\/watch$|^\/watch\//;
+
 /** Senders attached to this receiver; 0 on a TV that fell back here with no phone. */
 export const connectedSenders = ref(0);
 
@@ -191,7 +193,7 @@ export function bootCastReceiver(router: Router): void {
 
 	// The phone's stop casting returns the TV to where it was (WatchScreen.kt remoteStopCount).
 	onRemoteStop(() => {
-		if (/^\/(?:movie|tv)\/[^/]+\/watch$|^\/watch\//.test(router.currentRoute.value.path)) {
+		if (WatchPath.test(router.currentRoute.value.path)) {
 			leaveToPreviousOrHome(router);
 		}
 	});
@@ -338,7 +340,8 @@ const CatchAllPrefix = '/:pathMatch';
 
 // An unknown route would fall into the catch-all redirect to Home and look accepted.
 function isKnownRoute(router: Router, route: string): boolean {
-	if (!route.startsWith('/')) return false;
+	if (!route.startsWith('/'))
+		return false;
 
 	const { matched } = router.resolve(route);
 

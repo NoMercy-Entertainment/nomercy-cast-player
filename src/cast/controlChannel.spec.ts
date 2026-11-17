@@ -192,8 +192,17 @@ describe('answerControl: the /v1 TV control contract over the Cast channel', () 
 
 	// SessionRoutes.kt:96-103: stop is an idempotent teardown, other routes answer 412.
 	it('answers a stop with 204 when there is no player, and pause with 412', async () => {
-		expect((await answerControl({ id: 8, method: 'POST', path: '/v1/session/transport/stop' }, null)).status).toBe(204);
-		expect((await answerControl({ id: 9, method: 'POST', path: '/v1/session/transport/pause' }, null)).status).toBe(412);
+		expect((await answerControl({
+			id: 8,
+			method: 'POST',
+			path: '/v1/session/transport/stop',
+		}, null)).status).toBe(204);
+
+		expect((await answerControl({
+			id: 9,
+			method: 'POST',
+			path: '/v1/session/transport/pause',
+		}, null)).status).toBe(412);
 	});
 
 	it('runs every transport command and answers 204', async () => {

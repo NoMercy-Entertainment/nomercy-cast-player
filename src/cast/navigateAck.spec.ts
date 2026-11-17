@@ -31,17 +31,20 @@ function jwt(): string {
 
 function stubNetwork(): void {
 	vi.stubGlobal('fetch', vi.fn((url: string) => {
-		if (url.endsWith('/v1/app_config'))
-			return Promise.resolve(new Response(JSON.stringify({ data: { servers: [Server] } }), { status: 200 }));
+		const body = url.endsWith('/v1/app_config')
+			? JSON.stringify({ data: { servers: [Server] } })
+			: '{}';
 
-		return Promise.resolve(new Response('{}', { status: 200 }));
+		return Promise.resolve(new Response(body, { status: 200 }));
 	}));
 }
 
 function fakeRouter(knownRoute = true) {
 	return {
 		push: vi.fn(async () => {}),
-		resolve: vi.fn(() => ({ matched: knownRoute ? [{ path: '/tv/:id/watch' }] : [{ path: '/:pathMatch(.*)*' }] })),
+		resolve: vi.fn(() => ({ matched: knownRoute
+			? [{ path: '/tv/:id/watch' }]
+			: [{ path: '/:pathMatch(.*)*' }] })),
 	};
 }
 
@@ -51,8 +54,9 @@ function cast(data: object, router = fakeRouter()) {
 	const context = {
 		addEventListener: vi.fn(),
 		addCustomMessageListener: (ns: string, fn: Listener) => {
-			if (ns === NAMESPACE_GENERAL)
+			if (ns === NAMESPACE_GENERAL) {
 				listeners.push(fn);
+			}
 		},
 		sendCustomMessage: send,
 		getApplicationData: vi.fn(),
@@ -70,8 +74,9 @@ function cast(data: object, router = fakeRouter()) {
 
 	bootCastReceiver(router as never);
 
-	for (const fn of listeners)
+	for (const fn of listeners) {
 		fn({ senderId: 'sender-1', data });
+	}
 
 	return { send, router };
 }
@@ -99,7 +104,11 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 	});
 
 	it('acks a valid route once the route opened (positive control)', async () => {
-		const { send, router } = cast({ route: WatchRoute, token: jwt(), server_id: Server.id });
+		const { send, router } = cast({
+			route: WatchRoute,
+			token: jwt(),
+			server_id: Server.id,
+		});
 
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(router.push).toHaveBeenCalledWith(WatchRoute);
@@ -122,7 +131,11 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 	});
 
 	it('does not ack when the named server is not on the account', async () => {
-		const { send, router } = cast({ route: WatchRoute, token: jwt(), server_id: '00000000-0000-4000-8000-0000000000ff' });
+		const { send, router } = cast({
+			route: WatchRoute,
+			token: jwt(),
+			server_id: '00000000-0000-4000-8000-0000000000ff',
+		});
 
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(acked(send)).toBe(false);
@@ -130,7 +143,11 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 	});
 
 	it('does not ack a route the receiver does not know', async () => {
-		const { send, router } = cast({ route: '/bogus', token: jwt(), server_id: Server.id }, fakeRouter(false));
+		const { send, router } = cast({
+			route: '/bogus',
+			token: jwt(),
+			server_id: Server.id,
+		}, fakeRouter(false));
 
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(acked(send)).toBe(false);
@@ -141,7 +158,11 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 		const router = fakeRouter();
 
 		router.push.mockRejectedValue(new Error('chunk failed'));
-		const { send } = cast({ route: WatchRoute, token: jwt(), server_id: Server.id }, router);
+		const { send } = cast({
+			route: WatchRoute,
+			token: jwt(),
+			server_id: Server.id,
+		}, router);
 
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(acked(send)).toBe(false);
@@ -161,8 +182,17 @@ describe('a remote stop leaves the watch screen, as native WatchScreen.kt does f
 	});
 
 	function stopOn(path: string) {
-		const router = { ...fakeRouter(), replace: vi.fn(async () => {}), back: vi.fn(), currentRoute: { value: { path } } };
-		const { send } = cast({ control: { id: 1, method: 'POST', path: '/v1/session/transport/stop' } }, router as never);
+		const router = {
+			...fakeRouter(),
+			replace: vi.fn(async () => {}),
+			back: vi.fn(),
+			currentRoute: { value: { path } },
+		};
+		const { send } = cast({ control: {
+			id: 1,
+			method: 'POST',
+			path: '/v1/session/transport/stop',
+		} }, router as never);
 
 		return { router, send };
 	}
@@ -190,7 +220,9 @@ describe('playback does not wait on the SignalR hubs', () => {
 		window.sessionStorage.removeItem('nm_cast_mock');
 		authStore.clear();
 		authStore.bootError.value = null;
-		vi.mocked(socketStore.connectAll).mockReset().mockImplementation(() => new Promise<void>(() => {}));
+		const never = new Promise<void>(() => {});
+
+		vi.mocked(socketStore.connectAll).mockReset().mockReturnValue(never);
 		vi.spyOn(console, 'warn').mockImplementation(() => {});
 		stubNetwork();
 	});
@@ -202,7 +234,11 @@ describe('playback does not wait on the SignalR hubs', () => {
 	});
 
 	it('keeps the watch route and shows no boot error when a hub never connects', async () => {
-		const { router, send } = cast({ route: WatchRoute, token: jwt(), server_id: Server.id });
+		const { router, send } = cast({
+			route: WatchRoute,
+			token: jwt(),
+			server_id: Server.id,
+		});
 
 		await vi.advanceTimersByTimeAsync(20_000);
 		expect(router.push).toHaveBeenCalledWith(WatchRoute);
