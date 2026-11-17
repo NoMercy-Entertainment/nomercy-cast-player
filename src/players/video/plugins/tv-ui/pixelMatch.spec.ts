@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { episodeDialog, languageDialog, preScreen, settingsPanel } from './panels';
 import type { Choice, SettingsData, UiItem } from './panels';
-import { playingAudioIndex, trackLabel } from './title';
+import { playingAudioIndex, subtitleLabel, trackLabel, wireOrder } from './title';
 
 // KMP shows the audio track that plays; the web player reports no selection until one is picked.
 describe('playingAudioIndex', () => {
@@ -33,6 +33,38 @@ describe('trackLabel', () => {
 
 	it('x20 keeps the raw label when the language is unknown', () => {
 		expect(trackLabel({ label: 'Commentary' }, 'en')).toBe('Commentary');
+	});
+});
+
+// LanguageNames.kt:50-85 (resolveSubtitleLabel, subtitleKindOf).
+describe('subtitleLabel', () => {
+	it('x26 names the variant by whole label words like KMP', () => {
+		expect(subtitleLabel({ language: 'eng', label: 'sign' }, 'en')).toBe('English (Signs)');
+		expect(subtitleLabel({ language: 'eng', label: 'eng.sdh' }, 'en')).toBe('English (SDH)');
+		expect(subtitleLabel({ language: 'eng', label: 'full' }, 'en')).toBe('English (Full)');
+		expect(subtitleLabel({ language: 'mlt', label: 'Maltese' }, 'en')).toBe('Maltese');
+		expect(subtitleLabel({ language: 'eng', label: '' }, 'en')).toBe('English');
+		expect(subtitleLabel({ language: 'und', label: '' }, 'en')).toBe('und');
+	});
+});
+
+// AppPlaylistItem.kt:178-195: KMP lists subtitles in the server's order; the web core lists the manifest's first.
+describe('wireOrder', () => {
+	it('x27 puts the tracks in the order of the item, unknown ones last', () => {
+		const shown = [
+			{ language: 'eng', label: 'alt' },
+			{ language: 'eng', label: 'full' },
+			{ language: 'eng', label: 'sign' },
+			{ language: 'dut', label: 'full' },
+		];
+		const wire = [
+			{ language: 'eng', label: 'sign' },
+			{ language: 'eng', label: 'alt' },
+			{ language: 'eng', label: 'full' },
+		];
+
+		expect(wireOrder(shown, wire)).toEqual([2, 0, 1, 3]);
+		expect(wireOrder(shown, [])).toEqual([0, 1, 2, 3]);
 	});
 });
 
@@ -111,7 +143,8 @@ describe('pre-screen matches PreScreenDialog.kt', () => {
 		const { root } = preScreen({ ...options, item });
 		const names = Array.from(root.querySelectorAll('.tvui-pre-buttons [data-icon]')).map((n) => n.getAttribute('data-icon'));
 
-		expect(names).toEqual(['play', 'playCircle', 'globe', 'playlist1']);
+		// PreScreenDialog.kt:306: Play is the solid nmplaysolid, the sprite's nmPlay.
+		expect(names).toEqual(['nmPlay', 'playCircle', 'globe', 'playlist1']);
 	});
 
 	it('x06 the buttons are 250 x 44, 12 radius, 1 px border, 4 gap', () => {
@@ -187,6 +220,20 @@ describe('episodes match EpisodeDialog.kt', () => {
 		expect(rule('.tvui-card-overview')).toContain('font-size: 13px');
 		expect(rule('.tvui-card-overview')).toContain('line-height: 16px');
 		expect(rule('.tvui-card-overview')).toContain('-webkit-line-clamp: 4');
+	});
+
+	// EpisodeCard.kt:167-195.
+	it('x28 progress is a 30 percent track with a white fill, only past 1 percent', () => {
+		const card = (time: number) => episodeDialog({
+			items: [{ ...item, progress: { time } }],
+			currentIndex: 0,
+			onPick: noop,
+		}).root;
+
+		expect(card(10).querySelector('.tvui-card-progress')).toBeNull();
+		expect(card(720).querySelector<HTMLElement>('.tvui-card-progress .tvui-card-progress-fill')?.style.width).toBe('50%');
+		expect(rule('.tvui-card-progress')).toContain('background: rgb(255 255 255 / 0.3)');
+		expect(rule('.tvui-card-progress-fill')).toContain('background: var(--cast-white)');
 	});
 
 	it('x10 seasons sit centered in a column, episodes take twice the width', () => {

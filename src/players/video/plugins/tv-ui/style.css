@@ -447,9 +447,15 @@
 .tvui-card-progress {
 	position: absolute;
 	left: 4px;
+	right: 4px;
 	bottom: 2px;
 	height: 4px;
 	border-radius: 2px;
+	overflow: hidden;
+	background: rgb(255 255 255 / 0.3);
+}
+.tvui-card-progress-fill {
+	height: 100%;
 	background: var(--cast-white);
 }
 .tvui-card-text {

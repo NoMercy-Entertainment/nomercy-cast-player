@@ -22,7 +22,7 @@ import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimes
 import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, SETTINGS_EASING, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
-import { playingAudioIndex, trackLabel } from './title';
+import { playingAudioIndex, subtitleLabel, trackLabel, wireOrder } from './title';
 import type { LabeledTrack } from './title';
 import './style.css';
 
@@ -859,7 +859,12 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 		const locale = i18next.language || 'en';
 		const audioLabels = engine.audioTracks?.().map((track) => trackLabel(track, locale));
-		const subtitleLabels = engine.subtitles?.().map((track) => trackLabel(track, locale));
+		const subtitleTracks = engine.subtitles?.() ?? [];
+		const subtitleLabels = subtitleTracks.map((track) => subtitleLabel(track, locale));
+		const wire = engine.item()?.tracks?.filter((track) => track.kind === 'subtitles') ?? [];
+		const subtitleOrder = wireOrder(subtitleTracks, wire);
+		const pickSubtitle = (index: number): void => void engine.subtitle?.(index);
+		const subtitleRows = this.choices(subtitleLabels, subtitleIndex, pickSubtitle);
 		const levelLabels = engine.qualityLevels?.().map((level) => level.label);
 		const off = {
 			label: t('dialog_subtitle_off'),
@@ -876,12 +881,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		return {
 			audio: this.choices(audioLabels, audioIndex, (index) =>
 				void engine.audioTrack?.(index)),
-			subtitles: this.choices(
-				subtitleLabels,
-				subtitleIndex,
-				(index) => void engine.subtitle?.(index),
-				off,
-			),
+			subtitles: [off, ...subtitleOrder.flatMap((index) => subtitleRows[index] ?? [])],
 			levels: this.choices(levelLabels, levelIndex, (index) => void engine.quality?.(index), auto),
 		} as const satisfies {
 			audio: Choice[];
@@ -1101,6 +1101,21 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 		const width = this.root.clientWidth || window.innerWidth;
 		const { scale, translateX, translateY, radius } = videoShrink(width, titleBottom);
+
+		// WatchScreen.kt:587: the picture keeps its black; the app background shows around it.
+		if (container) {
+			container.style.background = open
+				? 'var(--cast-bg-base)'
+				: '';
+		}
+
+		const video = layers[0];
+
+		if (video) {
+			video.style.background = open
+				? 'black'
+				: '';
+		}
 
 		for (const layer of layers) {
 			if (!layer) continue;

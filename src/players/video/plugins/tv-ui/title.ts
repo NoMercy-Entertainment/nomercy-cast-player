@@ -96,6 +96,67 @@ export function trackLabel(track: LabeledTrack, locale: string): string {
 	return language ?? raw;
 }
 
+const SUBTITLE_KINDS = [
+	[['sdh'], 'SDH'],
+	[['sign', 'signs'], 'Signs'],
+	[['full'], 'Full'],
+	[['forced'], 'Forced'],
+	[['alt'], 'Alt'],
+] as const satisfies ReadonlyArray<readonly [readonly string[], string]>;
+
+const LABEL_WORD_BREAK = /[.\s_\-/()[\]]+/;
+
+// Whole words, so "Maltese" never reads as "alt": LanguageNames.kt:74-85.
+function subtitleKind(label: string): string | null {
+	const words = new Set(label.toLowerCase().split(LABEL_WORD_BREAK).filter(Boolean));
+
+	return SUBTITLE_KINDS.find(([names]) => names.some((name) => words.has(name)))?.[1] ?? null;
+}
+
+// KMP resolveSubtitleLabel (LanguageNames.kt:50-70).
+export function subtitleLabel(track: LabeledTrack, locale: string): string {
+	const kind = subtitleKind(track.type ?? track.label);
+	const language = track.language?.toLowerCase() === 'und'
+		? null
+		: languageName(track.language, locale);
+
+	if (kind) {
+		return language
+			? `${language} (${kind})`
+			: kind;
+	}
+
+	return track.label.trim() || language || 'und';
+}
+
+interface WireTrack {
+	language?: string;
+	label?: string;
+}
+
+// The display order of `shown`: the item's own track order first, the rest after in their order.
+export function wireOrder(shown: readonly WireTrack[], wire: readonly WireTrack[]): number[] {
+	const key = (track: WireTrack): string => `${track.language ?? ''}|${track.label ?? ''}`.toLowerCase();
+	const used = new Set<number>();
+	const ranked = shown.map((track, index) => {
+		const wanted = key(track);
+		const at = wire.findIndex((candidate, slot) => !used.has(slot) && key(candidate) === wanted);
+
+		if (at >= 0) {
+			used.add(at);
+		}
+
+		return {
+			index,
+			rank: at < 0
+				? wire.length
+				: at,
+		};
+	});
+
+	return ranked.sort((a, b) => a.rank - b.rank || a.index - b.index).map(({ index }) => index);
+}
+
 export function titleAndSubtitle(
 	item: TitledItem | undefined,
 	t: Translate,

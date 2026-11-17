@@ -30,7 +30,12 @@ export interface UiItem extends TitledItem {
 	duration?: number;
 	seasonName?: string;
 	progress?: { time?: number };
-	tracks?: Array<{ kind?: string; file?: string }>;
+	tracks?: Array<{
+		kind?: string;
+		file?: string;
+		language?: string;
+		label?: string;
+	}>;
 }
 
 export interface Choice {
@@ -337,7 +342,7 @@ export function preScreen(opts: {
 		? episodeLabel(item, t)
 		: null;
 
-	const play = button(t('player_play'), opts.onPlay, 'play');
+	const play = button(t('player_play'), opts.onPlay, 'nmPlay');
 	const restart = button(t('player_restart'), opts.onRestart, 'playCircle');
 	const languages = button(t('player_audio_subtitles'), opts.onLanguage, 'globe');
 	const buttons = [play, restart, languages];
@@ -389,7 +394,8 @@ function episodeCard(
 		? Math.min(item.progress.time / item.duration, 1)
 		: 0;
 
-	const bar = el('div', 'tvui-card-progress');
+	const fill = el('div', 'tvui-card-progress-fill');
+	const bar = el('div', 'tvui-card-progress', fill);
 	const text = el('div', 'tvui-card-text', el('div', 'tvui-card-title', heading));
 	const card = row('', index === current, () =>
 		onPick(index));
@@ -401,7 +407,7 @@ function episodeCard(
 	}
 
 	text.append(el('div', 'tvui-card-overview', item.description ?? item.overview ?? ''));
-	bar.style.width = `${percent * 100}%`;
+	fill.style.width = `${percent * 100}%`;
 
 	card.className = index === current
 		? 'tvui-card tvui-selected'
@@ -454,11 +460,11 @@ export function episodeDialog(opts: {
 	const list = el('div', 'tvui-episode-list', ...cards);
 	const root = el('div', 'tvui-dialog tvui-episodes', el('div', 'tvui-seasons', ...seasonRows), list);
 
-	// EpisodeDialog.kt:43,94: the current card lands 110 px below the 52 px list padding.
+	// EpisodeDialog.kt:43,92-100: the first season row takes focus; the current card lands 110 px below the 52 px padding.
 	const focus = (): void => {
 		const target = cards[currentIndex] ?? cards[0];
 
-		target?.focus({ preventScroll: true });
+		(seasonRows[0] ?? target)?.focus({ preventScroll: true });
 
 		list.scrollTop = target
 			? target.offsetTop - list.offsetTop - EPISODE_SCROLL_OFFSET

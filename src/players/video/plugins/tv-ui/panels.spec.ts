@@ -368,11 +368,12 @@ describe('episode dialog (EpisodeDialog.kt)', () => {
 		expect(cards[0]?.querySelector('.tvui-card-title')?.textContent).toBe('Special');
 		expect(cards[0]?.querySelector('.tvui-card-label')?.textContent).toBe('Extras E1');
 		expect(cards.map((node) => node.classList.contains('tvui-selected'))).toEqual([false, true, false]);
-		expect(cards[1]?.querySelector<HTMLElement>('.tvui-card-progress')?.style.width).toBe('50%');
+		expect(cards[1]?.querySelector<HTMLElement>('.tvui-card-progress-fill')?.style.width).toBe('50%');
 		expect(cards[2]?.querySelector('.tvui-card-progress')).toBeNull();
 	});
 
-	it('e03 picking a card passes its index and the dialog focuses the current card', () => {
+	// EpisodeDialog.kt:92-100: the root takes focus, so the first season row holds it, as on the TV.
+	it('e03 picking a card passes its index and the dialog focuses the first season row', () => {
 		const picked: number[] = [];
 		const dialog = episodeDialog({
 			items,
@@ -383,7 +384,7 @@ describe('episode dialog (EpisodeDialog.kt)', () => {
 		const detach = attached(dialog.root);
 
 		dialog.focus();
-		expect(document.activeElement).toBe(dialog.root.querySelectorAll('.tvui-card')[1]);
+		expect(document.activeElement).toBe(dialog.root.querySelector('.tvui-seasons .tvui-row'));
 		dialog.root.querySelectorAll<HTMLElement>('.tvui-card')[2]!.click();
 		expect(picked).toEqual([2]);
 		detach();

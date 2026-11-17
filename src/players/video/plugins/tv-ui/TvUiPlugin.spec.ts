@@ -585,6 +585,16 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 		expect([video.style.transform, safezone.style.transform]).toEqual(['', '']);
 	});
 
+	// WatchScreen.kt:587: the shrunk picture keeps its black; around it shows the app background (slate_12).
+	it('x25 the app background shows around the shrunk picture, the picture stays black', () => {
+		const { root, video, player } = openSettings();
+
+		expect([player.container.style.background, video.style.background]).toEqual(['var(--cast-bg-base)', 'black']);
+
+		root.querySelector<HTMLElement>('.tvui-sidebar-header button')!.click();
+		expect([player.container.style.background, video.style.background]).toEqual(['', '']);
+	});
+
 	it('keeps the title at the top while the sidebar is open', () => {
 		const { root } = openSettings();
 

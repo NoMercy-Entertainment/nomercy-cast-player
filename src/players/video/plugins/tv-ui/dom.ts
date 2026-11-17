@@ -2,7 +2,7 @@ import { h, render } from 'vue';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import i18next from '@/i18n/i18next';
 
-export type IconName = 'play' | 'pause' | 'settings' | 'next' | 'check' | 'chevronLeft' |
+export type IconName = 'play' | 'nmPlay' | 'pause' | 'settings' | 'next' | 'check' | 'chevronLeft' |
 	'chevronRight' | 'globe' | 'playlist1' | 'playCircle' | 'rewind' | 'translate' | 'alertTriangle' |
 	'volumeMuted' | 'volumeOne' | 'volumeTwo' | 'volumeThree';
 
