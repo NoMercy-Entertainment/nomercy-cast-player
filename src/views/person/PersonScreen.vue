@@ -7,6 +7,7 @@ import { applyThemeColor, clearThemeColor } from '@/lib/theme';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { FocusedCardData } from '@/stores/focusedCardStore';
 import HeroRailsView from '@/views/HeroRailsView.vue';
+import { buildPersonRows, personHeroBackdrop } from './personRows';
 
 /*
  * PersonScreen.kt: the server's NMHomeCard is a fixed hero that never follows focus;
@@ -17,19 +18,51 @@ const { t } = useTranslation();
 const id = computed(() => String(route.params.id ?? ''));
 const { data, isLoading, error, refetch, isFetching } = usePersonQuery(id);
 
-const heroComponent = computed(() => data.value?.find((c) => c.component === 'NMHomeCard'));
+const components = computed(() => (data.value?.kind === 'components' ? data.value.components : undefined));
+const legacy = computed(() => (data.value?.kind === 'legacy' ? data.value.person : undefined));
+const knownFor = computed(() => (legacy.value ? personHeroBackdrop(legacy.value) : null));
+
+const heroComponent = computed(() => components.value?.find((c) => c.component === 'NMHomeCard'));
 // tv/PersonScreen.kt:156 draws only the backdrop, never the profile photo.
-const hero = computed(() => {
+const hero = computed<FocusedCardData | undefined>(() => {
+	if (legacy.value) {
+		return {
+			id: legacy.value.id,
+			title: legacy.value.name,
+			overview: legacy.value.biography,
+			backdrop: knownFor.value?.backdrop ?? undefined,
+			type: 'person',
+		};
+	}
+
 	const card = (heroComponent.value?.props as { data?: FocusedCardData } | undefined)?.data;
 
 	return card
 		? { ...card, poster: undefined } as const satisfies FocusedCardData
 		: undefined;
 });
-const rows = computed(() => data.value?.filter((c) => c !== heroComponent.value));
+const rows = computed(() => {
+	if (legacy.value) {
+		return buildPersonRows(legacy.value, {
+			knownFor: t('views.person.known_for'),
+			acting: t('views.person.acting'),
+			production: t('views.person.production'),
+			writing: t('views.person.writing'),
+			directing: t('views.person.directing'),
+			crew: t('views.person.crew'),
+			creator: t('views.person.creator'),
+		});
+	}
+
+	return components.value?.filter((c) => c !== heroComponent.value);
+});
 
 // PersonScreen.kt:56-60: the page color is the known-for backdrop palette.
-watch(hero, (next) => applyThemeColor(next?.color_palette?.backdrop ?? null), { immediate: true });
+watch(
+	[hero, knownFor],
+	([next, credit]) => applyThemeColor((next?.color_palette ?? credit?.color_palette)?.backdrop ?? null),
+	{ immediate: true },
+);
 focusedCardStore.setThemeFollowsFocus(false);
 
 onBeforeUnmount(() => {

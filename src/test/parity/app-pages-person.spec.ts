@@ -91,14 +91,15 @@ describe('row 6: the person page draws the components the server sends', () => {
 		expect(seen.persistentHero?.poster).toBeUndefined();
 	});
 
-	it('an older server that answers the plain person object draws the empty page', async () => {
-		await mountWith({ data: {
+	it('an older server that answers the plain person object gets the rows built on the client', async () => {
+		await mountWith({
 			id: '7',
 			name: 'Example Person',
-			known_for: [],
-		} });
+			biography: 'An old-server biography.',
+			known_for: [{ id: 1, title: 'Example Film', media_type: 'movie', link: '/movie/1', hasItem: true, backdrop: '/a.jpg' }],
+		});
 
-		expect(seen.data).toEqual([]);
-		expect(seen.persistentHero).toBeUndefined();
+		expect(seen.data?.length).toBeGreaterThan(0);
+		expect(seen.persistentHero).toMatchObject({ title: 'Example Person', overview: 'An old-server biography.', backdrop: '/a.jpg' });
 	});
 });

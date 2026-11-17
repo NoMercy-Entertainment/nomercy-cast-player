@@ -1,8 +1,15 @@
 {
 	"views": {
 		"person": {
+			"acting": "Acteren",
+			"creator": "Bedenker",
+			"crew": "Crew",
+			"directing": "Regie",
 			"empty": "Nog niets te tonen voor deze persoon.",
-			"load_error": "Deze persoon laden lukte niet"
+			"known_for": "Bekend van",
+			"load_error": "Deze persoon laden lukte niet",
+			"production": "Productie",
+			"writing": "Schrijven"
 		}
 	}
 }
