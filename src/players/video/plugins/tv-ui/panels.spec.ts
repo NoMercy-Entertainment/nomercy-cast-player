@@ -169,6 +169,17 @@ describe('settings panes (PlayerSettingsScreen.kt:128-173)', () => {
 		}
 	});
 
+	// PlayerSettingsScreen.kt:563-573: the check is always laid out, alpha .5 when selected and 0 otherwise.
+	it('p09b every sidebar choice row lays out a check, visible only on the selected one', () => {
+		for (const pane of ['quality', 'subtitle', 'audio'] as const) {
+			const { root } = settingsPanel(settingsData({ nav: { pane, styleProp: null } }));
+			const rows = Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row'));
+			const alphas = rows.map((node) => node.querySelector<HTMLElement>('[data-icon="check"]')?.closest<HTMLElement>('.tvui-icon')?.style.opacity);
+
+			expect(alphas).toEqual(rows.map((node) => node.classList.contains('tvui-selected') ? '0.5' : '0'));
+		}
+	});
+
 	it('p10 the style pane lists font, size, edge, color, background and reset', () => {
 		const { root } = settingsPanel(settingsData({ nav: { pane: 'subtitleStyle', styleProp: null } }));
 

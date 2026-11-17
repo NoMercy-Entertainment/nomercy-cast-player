@@ -68,6 +68,7 @@ function row(
 	onPick: () => void,
 	value = '',
 	trailing: IconName | null = null,
+	sidebar = false,
 ): HTMLElement {
 	const classes = selected
 		? 'tvui-row tvui-selected'
@@ -77,9 +78,16 @@ function row(
 		? el('span', 'tvui-row-value', value)
 		: false;
 
-	const check = selected && !trailing
-		? icon('check')
-		: false;
+	// PlayerSettingsScreen.kt:563-573: the sidebar always lays the check out so row heights never change.
+	const mark = icon('check');
+
+	mark.style.opacity = selected
+		? '0.5'
+		: '0';
+
+	const check = sidebar && !trailing
+		? mark
+		: selected && !trailing && icon('check');
 
 	const arrow = trailing
 		? icon(trailing)
@@ -100,8 +108,8 @@ function column(titleKey: string, rows: HTMLElement[]): HTMLElement {
 	return el('div', 'tvui-column', title, ...rows);
 }
 
-function choiceRows(choices: Choice[]): HTMLElement[] {
-	return choices.map((choice) => row(choice.label, choice.selected, choice.onPick));
+function choiceRows(choices: Choice[], sidebar = false): HTMLElement[] {
+	return choices.map((choice) => row(choice.label, choice.selected, choice.onPick, '', null, sidebar));
 }
 
 // The first choice is Auto, which is not a real level: a lone real level is no choice (KMP levels.size > 1).
@@ -559,14 +567,14 @@ function settingsRows(data: SettingsData): HTMLElement[] {
 		case 'main':
 			return mainPaneRows(data);
 		case 'quality':
-			return choiceRows(data.levels);
+			return choiceRows(data.levels, true);
 		case 'subtitle':
-			return choiceRows(data.subtitles);
+			return choiceRows(data.subtitles, true);
 		case 'audio':
-			return choiceRows(data.audio);
+			return choiceRows(data.audio, true);
 		case 'subtitleStyle':
 			return nav.styleProp
-				? choiceRows(data.styleChoices(nav.styleProp))
+				? choiceRows(data.styleChoices(nav.styleProp), true)
 				: stylePaneRows(data);
 	}
 }
