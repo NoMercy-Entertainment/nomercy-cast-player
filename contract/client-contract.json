@@ -96,7 +96,7 @@
 		},
 		{
 			"file": "src/views/music/MusicListScreen.vue",
-			"line": 159,
+			"line": 172,
 			"reason": "Server-provided path can contain multiple segments",
 			"expression": "/api/v1/${cleanLink}/like"
 		}
