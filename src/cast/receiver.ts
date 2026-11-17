@@ -160,9 +160,15 @@ export function bootCastReceiver(router: Router): void {
 	// listener registers is not possible here the way it was on the KMP
 	// receiver's wasm module - Vue mounts and this file runs synchronously,
 	// no multi-second binary load to race against.
-	onSenderNavigate((payload) => {
+	onSenderNavigate((payload, ack) => {
 		if (!payload.token) {
 			console.warn('[cast] navigate message carried no token');
+
+			return;
+		}
+
+		if (!isKnownRoute(router, payload.route)) {
+			console.warn('[cast] navigate route is not one the receiver has', payload.route);
 
 			return;
 		}
@@ -178,7 +184,7 @@ export function bootCastReceiver(router: Router): void {
 			`cast-session ${payload.route}`,
 		);
 
-		runNavigateBoot(payload, router);
+		runNavigateBoot(payload, router, ack);
 	});
 
 	authStore.setRenewalRequester(requestTokenRenewal);
@@ -315,15 +321,29 @@ interface BootPlan {
 	token: string;
 	resolve: (onStep: (step: 'account' | 'server') => void) => Promise<ResolvedServer | null>;
 	open: () => Promise<void> | void;
+	/** Runs once the route opened; a refusal before that leaves the sender without it. */
+	accepted?: () => void;
 }
 
-function runNavigateBoot(payload: NavigatePayload, router: Router): void {
+const CatchAllPrefix = '/:pathMatch';
+
+// An unknown route would fall into the catch-all redirect to Home and look accepted.
+function isKnownRoute(router: Router, route: string): boolean {
+	if (!route.startsWith('/')) return false;
+
+	const { matched } = router.resolve(route);
+
+	return matched.length > 0 && !matched.some((record) => record.path.startsWith(CatchAllPrefix));
+}
+
+function runNavigateBoot(payload: NavigatePayload, router: Router, ack: () => void): void {
 	runBoot({
 		token: payload.token!,
 		resolve: (onStep) => resolveServerFromAppConfig(payload.token!, payload, onStep),
 		open: async () => {
 			await router.push(payload.route);
 		},
+		accepted: ack,
 	});
 }
 
@@ -341,10 +361,6 @@ function runBoot(plan: BootPlan): void {
 		if (!current()) return;
 
 		bootRun++;
-
-		if (step === 'connect') {
-			void socketStore.disconnectAll();
-		}
 
 		console.warn('[cast] boot passed its deadline at step', step);
 		authStore.bootError.value = BootStepReasons[step]();
@@ -391,16 +407,23 @@ function runBoot(plan: BootPlan): void {
 			return;
 		}
 
-		step = 'connect';
+		// The hubs retry on their own; playback runs over HTTP and never waits on them.
+		clearTimeout(timer);
 		authStore.receiverState.value = 'CONNECTING';
 
-		void socketStore.connectAll().then(() => {
-			if (!current()) return;
+		void socketStore.connectAll().catch((err) => console.warn('[cast] hubs did not connect', err));
 
-			clearTimeout(timer);
-			authStore.receiverState.value = 'READY';
-		});
+		try {
+			await plan.open();
+		} catch (err) {
+			console.warn('[cast] route did not open', err);
 
-		await plan.open();
+			return;
+		}
+
+		if (!current()) return;
+
+		authStore.receiverState.value = 'READY';
+		plan.accepted?.();
 	})();
 }

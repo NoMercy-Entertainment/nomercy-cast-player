@@ -28,7 +28,7 @@ export interface NavigatePayload extends NamedServer {
 	token?: string;
 }
 
-type NavigateHandler = (payload: NavigatePayload) => void;
+type NavigateHandler = (payload: NavigatePayload, ack: () => void) => void;
 type TokenHandler = (token: string) => void;
 type LaunchHandler = (launch: JsonValue) => void;
 
@@ -140,14 +140,17 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 
 		const payload = event.data;
 
-		try {
-			ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { ack: true, route: payload.route });
-		} catch (err) {
-			console.warn('[cast] ack send failed', err);
-		}
+		// The ack tells the phone the TV took the route, so a handler sends it after its checks.
+		const ack = (): void => {
+			try {
+				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, { ack: true, route: payload.route });
+			} catch (err) {
+				console.warn('[cast] ack send failed', err);
+			}
+		};
 
 		for (const fn of navigateHandlers) {
-			fn(payload);
+			fn(payload, ack);
 		}
 	});
 }

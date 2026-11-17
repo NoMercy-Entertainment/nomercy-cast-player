@@ -52,7 +52,7 @@ describe('the cast handshake never leaves the TV on the splash', () => {
 
 		const listeners = installFakeCast();
 
-		bootCastReceiver({} as never);
+		bootCastReceiver({ resolve: () => ({ matched: [{ path: '/' }] }) } as never);
 
 		sendNavigate(listeners);
 
@@ -69,7 +69,7 @@ describe('the cast handshake never leaves the TV on the splash', () => {
 
 		const listeners = installFakeCast();
 
-		bootCastReceiver({} as never);
+		bootCastReceiver({ resolve: () => ({ matched: [{ path: '/' }] }) } as never);
 
 		sendNavigate(listeners);
 		await vi.advanceTimersByTimeAsync(30_000);

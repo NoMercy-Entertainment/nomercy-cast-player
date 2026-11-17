@@ -61,7 +61,7 @@ describe('the receiver asks the sender for a fresh token before it expires', () 
 			},
 		});
 
-		bootCastReceiver({ push: vi.fn() } as never);
+		bootCastReceiver({ push: vi.fn(), resolve: () => ({ matched: [{ path: '/movie/:id/watch' }] }) } as never);
 		onSenderNavigate(navigate);
 	});
 
@@ -190,12 +190,11 @@ describe('the receiver asks the sender for a fresh token before it expires', () 
 		expect(authStore.castAgainRequired.value).toBe(false);
 	});
 
-	it('still acks and navigates for a payload with a route', () => {
+	it('still hands a payload with a route to the navigate handlers, with the ack to send', () => {
 		const payload = { route: '/movie/1/watch?cast=true&position=0', token: token('made-up-user', nowSeconds() + 600) };
 
 		fromSender(payload);
 
-		expect(sendCustomMessage).toHaveBeenCalledWith(NAMESPACE_GENERAL, 'sender-1', { ack: true, route: payload.route });
-		expect(navigate).toHaveBeenCalledWith(payload);
+		expect(navigate).toHaveBeenCalledWith(payload, expect.any(Function));
 	});
 });

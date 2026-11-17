@@ -72,7 +72,7 @@ async function castFromPhone(server: PhoneServer): Promise<ReturnType<typeof vi.
 	const push = vi.fn(async () => {});
 	const listeners = installFakeCast();
 
-	bootCastReceiver({ push } as never);
+	bootCastReceiver({ push, resolve: () => ({ matched: [{ path: '/tv/:id/watch' }] }) } as never);
 
 	for (const fn of listeners) {
 		fn({ senderId: 'sender-1', data: {

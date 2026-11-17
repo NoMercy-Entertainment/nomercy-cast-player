@@ -119,7 +119,7 @@ function launchFromServer(): ReturnType<typeof vi.fn> {
 		},
 	});
 
-	bootCastReceiver({ push } as never);
+	bootCastReceiver({ push, resolve: () => ({ matched: [{ path: '/tv/:id/watch' }] }) } as never);
 
 	for (const fn of ready) {
 		fn();
@@ -142,7 +142,7 @@ function mockCast(serverUrl?: string): ReturnType<typeof vi.fn> {
 		serverUrl,
 	}));
 
-	bootCastReceiver({ push } as never);
+	bootCastReceiver({ push, resolve: () => ({ matched: [{ path: '/tv/:id/watch' }] }) } as never);
 
 	return push;
 }
@@ -151,7 +151,7 @@ function castFromPhone(server: { server_id?: string } = {}): ReturnType<typeof v
 	const push = vi.fn(async () => {});
 	const listeners = installFakeCast();
 
-	bootCastReceiver({ push } as never);
+	bootCastReceiver({ push, resolve: () => ({ matched: [{ path: '/tv/:id/watch' }] }) } as never);
 
 	for (const fn of listeners) {
 		fn({ senderId: 'sender-1', data: {
@@ -215,17 +215,17 @@ describe('a stuck boot ends on the error screen, never an endless splash', () =>
 		expect(authStore.serverUrl.value).toBe(Server.serverBaseUrl);
 	});
 
-	it('shows the connection reason after 15 s when connectAll never settles', async () => {
+	// Native never waits on a hub (WatchScreen.kt loads the playlist over HTTP).
+	it('plays on when connectAll never settles, with no error screen', async () => {
 		stubNetwork([Server], () => [Server.serverBaseUrl]);
 		vi.mocked(socketStore.connectAll).mockImplementation(() => new Promise<void>(() => {}));
 
-		castFromPhone({ server_id: Server.id });
+		const push = castFromPhone({ server_id: Server.id });
 
-		await vi.advanceTimersByTimeAsync(14_000);
+		await vi.advanceTimersByTimeAsync(16_000);
+		expect(push).toHaveBeenCalledWith(WatchRoute);
 		expect(authStore.bootError.value).toBeNull();
-		await vi.advanceTimersByTimeAsync(1500);
-		expect(authStore.bootError.value).toBe('The connection to the media server did not open.');
-		expect(authStore.receiverState.value).not.toBe('READY');
+		expect(authStore.receiverState.value).toBe('READY');
 	});
 
 	it('shows the account reason after 15 s when app_config never answers', async () => {
@@ -269,15 +269,15 @@ describe('a stuck boot ends on the error screen, never an endless splash', () =>
 		expect(authStore.bootError.value).toBeNull();
 	});
 
-	it('a launch from the media server shows the connection reason after 15 s when connectAll never settles', async () => {
+	it('a launch from the media server plays on when connectAll never settles', async () => {
 		vi.mocked(socketStore.connectAll).mockImplementation(() => new Promise<void>(() => {}));
 
-		launchFromServer();
+		const push = launchFromServer();
 
-		await vi.advanceTimersByTimeAsync(14_000);
+		await vi.advanceTimersByTimeAsync(16_000);
+		expect(push).toHaveBeenCalledTimes(1);
 		expect(authStore.bootError.value).toBeNull();
-		await vi.advanceTimersByTimeAsync(1500);
-		expect(authStore.bootError.value).toBe('The connection to the media server did not open.');
+		expect(authStore.receiverState.value).toBe('READY');
 	});
 
 	it('try again after a launch failure reruns the launch and reaches READY', async () => {
@@ -285,9 +285,7 @@ describe('a stuck boot ends on the error screen, never an endless splash', () =>
 
 		const push = launchFromServer();
 
-		await vi.advanceTimersByTimeAsync(15_500);
-		expect(authStore.bootError.value).not.toBeNull();
-
+		await vi.advanceTimersByTimeAsync(2000);
 		authStore.retryBoot();
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(authStore.bootError.value).toBeNull();
@@ -304,13 +302,14 @@ describe('a stuck boot ends on the error screen, never an endless splash', () =>
 		expect(authStore.bootError.value).toBeNull();
 	});
 
-	it('a mock session shows the connection reason after 15 s when connectAll never settles', async () => {
+	it('a mock session plays on when connectAll never settles', async () => {
 		vi.mocked(socketStore.connectAll).mockImplementation(() => new Promise<void>(() => {}));
 
-		mockCast(Server.serverBaseUrl);
+		const push = mockCast(Server.serverBaseUrl);
 
 		await vi.advanceTimersByTimeAsync(15_500);
-		expect(authStore.bootError.value).toBe('The connection to the media server did not open.');
+		expect(push).toHaveBeenCalledWith(WatchRoute);
+		expect(authStore.bootError.value).toBeNull();
 	});
 
 	it('a mock session shows the account reason after 15 s when app_config never answers', async () => {
