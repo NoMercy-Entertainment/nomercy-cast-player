@@ -164,6 +164,8 @@ export function bootCastReceiver(router: Router): void {
 	// listener registers is not possible here the way it was on the KMP
 	// receiver's wasm module - Vue mounts and this file runs synchronously,
 	// no multi-second binary load to race against.
+	const navigateSlot: { pending: PendingNavigate | null } = { pending: null };
+
 	onSenderNavigate((payload, ack) => {
 		if (!payload.token) {
 			console.warn('[cast] navigate message carried no token');
@@ -188,7 +190,7 @@ export function bootCastReceiver(router: Router): void {
 			`cast-session ${payload.route}`,
 		);
 
-		runNavigateBoot(payload, router, ack);
+		runNavigateBoot(payload, router, ack, navigateSlot);
 	});
 
 	// The phone's stop casting returns the TV to where it was (WatchScreen.kt remoteStopCount).
@@ -334,6 +336,8 @@ interface BootPlan {
 	open: () => Promise<void> | void;
 	/** Runs once the route opened; a refusal before that leaves the sender without it. */
 	accepted?: () => void;
+	/** Runs when this boot ends, opened or not. */
+	ended?: () => void;
 }
 
 const CatchAllPrefix = '/:pathMatch';
@@ -348,14 +352,47 @@ function isKnownRoute(router: Router, route: string): boolean {
 	return matched.length > 0 && !matched.some((record) => record.path.startsWith(CatchAllPrefix));
 }
 
-function runNavigateBoot(payload: NavigatePayload, router: Router, ack: () => void): void {
+interface PendingNavigate {
+	key: string;
+	acks: (() => void)[];
+}
+
+// A sender resends its navigate until it is acked. A resend that restarted the boot would
+// cancel the one before it, and with a boot slower than the resend no boot would ever finish.
+function runNavigateBoot(
+	payload: NavigatePayload,
+	router: Router,
+	ack: () => void,
+	slot: { pending: PendingNavigate | null },
+): void {
+	const key = JSON.stringify(payload);
+
+	if (slot.pending?.key === key) {
+		slot.pending.acks.push(ack);
+
+		return;
+	}
+
+	const pending: PendingNavigate = { key, acks: [ack] };
+
+	slot.pending = pending;
+
 	runBoot({
 		token: payload.token!,
 		resolve: (onStep) => resolveServerFromAppConfig(payload.token!, payload, onStep),
 		open: async () => {
 			await router.push(payload.route);
 		},
-		accepted: ack,
+		accepted: () => {
+			for (const send of pending.acks) {
+				send();
+			}
+		},
+		ended: () => {
+			if (slot.pending === pending) {
+				slot.pending = null;
+			}
+		},
 	});
 }
 
@@ -376,6 +413,7 @@ function runBoot(plan: BootPlan): void {
 
 		console.warn('[cast] boot passed its deadline at step', step);
 		authStore.bootError.value = BootStepReasons[step]();
+		plan.ended?.();
 	}, BootDeadlineMs);
 
 	void (async () => {
@@ -437,5 +475,5 @@ function runBoot(plan: BootPlan): void {
 
 		authStore.receiverState.value = 'READY';
 		plan.accepted?.();
-	})();
+	})().finally(() => plan.ended?.());
 }

@@ -61,6 +61,7 @@
 		"GET /api/v1/search/video/tv",
 		"GET /api/v1/setup/server-info",
 		"GET /api/v1/subtitles/search",
+		"GET /api/v1/userData/favorites",
 		"POST /api/v1/subtitles/download"
 	],
 	"skips": [
@@ -90,13 +91,13 @@
 		},
 		{
 			"file": "src/views/info/InfoScreen.vue",
-			"line": 215,
+			"line": 229,
 			"reason": "Server-provided path can contain multiple segments",
 			"expression": "/api/v1/${cleanLink}/watch-list"
 		},
 		{
 			"file": "src/views/music/MusicListScreen.vue",
-			"line": 172,
+			"line": 154,
 			"reason": "Server-provided path can contain multiple segments",
 			"expression": "/api/v1/${cleanLink}/like"
 		}
