@@ -1,5 +1,5 @@
 import { buildDiagnosticsAnswer } from './diagnosticsAnswer';
-import { answerControl, isControlRequest } from './controlChannel';
+import { answerControl, isControlRequest, isStopRequest } from './controlChannel';
 import { videoSyncBridge } from '@/players/video/syncBridge';
 import { NAMESPACE_GENERAL, NAMESPACE_STATUS } from './namespaces';
 import { resolveServerFromAppConfig } from '@/lib/resolveServer';
@@ -60,6 +60,7 @@ let lastSenderId: string | undefined;
 let navigateHandlers: NavigateHandler[] = [];
 let tokenHandlers: TokenHandler[] = [];
 let launchHandlers: LaunchHandler[] = [];
+let stopHandlers: (() => void)[] = [];
 
 // A media server that woke this TV sends its LaunchCustomData here: CAF hides the LAUNCH customData.
 function isLaunchMessage(data: unknown): data is { launch: JsonValue } {
@@ -88,9 +89,18 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 	ctx.addCustomMessageListener(NAMESPACE_GENERAL, (event) => {
 		if (isControlRequest(event.data)) {
 			const { senderId } = event;
+			const stopped = isStopRequest(event.data.control);
 
 			void answerControl(event.data.control, videoSyncBridge.current())
-				.then((control) => ctx.sendCustomMessage(NAMESPACE_GENERAL, senderId, { control }))
+				.then((control) => {
+					ctx.sendCustomMessage(NAMESPACE_GENERAL, senderId, { control });
+
+					if (stopped) {
+						for (const fn of stopHandlers) {
+							fn();
+						}
+					}
+				})
 				.catch((err) => console.warn('[cast] control answer failed', err));
 
 			return;
@@ -160,6 +170,15 @@ export function onSenderNavigate(handler: NavigateHandler): () => void {
 
 	return () => {
 		navigateHandlers = navigateHandlers.filter((h) => h !== handler);
+	};
+}
+
+/** Runs after the phone's stop was answered. */
+export function onRemoteStop(handler: () => void): () => void {
+	stopHandlers.push(handler);
+
+	return () => {
+		stopHandlers = stopHandlers.filter((h) => h !== handler);
 	};
 }
 

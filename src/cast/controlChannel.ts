@@ -254,6 +254,12 @@ const ROUTES = {
 	'PATCH /session/playlist': command((e, b) => e.seekToIndex(Number(b.activeIndex))),
 } as const satisfies Record<string, Handler>;
 
+const StopRoute = 'POST /session/transport/stop';
+
+export function isStopRequest(req: ControlRequest): boolean {
+	return `${req.method.toUpperCase()} ${req.path.replace(V1_PREFIX, '')}` === StopRoute;
+}
+
 function isRoute(key: string): key is keyof typeof ROUTES {
 	return Object.hasOwn(ROUTES, key);
 }
@@ -286,7 +292,10 @@ export async function answerControl(
 	if (!engine) {
 		return {
 			id: req.id,
-			status: 412,
+			// Stop is an idempotent teardown (SessionRoutes.kt:96-103); the rest need a session.
+			status: key === StopRoute
+				? 204
+				: 412,
 			body: null,
 		};
 	}

@@ -6,12 +6,14 @@ import type { JsonValue, NavigatePayload, ReceiverContextLike } from './messageB
 import type { ResolvedServer } from '@/lib/resolveServer';
 import {
 	attachMessageBus,
+	onRemoteStop,
 	onSenderNavigate,
 	onSenderToken,
 	onServerLaunch,
 	requestTokenRenewal,
 	resolveServerFromAppConfig,
 } from './messageBus';
+import { leaveToPreviousOrHome } from '@/router/leave';
 import { authStore } from '@/stores/authStore';
 import { dispatchInitialIntent } from '@/stores/navStore';
 import { socketStore } from '@/stores/socketStore';
@@ -185,6 +187,13 @@ export function bootCastReceiver(router: Router): void {
 		);
 
 		runNavigateBoot(payload, router, ack);
+	});
+
+	// The phone's stop casting returns the TV to where it was (WatchScreen.kt remoteStopCount).
+	onRemoteStop(() => {
+		if (/^\/(?:movie|tv)\/[^/]+\/watch$|^\/watch\//.test(router.currentRoute.value.path)) {
+			leaveToPreviousOrHome(router);
+		}
 	});
 
 	authStore.setRenewalRequester(requestTokenRenewal);

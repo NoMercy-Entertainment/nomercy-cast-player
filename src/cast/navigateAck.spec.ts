@@ -148,6 +148,41 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 	});
 });
 
+describe('a remote stop leaves the watch screen, as native WatchScreen.kt does for a cast', () => {
+	beforeEach(async () => {
+		await loadFresh();
+		window.sessionStorage.removeItem('nm_cast_mock');
+		vi.spyOn(console, 'warn').mockImplementation(() => {});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.restoreAllMocks();
+	});
+
+	function stopOn(path: string) {
+		const router = { ...fakeRouter(), replace: vi.fn(async () => {}), back: vi.fn(), currentRoute: { value: { path } } };
+		const { send } = cast({ control: { id: 1, method: 'POST', path: '/v1/session/transport/stop' } }, router as never);
+
+		return { router, send };
+	}
+
+	it('goes back from a watch route', async () => {
+		const { router, send } = stopOn('/tv/60808/watch');
+
+		await vi.waitFor(() => expect(send).toHaveBeenCalled());
+		expect(router.replace).toHaveBeenCalledWith('/');
+	});
+
+	it('stays put when the receiver is not on a watch route', async () => {
+		const { router, send } = stopOn('/music');
+
+		await vi.waitFor(() => expect(send).toHaveBeenCalled());
+		expect(router.replace).not.toHaveBeenCalled();
+		expect(router.back).not.toHaveBeenCalled();
+	});
+});
+
 describe('playback does not wait on the SignalR hubs', () => {
 	beforeEach(async () => {
 		await loadFresh();
