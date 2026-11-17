@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import FallbackPoster from '@/components/cards/FallbackPoster.vue';
-import { BACKDROP_SIZE, buildImageUrl, pickPaletteColor, POSTER_SIZE } from '@/lib/images/urls';
+import { BACKDROP_SIZE, buildImageUrl, paletteWashStyle, pickPaletteColor, POSTER_SIZE } from '@/lib/images/urls';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { NMCardWrapper, Update } from './types';
 
@@ -32,13 +32,24 @@ const imageUrl = computed(() => buildImageUrl(imageSource.value, props.data.wide
 	: POSTER_SIZE));
 
 // TvCardViewHolder.kt:86-102: the palette of the image the card shows; the page accent when it has none.
-const accent = computed(() => {
+const shownPalette = computed(() => {
 	const palette = props.data.color_palette ?? props.data.colorPalette;
-	const shown = props.data.wide
+
+	return props.data.wide
 		? palette?.still ?? palette?.backdrop ?? palette?.poster
 		: palette?.poster ?? palette?.backdrop;
+});
 
-	return pickPaletteColor(shown);
+// TvCardViewHolder.kt:180-181: the palette wash shows until the image covers it.
+const posterStyle = computed(() => {
+	const style = paletteWashStyle(shownPalette.value);
+	const accent = pickPaletteColor(shownPalette.value);
+
+	if (accent) {
+		style['--card-accent'] = accent;
+	}
+
+	return style;
 });
 
 const progressPct = computed(() => {
@@ -93,7 +104,7 @@ useFocusEntry({
 		tabindex="0"
 		role="button"
 	>
-		<div class="poster nm-focus-ring" :style="accent ? { '--card-accent': accent } : undefined">
+		<div class="poster nm-focus-ring nm-palette-wash" :style="posterStyle">
 			<img
 				v-if="imageUrl"
 				class="nm-cover-top"
@@ -143,11 +154,13 @@ useFocusEntry({
 	aspect-ratio: 2/3;
 	border-radius: var(--radius-card);
 	overflow: hidden;
-	background: oklch(0.18 0.01 250);
 	position: relative;
+	/* PalettePlaceholder.kt:40: 0.9 of the longer side. */
+	--wash-r: calc(var(--rail-card-width) * 1.35);
 }
 .card-wide .poster {
 	aspect-ratio: 16 / 9;
+	--wash-r: calc((100vw - 40px - 42px - 24px) / 3 * 0.9);
 }
 /* TvCardViewHolder.kt:79-102: a 1 dp palette stroke at rest, replaced by the white ring on focus. */
 .poster::after {

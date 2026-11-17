@@ -4,7 +4,7 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import FallbackPoster from '@/components/cards/FallbackPoster.vue';
-import { buildImageUrl, SQUARE_SIZE } from '@/lib/images/urls';
+import { buildImageUrl, paletteWashStyle, SQUARE_SIZE } from '@/lib/images/urls';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { NMMusicCardWrapper, Update } from './types';
 
@@ -32,6 +32,13 @@ const isLetterCard = computed(() => cardType.value === 'letter');
 const cover = computed(() =>
 	buildImageUrl(props.data.cover ?? null, SQUARE_SIZE),
 );
+
+// TvCardData.kt:72: a music card washes in its cover palette while the cover loads.
+const washStyle = computed(() => {
+	const palette = props.data.color_palette ?? props.data.colorPalette;
+
+	return paletteWashStyle(palette?.cover ?? palette?.image);
+});
 
 const typeLabel = computed(() => {
 	switch (cardType.value) {
@@ -104,7 +111,7 @@ useFocusEntry({
 		tabindex="0"
 		role="button"
 	>
-		<div class="cover nm-focus-ring">
+		<div class="cover nm-focus-ring nm-palette-wash" :style="washStyle">
 			<template v-if="isLetterCard">
 				<div class="letter">
 					{{ props.data.name }}
@@ -158,8 +165,8 @@ useFocusEntry({
 	margin: 4px;
 	border-radius: var(--radius-card);
 	overflow: hidden;
-	background: oklch(0.18 0.01 250);
 	position: relative;
+	--wash-r: calc(var(--rail-card-width) * 0.9);
 	display: grid;
 	place-items: center;
 }

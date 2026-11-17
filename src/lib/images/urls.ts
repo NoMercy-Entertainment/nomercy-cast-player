@@ -231,3 +231,45 @@ export function pickPaletteColor(
 
 	return result;
 }
+
+const HEX_COLOR = /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i;
+
+function withAlpha(hex: string | undefined, alpha: number): string | null {
+	if (!hex || !HEX_COLOR.test(hex))
+		return null;
+
+	return `${hex.slice(0, 7)}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+}
+
+// PalettePlaceholder.kt:66-77: top left, top right, bottom left, bottom right; null when a color is missing.
+export function paletteWashCorners(palette: PaletteColors | null | undefined): string[] | null {
+	const corners = [
+		withAlpha(palette?.lightVibrant, 0.75),
+		withAlpha(palette?.dominant, 0.70),
+		withAlpha(palette?.darkVibrant, 0.80),
+		withAlpha(palette?.dominant, 0.70),
+	];
+
+	return corners.every((c) => c !== null)
+		? corners
+		: null;
+}
+
+// The --wash-1..4 variables the .nm-palette-wash class reads; empty when the palette is incomplete.
+export function paletteWashStyle(palette?: PaletteColors | null): Record<string, string> {
+	const style: Record<string, string> = {};
+
+	const corners = paletteWashCorners(palette);
+
+	if (!corners)
+		return style;
+
+	corners.forEach((color, i) => {
+		style[`--wash-${i + 1}`] = color;
+	});
+
+	style['--wash-base'] = 'transparent';
+	style['--wash-glow'] = 'rgb(0 0 0 / 0.15)';
+
+	return style;
+}

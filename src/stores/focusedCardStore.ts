@@ -1,3 +1,4 @@
+import type { PaletteColors } from '@/lib/images/urls';
 import { applyThemeColor } from '@/lib/theme';
 import { ref, watch } from 'vue';
 
@@ -16,30 +17,12 @@ export interface FocusedCardData {
 	have_items?: number;
 	number_of_items?: number;
 	color_palette?: {
-		backdrop?: {
-			dominant?: string;
-			light?: string;
-			dark?: string;
-			primary?: string;
-		};
-		poster?: {
-			dominant?: string;
-			light?: string;
-			dark?: string;
-			primary?: string;
-		};
-		logo?: {
-			dominant?: string;
-			light?: string;
-			dark?: string;
-			primary?: string;
-		};
-		still?: {
-			dominant?: string;
-			light?: string;
-			dark?: string;
-			primary?: string;
-		};
+		backdrop?: PaletteColors;
+		poster?: PaletteColors;
+		logo?: PaletteColors;
+		still?: PaletteColors;
+		cover?: PaletteColors;
+		image?: PaletteColors;
 	};
 }
 

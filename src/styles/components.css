@@ -48,6 +48,19 @@
 	border-color: var(--color-primary, oklch(0.7 0.2 285));
 }
 
+/* ─── Card placeholder (PalettePlaceholder.kt:34-49) ────────────────── */
+
+/* Four corner glows and a dark top-left glow; the page accent when the palette is incomplete. */
+.nm-palette-wash {
+	background-color: var(--wash-base, var(--color-primary, var(--cast-accent)));
+	background-image:
+		radial-gradient(circle calc(var(--wash-r, 100px) * 1.589) at -10% -10%, var(--wash-glow, transparent), transparent),
+		radial-gradient(circle var(--wash-r, 100px) at 100% 100%, var(--wash-4, transparent), transparent),
+		radial-gradient(circle var(--wash-r, 100px) at 0 100%, var(--wash-3, transparent), transparent),
+		radial-gradient(circle var(--wash-r, 100px) at 100% 0, var(--wash-2, transparent), transparent),
+		radial-gradient(circle var(--wash-r, 100px) at 0 0, var(--wash-1, transparent), transparent);
+}
+
 /* ─── Image cropping ────────────────────────────────────────────────── */
 
 .nm-cover-top {
