@@ -37,8 +37,9 @@ export interface FocusedCardData {
 
 const _activeCard = ref<FocusedCardData | null>(null);
 const _debouncedCard = ref<FocusedCardData | null>(null);
-const HORIZONTAL_DEBOUNCE_MS = 650;
-const VERTICAL_DEBOUNCE_MS = 2000;
+// HeroSelectionTiming.kt:27-29: a move along a row updates the hero fast, a row change a touch later.
+const HORIZONTAL_DEBOUNCE_MS = 250;
+const VERTICAL_DEBOUNCE_MS = 500;
 let pending: number | null = null;
 let lastNavDir: 'horizontal' | 'vertical' = 'horizontal';
 
