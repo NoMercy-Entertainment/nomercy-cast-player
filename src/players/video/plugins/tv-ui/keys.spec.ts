@@ -105,3 +105,25 @@ describe('sharedKeyAction (VideoChromeStoreAdapter.kt:181-188)', () => {
 	it('h05 everything else goes to the library key handler', () =>
 		expect(sharedKeyAction('other')).toBe('library'));
 });
+
+describe('media transport keys and platform Back codes (VideoChromeStoreAdapter.kt:166-189)', () => {
+	it.each([
+		['MediaPlayPause', 'playPause'],
+		['MediaTrackNext', 'next'],
+		['MediaTrackPrevious', 'previous'],
+		['MediaStop', 'stop'],
+	])('osd-17 %s is %s', (key, name) => {
+		expect(keyOf({ key })).toBe(name);
+	});
+
+	it.each([461, 10009])('osd-17 a key with only keyCode %i is Back', (keyCode) => {
+		expect(keyOf({ key: 'Unidentified', keyCode })).toBe('back');
+	});
+
+	it('osd-17 the transport keys reach the shared handler', () => {
+		expect(sharedKeyAction('playPause')).toBe('togglePlay');
+		expect(sharedKeyAction('next')).toBe('next');
+		expect(sharedKeyAction('previous')).toBe('previous');
+		expect(sharedKeyAction('stop')).toBe('stop');
+	});
+});

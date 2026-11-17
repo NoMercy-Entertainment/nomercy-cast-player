@@ -1,4 +1,4 @@
-export type KeyName = 'left' | 'right' | 'up' | 'down' | 'center' | 'back' | 'volumeUp' | 'volumeDown' | 'volumeMute' | 'rewind' | 'fastForward' | 'other';
+export type KeyName = 'left' | 'right' | 'up' | 'down' | 'center' | 'back' | 'volumeUp' | 'volumeDown' | 'volumeMute' | 'rewind' | 'fastForward' | 'playPause' | 'next' | 'previous' | 'stop' | 'other';
 
 const KEY_NAMES = {
 	ArrowLeft: 'left',
@@ -16,10 +16,24 @@ const KEY_NAMES = {
 	AudioVolumeMute: 'volumeMute',
 	MediaRewind: 'rewind',
 	MediaFastForward: 'fastForward',
+	MediaPlayPause: 'playPause',
+	MediaTrackNext: 'next',
+	MediaTrackPrevious: 'previous',
+	MediaStop: 'stop',
 } as const satisfies Record<string, KeyName>;
 
-export function keyOf(event: { key: string }): KeyName {
-	return (KEY_NAMES as Record<string, KeyName>)[event.key] ?? 'other';
+// webOS and Tizen remotes send Back with no usable key name.
+const BACK_KEY_CODES = [461, 10009];
+
+export function keyOf(event: { key: string; keyCode?: number }): KeyName {
+	const named = (KEY_NAMES as Record<string, KeyName>)[event.key];
+
+	if (named)
+		return named;
+
+	return event.keyCode !== undefined && BACK_KEY_CODES.includes(event.keyCode)
+		? 'back'
+		: 'other';
 }
 
 export interface RootKeyState {
@@ -76,7 +90,7 @@ export function routeRootKey(state: RootKeyState, key: KeyName): RootRoute {
 	}
 }
 
-export type SharedAction = 'toggleMute' | 'seekBack' | 'seekForward' | 'togglePlay' | 'library';
+export type SharedAction = 'toggleMute' | 'seekBack' | 'seekForward' | 'togglePlay' | 'next' | 'previous' | 'stop' | 'library';
 
 // VideoChromeStoreAdapter.kt:173-190, the shared player key map.
 export function sharedKeyAction(key: KeyName): SharedAction {
@@ -84,7 +98,11 @@ export function sharedKeyAction(key: KeyName): SharedAction {
 		case 'volumeMute': return 'toggleMute';
 		case 'rewind': return 'seekBack';
 		case 'fastForward': return 'seekForward';
-		case 'center': return 'togglePlay';
+		case 'center':
+		case 'playPause': return 'togglePlay';
+		case 'next': return 'next';
+		case 'previous': return 'previous';
+		case 'stop': return 'stop';
 		default: return 'library';
 	}
 }

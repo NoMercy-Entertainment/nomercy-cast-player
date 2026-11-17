@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './seek';
+import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex, spriteStarts } from './seek';
 
 describe('tvSeekActions (TvSeekActions.kt:11-35)', () => {
 	it('canEnterSeekMode needs a known duration', () => {
@@ -93,5 +93,20 @@ describe('chapter-aware seek (VideoChromeStoreAdapter.kt:195-219)', () => {
 
 	it('h03 forward past the last chapter steps on', () => {
 		expect(chapterSeekTarget(starts, 250, true, 10)).toBe(260);
+	});
+});
+
+describe('scrub strip frame list (TVSeekContainer.kt:78-89)', () => {
+	it('osd-08 walks the sprite cues for their start times', () => {
+		const cues = [{ start: 0, end: 5 }, { start: 5, end: 10 }, { start: 10, end: 15 }];
+		const lookup = (time: number) =>
+			cues.find((cue) => time >= cue.start && time < cue.end) ?? null;
+
+		expect(spriteStarts(lookup, 15)).toEqual([0, 5, 10]);
+	});
+
+	it('osd-08 gives no starts without a sprite, so the 10 s grid applies', () => {
+		expect(spriteStarts(() => null, 30)).toEqual([]);
+		expect(frameTimesFor(spriteStarts(() => null, 30), 30)).toEqual([0, 10, 20, 30]);
 	});
 });

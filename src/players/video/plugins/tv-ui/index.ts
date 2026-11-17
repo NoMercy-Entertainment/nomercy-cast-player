@@ -5,12 +5,12 @@ import { StorageBackedSubtitleStyleStore, VttChapterSource, VttSpriteThumbnailSo
 import i18next from '@/i18n/i18next';
 import { authStore } from '@/stores/authStore';
 import { settingsStore } from '@/stores/settingsStore';
-import { decideSkipAction, segmentsForItem } from '@/players/video/skipSegments';
+import { chapterType } from '@/players/video/ChapterAutoSkipPlugin';
 import { el, moveFocus, t } from './dom';
 import type { Direction } from './dom';
 import { fromEngineStyle, isPlaying, readVolume, toEngineStyle } from './engine';
 import type { ViewStyle } from './engine';
-import { mediaAbsentClaims } from './errors';
+import { LIVE_TRANSCODE_FAILED, mediaAbsentClaims } from './errors';
 import { keyOf, routeRootKey, sharedKeyAction } from './keys';
 import type { KeyName } from './keys';
 import { backdropLayer, centerMessage, loadingLayer, showBackdrop, showLoading, skipPrompt } from './overlays';
@@ -18,7 +18,7 @@ import { bottomBar, episodeDialog, errorDialog, languageDialog, messageDialog, p
 import type { BottomBarHandle, Choice, Panel, SearchView, SeekStripHandle, UiItem } from './panels';
 import { downloadSubtitle, isRateLimited, searchSubtitles, searchTarget } from './subtitleSearch';
 import type { SubtitleCandidate } from './subtitleSearch';
-import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './seek';
+import { cancelSeek, canEnterSeekMode, chapterSeekTarget, commitSeek, frameTimesFor, seekStripKey, snapIndex, spriteStarts } from './seek';
 import { BACKGROUND_CHOICES, FONT_CHOICES, FONT_SIZE_CHOICES, fontName, SETTINGS_ANIM_MS, SETTINGS_EASING, videoShrink } from './settingsModel';
 import { backAction, settingsStepBack } from './state';
 import type { SettingsNav, StyleProp } from './state';
@@ -45,6 +45,13 @@ interface SkipChapter {
 	endTime?: number;
 }
 
+interface ErrorDetail {
+	message?: string;
+	code?: string;
+	context?: { kind?: string };
+	error?: ErrorDetail;
+}
+
 type ChapterBusEvent = 'chapter-skip-available' | 'chapter-skip-clear';
 
 // The chapter plugin emits these two; the library's event map does not list them.
@@ -57,17 +64,24 @@ function hasChapterBus(player: NMVideoPlayer): player is NMVideoPlayer & Chapter
 	return typeof player.on === 'function' && typeof player.off === 'function';
 }
 
+interface ChapterSpan {
+	start: number;
+	end?: number;
+	title?: string;
+}
+
 interface Engine {
 	play: () => void;
 	pause: () => void;
 	restart: () => void;
 	next?: () => void;
+	previous?: () => void;
 	item: (id?: number | string) => UiItem | undefined;
 	queue: () => readonly UiItem[];
 	index?: () => number;
 	time: (seconds?: number) => number;
 	duration: () => number;
-	chapters?: () => Array<{ start: number; end?: number }>;
+	chapters?: () => ReadonlyArray<ChapterSpan>;
 	audioTracks?: () => LabeledTrack[];
 	audioTrack?: (index?: number) => { index: number } | null | undefined;
 	subtitles?: () => LabeledTrack[];
@@ -104,6 +118,12 @@ const AUTO_HIDE_MS = 5000;
 const WATCHDOG_MS = 500;
 const VOLUME_MS = 2000;
 const SEEK_STEP_SECONDS = 10;
+// SkipOverlay.kt:190,224: the pill shows for 10 s and takes focus 200 ms after it appears.
+const SKIP_VISIBLE_MS = 10_000;
+const SKIP_FOCUS_MS = 200;
+const RECOVERY_SECONDS = 1;
+// Where focus lives between redraws: the bars and the skip pill.
+const FOCUS_GROUPS = ['.tvui-top-bar', '.tvui-bottom-bar', '.tvui-skip'];
 const NAMED_STYLE_CHOICES = {
 	edgeStyle: {
 		field: 'edgeStyle',
@@ -155,6 +175,9 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	private controlsVisible = false;
 	private remote = false;
 	private error: string | null = null;
+	private errorCode: string | null = null;
+	private errorKind: string | undefined;
+	private errorAt = 0;
 	private absenceAnswered = false;
 	private volumeShown: { volume: number; muted: boolean } | null = null;
 	private frameTimes: number[] = [];
@@ -165,9 +188,12 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	private hideTimer = 0;
 	private volumeTimer = 0;
 	private enteredAt = 0;
-	private skipChapter: { type?: string; endTime?: number } | null = null;
-	private nextOffered = false;
-	private advancedItem: number | string | null = null;
+	private skipChapter: SkipChapter | null = null;
+	private skipSuppressed: SkipChapter | null = null;
+	private skipTimer = 0;
+	private skipFocusTimer = 0;
+	private skipFocusedFor: SkipChapter | null = null;
+	private barsShown = false;
 	private message: string | null = null;
 	private search: { status: SearchView['status']; results: SubtitleCandidate[] } | null = null;
 	private thumbs = new VttSpriteThumbnailSource();
@@ -219,7 +245,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			this.onPlayState(false));
 
 		this.on('time', () => {
-			this.updateNextEpisode();
+			this.recoverFromError();
 			this.updateFirstFrame();
 			this.updateBar();
 		});
@@ -242,19 +268,31 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			this.seekMode = false;
 			this.error = null;
 			this.absenceAnswered = false;
-			this.skipChapter = null;
-			this.nextOffered = false;
-			this.advancedItem = null;
+			this.resetSkip();
 			this.loadThumbnails();
 			this.loadChapters();
 			this.refresh();
 		});
 
 		this.on('error', (error) => {
+			const detail = typeof error === 'object'
+				? (error as ErrorDetail | null)
+				: null;
+
+			const source = detail?.error ?? detail;
+			const kind = source?.context?.kind;
+
 			this.error = typeof error === 'string'
 				? error
-				: (error as { message?: string } | undefined)?.message ?? 'error';
+				: detail?.message ?? 'error';
 
+			this.errorCode = source?.code ?? null;
+
+			this.errorKind = typeof kind === 'string'
+				? kind
+				: undefined;
+
+			this.errorAt = this.engine.time();
 			this.absenceAnswered = false;
 			this.refresh();
 		});
@@ -262,14 +300,34 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		this.refresh();
 	}
 
+	// ErrorOverlay.kt:92: the overlay follows the engine's error, so it leaves when playback recovers.
+	private recoverFromError(): void {
+		const moved = this.engine.time() - this.errorAt >= RECOVERY_SECONDS;
+
+		if (!this.error || !this.playing() || !moved) return;
+
+		this.error = null;
+		this.refresh();
+	}
+
+	private resetSkip(): void {
+		window.clearTimeout(this.skipTimer);
+		window.clearTimeout(this.skipFocusTimer);
+		this.skipTimer = 0;
+		this.skipChapter = null;
+		this.skipSuppressed = null;
+		this.skipFocusedFor = null;
+	}
+
 	private listenChapters(bus: ChapterBus): void {
 		const available = (chapter?: SkipChapter | null): void => {
+			this.resetSkip();
 			this.skipChapter = chapter ?? null;
 			this.refresh();
 		};
 
 		const cleared = (): void => {
-			this.skipChapter = null;
+			this.resetSkip();
 			this.refresh();
 		};
 
@@ -371,6 +429,10 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			this.preScreenVisible = false;
 		}
 
+		if (playing) {
+			this.error = null;
+		}
+
 		if (this.blockingUi() || playing) {
 			this.controlsVisible = false;
 		} else {
@@ -405,7 +467,11 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		}
 
 		const key = keyOf(event);
-		const consumed = this.route(key);
+
+		// A held OK is one press: Compose clicks once, on key up (PlayerSettingsScreen.kt:256-266).
+		const consumed = event.repeat && key === 'center'
+			? true
+			: this.route(key);
 
 		if (consumed) {
 			event.preventDefault();
@@ -419,6 +485,10 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 		if (this.seekMode)
 			return this.seekKey(key);
+
+		// SkipOverlay.kt:221-227: OK presses the focused skip pill, not play.
+		if (key === 'center' && document.activeElement?.matches('[data-skip-prompt]') && this.root.contains(document.activeElement))
+			return this.focusKey(key);
 
 		const route = routeRootKey({
 			preScreen: this.preScreenVisible,
@@ -498,6 +568,24 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				this.seekByChapter(true);
 
 				return true;
+			case 'togglePlay':
+				void (this.playing()
+					? this.engine.pause()
+					: this.engine.play());
+
+				return true;
+			case 'next':
+				this.engine.next?.();
+
+				return true;
+			case 'previous':
+				this.engine.previous?.();
+
+				return true;
+			case 'stop':
+				void this.engine.pause();
+
+				return true;
 			default:
 				return false;
 		}
@@ -516,7 +604,12 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		this.controlsVisible = true;
 		void this.engine.pause();
 		this.seekMode = true;
-		this.frameTimes = frameTimesFor(undefined, this.engine.duration());
+		const duration = this.engine.duration();
+		const starts = this.thumbsReady
+			? spriteStarts((time) => this.thumbs.lookup(time), duration)
+			: undefined;
+
+		this.frameTimes = frameTimesFor(starts, duration);
 		this.frameIndex = snapIndex(this.frameTimes, this.engine.time());
 		this.refresh();
 	}
@@ -605,25 +698,6 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		});
 	}
 
-	// TVOverlayPlugin.ts:186-214: offer the next episode inside the credits, advance at the content end.
-	private updateNextEpisode(): void {
-		const item = this.engine.item();
-		const items = this.engine.queue();
-		const index = this.engine.index?.() ?? 0;
-		const hasNext = Boolean(item && index < items.length - 1 && this.engine.next);
-		const action = decideSkipAction(this.engine.time(), segmentsForItem(item), hasNext);
-
-		if (action === 'advance' && item && this.advancedItem !== item.id) {
-			this.advancedItem = item.id ?? null;
-			this.nextOffered = false;
-			void this.engine.next?.();
-			this.refresh();
-		} else if ((action === 'next-button') !== this.nextOffered && action !== 'advance') {
-			this.nextOffered = action === 'next-button';
-			this.refresh();
-		}
-	}
-
 	private lastFirstFrame = '';
 
 	// The backdrop and loading overlay follow the clock; redraw only when one flips.
@@ -657,7 +731,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 		if (this.root.contains(document.activeElement) || this.settingsEntering()) return;
 
-		(this.panel ?? this.bar)?.focus();
+		// TvUiPlugin.kt:763-765: while scrubbing, focus belongs to the strip.
+		(this.panel ?? this.strip ?? this.bar)?.focus();
 	}
 
 	private settingsEntering(): boolean {
@@ -665,7 +740,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 	}
 
 	// Sprite frames come from the library's thumbnail source; the cue file is the item's 'thumbnails' track.
-	private chapterList(): Array<{ start: number; end?: number }> {
+	private chapterList(): ReadonlyArray<ChapterSpan> {
 		const own = this.chapterSource.all();
 
 		return own.length > 0
@@ -1000,10 +1075,16 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		}
 
 		if (this.languageOpen) {
+			// LanguageDialog.kt:45-51: the check follows the pick at once, also while paused.
+			const redraw = (choice: Choice) => ({
+				...choice,
+				onPick: this.act(choice.onPick),
+			}) as const satisfies Choice;
+
 			return languageDialog({
-				quality: levels,
-				audio,
-				subtitles,
+				quality: levels.map(redraw),
+				audio: audio.map(redraw),
+				subtitles: subtitles.map(redraw),
 				autoSkip: settingsStore.autoSkipChapters.value,
 				onToggleAutoSkip: toggleAutoSkip,
 				onSearch: this.act(() => {
@@ -1037,8 +1118,10 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				void engine.restart();
 			});
 
-			return errorDialog(this.error, this.error.includes('transcode'), retry, () =>
-				this.opts?.onExit?.());
+			const transcodeFailed = this.errorCode === LIVE_TRANSCODE_FAILED || this.error.includes('transcode');
+
+			return errorDialog(this.error, transcodeFailed, retry, () =>
+				this.opts?.onExit?.(), this.errorKind);
 		}
 
 		return null;
@@ -1051,38 +1134,158 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		};
 	}
 
-	// SkipOverlay.kt: the chapter pill and the next-episode pill sit apart from the bars and unmount behind any panel.
-	private skipPills(): HTMLElement[] {
-		const pills: HTMLElement[] = [];
+	// SkipOverlay.kt:68-78: the first item hides its pill before half-time, the last item after it.
+	private pillAllowed(): boolean {
+		const duration = this.engine.duration();
+		const time = this.engine.time();
+		const index = this.engine.index?.() ?? 0;
+
+		if (duration > 0 && time < duration / 2 && index === 0)
+			return false;
+
+		return !(duration > 0 && time > duration / 2 && index === this.engine.queue().length - 1);
+	}
+
+	// SkipOverlay.kt:186-200: the pill shows while playing, for 10 s, once per chapter.
+	private visibleSkip(): SkipChapter | null {
 		const chapter = this.skipChapter;
 
-		if (chapter) {
-			const label = t(chapter.type === 'credits'
-				? 'skip_credits'
-				: 'skip_intro');
+		if (!chapter || chapter === this.skipSuppressed || !this.playing() || !this.pillAllowed())
+			return null;
 
-			pills.push(skipPrompt(label, () => {
-				this.skipChapter = null;
+		return chapter;
+	}
 
-				if (typeof chapter.endTime === 'number') {
-					this.engine.time(chapter.endTime);
-				}
+	// SkipOverlay.kt:232-243: to the next playable chapter, or on to the next item when none is left.
+	private skipTo(chapter: SkipChapter): void {
+		const engine = this.engine;
+		const hasNext = Boolean(engine.next) && (engine.index?.() ?? 0) < engine.queue().length - 1;
+		const chapters = this.chapterList();
+		const end = chapter.endTime;
 
-				this.refresh();
-			}));
+		const seekEnd = (): void => {
+			if (typeof end === 'number') {
+				engine.time(end);
+			}
+		};
+
+		if (chapters.length === 0) {
+			if (chapter.type === 'credits' && hasNext) {
+				engine.next?.();
+			} else {
+				seekEnd();
+			}
+
+			return;
 		}
 
-		if (this.nextOffered) {
-			const label = t('skip_next_episode');
+		const target = this.nextPlayableStart(chapters);
 
-			pills.push(skipPrompt(label, () => {
-				this.nextOffered = false;
-				void this.engine.next?.();
-				this.refresh();
-			}));
+		if (target !== null) {
+			engine.time(target);
+		} else if (hasNext) {
+			engine.next?.();
+		} else {
+			seekEnd();
+		}
+	}
+
+	private nextPlayableStart(chapters: ReadonlyArray<ChapterSpan>): number | null {
+		const skippable = (chapter: ChapterSpan): boolean =>
+			this.pillAllowed() && chapterType(chapter.title ?? '') !== undefined;
+
+		let after = this.engine.time();
+
+		for (let guard = 0; guard <= chapters.length; guard += 1) {
+			const candidate = chapters.find((chapter) => chapter.start >= after);
+
+			if (!candidate)
+				return null;
+
+			if (!skippable(candidate))
+				return candidate.start;
+
+			after = candidate.end ?? candidate.start + 1;
 		}
 
-		return pills;
+		return null;
+	}
+
+	// SkipOverlay.kt:263-275: the pill sits apart from the bars and unmounts behind any panel.
+	private skipPills(): HTMLElement[] {
+		const chapter = this.visibleSkip();
+
+		if (!chapter)
+			return [];
+
+		const outro = chapter.type === 'credits';
+		const label = t(outro
+			? 'skip_outro'
+			: 'skip_intro');
+
+		return [skipPrompt(label, outro
+			? 'end'
+			: 'start', () => {
+			this.resetSkip();
+			this.skipTo(chapter);
+			this.refresh();
+		})];
+	}
+
+	// The 10 s lifetime and the focus 200 ms after the pill appears start with its first draw.
+	private armSkip(): void {
+		const chapter = this.visibleSkip();
+
+		if (!chapter || !this.root.querySelector('[data-skip-prompt]')) return;
+
+		if (this.skipTimer === 0) {
+			this.skipTimer = this.timeout(() => {
+				this.skipSuppressed = chapter;
+				this.refresh();
+			}, SKIP_VISIBLE_MS);
+		}
+
+		if (this.skipFocusedFor !== chapter) {
+			this.skipFocusedFor = chapter;
+
+			this.skipFocusTimer = this.timeout(() =>
+				this.root.querySelector<HTMLElement>('[data-skip-prompt]')?.focus(), SKIP_FOCUS_MS);
+		}
+	}
+
+	// A redraw keeps focus on the bar or pill control the viewer chose (TvUiPlugin.kt:743-745).
+	private rememberFocus(): { group: string; slot: number } | null {
+		const active = document.activeElement;
+
+		if (!active || !this.root.contains(active))
+			return null;
+
+		for (const group of FOCUS_GROUPS) {
+			const host = active.closest(group);
+
+			if (host) {
+				return {
+					group,
+					slot: Array.from(host.querySelectorAll('[data-focusable]')).indexOf(active),
+				};
+			}
+		}
+
+		return null;
+	}
+
+	private restoreFocus(memory: { group: string; slot: number } | null): boolean {
+		if (!memory)
+			return false;
+
+		const host = this.root.querySelector<HTMLElement>(memory.group);
+		const target = memory.slot < 0
+			? host
+			: host?.querySelectorAll<HTMLElement>('[data-focusable]')[memory.slot];
+
+		target?.focus();
+
+		return Boolean(target);
 	}
 
 	// The whole picture moves aside for the sidebar: WatchScreen.kt:508-560 and TvUiPlugin.videoTransform.
@@ -1149,6 +1352,7 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		const current = engine.item();
 		const index = engine.index?.() ?? 0;
 		const parts: Array<HTMLElement> = [];
+		const kept = this.rememberFocus();
 
 		this.bar = null;
 		this.strip = null;
@@ -1158,7 +1362,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 		const frame = this.firstFrame();
 
 		this.lastFirstFrame = `${frame.backdrop}${frame.loading}`;
-		const art = current?.backdrop ?? current?.image ?? null;
+		// TvUiPlugin.kt:624: the backdrop and the loading overlay show the same item image.
+		const art = current?.image ?? null;
 
 		if (frame.backdrop && art) {
 			parts.push(backdropLayer(art));
@@ -1228,11 +1433,31 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 		this.shrinkPicture(this.settings !== null);
 		this.updateBar();
+		this.armSkip();
 		dialog?.focus();
 
-		if (this.controlsVisible && !this.seekMode && !dialog) {
-			this.bar?.focus();
-			this.scheduleHide();
+		const barsNow = this.controlsVisible && !this.seekMode && !dialog;
+
+		if (barsNow) {
+			// Focus goes to play/pause only when the bars appear; a redraw leaves the viewer's choice alone.
+			const appeared = !this.barsShown;
+			const restored = !appeared && this.restoreFocus(kept);
+
+			if (!restored) {
+				this.bar?.focus();
+				this.scheduleHide();
+			}
+		}
+
+		if (!barsNow && !dialog && !this.seekMode && kept?.group === '.tvui-skip') {
+			this.restoreFocus(kept);
+		}
+
+		this.barsShown = barsNow;
+
+		// TvUiPlugin.kt:763-765: the scrub strip holds focus while scrubbing.
+		if (this.seekMode) {
+			this.strip?.focus();
 		}
 	}
 }

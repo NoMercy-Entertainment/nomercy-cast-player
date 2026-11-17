@@ -2,6 +2,7 @@ import type { KeyName } from './keys';
 
 const FALLBACK_STEP_SECONDS = 10;
 const CHAPTER_RESTART_THRESHOLD = 3;
+const MAX_SPRITE_FRAMES = 20_000;
 
 export function canEnterSeekMode(duration: number): boolean {
 	return duration > 0;
@@ -33,6 +34,26 @@ export function frameTimesFor(spriteStarts: number[] | undefined, duration: numb
 
 	return Array.from({ length: Math.floor(duration / FALLBACK_STEP_SECONDS) + 1 }, (_, index) =>
 		index * FALLBACK_STEP_SECONDS);
+}
+
+// The thumbnail source only answers a time; walking its cues gives the frame start times.
+export function spriteStarts(
+	lookup: (time: number) => { start: number; end: number } | null,
+	duration: number,
+): number[] {
+	const starts: number[] = [];
+	let time = 0;
+
+	while (time < duration && starts.length < MAX_SPRITE_FRAMES) {
+		const frame = lookup(time);
+
+		if (!frame || frame.end <= time) break;
+
+		starts.push(frame.start);
+		time = frame.end;
+	}
+
+	return starts;
 }
 
 export function snapIndex(frameTimes: number[], time: number): number {
