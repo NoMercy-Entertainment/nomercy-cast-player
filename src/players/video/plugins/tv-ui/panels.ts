@@ -86,7 +86,8 @@ function row(
 		: false;
 
 	const name = el('span', 'tvui-row-label', label);
-	const node = focusable(el('div', classes, name, current, check, arrow), onPick);
+	const text = el('span', 'tvui-row-text', name, current);
+	const node = focusable(el('div', classes, text, check, arrow), onPick);
 
 	node.setAttribute('role', 'button');
 

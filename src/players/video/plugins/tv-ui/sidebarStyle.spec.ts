@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-const css = readFileSync(new URL('./style.css', import.meta.url), 'utf8');
+const css = readFileSync('src/players/video/plugins/tv-ui/style.css', 'utf8');
 
 function rule(selector: string): string {
 	const start = css.indexOf(`${selector} {`);
@@ -46,9 +46,9 @@ describe('settings sidebar rows match the KMP row', () => {
 	});
 
 	it('uses the system sans of the native app, not an unloaded Inter', () => {
-		const tailwind = readFileSync(new URL('../../../../styles/tailwind.css', import.meta.url), 'utf8');
+		const tailwind = readFileSync('src/styles/tailwind.css', 'utf8');
 
-		expect(tailwind).not.toContain("'Inter'");
+		expect(tailwind).not.toContain('Inter');
 		expect(tailwind).toContain('Roboto');
 	});
 });
