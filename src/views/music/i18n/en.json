@@ -1,7 +1,6 @@
 {
 	"views": {
 		"music": {
-			"resume": "Resume",
 			"like": "Like",
 			"start_error_offline": "Could not start playback. Music is not connected.",
 			"start_error": "Could not start playback.",

@@ -68,6 +68,8 @@ const musicVolume = ref<number>(100);
 const musicShuffle = ref<boolean>(false);
 const musicRepeat = ref<RepeatMode>('off');
 const musicLyricsOpen = ref<boolean>(false);
+// The list link the current track was started from (KMP MusicPlayerFacade _currentList).
+const musicListId = ref<string | null>(null);
 
 const videoItem = ref<CurrentVideoSnapshot | null>(null);
 const videoTimeMs = ref<number>(0);
@@ -96,6 +98,10 @@ function applyMusicRepeat(mode: RepeatMode): void {
 
 function applyMusicLyricsOpen(open: boolean): void {
 	musicLyricsOpen.value = open;
+}
+
+function applyMusicList(listId: string | null): void {
+	musicListId.value = listId;
 }
 
 function applyMusicFavorite(favorite: boolean): void {
@@ -144,6 +150,8 @@ export const playbackStore = {
 		shuffle: musicShuffle,
 		repeat: musicRepeat,
 		lyricsOpen: musicLyricsOpen,
+		listId: musicListId,
+		applyList: applyMusicList,
 		applyTrack: applyMusicTrack,
 		applyTime: applyMusicTime,
 		applyPlayState: applyMusicPlayState,

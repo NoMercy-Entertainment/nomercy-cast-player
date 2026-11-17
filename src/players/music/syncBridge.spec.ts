@@ -32,6 +32,7 @@ function fakeEngine() {
 		seek: () => {},
 		currentTrack: () => ({ id: 4821 }),
 		volume: vi.fn(),
+		shuffle: vi.fn(),
 	};
 }
 
@@ -98,6 +99,54 @@ describe('musicSyncBridge outbound calls', () => {
 		hubHandlers.get('MusicPlayerState')?.({ events: [{ type: 'PlayerStateChanged', event: { state: { device_id: castDeviceId() } } }] });
 		engine.emit('play');
 		expect(invoke).toHaveBeenCalledExactlyOnceWith('PlaybackCommand', 'play', null);
+	});
+
+	// MusicPlayerFacade.shuffle: the active device flips its own player; a passive one forwards the verb.
+	it('music-19: shuffle on the active device flips the engine', () => {
+		serverNamesActive(castDeviceId());
+		musicSyncBridge.setShuffle(true);
+
+		expect(engine.shuffle).toHaveBeenCalledExactlyOnceWith(true);
+		expect(invoke).not.toHaveBeenCalled();
+	});
+
+	it('music-19: shuffle on a passive device sends the shuffle verb to the active one', () => {
+		serverNamesActive('phone-1');
+		musicSyncBridge.setShuffle(true);
+
+		expect(engine.shuffle).not.toHaveBeenCalled();
+		expect(invoke).toHaveBeenCalledExactlyOnceWith('PlaybackCommand', 'shuffle', null);
+	});
+
+	it('music-02: binds to a music hub that arrives after attach and to a replaced hub', () => {
+		const playTrack = vi.fn();
+		const late = fakeEngine();
+		const lateHandlers = new Map<string, (...args: unknown[]) => void>();
+		const hubFor = (handlers: Map<string, (...args: unknown[]) => void>) => ({
+			invoke,
+			on: (event: string, handler: (...args: unknown[]) => void) => handlers.set(event, handler),
+			off: (event: string) => handlers.delete(event),
+		}) as never;
+		const state = {
+			device_id: castDeviceId(),
+			is_playing: true,
+			item: { id: 'a', path: '/a.mp3' },
+		};
+
+		musicSyncBridge.detach();
+		socketStore.musicHub.value = null as never;
+		musicSyncBridge.attach({ ...late, playTrack } as never);
+
+		socketStore.musicHub.value = hubFor(lateHandlers);
+		lateHandlers.get('MusicPlayerState')?.(state);
+		expect(playTrack).toHaveBeenCalledTimes(1);
+
+		const replaced = new Map<string, (...args: unknown[]) => void>();
+
+		socketStore.musicHub.value = hubFor(replaced);
+		expect(lateHandlers.has('MusicPlayerState')).toBe(false);
+		replaced.get('MusicPlayerState')?.({ ...state, item: { id: 'b', path: '/b.mp3' } });
+		expect(playTrack).toHaveBeenCalledTimes(2);
 	});
 
 	it('subscribes only to server events that MusicHub actually pushes', () => {

@@ -1,7 +1,6 @@
 {
 	"views": {
 		"music": {
-			"resume": "Hervatten",
 			"like": "Vind ik leuk",
 			"start_error_offline": "Afspelen kon niet starten. Muziek is niet verbonden.",
 			"start_error": "Afspelen kon niet starten.",

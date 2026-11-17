@@ -60,6 +60,7 @@ export interface MusicEngineLike {
 	currentTrack?: () => CurrentTrackSnapshot;
 	currentSong?: { id?: string | number } | null;
 	playTrack?: (track: ServerTrack, tracks?: ServerTrack[]) => void;
+	shuffle?: (on: boolean) => void;
 }
 
 interface ServerTrack {
@@ -330,20 +331,26 @@ function stateOf(payload: StatePayload | null): PlayerState | null | undefined {
 	return [...payload.events].reverse().find((entry) => entry.type === 'PlayerStateChanged')?.event?.state;
 }
 
+// connectAll builds new hubs on every reconnect, and the hub can arrive after attach,
+// so the hub handlers follow socketStore.musicHub instead of reading it once.
 function bindInbound(p: MusicEngineLike): void {
-	const hub = socketStore.musicHub.value;
+	let unbindHub: (() => void) | null = null;
 
-	if (!hub) return;
+	const stop = watch(socketStore.musicHub, (hub) => {
+		unbindHub?.();
 
-	const onState = (payload: StatePayload | null): void => {
-		const state = stateOf(payload);
-		const wasOwn = activeDeviceId === castDeviceId();
+		unbindHub = hub
+			? bindHubHandlers(p, hub)
+			: null;
+	}, { immediate: true, flush: 'sync' });
 
-		activeDeviceId = state?.device_id ?? null;
-		applyOwnVolume(p, payload);
-		applyServerState(p, state, wasOwn);
-	};
+	bindEngineLoad(p);
 
+	unsubs.push(stop, () =>
+		unbindHub?.());
+}
+
+function bindEngineLoad(p: MusicEngineLike): void {
 	const onCanPlay = (): void => {
 		const target = pendingLoad;
 
@@ -369,6 +376,22 @@ function bindInbound(p: MusicEngineLike): void {
 	p.on('canplay', onCanPlay);
 	p.on('error', onLoadFailed);
 
+	unsubs.push(
+		() => p.off('canplay', onCanPlay),
+		() => p.off('error', onLoadFailed),
+	);
+}
+
+function bindHubHandlers(p: MusicEngineLike, hub: TypedHub): () => void {
+	const onState = (payload: StatePayload | null): void => {
+		const state = stateOf(payload);
+		const wasOwn = activeDeviceId === castDeviceId();
+
+		activeDeviceId = state?.device_id ?? null;
+		applyOwnVolume(p, payload);
+		applyServerState(p, state, wasOwn);
+	};
+
 	const onConnectedDevices = (devices: ConnectedDeviceSnapshot[] | undefined): void => {
 		playbackStore.music.applyConnectedDevices(devices ?? []);
 	};
@@ -376,12 +399,10 @@ function bindInbound(p: MusicEngineLike): void {
 	hub.on('MusicPlayerState', onState);
 	hub.on('ConnectedDevicesState', onConnectedDevices);
 
-	unsubs.push(
-		() => p.off('canplay', onCanPlay),
-		() => p.off('error', onLoadFailed),
-		() => hub.off('MusicPlayerState', onState),
-		() => hub.off('ConnectedDevicesState', onConnectedDevices),
-	);
+	return () => {
+		hub.off('MusicPlayerState', onState);
+		hub.off('ConnectedDevicesState', onConnectedDevices);
+	};
 }
 
 export const musicSyncBridge = {
@@ -409,6 +430,22 @@ export const musicSyncBridge = {
 	},
 	current(): MusicEngineLike | null {
 		return engine;
+	},
+	// MusicPlayerFacade.shuffle: the active device flips its own player; a passive one forwards the verb.
+	setShuffle(on: boolean): void {
+		const passive = activeDeviceId !== null && activeDeviceId !== castDeviceId();
+
+		if (passive) {
+			void socketStore.musicHub.value?.invoke('PlaybackCommand', 'shuffle', null);
+
+			return;
+		}
+
+		if (engine?.shuffle) {
+			engine.shuffle(on);
+		} else {
+			playbackStore.music.applyShuffle(on);
+		}
 	},
 };
 

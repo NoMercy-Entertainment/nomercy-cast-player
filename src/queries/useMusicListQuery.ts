@@ -13,7 +13,10 @@ export interface MusicTrack {
 	duration?: number | string;
 	cover?: string;
 	link?: string;
+	path?: string;
+	plugin_id?: string | null;
 	artist_track?: Array<{ name?: string; id?: string }>;
+	album_track?: Array<{ year?: number | string }>;
 }
 
 export interface MusicListData {

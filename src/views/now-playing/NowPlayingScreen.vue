@@ -169,7 +169,7 @@ onUnmounted(() => {
 
 		<div class="content">
 			<div class="left">
-				<NowPlayingHero v-show="!lyricsOpen" />
+				<NowPlayingHero :compact="lyricsOpen" />
 				<Lyrics v-show="lyricsOpen" />
 				<ProgressControls />
 			</div>

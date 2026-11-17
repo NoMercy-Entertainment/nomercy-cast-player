@@ -26,6 +26,7 @@ import MusicAboutDialog from './MusicAboutDialog.vue';
 
 const API_PREFIX = /^\/api\/v1\//;
 const LEADING_SLASH = /^\//;
+const TRAILING_S = /s$/;
 
 const { t } = useTranslation();
 const route = useRoute();
@@ -64,29 +65,14 @@ onBeforeUnmount(() => {
 	clearThemeColor();
 });
 
-const trackCount = computed(() => list.value?.tracks?.length ?? 0);
-const totalDurationText = computed(() => {
-	const total =
-		list.value?.tracks?.reduce((acc, t) => {
-			const d = typeof t.duration === 'number'
-				? t.duration
-				: Number(t.duration ?? 0);
+// ListScreen.kt BigHeaderText: Type (capitalized, no trailing s) • year,
+// the year falling back to the first track's album year.
+const kindText = computed(() => {
+	const type = list.value?.type ?? '';
 
-			return acc + (Number.isFinite(d)
-				? d
-				: 0);
-		}, 0) ?? 0;
-
-	if (total <= 0)
-		return '';
-
-	const mins = Math.round(total / 60);
-
-	if (mins < 60)
-		return `${mins} min`;
-
-	return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+	return type.charAt(0).toUpperCase() + type.slice(1).replace(TRAILING_S, '');
 });
+const yearText = computed(() => String(list.value?.year || list.value?.tracks?.[0]?.album_track?.[0]?.year || ''));
 
 const containerEl = ref<HTMLElement | null>(null);
 const listGroup = useFocusGroup({
@@ -99,28 +85,24 @@ const listGroup = useFocusGroup({
 const playEl = ref<HTMLElement | null>(null);
 const startError = ref<string | null>(null);
 
+// BigPlayButton.kt: isCurrentList(link) && currentSong != null, the list the track started from.
 const isCurrentList = computed(() => {
-	const current = playbackStore.music.track.value;
+	const link = list.value?.link;
 
-	if (!current || !list.value)
-		return false;
-
-	return (list.value.tracks ?? []).some((t) => t.id === current.id);
+	return Boolean(link) &&
+		playbackStore.music.listId.value === link &&
+		playbackStore.music.track.value !== null;
 });
 
-const playButtonLabel = computed(() => {
-	if (isCurrentList.value && playbackStore.music.playing.value)
-		return t('common.pause');
+const playButtonLabel = computed(() =>
+	isCurrentList.value && playbackStore.music.playing.value
+		? t('common.pause')
+		: t('common.play'));
 
-	if (isCurrentList.value)
-		return t('views.music.resume');
-
-	return t('common.play');
-});
+const hasTracks = computed(() => (list.value?.tracks?.length ?? 0) > 0);
 
 function onPlayClick(): void {
-	// APK BigPlayButton: when this list is currently playing, toggle
-	// play/pause. Otherwise start the list from the first track.
+	// BigPlayButton.kt: toggle when this list is the current one, else play from track 1.
 	if (isCurrentList.value) {
 		const engine = musicSyncBridge.current();
 
@@ -131,8 +113,6 @@ function onPlayClick(): void {
 				engine.play();
 			}
 
-			router.push('/now-playing');
-
 			return;
 		}
 	}
@@ -141,18 +121,18 @@ function onPlayClick(): void {
 
 	if (!first?.id) return;
 
-	void startPlayback(first.id).then((started) => {
-		if (started) {
-			router.push('/now-playing');
-		}
-	});
+	void startPlayback(first.id);
 }
 
 const backEl = ref<HTMLElement | null>(null);
 const likeEl = ref<HTMLElement | null>(null);
 const aboutEl = ref<HTMLElement | null>(null);
 const aboutOpen = ref(false);
-const aboutText = computed(() => list.value?.description || list.value?.overview || '');
+// MediaAboutButton.kt shows the info button for a non-blank description only.
+const aboutText = computed(() =>
+	list.value?.description?.trim()
+		? list.value.description
+		: '');
 
 // The server's value until the user toggles; ListScreen's MediaLikeButton posts `${link}/like`.
 const favoriteOverride = ref<boolean | null>(null);
@@ -230,16 +210,10 @@ function onTrackClick(trackId: string): void {
 			}
 		}
 
-		router.push('/now-playing');
-
 		return;
 	}
 
-	void startPlayback(trackId).then((started) => {
-		if (started) {
-			router.push('/now-playing');
-		}
-	});
+	void startPlayback(trackId);
 }
 
 function trackRowEl(index: number): HTMLElement | null {
@@ -289,13 +263,36 @@ watch(list, (next) => {
 	});
 });
 
+// MusicPlayerFacade.playTrack: queue the whole list and play on this device first,
+// then announce the start to the server (announceStart).
+function playLocally(trackId: string): boolean {
+	const engine = musicSyncBridge.current();
+	const tracks = (list.value?.tracks ?? []).filter((track) => track.id).map((track) => ({
+		id: track.id as string,
+		path: track.path,
+		plugin_id: track.plugin_id,
+	}));
+	const clicked = tracks.find((track) => track.id === trackId);
+
+	if (!engine?.playTrack || !clicked)
+		return false;
+
+	engine.playTrack(clicked, tracks);
+	playbackStore.music.applyList(list.value?.link ?? null);
+
+	return true;
+}
+
 async function startPlayback(trackId: string): Promise<boolean> {
 	const hub = socketStore.musicHub.value;
+	const local = playLocally(trackId);
 
 	if (!hub || !id.value || !trackId) {
-		startError.value = t('views.music.start_error_offline');
+		startError.value = local
+			? null
+			: t('views.music.start_error_offline');
 
-		return false;
+		return local;
 	}
 
 	try {
@@ -303,33 +300,23 @@ async function startPlayback(trackId: string): Promise<boolean> {
 		const result = await hub.invoke('StartPlaybackCommand', type.value, id.value, trackId) as { ok?: boolean } | undefined;
 
 		if (result?.ok === false) {
-			startError.value = t('views.music.start_error');
+			startError.value = local
+				? null
+				: t('views.music.start_error');
 
-			return false;
+			return local;
 		}
 
 		startError.value = null;
 
 		return true;
 	} catch {
-		startError.value = t('views.music.start_error');
+		startError.value = local
+			? null
+			: t('views.music.start_error');
 
-		return false;
+		return local;
 	}
-}
-
-function formatDuration(d: number | string | undefined): string {
-	const seconds = typeof d === 'number'
-		? d
-		: Number(d ?? 0);
-
-	if (!Number.isFinite(seconds) || seconds <= 0)
-		return '';
-
-	const m = Math.floor(seconds / 60);
-	const s = Math.floor(seconds % 60);
-
-	return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function trackArtistText(track: MusicTrack): string {
@@ -350,18 +337,13 @@ function trackArtistText(track: MusicTrack): string {
 			<div class="cover">
 				<img v-if="coverUrl" :src="coverUrl" :alt="list.title ?? ''">
 			</div>
-			<p class="kind">
-				{{ list.type ?? t('components.music_card_type.album') }}
-			</p>
 			<h1 class="title">
 				{{ list.title }}
 			</h1>
-			<p v-if="list.year || trackCount" class="meta">
-				<span v-if="list.year">{{ list.year }}</span>
-				<span v-if="list.year && trackCount">·</span>
-				<span v-if="trackCount">{{ trackCount }} {{ t('music.tracks') }}</span>
-				<span v-if="totalDurationText">·</span>
-				<span v-if="totalDurationText">{{ totalDurationText }}</span>
+			<p class="meta">
+				<span class="kind">{{ kindText }}</span>
+				<span>&bull;</span>
+				<span class="year">{{ yearText }}</span>
 			</p>
 			<div class="music-list-controls">
 				<div class="icon-row">
@@ -409,6 +391,7 @@ function trackArtistText(track: MusicTrack): string {
 					data-focusable
 					tabindex="0"
 					:aria-label="playButtonLabel"
+					:disabled="!hasTracks"
 					@click.prevent="onPlayClick"
 				>
 					<MoooomIcon v-if="isCurrentList && playbackStore.music.playing.value" icon="nmPause" width="18" height="18" />
@@ -428,11 +411,6 @@ function trackArtistText(track: MusicTrack): string {
 		</div>
 
 		<div class="tracks-col nm-no-scrollbar">
-			<header class="tracks-head">
-				<span>#</span>
-				<span>{{ t('common.title') }}</span>
-				<span class="duration">{{ t('common.duration') }}</span>
-			</header>
 			<ol class="tracks">
 				<!-- eslint-disable-next-line vue-a11y/click-events-have-key-events -- useDPad turns Enter into this click -->
 				<li
@@ -454,7 +432,6 @@ function trackArtistText(track: MusicTrack): string {
 							{{ trackArtistText(track) }}
 						</p>
 					</div>
-					<span class="duration">{{ formatDuration(track.duration) }}</span>
 				</li>
 			</ol>
 		</div>
@@ -488,14 +465,6 @@ function trackArtistText(track: MusicTrack): string {
 	height: 100%;
 	object-fit: cover;
 }
-.kind {
-	margin: 0;
-	font-size: 16px;
-	font-weight: 700;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-	color: oklch(0.85 0.01 250);
-}
 .title {
 	margin: 0;
 	font-size: 28px;
@@ -506,9 +475,13 @@ function trackArtistText(track: MusicTrack): string {
 .meta {
 	margin: 0;
 	display: flex;
-	gap: 8px;
+	align-items: center;
+	gap: 4px;
 	font-size: 14px;
 	color: oklch(0.85 0.005 250);
+}
+.kind {
+	font-size: 16px;
 }
 .music-list-controls {
 	display: flex;
@@ -560,18 +533,6 @@ function trackArtistText(track: MusicTrack): string {
 	padding-top: 16px;
 	overflow-y: auto;
 }
-.tracks-head {
-	display: grid;
-	grid-template-columns: 32px 1fr auto;
-	gap: 16px;
-	padding: 0 16px 8px;
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: oklch(0.7 0.005 250);
-	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
 .tracks {
 	list-style: none;
 	margin: 8px 0 0;
@@ -582,7 +543,7 @@ function trackArtistText(track: MusicTrack): string {
 }
 .track-row {
 	display: grid;
-	grid-template-columns: 32px 1fr auto;
+	grid-template-columns: 32px 1fr;
 	gap: 16px;
 	padding: 8px 12px 8px 16px;
 	min-height: 48px;
@@ -628,11 +589,5 @@ function trackArtistText(track: MusicTrack): string {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-}
-.duration {
-	color: oklch(0.75 0.005 250);
-	font-variant-numeric: tabular-nums;
-	font-size: 13px;
-	align-self: center;
 }
 </style>

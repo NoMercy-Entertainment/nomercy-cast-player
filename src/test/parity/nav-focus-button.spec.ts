@@ -41,7 +41,7 @@ describe('nav matches TvNavigationBar.kt', () => {
 	it('nav.miniplayer: 360 wide, gap 8, text 10 / 12 (MiniPlayer.kt:119-215)', () => {
 		const m = decls('layout/TvMiniPlayer.vue', '.mini-player');
 
-		expect(m['max-width']).toBe('360px');
+		expect(m.width).toBe('360px');
 		expect(m.gap).toBe('8px');
 		expect(decls('layout/TvMiniPlayer.vue', '.title')['font-size']).toBe('10px');
 		expect(decls('layout/TvMiniPlayer.vue', '.title')['line-height']).toBe('12px');
