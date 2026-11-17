@@ -11,6 +11,9 @@ import FallbackPoster from '@/components/cards/FallbackPoster.vue';
  * fluid units so the layout still works at non-1080p resolutions.
  */
 
+// FullPlayerScreen.kt: while lyrics show, artwork is 60dp and the title scales to 0.72.
+defineProps<{ compact?: boolean }>();
+
 const track = playbackStore.music.track;
 const cover = computed(() =>
 	track.value?.cover
@@ -20,7 +23,7 @@ const cover = computed(() =>
 </script>
 
 <template>
-	<div class="hero">
+	<div class="hero" :class="{ 'is-compact': compact }">
 		<div class="art">
 			<img v-if="cover"
 				class="nm-cover-top"
@@ -58,6 +61,13 @@ const cover = computed(() =>
 	overflow: hidden;
 	box-shadow: 0 16px 48px oklch(0 0 0 / 0.5);
 	flex: 0 0 auto;
+}
+.hero.is-compact .art {
+	width: 60px;
+	height: 60px;
+}
+.hero.is-compact .title {
+	font-size: 26px;
 }
 .meta {
 	min-width: 0;

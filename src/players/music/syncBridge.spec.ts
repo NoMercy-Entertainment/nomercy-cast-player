@@ -127,7 +127,11 @@ describe('musicSyncBridge outbound calls', () => {
 			on: (event: string, handler: (...args: unknown[]) => void) => handlers.set(event, handler),
 			off: (event: string) => handlers.delete(event),
 		}) as never;
-		const state = { device_id: castDeviceId(), is_playing: true, item: { id: 'a', path: '/a.mp3' } };
+		const state = {
+			device_id: castDeviceId(),
+			is_playing: true,
+			item: { id: 'a', path: '/a.mp3' },
+		};
 
 		musicSyncBridge.detach();
 		socketStore.musicHub.value = null as never;

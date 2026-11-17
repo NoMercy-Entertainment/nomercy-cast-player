@@ -11,7 +11,13 @@ vi.mock('vue-router', () => ({
 
 describe('the mini player matches MiniPlayer.kt', () => {
 	it('music-17: the circle holds the equalizer or the play icon and never the cover image', () => {
-		playbackStore.music.applyTrack({ id: 't1', name: 'Song', artist: 'Band', cover: '/cover.jpg' } as never, []);
+		playbackStore.music.applyTrack({
+			id: 't1',
+			name: 'Song',
+			artist: 'Band',
+			cover: '/cover.jpg',
+		} as never, []);
+
 		playbackStore.music.applyPlayState(false);
 
 		const wrapper = mount(TvMiniPlayer);

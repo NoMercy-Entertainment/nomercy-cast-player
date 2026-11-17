@@ -181,7 +181,11 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 
 describe('the list page plays on this device like the KMP list screen', () => {
 	const playTrack = vi.fn();
-	const engine = { playTrack, play: vi.fn(), pause: vi.fn() };
+	const engine = {
+		playTrack,
+		play: vi.fn(),
+		pause: vi.fn(),
+	};
 	const original = listData.value;
 
 	beforeEach(() => {
@@ -260,7 +264,11 @@ describe('the list page plays on this device like the KMP list screen', () => {
 	});
 
 	it('music-06: the header reads Type - year with no count, duration or column header', () => {
-		listData.value = { ...original, type: 'albums', year: 2020 } as never;
+		listData.value = {
+			...original,
+			type: 'albums',
+			year: 2020,
+		} as never;
 
 		const wrapper = screen();
 
@@ -274,7 +282,11 @@ describe('the list page plays on this device like the KMP list screen', () => {
 		listData.value = {
 			...original,
 			type: 'album',
-			tracks: [{ id: 't', title: 'T', album_track: [{ year: 1999 }] }],
+			tracks: [{
+				id: 't',
+				title: 'T',
+				album_track: [{ year: 1999 }],
+			}],
 		} as never;
 
 		const wrapper = screen();

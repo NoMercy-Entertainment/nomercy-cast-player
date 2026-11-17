@@ -338,13 +338,16 @@ function bindInbound(p: MusicEngineLike): void {
 
 	const stop = watch(socketStore.musicHub, (hub) => {
 		unbindHub?.();
+
 		unbindHub = hub
 			? bindHubHandlers(p, hub)
 			: null;
 	}, { immediate: true, flush: 'sync' });
 
 	bindEngineLoad(p);
-	unsubs.push(stop, () => unbindHub?.());
+
+	unsubs.push(stop, () =>
+		unbindHub?.());
 }
 
 function bindEngineLoad(p: MusicEngineLike): void {

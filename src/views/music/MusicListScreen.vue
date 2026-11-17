@@ -26,6 +26,7 @@ import MusicAboutDialog from './MusicAboutDialog.vue';
 
 const API_PREFIX = /^\/api\/v1\//;
 const LEADING_SLASH = /^\//;
+const TRAILING_S = /s$/;
 
 const { t } = useTranslation();
 const route = useRoute();
@@ -64,11 +65,12 @@ onBeforeUnmount(() => {
 	clearThemeColor();
 });
 
-// ListScreen.kt BigHeaderText: Type (capitalized, no trailing s) • year, year falling back to the first track's album year.
+// ListScreen.kt BigHeaderText: Type (capitalized, no trailing s) • year,
+// the year falling back to the first track's album year.
 const kindText = computed(() => {
 	const type = list.value?.type ?? '';
 
-	return type.charAt(0).toUpperCase() + type.slice(1).replace(/s$/, '');
+	return type.charAt(0).toUpperCase() + type.slice(1).replace(TRAILING_S, '');
 });
 const yearText = computed(() => String(list.value?.year || list.value?.tracks?.[0]?.album_track?.[0]?.year || ''));
 
@@ -87,12 +89,15 @@ const startError = ref<string | null>(null);
 const isCurrentList = computed(() => {
 	const link = list.value?.link;
 
-	return Boolean(link) && playbackStore.music.listId.value === link && playbackStore.music.track.value !== null;
+	return Boolean(link) &&
+		playbackStore.music.listId.value === link &&
+		playbackStore.music.track.value !== null;
 });
 
-const playButtonLabel = computed(() => isCurrentList.value && playbackStore.music.playing.value
-	? t('common.pause')
-	: t('common.play'));
+const playButtonLabel = computed(() =>
+	isCurrentList.value && playbackStore.music.playing.value
+		? t('common.pause')
+		: t('common.play'));
 
 const hasTracks = computed(() => (list.value?.tracks?.length ?? 0) > 0);
 
@@ -124,9 +129,10 @@ const likeEl = ref<HTMLElement | null>(null);
 const aboutEl = ref<HTMLElement | null>(null);
 const aboutOpen = ref(false);
 // MediaAboutButton.kt shows the info button for a non-blank description only.
-const aboutText = computed(() => list.value?.description?.trim()
-	? list.value.description
-	: '');
+const aboutText = computed(() =>
+	list.value?.description?.trim()
+		? list.value.description
+		: '');
 
 // The server's value until the user toggles; ListScreen's MediaLikeButton posts `${link}/like`.
 const favoriteOverride = ref<boolean | null>(null);
@@ -268,7 +274,8 @@ function playLocally(trackId: string): boolean {
 	}));
 	const clicked = tracks.find((track) => track.id === trackId);
 
-	if (!engine?.playTrack || !clicked) return false;
+	if (!engine?.playTrack || !clicked)
+		return false;
 
 	engine.playTrack(clicked, tracks);
 	playbackStore.music.applyList(list.value?.link ?? null);
