@@ -5,7 +5,6 @@ import { authStore } from '@/stores/authStore';
 import { socketStore } from '@/stores/socketStore';
 import { closeCastSession, connectedSenders } from '@/cast/receiver';
 import { useFocusGroup } from '@/composables/useFocusGroup';
-import FocusableButton from '@/components/buttons/FocusableButton.vue';
 import logoWide from '@/assets/logo-wide.svg';
 import mobile from '@/assets/mobile.svg';
 import splash from '@/assets/splash.png';
@@ -16,8 +15,8 @@ import splash from '@/assets/splash.png';
  * authStore + socketStore reactive state.
  *
  * Also the page a TV lands on when the native app launch was refused and
- * cast_shell fell back here with no sender attached: only then is Close shown.
- * Back closes the session in every state.
+ * cast_shell fell back here with no sender attached. It has no button: Back
+ * closes the session in every state, as on the native launch screen.
  */
 
 useFocusGroup({
@@ -84,26 +83,14 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 				<template v-if="userName">
 					<span>{{ t('views.splash.hi') }} <strong>{{ userName }}</strong>{{ t('views.splash.hi_rest') }}</span>
 					<br>
-					<span class="emphasis">{{ t('nav.chromecast') }}</span>
-					<span> {{ t('views.splash.button_in_app') }}</span>
+					<span class="emphasis">{{ t('nav.chromecast') }}</span>{{ ' ' }}<span>{{ t('views.splash.button_in_app') }}</span>
 				</template>
 				<template v-else>
 					<span>{{ t('views.splash.no_user_start') }}</span>
 					<br>
-					<span class="emphasis">{{ t('nav.chromecast') }}</span>
-					<span> {{ t('views.splash.button_in_player') }}</span>
+					<span class="emphasis">{{ t('nav.chromecast') }}</span>{{ ' ' }}<span>{{ t('views.splash.button_in_player') }}</span>
 				</template>
 			</p>
-
-			<FocusableButton
-				v-if="connectedSenders === 0"
-				class="close"
-				focus-key="splash-close"
-				variant="ghost"
-				@action="closeCastSession"
-			>
-				{{ t('common.close') }}
-			</FocusableButton>
 		</section>
 
 		<img class="phone" :src="mobile" alt="" aria-hidden="true">
@@ -180,12 +167,6 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 
 .emphasis {
 	font-weight: 700;
-}
-
-/* Sized to its label, not stretched across the column. */
-.close {
-	align-self: flex-start;
-	min-width: 160px;
 }
 
 .phone {

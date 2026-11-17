@@ -5,6 +5,7 @@ import { nextTick } from 'vue';
 import ReadyToCastScreen from './ReadyToCastScreen.vue';
 import { connectedSenders } from '@/cast/receiver';
 import { authStore } from '@/stores/authStore';
+import { focusStore } from '@/stores/focusStore';
 
 const { closeCastSession } = vi.hoisted(() => ({ closeCastSession: vi.fn() }));
 
@@ -50,16 +51,33 @@ describe('the title tells the truth about the sender', () => {
 	});
 });
 
-describe('the Close button is only for a TV with no sender', () => {
+describe('the instructions keep a space after Chromecast', () => {
+	afterEach(() => {
+		document.body.innerHTML = '';
+	});
+
+	it('renders a word break between Chromecast and the rest of the line', async () => {
+		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
+
+		await nextTick();
+
+		const text = wrapper.get('.instructions').element.textContent ?? '';
+
+		expect(text).toMatch(/Chromecast\s+\S/);
+	});
+});
+
+describe('the splash has no Close button and Back closes the session', () => {
 	Element.prototype.scrollIntoView = vi.fn();
 
 	afterEach(() => {
 		document.body.innerHTML = '';
 		connectedSenders.value = 0;
+		closeCastSession.mockClear();
 	});
 
-	it('shows no Close while a sender is attached', async () => {
-		connectedSenders.value = 1;
+	it.each([0, 1])('draws no control with %i senders attached', async (senders) => {
+		connectedSenders.value = senders;
 		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
 
 		await nextTick();
@@ -68,56 +86,12 @@ describe('the Close button is only for a TV with no sender', () => {
 		expect(wrapper.find('[data-focusable]').exists()).toBe(false);
 	});
 
-	it('shows Close, focused, when no sender is attached', async () => {
-		connectedSenders.value = 0;
-		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
+	it('ends the cast session on Back', async () => {
+		mount(ReadyToCastScreen, { attachTo: document.body });
 
 		await nextTick();
 
-		const close = wrapper.get('[data-focusable]');
-
-		expect(close.text()).toBe('Close');
-		expect(document.activeElement).toBe(close.element);
-	});
-
-	it('hides Close when a sender connects after the screen opened', async () => {
-		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
-
-		await nextTick();
-		connectedSenders.value = 1;
-		await nextTick();
-
-		expect(wrapper.text()).not.toContain('Close');
-	});
-});
-
-describe('the fallback splash screen is usable when no sender has shown up', () => {
-	// jsdom has no layout, so it has no scrollIntoView.
-	Element.prototype.scrollIntoView = vi.fn();
-
-	afterEach(() => {
-		document.body.innerHTML = '';
-		closeCastSession.mockClear();
-	});
-
-	it('puts D-pad focus on a visible control so the remote does something', async () => {
-		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
-
-		await nextTick();
-
-		const focused = document.activeElement;
-
-		expect(focused).not.toBe(document.body);
-		expect(wrapper.element.contains(focused)).toBe(true);
-	});
-
-	it('ends the cast session when the focused control is activated', async () => {
-		const wrapper = mount(ReadyToCastScreen, { attachTo: document.body });
-
-		await nextTick();
-
-		await wrapper.get('[data-focusable]').trigger('keydown', { key: 'Enter' });
-
+		expect(focusStore.dispatchEscape()).toBe(true);
 		expect(closeCastSession).toHaveBeenCalled();
 	});
 });
