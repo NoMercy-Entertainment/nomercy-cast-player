@@ -40,14 +40,14 @@ describe('cards match item_card_poster.xml / TvCardViewHolder.kt', () => {
 		const f = decls(CAROUSEL, '.show-all:focus-visible');
 
 		expect(f['border-color']).toBe('var(--cast-white)');
-		expect(f['box-shadow']).toBe('0 0 0 1px var(--cast-white)');
+		expect(f['box-shadow']).toBe('inset 0 0 0 1px var(--cast-white)');
 	});
 
 	it('card.poster: resting 1 px palette stroke, replaced by the white ring on focus (:79-102)', () => {
 		const n = 'server-components/NMCard.vue';
 
 		expect(decls(n, '.poster::after').border).toBe('1px solid var(--card-accent, rgba(255, 255, 255, 0.18))');
-		expect(decls(n, '.card:focus-visible .poster::after')['border-color']).toBe('transparent');
+		expect(decls(n, '.card:focus-visible .poster::after').border).toBe('2px solid var(--cast-white)');
 	});
 
 	it('card.backdrop: width (screen - 40 - 42 - 3 * 8) / 3 (TvHomeAdapter.kt:68-75)', () => {

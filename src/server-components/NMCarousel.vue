@@ -133,7 +133,7 @@ useFocusEntry({
 }
 .show-all:focus-visible {
 	border-color: var(--cast-white);
-	box-shadow: 0 0 0 1px var(--cast-white);
+	box-shadow: inset 0 0 0 1px var(--cast-white);
 	outline: none;
 }
 .show-all-text {
