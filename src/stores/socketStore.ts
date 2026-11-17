@@ -43,6 +43,9 @@ const pluginHub = shallowRef<TypedHub | null>(null);
 
 let stopRequested = false;
 
+// Each connectAll owns one set of hubs; an older set stops retrying.
+let hubGeneration = 0;
+
 // The video hub holds per-connection state, so what a device plays is told to it again on every connect.
 const videoHubConnectedListeners = new Set<() => void>();
 
@@ -71,11 +74,11 @@ function recordHubEvent(code: DiagnosticsCodeValue, name: HubName): void {
 	recordDiagnostic(DiagnosticsCategory.Network, code, HUB_ORDINAL[name], 0, 0, name);
 }
 
-async function startWithRetry(hub: TypedHub, name: HubName): Promise<void> {
-	// stopRequested is mutated by disconnectAll() outside this loop —
+async function startWithRetry(hub: TypedHub, name: HubName, generation: number): Promise<void> {
+	// stopRequested and hubGeneration are mutated outside this loop —
 	// ESLint's static analysis can't follow async cross-call mutation.
 	// eslint-disable-next-line no-unmodified-loop-condition
-	while (!stopRequested) {
+	while (!stopRequested && generation === hubGeneration) {
 		try {
 			recordHubEvent(DiagnosticsCode.SocketConnecting, name);
 			await hub.start();
@@ -282,8 +285,15 @@ export async function connectAll(): Promise<void> {
 		return;
 	}
 
+	const generation = ++hubGeneration;
+	const previous = [videoHub.value, musicHub.value, deviceHub.value, pluginHub.value];
+
 	stopRequested = false;
 	connectionState.value = 'connecting';
+
+	for (const old of previous) {
+		void old?.stop().catch((error: Thrown) => recordSwallowed('connectAll', error));
+	}
 
 	videoHub.value = new TypedHub(buildHub('videoHub'));
 	musicHub.value = new TypedHub(buildHub('musicHub'));
@@ -308,13 +318,15 @@ export async function connectAll(): Promise<void> {
 	bindLifecycle(pluginHub.value, 'pluginHub');
 
 	await Promise.all([
-		startWithRetry(videoHub.value, 'videoHub'),
-		startWithRetry(musicHub.value, 'musicHub'),
-		startWithRetry(deviceHub.value, 'deviceHub'),
-		startWithRetry(pluginHub.value, 'pluginHub'),
+		startWithRetry(videoHub.value, 'videoHub', generation),
+		startWithRetry(musicHub.value, 'musicHub', generation),
+		startWithRetry(deviceHub.value, 'deviceHub', generation),
+		startWithRetry(pluginHub.value, 'pluginHub', generation),
 	]);
 
-	connectionState.value = 'connected';
+	if (generation === hubGeneration) {
+		connectionState.value = 'connected';
+	}
 }
 
 export async function disconnectAll(): Promise<void> {
