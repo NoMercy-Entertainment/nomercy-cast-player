@@ -25,10 +25,6 @@
 	outline: none;
 }
 
-.rail-track > [data-focusable]:focus-visible {
-	scroll-margin-inline: 25vw;
-}
-
 .tv-safe-container {
 	padding-inline: var(--tv-safe-padding);
 }
