@@ -6,7 +6,7 @@ const F = 'components/feedback/';
 
 describe('search matches SearchScreen.kt / SearchKeyboard.kt', () => {
 	it('search.layout: left column 25 percent (SearchScreen.kt:76-114)', () => {
-		expect(decls(`${S}SearchScreen.vue`, '.search')['grid-template-columns']).toBe('25% 1fr');
+		expect(decls(`${S}SearchScreen.vue`, '.search')['grid-template-columns']).toBe('calc((100vw - 72px) / 4) 1fr');
 	});
 
 	it('search.keyboard: 6 columns, gap 4, pad 4 (SearchKeyboard.kt:55-82)', () => {
@@ -16,8 +16,8 @@ describe('search matches SearchScreen.kt / SearchKeyboard.kt', () => {
 		expect(k.padding).toBe('4px');
 	});
 
-	it('search.keyboard.key: 16 px label to fit a 33 px key', () => {
-		expect(decls(`${S}SearchKey.vue`, '.key')['font-size']).toBe('16px');
+	it('search.keyboard.key: titleLarge 22 label (SearchKeyboard.kt:170-188)', () => {
+		expect(decls(`${S}SearchKey.vue`, '.key')['font-size']).toBe('22px');
 	});
 
 	it('search.bar: h60, pad h16, r16 (SearchBar.kt:57,64,43)', () => {

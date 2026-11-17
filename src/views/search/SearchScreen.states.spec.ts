@@ -52,7 +52,7 @@ describe('the results area draws only what the native SearchScreen draws', () =>
 
 		await wrapper.vm.$nextTick();
 
-		expect(document.activeElement?.textContent?.trim()).toBe('A');
+		expect(document.activeElement?.textContent?.trim()).toBe('a');
 		wrapper.unmount();
 	});
 

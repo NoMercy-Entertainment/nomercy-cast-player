@@ -127,7 +127,7 @@ function setMode(next: 'video' | 'music'): void {
  */
 .search {
 	display: grid;
-	grid-template-columns: 25% 1fr;
+	grid-template-columns: calc((100vw - 72px) / 4) 1fr;
 	gap: 16px;
 	padding: 64px 36px 24px;
 	height: 100%;
@@ -160,7 +160,9 @@ function setMode(next: 'video' | 'music'): void {
 }
 .query-text {
 	flex: 1 1 auto;
-	font-size: 16px;
+	font-size: 14px;
+	line-height: 20px;
+	letter-spacing: 0.25px;
 	color: var(--color-text-secondary);
 	overflow: hidden;
 	text-overflow: ellipsis;

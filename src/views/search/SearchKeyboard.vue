@@ -47,7 +47,7 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 <template>
 	<div ref="containerEl" class="kb">
-		<div class="kb-row utility-row">
+		<div class="kb-grid">
 			<SearchKey
 				focus-key="kb-space"
 				label="⎵"
@@ -80,17 +80,13 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 				:variant="mode === 'music' ? 'mode-active' : 'mode'"
 				@press="emit('mode', 'music')"
 			/>
-		</div>
-		<div class="kb-grid">
 			<SearchKey
 				v-for="l in letters"
 				:key="l"
 				:focus-key="`kb-${l}`"
-				:label="l.toUpperCase()"
+				:label="l"
 				@press="emit('type', l)"
 			/>
-		</div>
-		<div class="kb-grid">
 			<SearchKey
 				v-for="n in digits"
 				:key="n"
@@ -110,17 +106,12 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 	gap: 4px;
 	padding: 4px;
 }
-.kb-row {
-	display: grid;
-	grid-template-columns: repeat(6, 1fr);
-	gap: 4px;
-}
 .kb-grid {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
 	gap: 4px;
 }
-.utility-row :deep(.span-2) {
+.kb-grid :deep(.span-2) {
 	grid-column: span 2;
 	aspect-ratio: 2 / 1;
 }

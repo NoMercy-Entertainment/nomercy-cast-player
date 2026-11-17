@@ -48,10 +48,12 @@ useFocusEntry({
 	font: inherit;
 	border: 2px solid transparent;
 	cursor: pointer;
-	background: oklch(0.22 0.01 250);
+	background: var(--cast-bg-base);
 	color: var(--color-text-primary);
-	font-weight: 600;
-	font-size: 16px;
+	font-weight: 400;
+	font-size: 22px;
+	line-height: 28px;
+	letter-spacing: 0;
 	border-radius: 6px;
 	aspect-ratio: 1 / 1;
 	min-height: 0;
@@ -65,24 +67,17 @@ useFocusEntry({
 	display: grid;
 	place-items: center;
 }
-.key-hot {
-	background: oklch(0.18 0.02 250);
-}
-.key-number {
-	background: oklch(0.18 0.02 250);
-}
-.key-mode {
-	background: oklch(0.22 0.01 250);
+.key-mode,
+.key-mode-active {
 	font-size: 24px;
 }
 .key-mode-active {
 	background: var(--color-primary, oklch(0.7 0.2 285));
-	color: oklch(0.18 0.02 35);
-	font-size: 24px;
+	color: var(--cast-text-primary);
 }
 .key:focus-visible {
 	transform: scale(1.06);
-	border-color: oklch(0.95 0 0);
+	border-color: var(--cast-text-primary);
 	outline: none;
 	z-index: 1;
 }
