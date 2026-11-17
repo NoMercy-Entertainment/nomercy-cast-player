@@ -72,7 +72,7 @@ export function buildPersonRows(person: PersonData, labels: PersonRowLabels): Co
 		[labels.crew, crew.filter((c) => !has(c.job, 'Produc') && !has(c.job, 'Writ') && !has(c.job, 'Direct') && !has(c.job, 'Creator'))],
 		[labels.creator, crew.filter((c) => has(c.job, 'Creator'))],
 	];
-	const rows: Array<[string, string, Component[]]> = [
+	const rows: ReadonlyArray<readonly [string, string, Component[]]> = [
 		['person-known-for', labels.knownFor, distinctCards(person.known_for ?? [], (c) =>
 			c.character ?? undefined)],
 		...groups.map(([title, credits], index) => [
