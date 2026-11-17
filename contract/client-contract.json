@@ -90,7 +90,7 @@
 		},
 		{
 			"file": "src/views/info/InfoScreen.vue",
-			"line": 240,
+			"line": 215,
 			"reason": "Server-provided path can contain multiple segments",
 			"expression": "/api/v1/${cleanLink}/watch-list"
 		},
