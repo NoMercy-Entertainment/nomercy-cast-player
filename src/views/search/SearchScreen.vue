@@ -7,6 +7,7 @@ import { useSearchQuery } from '@/queries/useSearchQuery';
 import Resolver from '@/server-components/Resolver.vue';
 import Skeleton from '@/components/feedback/Skeleton.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
+import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import SearchKeyboard from './SearchKeyboard.vue';
 
 const { t } = useTranslation();
@@ -38,6 +39,11 @@ watch(queryStr, (val) => {
 		debouncedQuery.value = val;
 	}, 250);
 });
+
+const placeholder = computed(() =>
+	mode.value === 'music'
+		? t('views.search.placeholder_music')
+		: t('views.search.placeholder_video'));
 
 const queryType = computed(() =>
 	mode.value === 'music'
@@ -76,10 +82,8 @@ function setMode(next: 'video' | 'music'): void {
 		</aside>
 		<section class="right">
 			<header class="query-bar">
-				<span class="query-label">{{ t('views.search.label') }}</span>
-				<span class="query-text">{{ queryStr || '_' }}</span>
-				<span v-if="mode === 'music'" class="mode-pill">{{ t('nav.music') }}</span>
-				<span v-else class="mode-pill">{{ t('views.search.video') }}</span>
+				<MoooomIcon icon="searchMagnifyingGlass" class="query-icon" />
+				<span class="query-text" :class="{ 'query-placeholder': !queryStr }">{{ queryStr || placeholder }}</span>
 			</header>
 
 			<div class="results nm-no-scrollbar">
@@ -149,34 +153,23 @@ function setMode(next: 'video' | 'music'): void {
 	width: 75%;
 	height: 60px;
 	padding: 0 16px;
-	background: oklch(0.18 0.01 250 / 0.85);
-	border: 1px solid rgba(255, 255, 255, 0.18);
 	border-radius: 16px;
+	overflow: hidden;
 }
-.query-label {
-	color: var(--color-text-secondary);
-	font-size: 14px;
-	letter-spacing: 0.04em;
+.query-icon {
+	flex: none;
+	color: var(--color-text-primary);
 }
 .query-text {
 	flex: 1 1 auto;
-	font-size: 24px;
-	font-weight: 700;
-	letter-spacing: 0.5px;
-	font-variant-numeric: tabular-nums;
+	font-size: 16px;
+	color: var(--color-text-secondary);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
-.mode-pill {
-	font-size: 11px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	padding: 4px 10px;
-	border-radius: 999px;
-	background: var(--color-primary, oklch(0.7 0.2 285 / 0.4));
-	color: oklch(0.18 0.02 35);
+.query-placeholder {
+	opacity: 0.7;
 }
 .results {
 	overflow-y: auto;

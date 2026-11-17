@@ -3,8 +3,8 @@
 		"search_videos": "Video's zoeken",
 		"search_music": "Muziek zoeken",
 		"search": {
-			"video": "Video",
-			"label": "Zoeken:",
+			"placeholder_video": "Film, serie of persoon…",
+			"placeholder_music": "Nummer, album of artiest…",
 			"space": "Spatie",
 			"backspace": "Wissen",
 			"start_typing": "Begin met typen om te zoeken.",

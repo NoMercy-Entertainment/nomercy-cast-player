@@ -3,8 +3,8 @@
 		"search_videos": "Search videos",
 		"search_music": "Search music",
 		"search": {
-			"label": "Search:",
-			"video": "Video",
+			"placeholder_video": "Movie, show or person…",
+			"placeholder_music": "Song, album or artist…",
 			"space": "Space",
 			"backspace": "Backspace",
 			"start_typing": "Start typing to search.",
