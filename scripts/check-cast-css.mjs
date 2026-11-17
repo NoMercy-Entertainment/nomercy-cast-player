@@ -1,4 +1,4 @@
-// Fails when the built CSS or JS holds a feature the Cast device browser (Chrome 92) cannot read.
+// Fails when built CSS or JS holds a known unsupported Chrome 80 feature without its fallback.
 // Usage: node scripts/check-cast-css.mjs [assetsDir]   (default: docs/assets, the build outDir)
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -41,10 +41,15 @@ export function findIssues(css, file) {
 	return issues;
 }
 
-// Built-ins newer than Chrome 92. A bundle may use one only when src/lib/chrome92Polyfills.ts lists it.
+// Built-ins newer than Chrome 80. A window bundle may use one only when chrome92Polyfills.ts lists it.
 // Vue's reactive array wrappers call the array methods as `fn(this).toSorted(`; nothing in src uses them.
 const JS_APIS = [
 	['Object.hasOwn', /\bObject\.hasOwn\b/g],
+	['Array.prototype.at', /\.at\(/g],
+	['String.prototype.replaceAll', /\.replaceAll\(/g],
+	['ParentNode.replaceChildren', /\.replaceChildren\(/g],
+	['Promise.any', /\bPromise\.any\b/g],
+	['WeakRef', /\bnew\s+(?:WeakRef|FinalizationRegistry)\b/g],
 	['structuredClone', /(?<![.\w])structuredClone\s*\(/g],
 	['Array.prototype.findLast', /\.findLast(?:Index)?\(/g],
 	['Array.prototype.toSorted', /(?<!\(this\))\.(?:toSorted|toReversed|toSpliced)\(/g],
@@ -112,6 +117,11 @@ function selfTest() {
 	}
 	const plantedJs = [
 		'if(Object.hasOwn(a,`x`))b()',
+		'a.at(-1)',
+		's.replaceAll(a,b)',
+		'element.replaceChildren(a,b)',
+		'Promise.any(a)',
+		'new WeakRef(a)',
 		'let c=structuredClone(a)',
 		'a.findLast(f)',
 		'a.findLastIndex(f)',
@@ -167,7 +177,11 @@ const jsFiles = readdirSync(jsRoot, { recursive: true, withFileTypes: true })
 	.map(e => join(e.parentPath, e.name));
 const issues = [
 	...files.flatMap(f => findIssues(readFileSync(join(dir, f), 'utf8'), f)),
-	...jsFiles.flatMap(f => findJsIssues(readFileSync(f, 'utf8'), f.replaceAll('\\', '/'), polyfilled)),
+	...jsFiles.flatMap((f) => {
+		const file = f.replaceAll('\\', '/');
+		// A window prototype shim does not install into the copied worker's global scope.
+		return findJsIssues(readFileSync(f, 'utf8'), file, file.includes('/js/') ? [] : polyfilled);
+	}),
 	...scanSource('src'),
 ];
 if (issues.length > 0) {
@@ -179,4 +193,4 @@ if (issues.length > 0) {
 		console.error(`  ${i.name} ${i.file}:${i.line} ${i.snippet}`);
 	process.exit(1);
 }
-console.log(`check-cast-css: ${files.length} css and ${jsFiles.length} js files, no Chrome 92 findings, no raw hex in src (self-test ok)`);
+console.log(`check-cast-css: ${files.length} css and ${jsFiles.length} js files, no known Chrome 80 findings, no raw hex in src (self-test ok)`);

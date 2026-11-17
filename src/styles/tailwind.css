@@ -5,6 +5,17 @@
 @import './tv-safe.css';
 @import './components.css';
 
+/* These describe the element itself; custom properties otherwise inherit from a parent. */
+* {
+	--cast-aspect-ratio: initial;
+	--cast-css-width: initial;
+	--cast-css-height: initial;
+	--cast-margin-top: initial;
+	--cast-margin-right: initial;
+	--cast-margin-bottom: initial;
+	--cast-margin-left: initial;
+}
+
 @theme {
 	--color-bg-base: var(--cast-bg-base);
 	--color-bg-elevated: var(--nm-surface);

@@ -120,3 +120,25 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 For further information or support, visit NoMercy.tv or contact our support team.
 
 Made with ❤️ by [NoMercy Entertainment](https://nomercy.tv)
+
+## Browser compatibility
+
+The receiver targets **Chrome 80 and newer**. Its first bootstrap import, `src/lib/chrome92Polyfills.ts`, keeps the existing conditional `Object.defineProperty` installation pattern and local `Object.hasOwn` helper. It also installs missing `Array.prototype.at` and `String.prototype.replaceAll` methods using core-js-pure implementations, plus `replaceChildren` on elements and document fragments for the TV controls. Vite compiles JavaScript and CSS for Chrome 80. Existing native APIs and layout remain in use on newer engines.
+
+Older engines get conditional keyboard-focus and selector fallbacks, non-wrapping flex gaps, and card aspect ratios. The build rejects wrapping flex declarations until a corresponding browser-tested fallback exists. The layout fallback observes dynamic content and resizing; it does not change grid gaps or explicit width-and-height overrides.
+
+The current Octopus WebAssembly binary is rejected by Chrome 80. ASS/SSA subtitles use the existing **plain-text fallback** there; styled ASS requires a compatible renderer/runtime. Browser shims cannot add hardware codecs, DRM capabilities, or native WebAssembly instructions.
+
+Reproduce the compatibility checks from this checkout with an installed browser executable:
+
+```sh
+yarn build
+node scripts/check-cast-css.mjs
+node scripts/build-cast-proof.mjs
+node scripts/cast-browser-fixture.mjs . .compat-layout.json
+node scripts/prove-cast-browser.cjs docs .compat-report.json "PATH_TO_BROWSER" .compat-layout.json .compat-proof
+```
+
+Run against actual Chrome 80, Chrome 92 and a current Chromium browser. The script uses an isolated headless profile and local preview with CAF removed and external DNS blocked. It checks API behavior, emitted-module imports, layout measurements, plugin registration, and subtitle fallback rendering/timing/cleanup. The ASS proof injects the real fallback's load-failed warning and exercises its timeout with a fake player clock; it does not claim full Cast playback or real worker-failure propagation. The optional audiomotion-analyzer peer's preexisting throwing stub is reported separately. Browser proof complements hardware playback, discovery, standby wake and codec tests; it does not replace them.
+
+The proof build is separate from `docs`; test pages and probe globals do not ship in the receiver.

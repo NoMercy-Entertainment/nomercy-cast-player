@@ -47,3 +47,8 @@ public/js/octopus/
 .claude/scheduled_tasks.lock
 .sperpowers/
 .archive-v0/
+# Isolated browser compatibility fixture builds.
+.compat-proof/
+.compat-layout.json
+.compat-report.json
+.compat-report.png

@@ -52,5 +52,5 @@ jobs:
       - name: Build
         run: node node_modules/vite/bin/vite.js build
 
-      - name: Check the built CSS reads on Chrome 92
+      - name: Check Chrome 80 receiver compatibility
         run: node scripts/check-cast-css.mjs

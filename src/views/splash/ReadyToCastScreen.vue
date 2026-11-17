@@ -208,7 +208,8 @@ const isPulsing = computed(() => !isConnected.value && connectedSenders.value > 
 .brand {
 	position: relative;
 	height: 48px;
-	width: max-content;
+	width: auto;
+	align-self: flex-start;
 	z-index: 1;
 }
 

@@ -1,4 +1,5 @@
 import './lib/chrome92Polyfills';
+import { installCastLayout } from './lib/castLayout';
 import { createApp } from 'vue';
 import I18NextVue from 'i18next-vue';
 import i18next from './i18n/i18next';
@@ -30,6 +31,7 @@ import './styles/tailwind.css';
  * so cast.framework is available by the time bootCastReceiver fires.
  */
 
+installCastLayout();
 installCrashHandlers();
 
 // Every error and warning the receiver catches and swallows. One seam covers

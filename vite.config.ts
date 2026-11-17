@@ -3,7 +3,8 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
 import { loadEnv } from 'vite';
 import type { Plugin, ProxyOptions } from 'vite';
-import { chrome92Layers, chrome92Targets, chrome92Visitor } from './scripts/chrome92Css.mjs';
+import { chrome92Layers, chrome92Visitor } from './scripts/chrome92Css.mjs';
+import { castLayoutCss } from './scripts/castLayoutCss.mjs';
 import { copyOctopusWorker } from './scripts/copyOctopusWorker.mjs';
 import { moooomIconsPlugin } from './tooling/vite/moooomIcons';
 import vue from '@vitejs/plugin-vue';
@@ -69,7 +70,7 @@ export default defineConfig(({ command, mode }) => {
 	const target = devTarget(command, env.CAST_DEV_SERVER_URL || undefined);
 
 	return {
-		plugins: [octopusWorker(), moooomIconsPlugin(), vue(), tailwindcss(), chrome92Layers()],
+		plugins: [octopusWorker(), moooomIconsPlugin(), vue(), tailwindcss(), chrome92Layers(), castLayoutCss()],
 		define: {
 			__APP_VERSION__: JSON.stringify(pkg.version),
 		},
@@ -85,7 +86,7 @@ export default defineConfig(({ command, mode }) => {
 		// Chrome 92 on the Cast device reads no lab(), oklch() or @layer.
 		css: {
 			transformer: 'lightningcss',
-			lightningcss: { targets: chrome92Targets, visitor: chrome92Visitor },
+			lightningcss: { targets: { chrome: 80 << 16 }, visitor: chrome92Visitor },
 		},
 		resolve: {
 			alias: {
@@ -94,8 +95,8 @@ export default defineConfig(({ command, mode }) => {
 		},
 		build: {
 			outDir: 'docs',
-			target: 'es2022',
-			cssTarget: 'chrome92',
+			target: 'chrome80',
+			cssTarget: 'chrome80',
 			sourcemap: true,
 			rollupOptions: {
 				output: {

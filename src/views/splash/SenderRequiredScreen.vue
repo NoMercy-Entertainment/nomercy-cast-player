@@ -151,7 +151,8 @@ useFocusGroup({ type: 'modal', initialFocusKey: 'cast-again-retry' });
 .brand {
 	position: relative;
 	height: 48px;
-	width: max-content;
+	width: auto;
+	align-self: flex-start;
 	z-index: 1;
 }
 
