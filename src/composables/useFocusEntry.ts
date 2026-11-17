@@ -68,7 +68,9 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 
 			if (scroll) {
 				el.scrollIntoView({
-					behavior: 'smooth',
+					behavior: focusStore.isRestoringFocus()
+						? 'instant'
+						: 'smooth',
 					block: 'nearest',
 					inline: group?.type === 'horizontal'
 						? 'start'

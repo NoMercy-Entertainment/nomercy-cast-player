@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted } from 'vue';
+import { onActivated, onBeforeUnmount, onDeactivated, onMounted } from 'vue';
 import type { Ref } from 'vue';
 import { focusStore } from '@/stores/focusStore';
 import type { FocusGroupHandle } from '@/stores/focusStore';
@@ -55,18 +55,20 @@ export function useNavFocusBridge(arg: FocusGroupHandle | BridgeArg): void {
 	};
 
 	const onNavDown = (): void => {
-		if (handle?.focusFirst()) return;
+		// TvRowFocus.kt:60-96: DOWN from the nav lands on the first card fully in view.
+		if (handle?.enterFirst?.() || handle?.focusFirst()) return;
 
 		focusFirstFocusable();
 	};
 
-	onMounted(() => {
-		window.addEventListener('cast-receiver:nav-down', onNavDown);
-	});
+	const listen = (): void => window.addEventListener('cast-receiver:nav-down', onNavDown);
+	const unlisten = (): void => window.removeEventListener('cast-receiver:nav-down', onNavDown);
 
-	onBeforeUnmount(() => {
-		window.removeEventListener('cast-receiver:nav-down', onNavDown);
-	});
+	// Only the live page answers: a KeepAlive page set aside stops listening (TvNavigationBar.kt:125-130).
+	onMounted(listen);
+	onActivated(listen);
+	onDeactivated(unlisten);
+	onBeforeUnmount(unlisten);
 }
 
 // TvNavigationBar.kt:109-131: UP and BACK land on the selected tab, else the first item.

@@ -3,6 +3,7 @@ import type { Router } from 'vue-router';
 import { leaveToPreviousOrHome } from '@/router/leave';
 import { focusTopnav } from '@/composables/useNavFocusBridge';
 import { focusStore } from '@/stores/focusStore';
+import type { Direction } from '@/stores/focusStore';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import { screensaverStore } from '@/stores/screensaverStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
@@ -77,22 +78,26 @@ export function useDPad(router: Router): void {
 		const active = focusStore.activeGroup();
 		let handled = false;
 
+		// Whatever focus an arrow moves is the user's own choice.
+		const move = (dir: Direction): boolean =>
+			focusStore.userFocus(() => active?.handleKey(dir) ?? false);
+
 		switch (e.key) {
 			case 'ArrowUp':
 				focusedCardStore.setNavDirection('vertical');
-				handled = active?.handleKey('up') ?? false;
+				handled = move('up');
 				break;
 			case 'ArrowDown':
 				focusedCardStore.setNavDirection('vertical');
-				handled = active?.handleKey('down') ?? false;
+				handled = move('down');
 				break;
 			case 'ArrowLeft':
 				focusedCardStore.setNavDirection('horizontal');
-				handled = active?.handleKey('left') ?? false;
+				handled = move('left');
 				break;
 			case 'ArrowRight':
 				focusedCardStore.setNavDirection('horizontal');
-				handled = active?.handleKey('right') ?? false;
+				handled = move('right');
 				break;
 			case 'Enter':
 				// A held OK acts once (TvNavigationBar.kt:331-336); repeats are consumed.

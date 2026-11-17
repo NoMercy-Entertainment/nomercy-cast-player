@@ -165,6 +165,32 @@ describe('every edge key is consumed (TvCardViewHolder.kt:358-382, TvRowFocus.kt
 	});
 });
 
+describe('down from the nav enters the first card fully in view (TvRowFocus.kt:60-96)', () => {
+	it('lands on the first fully visible card of row 0, not on card 0 scrolled away', async () => {
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+			const track = this.closest('.rail-track') as HTMLElement | null;
+
+			if (this.classList.contains('rail-track'))
+				return new DOMRect(0, 0, 960, 200);
+
+			if (!track || !this.hasAttribute('data-focusable'))
+				return new DOMRect(0, 0, 0, 0);
+
+			const index = Array.from(track.children).indexOf(this);
+
+			return new DOMRect(40 + index * 126 - track.scrollLeft, 0, 118, 177);
+		});
+
+		await boot('/', [rail('r1', 10), rail('r2', 10)]);
+		document.querySelector<HTMLElement>('[data-rail-id="r1"] .rail-track')!.scrollLeft = 300;
+		document.querySelector<HTMLElement>('.topnav .nav-link')!.focus();
+		press('ArrowDown');
+
+		expect(document.activeElement).toBe(cardsOf('r1')[3]);
+		vi.restoreAllMocks();
+	});
+});
+
 describe('a held OK acts once (TvNavigationBar.kt:331-336)', () => {
 	it('key repeat on a card does not fire the card action again', async () => {
 		await boot('/', [rail('r1', 4)]);

@@ -8,6 +8,8 @@ export interface FocusGroupHandle {
 	type: FocusGroupType;
 	handleKey: (dir: Direction) => boolean;
 	focusFirst: () => boolean;
+	/** Like focusFirst, but a row lands on its first card fully in view. */
+	enterFirst?: () => boolean;
 	focusLast: () => boolean;
 	focusByKey: (key: string) => boolean;
 	/** Used by focusStore.requestFocus to walk the stack from bottom up. */
@@ -160,9 +162,47 @@ function isAutoFocus(): boolean {
 	return autoFocusing;
 }
 
+let restoringFocus = false;
+
+/** Runs a focus that puts a saved card back: it scrolls into place at once (VideoContentList.kt:231-257). */
+function restoreFocus<T>(focus: () => T): T {
+	restoringFocus = true;
+
+	try {
+		return focus();
+	} finally {
+		restoringFocus = false;
+	}
+}
+
+function isRestoringFocus(): boolean {
+	return restoringFocus;
+}
+
+let userFocusing = false;
+
+/** Runs a focus a key press caused: only such a focus is written to the saved position (TvUserFocusIntent.kt:28-44). */
+function userFocus<T>(focus: () => T): T {
+	userFocusing = true;
+
+	try {
+		return focus();
+	} finally {
+		userFocusing = false;
+	}
+}
+
+function isUserFocus(): boolean {
+	return userFocusing;
+}
+
 export const focusStore = {
 	autoFocus,
 	isAutoFocus,
+	restoreFocus,
+	isRestoringFocus,
+	userFocus,
+	isUserFocus,
 	groupStack,
 	entryChanges,
 	activeGroup,

@@ -169,6 +169,16 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 
 			return true;
 		},
+		enterFirst() {
+			const e = sortedEnabled()[0];
+
+			if (!e)
+				return false;
+
+			(e.enter ?? e.focus)();
+
+			return true;
+		},
 		focusLast() {
 			const list = sortedEnabled();
 			const e = list[list.length - 1];
@@ -240,7 +250,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 				if (opts.restorationKey) {
 					const restored = focusStore.consumeRestoration(opts.restorationKey);
 
-					if (restored && handle.focusByKey(restored)) return;
+					if (restored && focusStore.restoreFocus(() => handle.focusByKey(restored))) return;
 				}
 
 				handle.focusFirst();
@@ -284,12 +294,12 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		}
 	}
 
-	function deactivate(keepAliveLeave = false): void {
+	function deactivate(): void {
 		if (!isActive) return;
 
 		isActive = false;
 		document.removeEventListener('focusin', trackFocus);
-		saveRestoration(keepAliveLeave);
+		saveRestoration();
 		parentUnregister?.();
 		parentUnregister = undefined;
 		focusStore.popGroup(handle);
@@ -321,7 +331,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 			if (opts.restorationKey) {
 				const restored = focusStore.consumeRestoration(opts.restorationKey);
 
-				if (restored && handle.focusByKey(restored)) return;
+				if (restored && focusStore.restoreFocus(() => handle.focusByKey(restored))) return;
 			}
 
 			if (opts.initialFocusKey && handle.focusByKey(opts.initialFocusKey)) return;
@@ -336,11 +346,13 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		});
 	}
 
-	// KMP keeps the position of the card that last held focus (TvCardViewHolder.kt:279-287).
-	// A KeepAlive leave saves it even though focus is already gone; an unmount keeps the old rule.
+	// KMP keeps the card the user last moved to (TvCardViewHolder.kt:279-287), even once focus is gone.
 	let lastFocusedKey: string | null = null;
 
 	function trackFocus(): void {
+		// A focus the page made on its own is no position the user chose.
+		if (!focusStore.isUserFocus()) return;
+
 		const focused = entries.value.find((e) => e.isFocused());
 
 		if (focused) {
@@ -348,13 +360,12 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		}
 	}
 
-	function saveRestoration(keepAliveLeave: boolean): void {
+	function saveRestoration(): void {
 		if (!opts.restorationKey) return;
 
-		const focused = entries.value.find((e) => e.isFocused()) ??
-			(keepAliveLeave
-				? entries.value.find((e) => e.key === lastFocusedKey)
-				: undefined);
+		const chosen = entries.value.find((e) => e.key === lastFocusedKey);
+		const focused = chosen ??
+			entries.value.find((e) => e.isFocused());
 
 		if (focused) {
 			focusStore.saveRestoration(opts.restorationKey, focused.key);
@@ -390,7 +401,7 @@ export function useFocusGroup(opts: FocusGroupOptions): FocusGroupHandle & Focus
 		});
 
 		onDeactivated(() => {
-			deactivate(true);
+			deactivate();
 		});
 	}
 

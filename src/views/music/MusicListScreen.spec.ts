@@ -178,6 +178,8 @@ describe('the D-pad reaches the track rows from the Play button', () => {
 		const loaded = listData.value;
 
 		listData.value = null as unknown as typeof loaded;
+		// A fresh visit: an earlier test left the row its user moved to.
+		focusStore.saveRestoration('music-list-tracks', 'music-list-play');
 
 		wrapper = mount(MusicListScreen, { attachTo: document.body });
 		await flushPromises();
