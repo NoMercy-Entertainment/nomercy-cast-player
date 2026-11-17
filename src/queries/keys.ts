@@ -14,7 +14,6 @@ export const QueryKeys = {
 	info: (type: string, id: string) => ['info', type, id] as const,
 	infoRows: (type: string, id: string) => ['info', type, id, 'rows'] as const,
 	available: (type: string, id: string) => ['info', type, id, 'available'] as const,
-	favorites: () => ['userData', 'favorites'] as const,
 	person: (id: string) => ['person', id] as const,
 	serverInfo: () => ['dashboard', 'server', 'info'] as const,
 	search: (type: string, query: string) => ['search', type, query] as const,

@@ -17,6 +17,7 @@ const { default: InfoScreen } = await import('@/views/info/InfoScreen.vue');
 const { focusedCardStore } = await import('@/stores/focusedCardStore');
 const { settingsStore } = await import('@/stores/settingsStore');
 const { QueryKeys } = await import('@/queries/keys');
+const { registerQueryClientGetter } = await import('@/lib/queryShim');
 
 const BASE = {
 	id: 'title-1',
@@ -38,6 +39,8 @@ async function mountInfo(base: Record<string, unknown> = BASE) {
 			: { data: base }));
 
 	client = new QueryClient();
+	// The app registers its client in queries/client.ts; the cache helpers read it from there.
+	registerQueryClientGetter(() => client);
 	const router = createRouter({ history: createWebHistory(), routes: [] });
 
 	wrapper = mount(InfoScreen, {
@@ -115,36 +118,22 @@ describe('videoMusicHeroSection.kt:112-137: the hero text crossfades in 200 ms',
 	});
 });
 
-describe('nMDetailActions.kt:139-145: a watchlist toggle reaches every cached query', () => {
-	it('a cached card of the same title follows the toggle and goes back when the POST fails', async () => {
+describe('nMDetailActions.kt:139-145 with QueryClient.kt:936-969: a watchlist toggle reaches every cached query', () => {
+	it('flips the info flag, marks cached lists stale without patching them, and goes back when the POST fails', async () => {
 		await mountInfo();
 
-		client.setQueryData(['library', 'example'], [{
-			id: 'row',
-			component: 'NMCarousel',
-			props: { items: [
-				{
-					id: 'c',
-					component: 'NMCard',
-					props: { data: {
-						id: '1',
-						link: '/movie/1',
-						watchlist: false,
-					} },
-				},
-			] },
-		}]);
+		client.setQueryData(['library', 'example'], [{ id: 'row', component: 'NMCarousel' }]);
 
-		const cached = () => JSON.stringify(client.getQueryData(['library', 'example']));
+		const info = () => (client.getQueryData([...QueryKeys.info('movie', '1')]) as { watchlist: boolean }).watchlist;
+		const listStale = () => client.getQueryCache().find({ queryKey: ['library', 'example'] })?.state.isInvalidated;
 
 		wrapper.get<HTMLElement>('.actions .nm-pill-secondary').element.click();
-		await vi.waitFor(() => expect(cached()).toContain('"watchlist":true'));
-		expect((client.getQueryData([...QueryKeys.info('movie', '1')]) as { watchlist: boolean }).watchlist).toBe(true);
+		await vi.waitFor(() => expect(info()).toBe(true));
+		expect(listStale()).toBe(true);
 
 		apiFetch.mockImplementation(() => Promise.reject(new Error('offline')));
 		wrapper.get<HTMLElement>('.actions .nm-pill-secondary').element.click();
-		await vi.waitFor(() => expect(cached()).toContain('"watchlist":true'));
 		await flushPromises();
-		expect(cached()).toContain('"watchlist":true');
+		await vi.waitFor(() => expect(info()).toBe(true));
 	});
 });
