@@ -47,7 +47,9 @@ const rows = computed(() =>
 );
 
 // PersonScreen.kt:56-60: the page color is the known-for backdrop palette.
-watch(knownFor, (next) => applyThemeColor(next?.color_palette?.backdrop ?? null), { immediate: true });
+const backdropColor = (next: typeof knownFor.value) => next?.color_palette?.backdrop ?? null;
+
+watch(knownFor, (next) => applyThemeColor(backdropColor(next)), { immediate: true });
 focusedCardStore.setThemeFollowsFocus(false);
 
 onBeforeUnmount(() => {

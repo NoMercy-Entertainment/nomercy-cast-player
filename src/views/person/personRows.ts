@@ -31,7 +31,10 @@ function card(data: NMCardWrapper): Component {
 	} as const satisfies Component;
 }
 
-function distinctCards(credits: PersonCredit[], subtitle: (c: PersonCredit) => string | undefined): Component[] {
+function distinctCards(
+	credits: PersonCredit[],
+	subtitle: (c: PersonCredit) => string | undefined,
+): Component[] {
 	const seen = new Set<string>();
 	const out: Component[] = [];
 

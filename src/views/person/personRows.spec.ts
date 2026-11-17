@@ -63,7 +63,9 @@ describe('row 6: person page matches PersonScreen.kt and PersonComponentMapping.
 
 	it('drops a credit the user does not own and a repeated card id', () => {
 		const rows = buildPersonRows(person, labels);
-		const ids = (row: number) => (rows[row]?.props as { items: Array<{ id: string }> }).items.map((i) => i.id);
+
+		interface IdRow { items: Array<{ id: string }> }
+		const ids = (row: number) => (rows[row]?.props as IdRow).items.map((i) => i.id);
 
 		expect(ids(0)).toEqual(['1', '2']);
 		expect(ids(1)).toEqual(['3']);
@@ -71,7 +73,9 @@ describe('row 6: person page matches PersonScreen.kt and PersonComponentMapping.
 
 	it('the card caption is the character, or the job for crew', () => {
 		const rows = buildPersonRows(person, labels);
-		const sub = (row: number) => ((rows[row]?.props as { items: Array<{ props: { data: { subtitle?: string } } }> }).items[0]!.props.data.subtitle);
+
+		interface CaptionRow { items: Array<{ props: { data: { subtitle?: string } } }> }
+		const sub = (row: number) => (rows[row]?.props as CaptionRow).items[0]!.props.data.subtitle;
 
 		expect(sub(0)).toBe('Lead');
 		expect(sub(1)).toBe('Cameo');

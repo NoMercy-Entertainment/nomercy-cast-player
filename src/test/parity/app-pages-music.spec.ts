@@ -90,7 +90,9 @@ describe('row 7: music start matches MusicStartScreen.kt via TvLolomoScreen', ()
 	});
 
 	it('the hero seeds from the first music card: title, cover as backdrop, description (NMLolomo.kt:151-162,194-213)', () => {
-		const list = ref([carousel('rows', [musicCard('a')])]);
+		const firstCard = musicCard('a');
+		const row = carousel('rows', [firstCard]);
+		const list = ref([row]);
 
 		useHeroSeed(list as never);
 		const card = focusedCardStore.activeCard.value;
