@@ -604,6 +604,18 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 		expect(layers.map((layer) => layer.style.transform.includes('scale('))).toEqual([true, true, true, true]);
 	});
 
+	// Chrome 92 repaints a video on every frame of a border-radius transition; a transform alone stays on the GPU.
+	it('animates only the transform of the shrinking layers, on the GPU', () => {
+		const { video, safezone } = openSettings();
+
+		expect([video, safezone].map((layer) => layer.style.transition)).toEqual([
+			expect.not.stringContaining('border-radius'),
+			expect.not.stringContaining('border-radius'),
+		]);
+
+		expect([video.style.willChange, safezone.style.willChange]).toEqual(['transform', 'transform']);
+	});
+
 	it('puts every layer back when the sidebar closes', () => {
 		const { root, video, safezone } = openSettings();
 

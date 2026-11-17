@@ -1320,18 +1320,33 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 				: '';
 		}
 
+		// Only the transform animates: Chrome 92 repaints a video on every frame of a radius transition.
 		for (const layer of layers) {
 			if (!layer) continue;
 
-			layer.style.transition = `transform ${SETTINGS_ANIM_MS}ms ${SETTINGS_EASING}, border-radius ${SETTINGS_ANIM_MS}ms ${SETTINGS_EASING}`;
+			layer.style.transition = `transform ${SETTINGS_ANIM_MS}ms ${SETTINGS_EASING}`;
+			layer.style.willChange = 'transform';
 
-			layer.style.borderRadius = open
-				? `${radius}px`
-				: '0';
+			if (open) {
+				layer.style.borderRadius = `${radius}px`;
+			}
 
 			layer.style.transform = open
 				? `translate(${translateX}px, ${translateY}px) scale(${scale})`
 				: '';
+		}
+
+		// The corners square off once the picture is full size again.
+		if (!open) {
+			this.timeout(() => {
+				if (this.settings !== null) return;
+
+				for (const layer of layers) {
+					if (layer) {
+						layer.style.borderRadius = '0';
+					}
+				}
+			}, SETTINGS_ANIM_MS);
 		}
 	}
 
