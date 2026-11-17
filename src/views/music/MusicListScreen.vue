@@ -16,6 +16,7 @@ import { socketStore } from '@/stores/socketStore';
 import { playbackStore } from '@/stores/playbackStore';
 import { musicSyncBridge } from '@/players/music/syncBridge';
 import { apiFetch } from '@/lib/http/client';
+import { updateTrackFavoriteInAllQueries } from '@/lib/queryShim';
 import MusicAboutDialog from './MusicAboutDialog.vue';
 
 /*
@@ -166,6 +167,7 @@ async function onLikeClick(): Promise<void> {
 	const before = isFavorite.value;
 
 	favoriteOverride.value = !before;
+	updateTrackFavoriteInAllQueries(link, !before);
 	const cleanLink = link.replace(API_PREFIX, '').replace(LEADING_SLASH, '');
 
 	try {
@@ -177,6 +179,7 @@ async function onLikeClick(): Promise<void> {
 		});
 	} catch {
 		favoriteOverride.value = before;
+		updateTrackFavoriteInAllQueries(link, before);
 	}
 }
 

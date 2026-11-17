@@ -16,6 +16,7 @@ import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { apiFetch } from '@/lib/http/client';
+import { updateWatchlistInAllQueries } from '@/lib/queryShim';
 import { QueryKeys } from '@/queries/keys';
 import { useTrailerQuery } from '@/queries/useTrailerQuery';
 import TrailerOverlay from '@/players/video/TrailerOverlay.vue';
@@ -209,6 +210,8 @@ async function toggleWatchlist(): Promise<void> {
 		return { ...prev, watchlist: newValue };
 	});
 
+	updateWatchlistInAllQueries(link, newValue);
+
 	try {
 		const cleanLink = link.replace(API_PREFIX, '').replace(LEADING_SLASH, '');
 
@@ -225,6 +228,8 @@ async function toggleWatchlist(): Promise<void> {
 
 			return { ...prev, watchlist: !newValue };
 		});
+
+		updateWatchlistInAllQueries(link, !newValue);
 	} finally {
 		isPostingWatchlist.value = false;
 	}
