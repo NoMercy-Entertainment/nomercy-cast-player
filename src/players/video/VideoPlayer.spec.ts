@@ -484,7 +484,7 @@ describe('videoPlayer starts the cast watch session', () => {
 });
 
 describe('videoPlayer runs on the tv-ui plugin', () => {
-	async function mountWith(extra: { resumeAt?: number } = {}) {
+	async function mountWith(extra: { resumeAt?: number; isCast?: boolean } = {}) {
 		players.length = 0;
 		const VideoPlayer = (await import('./VideoPlayer.vue')).default;
 		const item = {
@@ -520,6 +520,15 @@ describe('videoPlayer runs on the tv-ui plugin', () => {
 		expect(call![1]?.skipPreScreen).toBe(false);
 		expect(call![1]?.onExit).toBeTypeOf('function');
 		expect(player.container.querySelector('.tv-overlay-host')).toBeNull();
+
+		wrapper.unmount();
+	});
+
+	// TvNavHost.kt reads cast=true and WatchScreen.kt:313 builds TvUiPlugin(skipPreScreen = isCast).
+	it('skips the pre-screen for a cast that starts from 0:00', async () => {
+		const { wrapper, player } = await mountWith({ isCast: true });
+
+		expect(tvUiCall(player)![1]?.skipPreScreen).toBe(true);
 
 		wrapper.unmount();
 	});

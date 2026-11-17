@@ -51,6 +51,8 @@ function queryText(name: string): string | undefined {
 		: undefined;
 }
 
+const isCast = computed(() => queryText('cast') === 'true');
+
 // The audio and subtitle the handing-off device showed, from the cast intent.
 const castAudioLanguage = computed(() => queryText('audio'));
 const castSubtitle = computed(() => {
@@ -110,8 +112,10 @@ onBeforeUnmount(() => invalidateAfterPlayback(playbackStore.video.timeMs.value >
 		<VideoPlayer
 			v-else-if="initialItem"
 			:id="id"
+			:key="route.fullPath"
 			:type="type"
 			:resume-at="resumeAt"
+			:is-cast="isCast"
 			:cast-audio-language="castAudioLanguage"
 			:cast-subtitle="castSubtitle"
 			:playlist="playlist"

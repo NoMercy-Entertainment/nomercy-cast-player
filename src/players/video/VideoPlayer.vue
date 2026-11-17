@@ -21,6 +21,8 @@ const props = defineProps<{
 	type: 'movie' | 'tv';
 	id: string;
 	resumeAt?: number;
+	/** The route carried cast=true: a cast plays at once, with no pre-screen. */
+	isCast?: boolean;
 	playlist?: PlaylistItem[];
 	initialItem?: PlaylistItem;
 	/** The audio and subtitle the handing-off device showed, from the cast intent. */
@@ -184,9 +186,9 @@ onMounted(async () => {
 			fallbackFont: '/js/octopus/default.ttf',
 		});
 
-		// A handed-over position starts playback at once, with no pre-screen.
+		// A cast, or a handed-over position, starts playback at once, with no pre-screen.
 		player.addPlugin(TvUiPlugin, {
-			skipPreScreen: typeof props.resumeAt === 'number' && props.resumeAt > 0,
+			skipPreScreen: props.isCast === true || (typeof props.resumeAt === 'number' && props.resumeAt > 0),
 			onExit: () => leaveToPreviousOrHome(router),
 		});
 

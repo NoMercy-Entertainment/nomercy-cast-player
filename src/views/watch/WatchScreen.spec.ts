@@ -32,7 +32,7 @@ vi.mock('@tanstack/vue-query', () => ({
 vi.mock('@/players/video/VideoPlayer.vue', () => ({
 	default: {
 		name: 'VideoPlayer',
-		props: ['initialItem', 'resumeAt'],
+		props: ['initialItem', 'resumeAt', 'isCast'],
 		template: '<div />',
 		emits: ['error'],
 		mounted(this: { $emit: (event: string, message: string) => void }) {
@@ -120,6 +120,30 @@ describe('the resume time is a finite number above zero', () => {
 		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
 
 		expect(wrapper.findComponent({ name: 'VideoPlayer' }).props('resumeAt')).toBe(expected);
+	});
+});
+
+describe('the cast flag in the watch route', () => {
+	afterEach(() => {
+		routeQuery.value = {};
+	});
+
+	const castOf = (query: Record<string, string>) => {
+		routeQuery.value = query;
+		data.value = { playlist: [{ id: 1 }], item: { id: 1 } };
+		isLoading.value = false;
+		error.value = null;
+		const wrapper = mount(WatchScreen, { props: { type: 'movie', id: '1' } });
+
+		return wrapper.findComponent({ name: 'VideoPlayer' }).props('isCast');
+	};
+
+	it('reaches the player for cast=true, also from position 0', () => {
+		expect(castOf({ cast: 'true', position: '0' })).toBe(true);
+	});
+
+	it('is off without cast=true', () => {
+		expect(castOf({ position: '0' })).toBe(false);
 	});
 });
 
