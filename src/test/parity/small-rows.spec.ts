@@ -89,7 +89,7 @@ describe('d-pad focus memory and back (TvCardViewHolder.kt:279-294,348-350)', ()
 
 		wrapper = mount(Host, { attachTo: document.body });
 		await flushPromises();
-		document.getElementById('b')!.focus();
+		focusStore.userFocus(() => document.getElementById('b')!.focus());
 		page.value = 'other';
 		await flushPromises();
 		expect(focusStore.consumeRestoration('test-rail')).toBe('b');

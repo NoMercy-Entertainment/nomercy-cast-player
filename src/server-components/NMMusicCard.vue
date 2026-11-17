@@ -146,6 +146,11 @@ useFocusEntry({
 	cursor: pointer;
 	contain: layout paint;
 	outline: none;
+	transition: transform 120ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* NMMusicCard.kt:139,197: activeScale 1.03 over a 120 ms FastOutSlowIn tween. */
+.music-card:focus-visible {
+	transform: scale(1.03);
 }
 .cover {
 	width: 100%;

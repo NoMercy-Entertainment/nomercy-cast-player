@@ -67,9 +67,22 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 			el.focus({ preventScroll: !scroll });
 
 			if (scroll) {
+				// RowTopAlignLayoutManager: a row's top, title included, sits at the list's top padding.
+				const row = group?.type === 'horizontal'
+					? el.closest<HTMLElement>('.nm-hero-rails > .rail-section')
+					: null;
+
+				if (row) {
+					el.style.scrollMarginTop = `${el.getBoundingClientRect().top - row.getBoundingClientRect().top}px`;
+				}
+
 				el.scrollIntoView({
-					behavior: 'smooth',
-					block: 'nearest',
+					behavior: focusStore.isRestoringFocus()
+						? 'instant'
+						: 'smooth',
+					block: row
+						? 'start'
+						: 'nearest',
 					inline: group?.type === 'horizontal'
 						? 'start'
 						: 'center',

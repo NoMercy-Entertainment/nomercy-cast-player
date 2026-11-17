@@ -1,7 +1,9 @@
 import { onBeforeUnmount, onMounted } from 'vue';
 import type { Router } from 'vue-router';
 import { leaveToPreviousOrHome } from '@/router/leave';
+import { focusTopnav } from '@/composables/useNavFocusBridge';
 import { focusStore } from '@/stores/focusStore';
+import type { Direction } from '@/stores/focusStore';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import { screensaverStore } from '@/stores/screensaverStore';
 import { DiagnosticsCategory, DiagnosticsCode } from '@/lib/diagnostics/events';
@@ -76,26 +78,30 @@ export function useDPad(router: Router): void {
 		const active = focusStore.activeGroup();
 		let handled = false;
 
+		// Whatever focus an arrow moves is the user's own choice.
+		const move = (dir: Direction): boolean =>
+			focusStore.userFocus(() => active?.handleKey(dir) ?? false);
+
 		switch (e.key) {
 			case 'ArrowUp':
 				focusedCardStore.setNavDirection('vertical');
-				handled = active?.handleKey('up') ?? false;
+				handled = move('up');
 				break;
 			case 'ArrowDown':
 				focusedCardStore.setNavDirection('vertical');
-				handled = active?.handleKey('down') ?? false;
+				handled = move('down');
 				break;
 			case 'ArrowLeft':
 				focusedCardStore.setNavDirection('horizontal');
-				handled = active?.handleKey('left') ?? false;
+				handled = move('left');
 				break;
 			case 'ArrowRight':
 				focusedCardStore.setNavDirection('horizontal');
-				handled = active?.handleKey('right') ?? false;
+				handled = move('right');
 				break;
 			case 'Enter':
-				// TvNavigationBar.kt:331-336: a held OK never re-navigates from the nav bar.
-				handled = e.repeat && document.activeElement?.closest('.topnav')
+				// A held OK acts once (TvNavigationBar.kt:331-336); repeats are consumed.
+				handled = e.repeat
 					? true
 					: focusStore.dispatchAction();
 
@@ -108,7 +114,8 @@ export function useDPad(router: Router): void {
 				break;
 		}
 
-		if (handled) {
+		// An arrow at an edge is consumed too (TvCardViewHolder.kt:358-382), so the rail never scrolls on its own.
+		if (handled || e.key.startsWith('Arrow')) {
 			e.preventDefault();
 		}
 	}
@@ -128,6 +135,12 @@ function handleBack(router: Router): boolean {
 	// A player owns its own back key: it closes a panel, pauses on the pre-screen, or leaves.
 	if (document.querySelector(PLAYER_SELECTOR))
 		return false;
+
+	// BACK on content first hands focus to the nav; the next one leaves (VideoContentList.kt:519-533).
+	const focused = document.activeElement;
+
+	if (focused && focused !== document.body && !focused.closest('.topnav') && focusTopnav())
+		return true;
 
 	// Otherwise router back. At root we let cast_shell decide (which
 	// typically does nothing).
