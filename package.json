@@ -23,6 +23,7 @@
 		"test:watch": "vitest"
 	},
 	"dependencies": {
+		"@fontsource/roboto": "5",
 		"@microsoft/signalr": "^10.0.0",
 		"@nomercy-entertainment/nomercy-music-player": "0.2.15",
 		"@nomercy-entertainment/nomercy-video-player": "^2.9.0",

@@ -1151,6 +1151,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource/roboto@npm:5":
+  version: 5.3.0
+  resolution: "@fontsource/roboto@npm:5.3.0"
+  checksum: 10c0/68420d2c669ba05f0ea466343151c6d2efff85b05cedbf0f990c58635d86035cae5e7c4904db9abc7b9fd21c5ad179788243ec9dff0c30dfab90679ae2d226f9
+  languageName: node
+  linkType: hard
+
 "@gar/promise-retry@npm:^1.0.0":
   version: 1.0.2
   resolution: "@gar/promise-retry@npm:1.0.2"
@@ -5922,6 +5929,7 @@ __metadata:
   resolution: "nomercy-cast-receiver@workspace:."
   dependencies:
     "@antfu/eslint-config": "npm:8.1.1"
+    "@fontsource/roboto": "npm:5"
     "@microsoft/signalr": "npm:^10.0.0"
     "@nomercy-entertainment/nomercy-music-player": "npm:0.2.15"
     "@nomercy-entertainment/nomercy-video-player": "npm:^2.9.0"

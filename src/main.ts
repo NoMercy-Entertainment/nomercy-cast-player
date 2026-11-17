@@ -1,4 +1,8 @@
 import './lib/chrome92Polyfills';
+// Real Roboto weights: the TV's one variable Roboto file makes Chrome fake 500 (wider letters).
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 import { createApp } from 'vue';
 import I18NextVue from 'i18next-vue';
 import i18next from './i18n/i18next';
