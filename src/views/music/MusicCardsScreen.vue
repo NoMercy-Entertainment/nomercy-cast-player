@@ -3,7 +3,7 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useTranslation } from 'i18next-vue';
 import { useMusicCardQuery } from '@/queries/useMusicCardQuery';
-import ServerDrivenView from '../ServerDrivenView.vue';
+import HeroRailsView from '@/views/HeroRailsView.vue';
 
 const { t } = useTranslation();
 const route = useRoute();
@@ -20,7 +20,7 @@ const { data, isLoading, isFetching, error, refetch } = useMusicCardQuery(path);
 </script>
 
 <template>
-	<ServerDrivenView
+	<HeroRailsView
 		:restoration-key="`music-cards-${path}`"
 		:data="data"
 		:is-loading="isLoading"
@@ -29,5 +29,7 @@ const { data, isLoading, isFetching, error, refetch } = useMusicCardQuery(path);
 		:refetch="() => refetch()"
 		:error-context="t('views.music.cards_error')"
 		:empty-message="t('views.music.cards_empty')"
+		:skeleton-count="2"
+		:hero="false"
 	/>
 </template>
