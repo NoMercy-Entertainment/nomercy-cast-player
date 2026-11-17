@@ -67,7 +67,8 @@ describe('the info hero follows a focused title card like InfoScreen.kt', () => 
 			backdrop: '/p.jpg',
 		});
 
-		await vi.waitFor(() => expect(wrapper.get('.hero-row').text()).toContain('Base Title'));
+		// InfoScreen.kt paces the hero too: the card above held it for 1400 ms (HeroSelectionTiming.kt:33).
+		await vi.waitFor(() => expect(wrapper.get('.hero-row').text()).toContain('Base Title'), { timeout: 3000 });
 	});
 
 	it('keeps the title poster color while focus moves over cards without a palette', async () => {

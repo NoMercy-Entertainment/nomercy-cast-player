@@ -56,20 +56,61 @@ function applyPalette(card: FocusedCardData | null): void {
 	applyThemeColor(palette?.poster ?? palette?.backdrop ?? null);
 }
 
+// HeroSelectionTiming.kt:33,40-43 pacedHero: a change shows at once, then holds, and only the newest card follows.
+const HERO_CHANGE_MS = 1400;
+let holdTimer: number | null = null;
+let held: { card: FocusedCardData | null } | null = null;
+
+function showHero(card: FocusedCardData | null): void {
+	_debouncedCard.value = card;
+	applyPalette(card);
+
+	holdTimer = window.setTimeout(() => {
+		holdTimer = null;
+
+		if (!held) return;
+
+		const next = held.card;
+
+		held = null;
+		showHero(next);
+	}, HERO_CHANGE_MS);
+}
+
+function paceHero(card: FocusedCardData | null): void {
+	if (holdTimer === null) {
+		showHero(card);
+
+		return;
+	}
+
+	held = { card };
+}
+
+// A seed shows at once; the watch below must not debounce it a second time.
+let seededCard: FocusedCardData | null | undefined;
+
 watch(_activeCard, (next) => {
 	if (pending !== null) {
 		window.clearTimeout(pending);
 		pending = null;
 	}
 
+	if (seededCard !== undefined && next === seededCard) {
+		seededCard = undefined;
+
+		return;
+	}
+
+	seededCard = undefined;
+
 	const delay = lastNavDir === 'vertical'
 		? VERTICAL_DEBOUNCE_MS
 		: HORIZONTAL_DEBOUNCE_MS;
 
 	pending = window.setTimeout(() => {
-		_debouncedCard.value = next;
-		applyPalette(next);
 		pending = null;
+		paceHero(next);
 	}, delay);
 }, { flush: 'post' });
 
@@ -80,9 +121,28 @@ export const focusedCardStore = {
 		_activeCard.value = card;
 	},
 	seed(card: FocusedCardData | null): void {
+		seededCard = card;
 		_activeCard.value = card;
-		_debouncedCard.value = card;
-		applyPalette(card);
+		held = null;
+
+		if (holdTimer !== null) {
+			window.clearTimeout(holdTimer);
+			holdTimer = null;
+		}
+
+		if (pending !== null) {
+			window.clearTimeout(pending);
+			pending = null;
+		}
+
+		if (card) {
+			showHero(card);
+
+			return;
+		}
+
+		_debouncedCard.value = null;
+		applyPalette(null);
 	},
 	setThemeFollowsFocus(follows: boolean): void {
 		themeFollowsFocus = follows;

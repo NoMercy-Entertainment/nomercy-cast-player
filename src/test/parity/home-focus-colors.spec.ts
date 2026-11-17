@@ -112,6 +112,7 @@ describe('home D-pad rows (TvCardViewHolder.kt:405-421, TvHomeAdapter.kt:540-561
 describe('hero follows focus at the native pace (HeroSelectionTiming.kt:27-33)', () => {
 	it('updates 250 ms after a horizontal move and 500 ms after a vertical one', async () => {
 		vi.useFakeTimers();
+		focusedCardStore.seed(null);
 		focusedCardStore.setNavDirection('horizontal');
 		focusedCardStore.setActive({ id: 'h', title: 'Horizontal' });
 		await nextTick();
@@ -119,6 +120,8 @@ describe('hero follows focus at the native pace (HeroSelectionTiming.kt:27-33)',
 
 		expect(focusedCardStore.debouncedCard.value?.id).toBe('h');
 
+		// The first change holds the hero for 1400 ms (HeroSelectionTiming.kt:33), so wait it out.
+		vi.advanceTimersByTime(1400);
 		focusedCardStore.setNavDirection('vertical');
 		focusedCardStore.setActive({ id: 'v', title: 'Vertical' });
 		await nextTick();
