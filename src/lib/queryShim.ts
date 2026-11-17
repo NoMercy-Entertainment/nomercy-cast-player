@@ -67,18 +67,30 @@ export function mapServerKey(serverKey: readonly string[]) {
 	// undefined and silently dropped every per-title invalidation.
 	const id = serverKey[1];
 
-	// QueryClient.kt:667-699: the server's 'base' prefix is dropped.
-	if (head === 'base' && serverKey.length > 1)
-		return [serverKey.slice(1)] as const satisfies readonly (readonly string[])[];
+	// QueryClient.kt:685-706: 'base' is dropped; libraries and info collapse to their prefix.
+	if (head === 'base' && serverKey.length > 1) {
+		const rest = serverKey.slice(1);
 
-	if (head === 'movie' && id !== undefined)
-		return [['info', 'movie', id]] as const satisfies readonly (readonly string[])[];
+		if (rest[0] === 'libraries')
+			return [['libraries']] as const satisfies readonly (readonly string[])[];
 
-	if (head === 'tv' && id !== undefined)
-		return [['info', 'tv', id], ['playlist', 'tv', id]] as const satisfies readonly (readonly string[])[];
+		if (rest[0] === 'info')
+			return [['info']] as const satisfies readonly (readonly string[])[];
+
+		return [rest] as const satisfies readonly (readonly string[])[];
+	}
+
+	if (head === 'movie' || head === 'tv') {
+		return [id !== undefined
+			? ['info', head, id]
+			: ['info', head]] as const satisfies readonly (readonly string[])[];
+	}
 
 	return [serverKey] as const satisfies readonly (readonly string[])[];
 }
+
+// QueryClient.kt:634-659: an invalidation force-fetches every matching query, mounted or not.
+const REFETCH_ALL = 'all' as const;
 
 export function invalidateFromServer(serverKey: readonly string[]): void {
 	const client = getClient?.();
@@ -86,7 +98,22 @@ export function invalidateFromServer(serverKey: readonly string[]): void {
 	if (!client) return;
 
 	for (const clientKey of mapServerKey(serverKey)) {
-		void client.invalidateQueries({ queryKey: [...clientKey], exact: false });
+		void client.invalidateQueries({
+			queryKey: [...clientKey],
+			exact: false,
+			refetchType: REFETCH_ALL,
+		});
+	}
+
+	// LiveQueueRefresh.kt:40-55: only a title being played re-reads its watch list; the player merges new items.
+	const [type, id] = serverKey;
+
+	if ((type === 'tv' || type === 'movie') && id !== undefined) {
+		void client.refetchQueries({
+			queryKey: ['playlist', type, id],
+			exact: true,
+			type: 'active',
+		});
 	}
 }
 
@@ -100,15 +127,83 @@ export function invalidateAllLibrary(): void {
 		'libraries',
 		'library',
 		'info',
-		'playlist',
 		'card-items',
 		'music',
 		'search',
 		'person',
 		'component',
 	]) {
-		void client.invalidateQueries({ queryKey: [prefix], exact: false });
+		void client.invalidateQueries({
+			queryKey: [prefix],
+			exact: false,
+			refetchType: REFETCH_ALL,
+		});
 	}
+}
+
+interface LinkedEntry {
+	link?: string;
+	favorite?: boolean;
+	watchlist?: boolean;
+	tracks?: LinkedEntry[];
+}
+
+// QueryClient.kt:936-969: the watchlist flag follows the link into every cached info page; list pages go stale.
+export function updateWatchlistInAllQueries(link: string, watchlist: boolean): void {
+	const client = getClient?.();
+
+	if (!client) return;
+
+	for (const query of client.getQueryCache().findAll({ queryKey: ['info'] })) {
+		const current = query.state.data as LinkedEntry | undefined;
+
+		if (current?.link === link) {
+			client.setQueryData(query.queryKey, { ...current, watchlist });
+		}
+	}
+
+	for (const prefix of ['home', 'library', 'search']) {
+		void client.invalidateQueries({
+			queryKey: [prefix],
+			exact: false,
+			refetchType: 'none',
+		});
+	}
+}
+
+// QueryClient.kt:777-853: a like rewrites the list itself or the matching tracks in every cached music list.
+export function updateTrackFavoriteInAllQueries(link: string, favorite: boolean): void {
+	const client = getClient?.();
+
+	if (!client) return;
+
+	for (const query of client.getQueryCache().findAll({ queryKey: ['music'] })) {
+		const current = query.state.data as LinkedEntry | undefined;
+
+		if (!current || typeof current !== 'object') continue;
+
+		if (current.link === link) {
+			client.setQueryData(query.queryKey, { ...current, favorite });
+
+			continue;
+		}
+
+		if (current.tracks?.some((track) => track.link === link)) {
+			client.setQueryData(query.queryKey, {
+				...current,
+				tracks: current.tracks.map((track) =>
+					track.link === link
+						? { ...track, favorite }
+						: track),
+			});
+		}
+	}
+
+	void client.invalidateQueries({
+		queryKey: ['favorites'],
+		exact: true,
+		refetchType: 'none',
+	});
 }
 
 /**
@@ -158,8 +253,17 @@ export function invalidateAfterPlayback(played: boolean): void {
 
 	if (!client || !played) return;
 
-	void client.invalidateQueries({ queryKey: ['home'], exact: true });
-	void client.invalidateQueries({ queryKey: ['libraries'], exact: true });
+	void client.invalidateQueries({
+		queryKey: ['home'],
+		exact: true,
+		refetchType: REFETCH_ALL,
+	});
+
+	void client.invalidateQueries({
+		queryKey: ['libraries'],
+		exact: true,
+		refetchType: REFETCH_ALL,
+	});
 }
 
 export function staleSweep(maxAgeMs = 3 * 60 * 60_000): void {
@@ -172,7 +276,11 @@ export function staleSweep(maxAgeMs = 3 * 60 * 60_000): void {
 
 	for (const q of queries) {
 		if (q.state.dataUpdatedAt > 0 && q.state.dataUpdatedAt < cutoff) {
-			void client.invalidateQueries({ queryKey: q.queryKey, exact: true });
+			void client.invalidateQueries({
+				queryKey: q.queryKey,
+				exact: true,
+				refetchType: REFETCH_ALL,
+			});
 		}
 	}
 }

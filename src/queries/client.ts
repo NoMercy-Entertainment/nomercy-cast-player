@@ -38,6 +38,8 @@ export const defaultQueryClientOptions = {
 			...queryConfigs.standard,
 			retry: 0,
 			refetchOnWindowFocus: false,
+			// KMP reads no refetchOnReconnect anywhere; recovery comes from the hub reconnect.
+			refetchOnReconnect: false,
 		},
 	},
 } as const;

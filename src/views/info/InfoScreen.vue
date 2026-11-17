@@ -8,7 +8,6 @@ import type { InfoData } from '@/queries/useInfoQuery';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import { useFocusGroup } from '@/composables/useFocusGroup';
 import { usePacedValue } from '@/composables/usePacedValue';
-import { updateWatchlistInAllQueries } from '@/lib/watchlistCache';
 import { settingsStore } from '@/stores/settingsStore';
 import { focusTopnav, useNavFocusBridge } from '@/composables/useNavFocusBridge';
 import { BACKDROP_SIZE, buildImageUrl } from '@/lib/images/urls';
@@ -19,6 +18,7 @@ import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import { apiFetch } from '@/lib/http/client';
+import { updateWatchlistInAllQueries } from '@/lib/queryShim';
 import { QueryKeys } from '@/queries/keys';
 import { useInfoRowsQuery } from '@/queries/useInfoRowsQuery';
 import { useTrailerQuery } from '@/queries/useTrailerQuery';
@@ -221,7 +221,7 @@ async function toggleWatchlist(): Promise<void> {
 		return { ...prev, watchlist: newValue };
 	});
 
-	updateWatchlistInAllQueries(queryClient, link, newValue);
+	updateWatchlistInAllQueries(link, newValue);
 
 	try {
 		const cleanLink = link.replace(API_PREFIX, '').replace(LEADING_SLASH, '');
@@ -240,7 +240,7 @@ async function toggleWatchlist(): Promise<void> {
 			return { ...prev, watchlist: !newValue };
 		});
 
-		updateWatchlistInAllQueries(queryClient, link, !newValue);
+		updateWatchlistInAllQueries(link, !newValue);
 	} finally {
 		isPostingWatchlist.value = false;
 	}

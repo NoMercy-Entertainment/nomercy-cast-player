@@ -22,6 +22,12 @@ export const queryConfigs = {
 		gcTime: 10 * 60_000,
 		refetchOnMount: false,
 	},
+	// QueryClient.kt:2237-2241: the playing list is never refreshed or dropped during a session.
+	playlist: {
+		staleTime: Infinity,
+		gcTime: Infinity,
+		refetchOnMount: false,
+	},
 	static: {
 		staleTime: 30 * 60_000,
 		gcTime: 60 * 60_000,

@@ -41,7 +41,8 @@ export function useSearchQuery(type: Ref<string>, queryStr: Ref<string>) {
 		queryFn: () => fetchSearch(type.value, queryStr.value),
 		enabled: computed(() => queryStr.value.length >= 3),
 		...queryConfigs.realtime,
-		// SearchScreen.kt:55-62: every new query or type is fetched again, never served stale.
+		// SearchScreen.kt:55-60: every term change invalidates its key, so each search hits the server.
 		staleTime: 0,
+		refetchOnMount: 'always',
 	});
 }

@@ -57,8 +57,16 @@ describe('query layer matches QueryClient.kt', () => {
 		invalidateAfterPlayback(true);
 
 		expect(spy.mock.calls.map((c) => c[0])).toEqual([
-			{ queryKey: ['home'], exact: true },
-			{ queryKey: ['libraries'], exact: true },
+			{
+				queryKey: ['home'],
+				exact: true,
+				refetchType: 'all',
+			},
+			{
+				queryKey: ['libraries'],
+				exact: true,
+				refetchType: 'all',
+			},
 		]);
 	});
 
