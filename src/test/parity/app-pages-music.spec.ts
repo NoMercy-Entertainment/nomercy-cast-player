@@ -49,18 +49,19 @@ afterEach(() => {
 });
 
 describe('row 7: music start matches MusicStartScreen.kt via TvLolomoScreen', () => {
-	it('asks for the lolomo layout and draws only carousels with content (MusicStartRepository.kt:38, HasContent.kt:38-48)', async () => {
-		apiFetch.mockResolvedValue({
-			data: [
-				{
-					id: 'tile',
-					component: 'NMMusicHomeCard',
-					props: { id: 'tile', data: { id: 'tile' } },
-				},
-				carousel('empty', []),
-				carousel('rows', [musicCard('a')]),
-			],
-		});
+	// The server answers version=lolomo with ONE NMLolomo holding the carousels (MusicController.cs:130,
+	// BaseController.cs:469); the shared renderer draws it, as the library page does.
+	it('asks for the lolomo layout and hands the NMLolomo page to the renderer (MusicStartRepository.kt:38)', async () => {
+		const lolomo = {
+			id: 'music-carousels',
+			component: 'NMLolomo',
+			props: {
+				id: 'music-carousels',
+				items: [carousel('rows', [musicCard('a')])],
+			},
+		};
+
+		apiFetch.mockResolvedValue({ data: [lolomo] });
 
 		const seen = ref<unknown>();
 		const Host = defineComponent({
@@ -79,7 +80,7 @@ describe('row 7: music start matches MusicStartScreen.kt via TvLolomoScreen', ()
 		await vi.waitFor(() => expect(seen.value).toBeDefined());
 		await flushPromises();
 		expect((apiFetch.mock.calls[0]![0] as { path: string }).path).toBe('/api/v1/music/start?version=lolomo');
-		expect((seen.value as Array<{ id: string }>).map((c) => c.id)).toEqual(['rows']);
+		expect((seen.value as Array<{ id: string }>).map((c) => c.id)).toEqual(['music-carousels']);
 	});
 
 	it('the page draws its hero and its rows are music rows (NMLolomo.kt:75,245)', () => {
