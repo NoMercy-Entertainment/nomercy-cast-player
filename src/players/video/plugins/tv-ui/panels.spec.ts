@@ -363,8 +363,10 @@ describe('episode dialog (EpisodeDialog.kt)', () => {
 		const cards = Array.from(root.querySelectorAll<HTMLElement>('.tvui-card'));
 
 		expect(cards).toHaveLength(3);
-		expect(cards[1]?.querySelector('.tvui-card-title')?.textContent).toBe('S1E1 • Pilot');
-		expect(cards[0]?.querySelector('.tvui-card-title')?.textContent).toBe('Extras E1 • Special');
+		expect(cards[1]?.querySelector('.tvui-card-title')?.textContent).toBe('Pilot');
+		expect(cards[1]?.querySelector('.tvui-card-label')?.textContent).toBe('S1E1');
+		expect(cards[0]?.querySelector('.tvui-card-title')?.textContent).toBe('Special');
+		expect(cards[0]?.querySelector('.tvui-card-label')?.textContent).toBe('Extras E1');
 		expect(cards.map((node) => node.classList.contains('tvui-selected'))).toEqual([false, true, false]);
 		expect(cards[1]?.querySelector<HTMLElement>('.tvui-card-progress')?.style.width).toBe('50%');
 		expect(cards[2]?.querySelector('.tvui-card-progress')).toBeNull();
@@ -427,11 +429,11 @@ describe('pre screen (PreScreenDialog.kt)', () => {
 	const labels = (root: HTMLElement): Array<string | null> =>
 		Array.from(root.querySelectorAll('.tvui-pre-buttons .tvui-button')).map((node) => node.textContent);
 
-	it('p13 the title, year, episode count, episode line and overview are drawn', () => {
+	it('p13 the title, episode count, episode line and overview are drawn, no year', () => {
 		const { root } = preScreen(options);
 
 		expect(root.querySelector('.tvui-pre-title')?.textContent).toBe('Show');
-		expect(root.querySelector('.tvui-meta')?.textContent).toBe('20203 Episodes');
+		expect(root.querySelector('.tvui-meta')?.textContent).toBe('3 Episodes');
 		expect(root.querySelector('.tvui-pre-episode')?.textContent).toBe('S1E2Pilot');
 		expect(root.querySelector('.tvui-pre-overview')?.textContent).toBe('A pilot.');
 	});

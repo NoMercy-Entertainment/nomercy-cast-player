@@ -22,6 +22,7 @@ export interface UiItem extends TitledItem {
 	id?: number | string;
 	description?: string;
 	overview?: string;
+	logo?: string;
 	image?: string;
 	backdrop?: string;
 	year?: number;
@@ -69,6 +70,7 @@ function row(
 	value = '',
 	trailing: IconName | null = null,
 	sidebar = false,
+	checkmark = true,
 ): HTMLElement {
 	const classes = selected
 		? 'tvui-row tvui-selected'
@@ -87,7 +89,7 @@ function row(
 
 	const check = sidebar && !trailing
 		? mark
-		: selected && !trailing && icon('check');
+		: selected && !trailing && checkmark && icon('check');
 
 	const arrow = trailing
 		? icon(trailing)
@@ -301,6 +303,16 @@ export function seekStrip(
 	} as const satisfies SeekStripHandle;
 }
 
+// PreScreenDialog.kt:137-148: the show logo, at most 220 wide, in the 72 tall title block.
+function preLogo(url: string, alt: string): HTMLElement {
+	const image = el('img', 'tvui-pre-logo');
+
+	image.setAttribute('src', url);
+	image.setAttribute('alt', alt);
+
+	return image;
+}
+
 export function preScreen(opts: {
 	item?: UiItem;
 	playlistSize: number;
@@ -317,7 +329,7 @@ export function preScreen(opts: {
 		: null;
 
 	const play = button(t('player_play'), opts.onPlay, 'play');
-	const restart = button(t('player_restart'), opts.onRestart, 'play');
+	const restart = button(t('player_restart'), opts.onRestart, 'playCircle');
 	const languages = button(t('player_audio_subtitles'), opts.onLanguage, 'globe');
 	const buttons = [play, restart, languages];
 
@@ -327,24 +339,23 @@ export function preScreen(opts: {
 		buttons.push(episodes);
 	}
 
-	const year = item?.year
-		? el('span', '', String(item.year))
-		: false;
-
 	const count = opts.episodeCount > 0
 		? el('span', '', `${opts.episodeCount} ${t('player_episodes')}`)
 		: false;
 
 	const tag = label
-		? el('span', '', label)
+		? el('span', 'tvui-pre-episode-label', label)
 		: false;
 
-	const meta = el('div', 'tvui-meta', year, count);
-	const episode = el('div', 'tvui-pre-episode', tag, item?.title ?? '');
+	const meta = el('div', 'tvui-meta', count);
+	const episode = el('div', 'tvui-pre-episode', tag, el('span', 'tvui-pre-episode-title', item?.title ?? ''));
 	const overview = el('p', 'tvui-pre-overview', item?.description ?? item?.overview ?? '');
 	const actions = el('div', 'tvui-pre-buttons', ...buttons);
-	const heading = el('h1', 'tvui-pre-title', title);
-	const info = el('div', 'tvui-pre-info', heading, meta, episode, overview, actions);
+	const heading = item?.logo
+		? preLogo(item.logo, title)
+		: el('h1', 'tvui-pre-title', title);
+
+	const info = el('div', 'tvui-pre-info', el('div', 'tvui-pre-heading', heading), meta, episode, overview, actions);
 	const root = el('div', 'tvui-dialog tvui-pre-screen', info);
 
 	return { root, focus: () => play.focus() } as const satisfies Panel;
@@ -357,12 +368,16 @@ function episodeCard(
 	onPick: (index: number) => void,
 ) {
 	const label = episodeLabel(item, t);
-	const art = el('div', 'tvui-card-art');
-	const prefix = label
-		? `${label} • `
-		: '';
+	const length = item.duration
+		? el('span', 'tvui-card-duration', t('duration_minutes', { a: Math.round(item.duration / 60) }))
+		: false;
 
-	const heading = `${prefix}${item.title ?? t('player_episode', { a: item.episode ?? 0 })}`;
+	const badges = el('div', 'tvui-card-badges', label
+		? el('span', 'tvui-card-label', label)
+		: false, length);
+
+	const art = el('div', 'tvui-card-art', badges);
+	const heading = item.title ?? t('player_episode', { a: item.episode ?? 0 });
 	const percent = item.duration && item.progress?.time
 		? Math.min(item.progress.time / item.duration, 1)
 		: 0;
@@ -383,12 +398,16 @@ function episodeCard(
 		? 'tvui-card tvui-selected'
 		: 'tvui-card';
 
-	card.replaceChildren(art, percent > 0.01
-		? bar
-		: '', text);
+	if (percent > 0.01) {
+		art.append(bar);
+	}
+
+	card.replaceChildren(art, text);
 
 	return card;
 }
+
+const EPISODE_SCROLL_OFFSET = 162;
 
 function seasonName(season: number, item: UiItem): string {
 	if (item.seasonName)
@@ -418,14 +437,24 @@ export function episodeDialog(opts: {
 	const seasonRows = [...seasons.entries()].map(([season, item]) => {
 		const first = opts.items.findIndex((i) => i.season === season);
 
+		// EpisodeDialog.kt:131-143: a scroll rail, so no check mark.
 		return row(seasonName(season, item), season === browsing, () =>
-			cards[first]?.focus());
+			cards[first]?.focus(), '', null, false, false);
 	});
 
 	const list = el('div', 'tvui-episode-list', ...cards);
 	const root = el('div', 'tvui-dialog tvui-episodes', el('div', 'tvui-seasons', ...seasonRows), list);
 
-	const focus = (): void => (cards[currentIndex] ?? cards[0])?.focus();
+	// EpisodeDialog.kt:43,94: the current card lands 110 px below the 52 px list padding.
+	const focus = (): void => {
+		const target = cards[currentIndex] ?? cards[0];
+
+		target?.focus({ preventScroll: true });
+
+		list.scrollTop = target
+			? target.offsetTop - list.offsetTop - EPISODE_SCROLL_OFFSET
+			: 0;
+	};
 
 	return { root, focus } as const satisfies Panel;
 }
@@ -593,7 +622,8 @@ export function settingsPanel(data: SettingsData) {
 	const title = el('span', '', settingsTitle(data.nav));
 	const header = el('div', 'tvui-sidebar-header', back, title);
 	const list = el('div', 'tvui-sidebar-rows', ...rows);
-	const root = el('div', 'tvui-settings', el('div', 'tvui-sidebar', header, list));
+	const body = el('div', 'tvui-sidebar-body', list);
+	const root = el('div', 'tvui-settings', el('div', 'tvui-sidebar', header, body));
 
 	const focusTarget = (): HTMLElement | null => {
 		const selected = rows.map((node) => node.classList.contains('tvui-selected'));

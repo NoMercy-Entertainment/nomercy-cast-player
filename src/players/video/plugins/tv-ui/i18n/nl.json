@@ -26,6 +26,7 @@
 		"player_error_protected": "Er is een probleem met de toegang tot beveiligde inhoud.",
 		"player_error_technical": "Deze video kan niet worden afgespeeld door een technische fout.",
 		"player_error_transcode": "Deze video kon niet worden voorbereid voor weergave op dit apparaat.",
+		"duration_minutes": "{{a}} min",
 		"player_extras": "Extra's",
 		"player_loading": "Laden…",
 		"player_muted": "Gedempt",

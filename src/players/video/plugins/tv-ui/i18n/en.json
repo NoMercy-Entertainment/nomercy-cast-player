@@ -26,6 +26,7 @@
 		"player_error_protected": "There was a problem providing access to protected content.",
 		"player_error_technical": "This video cannot be played because of a technical error.",
 		"player_error_transcode": "This video could not be prepared for playback on this device.",
+		"duration_minutes": "{{a}} min",
 		"player_extras": "Extras",
 		"player_loading": "Loading…",
 		"player_muted": "Muted",
