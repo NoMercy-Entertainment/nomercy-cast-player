@@ -337,9 +337,8 @@ export async function disconnectAll(): Promise<void> {
 
 /** Foreground resume sweep wired to visibilitychange in main.ts. */
 export function onForegroundResume(): void {
-	if (connectionState.value === 'connected') {
-		invalidateAllLibrary();
-	}
+	// NoMercyApplication.kt:765-777: no connection check; a mid-reconnect hub still needs the refresh.
+	invalidateAllLibrary();
 }
 
 export const socketStore = {

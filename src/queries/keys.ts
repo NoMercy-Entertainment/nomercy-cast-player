@@ -23,6 +23,9 @@ export const QueryKeys = {
 	component: (link: string) => ['component', link] as const,
 	playlist: (type: string, id: string) => ['playlist', type, id] as const,
 	trailer: (candidates: readonly string[]) => ['trailer', ...candidates] as readonly string[],
+	favorites: () => ['favorites'] as const,
+	myLists: () => ['my-lists'] as const,
+	myList: (id: string) => ['my-lists', id] as const,
 	pluginUi: () => ['plugins', 'ui'] as const,
 	pluginSlot: (kind: string, slot: string) => ['plugins', 'slot', kind, slot] as const,
 } as const;

@@ -52,6 +52,6 @@ export function usePlaylistQuery(type: Ref<string>, id: Ref<string>) {
 	return useQuery({
 		queryKey,
 		queryFn: () => fetchPlaylist(type.value, id.value),
-		...queryConfigs.standard,
+		...queryConfigs.playlist,
 	});
 }

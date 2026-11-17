@@ -41,5 +41,8 @@ export function useSearchQuery(type: Ref<string>, queryStr: Ref<string>) {
 		queryFn: () => fetchSearch(type.value, queryStr.value),
 		enabled: computed(() => queryStr.value.trim().length >= 3),
 		...queryConfigs.realtime,
+		// SearchScreen.kt:55-60: every term change invalidates its key, so each search hits the server.
+		staleTime: 0,
+		refetchOnMount: 'always',
 	});
 }
