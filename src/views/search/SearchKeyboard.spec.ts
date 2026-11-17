@@ -15,12 +15,21 @@ describe('the search keyboard draws its utility keys with Moooom icons', () => {
 	it.each([
 		['Search videos', 'film'],
 		['Search music', 'noteDouble'],
-		['Space', 'keyboard'],
-		['Backspace', 'eraser'],
 	])('draws %s as the %s icon, without a text glyph', (label, name) => {
 		const { button, icon } = keyIcon(label);
 
 		expect(icon).toBe(name);
 		expect(button.text()).toBe('');
+	});
+
+	// SearchKeyboard.kt:77-78 draws these two as text.
+	it.each([
+		['Space', '⎵'],
+		['Backspace', '⌫'],
+	])('draws %s as the native glyph %s', (label, glyph) => {
+		const { button, icon } = keyIcon(label);
+
+		expect(icon).toBeUndefined();
+		expect(button.text()).toBe(glyph);
 	});
 });

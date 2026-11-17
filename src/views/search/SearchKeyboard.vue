@@ -50,8 +50,7 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 		<div class="kb-row utility-row">
 			<SearchKey
 				focus-key="kb-space"
-				label=" "
-				icon="keyboard"
+				label="⎵"
 				:aria-label="t('views.search.space')"
 				variant="hot"
 				class="span-2"
@@ -59,8 +58,7 @@ const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 			/>
 			<SearchKey
 				focus-key="kb-back"
-				label=" "
-				icon="eraser"
+				label="⌫"
 				:aria-label="t('views.search.backspace')"
 				variant="hot"
 				class="span-2"
