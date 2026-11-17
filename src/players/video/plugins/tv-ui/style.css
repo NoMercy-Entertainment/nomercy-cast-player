@@ -114,7 +114,7 @@
 .tvui-root .tvui-icon-button:focus-visible {
 	outline: 0;
 	border-radius: 999px;
-	box-shadow: inset 0 0 0 2px #fff;
+	box-shadow: inset 0 0 0 2px var(--cast-white);
 }
 .tvui-top-bar .tvui-icon-button {
 	padding: 12px;

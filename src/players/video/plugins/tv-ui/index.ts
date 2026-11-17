@@ -1092,7 +1092,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 			? this.titleBottom()
 			: 0;
 
-		const { scale, translateX, translateY, radius } = videoShrink(this.root.clientWidth || window.innerWidth, titleBottom);
+		const width = this.root.clientWidth || window.innerWidth;
+		const { scale, translateX, translateY, radius } = videoShrink(width, titleBottom);
 
 		for (const layer of layers) {
 			if (!layer) continue;

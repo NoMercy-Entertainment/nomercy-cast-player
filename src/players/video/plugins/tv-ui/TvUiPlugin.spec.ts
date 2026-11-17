@@ -521,8 +521,11 @@ describe('subtitle style pane values', () => {
 
 		player.emit('pause');
 		root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
+
 		Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row'))
-			.find((row) => row.textContent?.startsWith('Subtitle style'))!.click();
+			.find((row) => row.textContent?.startsWith('Subtitle style'))!
+			.click();
+
 		vi.advanceTimersByTime(400);
 
 		const values = Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row-value')).map((node) => node.textContent);
@@ -547,7 +550,11 @@ describe('settings sidebar shrink and title (WatchScreen.kt:508-560, :626-660)',
 		ctx.player.emit('pause');
 		ctx.root.querySelector<HTMLElement>('.tvui-top-bar button')!.click();
 
-		return { ...ctx, video, safezone };
+		return {
+			...ctx,
+			video,
+			safezone,
+		};
 	}
 
 	it('shrinks the video, the subtitle layer, the backdrop and the loading layer together', () => {

@@ -176,7 +176,10 @@ describe('settings panes (PlayerSettingsScreen.kt:128-173)', () => {
 			const rows = Array.from(root.querySelectorAll<HTMLElement>('.tvui-sidebar-rows .tvui-row'));
 			const alphas = rows.map((node) => node.querySelector<HTMLElement>('[data-icon="check"]')?.closest<HTMLElement>('.tvui-icon')?.style.opacity);
 
-			expect(alphas).toEqual(rows.map((node) => node.classList.contains('tvui-selected') ? '0.5' : '0'));
+			expect(alphas).toEqual(rows.map((node) =>
+				node.classList.contains('tvui-selected')
+					? '0.5'
+					: '0'));
 		}
 	});
 

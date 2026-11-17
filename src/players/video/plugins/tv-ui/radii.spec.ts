@@ -7,7 +7,8 @@ const css = readFileSync('src/players/video/plugins/tv-ui/style.css', 'utf8');
 function rule(selector: string): string {
 	const start = css.indexOf(`\n${selector} {`);
 
-	if (start < 0) return '';
+	if (start < 0)
+		return '';
 
 	return css.slice(start, css.indexOf('}', start));
 }

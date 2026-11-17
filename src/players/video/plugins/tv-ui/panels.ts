@@ -145,7 +145,9 @@ export function stickyTitle(item: UiItem | undefined): HTMLElement {
 		? el('div', 'tvui-subtitle', subtitle)
 		: false;
 
-	return el('div', 'tvui-sticky-title', el('div', 'tvui-titles', el('div', 'tvui-title', title), second));
+	const titles = el('div', 'tvui-titles', el('div', 'tvui-title', title), second);
+
+	return el('div', 'tvui-sticky-title', titles);
 }
 
 export interface BottomBarState {
