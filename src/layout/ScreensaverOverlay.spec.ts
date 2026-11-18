@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { defineComponent, h, ref } from 'vue';
+import { defineComponent, h, nextTick, ref } from 'vue';
 import { mount } from '@vue/test-utils';
 import type { VueWrapper } from '@vue/test-utils';
 
@@ -32,7 +32,11 @@ function item(letter: string) {
 
 const Host = defineComponent({
 	setup() {
-		useDPad({ back: vi.fn(), replace: vi.fn(), currentRoute: { value: { path: '/' } } } as never);
+		useDPad({
+			back: vi.fn(),
+			replace: vi.fn(),
+			currentRoute: { value: { path: '/' } },
+		} as never);
 
 		return () => h(ScreensaverOverlay);
 	},
@@ -44,11 +48,13 @@ function bg(): string | undefined {
 	return wrapper?.find('[data-screensaver-bg]').attributes('src');
 }
 
-beforeEach(() => {
+beforeEach(async () => {
 	vi.useFakeTimers();
 	items.value = [item('a'), item('b'), item('c')];
 	screensaverStore.resetIndex();
 	playbackStore.video.playing.value = false;
+	// Let the store's play-state watcher settle before the screensaver is armed.
+	await nextTick();
 	screensaverStore.active.value = true;
 });
 
@@ -70,13 +76,16 @@ describe('the screensaver draws the server art', () => {
 
 		// ImageModal.kt:182,283: the foreground follows after 2400 ms.
 		await vi.advanceTimersByTimeAsync(2_400);
+
 		expect(wrapper.find('[data-screensaver-art]').attributes('src'))
 			.toBe('https://image.tmdb.org/t/p/original/example-b.jpg');
+
 		expect(wrapper.find('[data-screensaver-logo]').exists()).toBe(false);
 
 		await vi.advanceTimersByTimeAsync(3_999);
 		expect(wrapper.find('[data-screensaver-logo]').exists()).toBe(false);
 		await vi.advanceTimersByTimeAsync(1);
+
 		expect(wrapper.find('[data-screensaver-logo]').attributes('src'))
 			.toBe('https://image.tmdb.org/t/p/w500/logo-b.png');
 	});
@@ -144,6 +153,7 @@ describe('a D-pad press wakes the receiver', () => {
 			bubbles: true,
 			cancelable: true,
 		}));
+
 		await wrapper.vm.$nextTick();
 
 		expect(wrapper.find('.screensaver').exists()).toBe(false);

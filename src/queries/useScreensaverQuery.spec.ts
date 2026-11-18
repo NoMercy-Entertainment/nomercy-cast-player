@@ -23,9 +23,18 @@ afterEach(() => {
 // ApiServices.kt:271: GET setup/screensaver on the media server, ScreensaverResponse.data is the list.
 describe('the screensaver query', () => {
 	it('reads the list from the server the receiver is signed in to', async () => {
-		const art = { aspectRatio: 1.78, src: '/example.jpg', color_palette: {}, meta: { title: 'Example', logo: null } };
+		const art = {
+			aspectRatio: 1.78,
+			src: '/example.jpg',
+			color_palette: {},
+			meta: { title: 'Example', logo: null },
+		};
 
-		fetchMock.mockResolvedValue({ ok: true, status: 200, text: () => Promise.resolve(JSON.stringify({ data: [art] })) });
+		fetchMock.mockResolvedValue({
+			ok: true,
+			status: 200,
+			text: () => Promise.resolve(JSON.stringify({ data: [art] })),
+		});
 
 		const seen = { data: undefined as unknown };
 		const Host = defineComponent({

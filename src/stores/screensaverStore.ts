@@ -1,4 +1,4 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { playbackStore } from './playbackStore';
 import { settingsStore } from './settingsStore';
 
@@ -39,8 +39,36 @@ function deactivate(): void {
 	clearTimer();
 }
 
+// ScreensaverStore.kt:184-189: sequential and wrapping; the first advance leaves index 0 behind.
+let index = 0;
+
+function advanceIndex(length: number): number {
+	index = index + 1 >= length
+		? 0
+		: index + 1;
+
+	return index;
+}
+
+function resetIndex(): void {
+	index = 0;
+}
+
+// ScreensaverStore.kt:103-124: playing disables it, stopping restarts the countdown.
+watch(playbackStore.video.playing, (playing) => {
+	if (playing) {
+		deactivate();
+
+		return;
+	}
+
+	resetIdle();
+});
+
 export const screensaverStore = {
 	active,
 	resetIdle,
 	deactivate,
+	advanceIndex,
+	resetIndex,
 };
