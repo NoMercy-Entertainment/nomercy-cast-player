@@ -232,6 +232,151 @@ export function pickPaletteColor(
 	return result;
 }
 
+type Rgb = readonly [number, number, number];
+
+const HEX_DIGITS = /^[0-9a-f]{6}(?:[0-9a-f]{2})?$/i;
+
+// PaletteColors.kt:202-221: #rgb, #rrggbb or #rrggbbaa.
+function parseHexRgb(c: string | null | undefined): Rgb | null {
+	const digits = c?.trim().replace('#', '') ?? '';
+	const full = digits.length === 3
+		? [...digits].map((d) => d + d).join('')
+		: digits;
+
+	if (!HEX_DIGITS.test(full))
+		return null;
+
+	const n = Number.parseInt(full.slice(0, 6), 16);
+
+	return [(n >> 16) & 0xFF, (n >> 8) & 0xFF, n & 0xFF];
+}
+
+function hexSaturation(c: string): number {
+	const rgb = parseHexRgb(c);
+
+	if (!rgb)
+		return 0;
+
+	const r = rgb[0] / 255;
+	const g = rgb[1] / 255;
+	const b = rgb[2] / 255;
+	const max = Math.max(r, g, b);
+	const min = Math.min(r, g, b);
+	const delta = max - min;
+
+	if (delta === 0)
+		return 0;
+
+	return (max + min) / 2 < 0.5
+		? delta / (max + min)
+		: delta / (2 - max - min);
+}
+
+// PaletteColors.kt:24-35: no swatch above 12% saturation means a black and white image.
+export function isGrayscalePalette(palette: PaletteColors | null | undefined): boolean {
+	if (!palette)
+		return false;
+
+	const swatches = [
+		palette.darkVibrant,
+		palette.primary,
+		palette.dominant,
+		palette.lightVibrant,
+		palette.darkMuted,
+		palette.lightMuted,
+	].filter((c): c is string => !!c);
+
+	return swatches.length > 0 && Math.max(...swatches.map(hexSaturation)) < 0.12;
+}
+
+function relativeLuminance(rgb: Rgb): number {
+	const channel = (v: number): number => {
+		const s = v / 255;
+
+		return s <= 0.04045
+			? s / 12.92
+			: ((s + 0.055) / 1.055) ** 2.4;
+	};
+
+	return 0.2126 * channel(rgb[0]) + 0.7152 * channel(rgb[1]) + 0.0722 * channel(rgb[2]);
+}
+
+function rgbContrast(a: Rgb, b: Rgb): number {
+	const la = relativeLuminance(a);
+	const lb = relativeLuminance(b);
+
+	return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+// PaletteColors.kt:119-124: WCAG contrast ratio; zero for invalid input.
+export function contrastRatio(first: string, second: string): number {
+	const a = parseHexRgb(first);
+	const b = parseHexRgb(second);
+
+	return a && b
+		? rgbContrast(a, b)
+		: 0;
+}
+
+function toHex(rgb: Rgb): string {
+	return `#${rgb.map((v) => v.toString(16).toUpperCase().padStart(2, '0')).join('')}`;
+}
+
+// PaletteColors.kt:88-117: a colorless logo takes the theme, a colored one the backdrop,
+// moved toward black or white until it reaches 3:1 contrast.
+export function pickLogoOutlineHex(
+	logoPalette: PaletteColors | null | undefined,
+	backdropHex: string | null | undefined,
+	themeHex: string,
+): string {
+	const logo = logoPalette
+		? [
+				logoPalette.dominant,
+				logoPalette.primary,
+				logoPalette.darkVibrant,
+				logoPalette.lightVibrant,
+				logoPalette.darkMuted,
+				logoPalette.lightMuted,
+			].map(parseHexRgb).find((c) => c !== null) ?? null
+		: null;
+
+	if (!logo)
+		return themeHex;
+
+	const backdrop = backdropHex && parseHexRgb(backdropHex)
+		? backdropHex
+		: null;
+	const candidate = isGrayscalePalette(logoPalette)
+		? themeHex
+		: backdrop ?? themeHex;
+	const outline = parseHexRgb(candidate);
+
+	if (!outline)
+		return themeHex;
+
+	if (rgbContrast(logo, outline) >= 3)
+		return candidate;
+
+	const endpoint = relativeLuminance(logo) > 0.179
+		? 0
+		: 255;
+	const toward = (v: number, fraction: number): number => Math.round(v + (endpoint - v) * fraction);
+
+	for (let step = 1; step <= 255; step++) {
+		const fraction = step / 255;
+		const adjusted: Rgb = [
+			toward(outline[0], fraction),
+			toward(outline[1], fraction),
+			toward(outline[2], fraction),
+		];
+
+		if (rgbContrast(logo, adjusted) >= 3)
+			return toHex(adjusted);
+	}
+
+	return toHex([endpoint, endpoint, endpoint]);
+}
+
 const HEX_COLOR = /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i;
 
 function withAlpha(hex: string | undefined, alpha: number): string | null {

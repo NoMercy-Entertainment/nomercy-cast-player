@@ -49,6 +49,9 @@ function bg(): string | undefined {
 }
 
 beforeEach(async () => {
+	// tokens.css is not loaded in jsdom; the overlay reads these two at runtime.
+	document.documentElement.style.setProperty('--cast-accent', '#8e4ec6');
+	document.documentElement.style.setProperty('--cast-white', '#fff');
 	vi.useFakeTimers();
 	items.value = [item('a'), item('b'), item('c')];
 	screensaverStore.resetIndex();
@@ -88,6 +91,59 @@ describe('the screensaver draws the server art', () => {
 
 		expect(wrapper.find('[data-screensaver-logo]').attributes('src'))
 			.toBe('https://image.tmdb.org/t/p/w500/logo-b.png');
+	});
+
+	// ModifierExtensions.kt:332 blurs 80 device px; the TV draws at scale 2, so 40 CSS px.
+	it('blurs, darkens and saturates the turning background like KMP', () => {
+		wrapper = mount(Host);
+
+		expect(wrapper.find('[data-screensaver-bg]').attributes('style'))
+			.toContain('filter: blur(40px) brightness(0.5) saturate(1.2)');
+	});
+
+	// ImageModal.kt:139-147,520,613: one item color tints the NoMercy mark and outlines the title logo.
+	it('gives the NoMercy mark and the title logo the item color', async () => {
+		const tinted = (letter: string) => ({
+			...item(letter),
+			color_palette: { image: { dominant: '#224466' } },
+			meta: {
+				title: `Example ${letter}`,
+				logo: {
+					aspectRatio: 2.5,
+					src: `/logo-${letter}.png`,
+					color_palette: { image: { dominant: '#F4B942' } },
+				},
+			},
+		});
+
+		items.value = [tinted('a'), tinted('b')];
+		wrapper = mount(Host);
+		await vi.advanceTimersByTimeAsync(6_400);
+
+		expect(wrapper.find('[data-screensaver-mark]').attributes('style')).toContain('--color-primary: #224466');
+		expect(wrapper.find('[data-screensaver-logo]').attributes('style')).toContain('drop-shadow(0 0 4px #224466)');
+	});
+
+	it('keeps the mark white on a black and white item and outlines its gray logo in the theme', async () => {
+		const gray = (letter: string) => ({
+			...item(letter),
+			color_palette: { image: { dominant: '#808080' } },
+			meta: {
+				title: `Example ${letter}`,
+				logo: {
+					aspectRatio: 2.5,
+					src: `/logo-${letter}.png`,
+					color_palette: { image: { dominant: '#000000' } },
+				},
+			},
+		});
+
+		items.value = [gray('a'), gray('b')];
+		wrapper = mount(Host);
+		await vi.advanceTimersByTimeAsync(6_400);
+
+		expect(wrapper.find('[data-screensaver-mark]').attributes('style')).toContain('--color-primary: #fff');
+		expect(wrapper.find('[data-screensaver-logo]').attributes('style')).toContain('drop-shadow(0 0 4px #8e4ec6)');
 	});
 
 	it('stays black until the foreground has loaded, then fades the veil out over 2500 ms', async () => {

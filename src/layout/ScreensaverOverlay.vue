@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import AppLogoSquare from '@/layout/AppLogoSquare.vue';
-import { buildImageUrl, pickPaletteColor } from '@/lib/images/urls';
+import { buildImageUrl, isGrayscalePalette, pickLogoOutlineHex, pickPaletteColor } from '@/lib/images/urls';
 import { useScreensaverQuery } from '@/queries/useScreensaverQuery';
 import type { ScreensaverItem } from '@/queries/useScreensaverQuery';
 import { playbackStore } from '@/stores/playbackStore';
 import { screensaverStore } from '@/stores/screensaverStore';
+import { settingsStore } from '@/stores/settingsStore';
 
 // ImageModal.kt:188,182,265,246-247,128 and ScreensaverStore.kt:261.
 const TIMING = {
@@ -21,6 +22,25 @@ const TIMING = {
 const TURN_SECONDS = 180;
 // ImageModal.kt:367: the scale that covers every angle, plus 5%.
 const COVER_MARGIN = 1.05;
+// ImageModal.kt:404-410 + ModifierExtensions.kt:332: 80 device px of blur is 40 CSS px at the TV's scale 2.
+const BG_FILTER = 'blur(40px) brightness(0.5) saturate(1.2)';
+
+function token(name: string): string {
+	return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+// ImageModal.kt:113,139-147: auto colors off = theme (KMP primary = --cast-accent), black and white art = white.
+function itemColorFor(item: ScreensaverItem, theme: string): string {
+	const palette = item.color_palette?.image;
+
+	if (!settingsStore.useAutoThemeColors.value)
+		return theme;
+
+	if (isGrayscalePalette(palette))
+		return token('--cast-white');
+
+	return pickPaletteColor(palette) || theme;
+}
 
 const { data } = useScreensaverQuery();
 
@@ -46,6 +66,7 @@ const aspect = ref(16 / 9);
 const fgSrc = ref<string | null>(null);
 const logoSrc = ref<string | null>(null);
 const logoGlow = ref('');
+const itemColor = ref('');
 const veil = ref(1);
 const veilMs = ref(0);
 const coverScale = ref(1);
@@ -94,7 +115,11 @@ function swapIn(item: ScreensaverItem): void {
 		? buildImageUrl(logo, { width: TIMING.logoWidth })
 		: null;
 
-	pendingGlow = pickPaletteColor(item.meta?.logo?.color_palette?.image);
+	const theme = token('--cast-accent');
+
+	itemColor.value = itemColorFor(item, theme);
+	// ImageModal.kt:520: the logo outline starts from the item color the mark also wears.
+	pendingGlow = pickLogoOutlineHex(item.meta?.logo?.color_palette?.image, itemColor.value, theme);
 
 	later(() => {
 		fgSrc.value = bgSrc.value;
@@ -166,6 +191,7 @@ onBeforeUnmount(stop);
 					data-screensaver-bg
 					alt=""
 					:src="bgSrc"
+					:style="{ filter: BG_FILTER }"
 				>
 			</div>
 			<div class="center">
@@ -189,7 +215,11 @@ onBeforeUnmount(stop);
 					>
 				</div>
 			</div>
-			<div class="mark">
+			<div
+				class="mark"
+				data-screensaver-mark
+				:style="itemColor ? { '--color-primary': itemColor } : undefined"
+			>
 				<AppLogoSquare />
 			</div>
 			<div
@@ -241,7 +271,6 @@ onBeforeUnmount(stop);
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
-	filter: brightness(0.5) saturate(1.2);
 }
 .center {
 	position: absolute;
