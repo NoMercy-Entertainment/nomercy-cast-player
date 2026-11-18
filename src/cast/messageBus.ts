@@ -1,5 +1,6 @@
 import { buildDiagnosticsAnswer } from './diagnosticsAnswer';
 import { answerControl, isControlRequest, isStopRequest } from './controlChannel';
+import { castDeviceId } from '@/lib/diagnostics/deviceId';
 import { videoSyncBridge } from '@/players/video/syncBridge';
 import { NAMESPACE_GENERAL, NAMESPACE_STATUS } from './namespaces';
 import { resolveServerFromAppConfig } from '@/lib/resolveServer';
@@ -159,6 +160,8 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 					ack: true,
 					route: payload.route,
 					visible: document.visibilityState === 'visible',
+					// The id this TV uses on the music hub; the phone targets it for a music hand-off.
+					device_id: castDeviceId(),
 				} as const;
 
 				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, reply);

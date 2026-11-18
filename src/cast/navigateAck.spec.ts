@@ -117,6 +117,25 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 			ack: true,
 			route: WatchRoute,
 			visible: true,
+			device_id: expect.any(String),
+		});
+	});
+
+	it('names the music hub client id in the ack, so the phone can hand music to this TV', async () => {
+		const { castDeviceId } = await import('@/lib/diagnostics/deviceId');
+		const { send } = cast({
+			route: WatchRoute,
+			token: jwt(),
+			server_id: Server.id,
+		});
+
+		await vi.advanceTimersByTimeAsync(2000);
+
+		expect(send).toHaveBeenCalledWith(NAMESPACE_GENERAL, 'sender-1', {
+			ack: true,
+			route: WatchRoute,
+			visible: true,
+			device_id: castDeviceId(),
 		});
 	});
 
@@ -134,6 +153,7 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 			ack: true,
 			route: WatchRoute,
 			visible: false,
+			device_id: expect.any(String),
 		});
 	});
 
