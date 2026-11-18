@@ -77,10 +77,10 @@ describe('focus rings match the KMP theme (TvFocusRing.kt:50-55, AppSettingsScre
 
 		// Chrome 92 outlines ignore border-radius, so the ring is the 3 px border, as the nav util buttons do.
 		expect(decls(p, '.ctrl-btn:focus-visible')['border-color']).toBe('var(--cast-white)');
-		expect(decls(p, '.ctrl-btn').border).toBe('3px solid transparent');
+		expect(decls(p, '.ctrl-btn').border).toBe('var(--focus-ring-width) solid transparent');
 		const n = 'views/now-playing/NowPlayingScreen.vue';
 
-		expect(decls(n, '.util-btn').border).toBe('3px solid transparent');
+		expect(decls(n, '.util-btn').border).toBe('var(--focus-ring-width) solid transparent');
 		expect(decls(n, '.util-btn:focus-visible')['border-color']).toBe('var(--cast-white)');
 	});
 });

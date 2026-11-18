@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import NowPlayingScreen from '@/views/now-playing/NowPlayingScreen.vue';
 import NowPlayingHero from '@/players/music/NowPlayingHero.vue';
@@ -106,7 +108,10 @@ describe('the bottom bar matches BottomBar and MusicProgressRow', () => {
 		expect(f['border-color']).toBe('var(--cast-white)');
 		expect(f.background).toBeUndefined();
 		expect(f.outline).toBe('none');
-		expect(decls(BAR, '.ctrl-btn').border).toBe('3px solid transparent');
+		expect(decls(BAR, '.ctrl-btn').border).toBe('var(--focus-ring-width) solid transparent');
+		expect(decls(BAR, '.side-btn').border).toBe('var(--focus-ring-width) solid transparent');
+		expect(decls('players/music/TvPanelToggles.vue', '.toggle-btn').border).toBe('var(--focus-ring-width) solid transparent');
+		expect(decls(BAR, '.ctrl-play').background).toContain('var(--cast-bg-base)');
 	});
 
 	it('music-25: the progress row is time | flat 8 px bar | time, monospace ExtraBold 14 (Progressbar.kt:104-165)', () => {
@@ -186,7 +191,7 @@ describe('the screen matches FullPlayerScreenTV', () => {
 		expect(b.transform).toBe('scale(1.35)');
 		expect(b['transform-origin']).toBe('50% 0');
 		expect(b['background-position']).toBe('top center');
-		expect(decls(SCREEN, '.now-playing').background).toBe('oklch(0 0 0)');
+		expect(decls(SCREEN, '.now-playing').background).toBe('var(--cast-black)');
 	});
 
 	it('music-28: only the track backdrop is drawn, never the cover, and dark mode draws none (FullPlayerScreen.kt:171-179)', () => {
@@ -248,6 +253,40 @@ describe('the screen matches FullPlayerScreenTV', () => {
 
 		expect(wrapper.find('.now-playing').classes()).toContain('is-dark');
 		expect(decls(SCREEN, '.now-playing.is-dark')['--play-bg']).toBe('var(--cast-white)');
-		expect(decls(SCREEN, '.now-playing.is-dark')['--play-fg']).toBe('oklch(0 0 0)');
+		expect(decls(SCREEN, '.now-playing.is-dark')['--play-fg']).toBe('var(--cast-black)');
+		expect(decls(SCREEN, '.now-playing.is-dark')['--color-primary']).toBe('var(--cast-black)');
+	});
+
+	it('music-38: a hidden bar leaves the focus order after its slide, and play takes focus 200 ms after it returns (FullPlayerScreen.kt:246-251)', async () => {
+		vi.useFakeTimers();
+		track();
+		const wrapper = mount(NowPlayingScreen, { attachTo: document.body });
+
+		vi.advanceTimersByTime(5100);
+		await wrapper.vm.$nextTick();
+		expect(decls(SCREEN, '.bar-wrap.is-hidden').visibility).toBe('hidden');
+		expect(decls(SCREEN, '.bar-wrap').transition).toContain('visibility 0s linear 300ms');
+
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+		await wrapper.vm.$nextTick();
+		vi.advanceTimersByTime(250);
+		expect(document.activeElement?.getAttribute('aria-label')).toBe('Play');
+		wrapper.unmount();
+	});
+
+	it('music-39: the lyrics layer sits 48 + 60 in from each side (FullPlayerScreen.kt:351, 374)', () => {
+		expect(decls(SCREEN, '.lyrics-layer').inset).toBe('60px 108px 0');
+	});
+
+	it('music-40: lyrics fade in over 500 ms and out over 300 ms (FullPlayerScreen.kt:356-359)', () => {
+		expect(decls(SCREEN, '.lyrics-fade-enter-active').transition).toBe('opacity 500ms ease');
+		expect(decls(SCREEN, '.lyrics-fade-leave-active').transition).toBe('opacity 300ms ease');
+		expect(decls(SCREEN, '.lyrics-fade-enter-from').opacity).toBe('0');
+	});
+
+	it('music-41: the close button has no dead border: 0 line', () => {
+		const source = readFileSync(resolve(__dirname, '../../views/now-playing/NowPlayingScreen.vue'), 'utf8');
+
+		expect(source).not.toMatch(/border:\s*0;/);
 	});
 });

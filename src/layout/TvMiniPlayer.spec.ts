@@ -87,13 +87,18 @@ describe('the mini player matches MiniPlayer.kt', () => {
 	});
 
 	// EqSpinner.kt:24-27: five bars, 2 wide, 1 apart, in a 16 high box, the theme color (MiniPlayer.kt:193).
+	it('music-37: the mini player draws its black end with the token', () => {
+		expect(decls('layout/TvMiniPlayer.vue', '.mini-player::before').background).toContain('var(--cast-black) 100%');
+		expect(decls('layout/TvMiniPlayer.vue', '.art::before').background).toContain('var(--cast-black) 100%');
+	});
+
 	it('music-33: the equalizer is five 2 px bars 1 px apart in a 16 px box', () => {
 		playbackStore.music.applyPlayState(true);
 		const wrapper = mount(TvMiniPlayer);
 
 		expect(wrapper.findAll('.eq span')).toHaveLength(5);
 		expect(decls('layout/TvMiniPlayer.vue', '.eq span').width).toBe('2px');
-		expect(decls('layout/TvMiniPlayer.vue', '.eq span').background).toBe('var(--color-primary)');
+		expect(decls('layout/TvMiniPlayer.vue', '.eq span').background).toBe('var(--color-primary, oklch(0.7 0.2 285))');
 		expect(decls('layout/TvMiniPlayer.vue', '.eq').gap).toBe('1px');
 		expect(decls('layout/TvMiniPlayer.vue', '.eq').height).toBe('16px');
 	});
@@ -158,8 +163,15 @@ describe('the mini player matches MiniPlayer.kt', () => {
 
 			await wrapper.vm.$nextTick();
 			expect(wrapper.find('.artist').classes()).toContain('is-marquee');
-			expect(wrapper.find<HTMLElement>('.artist').element.style.getPropertyValue('--marquee-shift')).toBe('-132px');
+			expect(wrapper.find<HTMLElement>('.artist').element.style.getPropertyValue('--marquee-shift')).toBe('-100px');
 			expect(decls('layout/TvMiniPlayer.vue', '.artist.is-marquee .artist-text').animation).toContain('9000ms');
+
+			// Marquee.kt:35: the 16 dp end padding counts, so 210 against 200 still fits.
+			widths.text = 210;
+			const edge = mount(TvMiniPlayer);
+
+			await edge.vm.$nextTick();
+			expect(edge.find('.artist').classes()).not.toContain('is-marquee');
 
 			widths.text = 100;
 			const short = mount(TvMiniPlayer);
