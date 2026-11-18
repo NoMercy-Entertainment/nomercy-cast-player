@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import AppLogoSquare from '@/layout/AppLogoSquare.vue';
+
 defineProps<{
 	title?: string;
 }>();
 </script>
 
 <template>
-	<div class="fallback-poster">
-		<span class="initials">{{ (title || '?').slice(0, 2).toUpperCase() }}</span>
+	<div class="fallback-poster" role="img" :aria-label="title">
+		<AppLogoSquare class="mark" />
 	</div>
 </template>
 
@@ -16,10 +18,11 @@ defineProps<{
 	height: 100%;
 	display: grid;
 	place-items: center;
-	background: linear-gradient(135deg, oklch(0.25 0.04 285), oklch(0.18 0.02 250));
-	color: var(--color-text-primary);
-	font-weight: 700;
-	font-size: 32px;
+	background: var(--cast-black);
 	border-radius: var(--radius-card);
+}
+.mark {
+	width: 60%;
+	height: 60%;
 }
 </style>
