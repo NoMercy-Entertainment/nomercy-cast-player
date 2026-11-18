@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventEmitter, LifecycleRegistry } from '@nomercy-entertainment/nomercy-player-core';
+import { authStore } from '@/stores/authStore';
 import { TvUiPlugin } from './index';
 import type { TvUiOptions } from './index';
 
@@ -22,6 +23,7 @@ interface Item {
 	video_id?: string;
 	video_type?: string;
 	tmdb_id?: number;
+	tracks?: Array<{ kind: string; file: string }>;
 	skip_segments?: Array<{
 		type: string;
 		credits_start: number;
@@ -863,5 +865,60 @@ describe('dialogs and overlays (LanguageDialog.kt:45-129, ErrorOverlay.kt:92, Tv
 		player.state = 'playing';
 		press('MediaPlayPause');
 		expect(player.pause).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('seek strip thumbnails (sprite cue from the item tracks)', () => {
+	const SERVER = 'https://media.example.invalid';
+	const FOLDER = '/00000000000000000000000001/Show//';
+	const CUE = 'WEBVTT\n\n00:00:00.000 --> 00:00:10.000\nthumbs_320x180.webp#xywh=0,0,320,180\n\n00:00:10.000 --> 00:00:20.000\nthumbs_320x180.webp#xywh=320,0,320,180\n';
+	const requested: string[] = [];
+
+	beforeEach(() => {
+		requested.length = 0;
+		authStore.serverUrl.value = SERVER;
+		vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+			requested.push(url);
+
+			return url.endsWith('.vtt')
+				? new Response(CUE)
+				: new Response(new Blob(['x'], { type: 'image/webp' }));
+		}));
+
+		URL.createObjectURL = vi.fn(() => 'blob:sprite-1');
+		URL.revokeObjectURL = vi.fn();
+		vi.stubGlobal('Image', class {
+			onload: (() => void) | null = null;
+			set src(_value: string) {
+				queueMicrotask(() => this.onload?.());
+			}
+		});
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		authStore.serverUrl.value = null;
+	});
+
+	it('draws the cue frame from the sprite in every strip tile', async () => {
+		const { player, root } = setup();
+
+		player.length = 20;
+		player.items[0]!.tracks = [
+			{ kind: 'sprite', file: `${FOLDER}thumbs_320x180.webp` },
+			{ kind: 'thumbnails', file: `${FOLDER}thumbs_320x180.vtt` },
+		];
+
+		player.emit('item', { item: player.items[0], index: 0 });
+		await vi.advanceTimersByTimeAsync(0);
+		player.emit('pause');
+		press('ArrowRight');
+
+		const frames = Array.from(root.querySelectorAll<HTMLElement>('.tvui-seek-frame'));
+
+		expect(requested).toEqual([`${SERVER}${FOLDER}thumbs_320x180.vtt`, `${SERVER}${FOLDER}thumbs_320x180.webp`]);
+		expect(frames).toHaveLength(2);
+		expect(frames[1]!.style.backgroundImage).toContain('blob:sprite-1');
+		expect(frames[1]!.style.backgroundPosition).toBe('-320px 0px');
 	});
 });
