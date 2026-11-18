@@ -29,6 +29,7 @@ const PATH_EXPRESSION_RE = /\bpath\s*:\s*([^,\n]+)/;
 const HELPER_RE = /function\s+(\w+)\(hub:\s*TypedHub/g;
 const HELPER_EVENT_RE = /\bhub\.on\(\s*(?<q>['"`])(?<event>[^'"`]+)\k<q>/g;
 const HELPER_BINDING_RE = /\b(\w+)\((\w+Hub)\.value/g;
+const NEXT_FUNCTION_RE = /\n(?:export\s+)?(?:async\s+)?function /;
 const FUNCTION_RE = /\bfunction\s+(\w+)\s*\([^)]*\)[^{]*\{/g;
 const RETURN_RE = new RegExp(`\\breturn\\s+${QUOTED.source}`);
 const BUILD_HUB_RE = /\bbuildHub\(\s*(?<q>['"`])(?<hub>\w+Hub)\k<q>/g;
@@ -194,7 +195,8 @@ function inventory(sources) {
 		add(helperHubs, match[1], hubName(match[2]));
 	for (const match of store.matchAll(HELPER_RE)) {
 		const helper = match[1];
-		const next = store.indexOf('\nfunction ', match.index + 1);
+		const after = NEXT_FUNCTION_RE.exec(store.slice(match.index + 1));
+		const next = after ? match.index + 1 + after.index : -1;
 		const body = store.slice(match.index, next < 0 ? undefined : next);
 		for (const event of body.matchAll(HELPER_EVENT_RE)) {
 			for (const hub of helperHubs.get(helper) ?? [])
@@ -231,6 +233,8 @@ const SELF_TEST_HUB = [
 ];
 
 const SELF_TEST_HELPER = `function bindFixture(hub: TypedHub): void {\n\thub.on('HelperEvent', () => {});\n}\nbindFixture(musicHub.value);`;
+// An exported helper right after another must not be read as part of the one before.
+const SELF_TEST_EXPORTED = `function bindDevices(hub: TypedHub): void {\n\thub.on('DeviceEvent', () => {});\n}\n\nexport function bindTracks(hub: TypedHub): void {\n\thub.on('TrackEvent', () => {});\n}\nbindDevices(deviceHub.value);\nbindTracks(musicHub.value);`;
 
 function selfTest() {
 	let failures = 0;
@@ -259,7 +263,9 @@ function selfTest() {
 	}
 	const helper = inventory([{ file: join(SRC, 'stores/socketStore.ts'), text: SELF_TEST_HELPER }]);
 	expect(SELF_TEST_HELPER, ['HelperEvent'], helper.hubs.MusicHub.listens);
-	const total = SELF_TEST_HTTP.length + SELF_TEST_HUB.length + 1;
+	const exported = inventory([{ file: join(SRC, 'stores/socketStore.ts'), text: SELF_TEST_EXPORTED }]);
+	expect(SELF_TEST_EXPORTED, ['DeviceEvent'], exported.hubs.DeviceHub.listens);
+	const total = SELF_TEST_HTTP.length + SELF_TEST_HUB.length + 2;
 	console.log(`self-test: ${total - failures} of ${total} call forms read`);
 	return failures;
 }

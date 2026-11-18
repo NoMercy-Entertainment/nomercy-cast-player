@@ -7,9 +7,14 @@ describe('music state from the server', () => {
 		const { bindMusicPlayerState } = await import('./socketStore');
 		const { playbackStore } = await import('./playbackStore');
 		const handlers: Record<string, (payload?: MusicPlayerStateMsg) => void> = {};
-		const hub = { on: (name: string, cb: (payload?: MusicPlayerStateMsg) => void) => { handlers[name] = cb; } };
+		const hub = {
+			on: (name: string, cb: (payload?: MusicPlayerStateMsg) => void) => {
+				handlers[name] = cb;
+			},
+		};
 
 		bindMusicPlayerState(hub as never);
+
 		handlers.MusicPlayerState?.({
 			events: [{
 				type: 'PlayerStateChanged',
