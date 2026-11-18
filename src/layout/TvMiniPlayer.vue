@@ -5,6 +5,8 @@ import { useTranslation } from 'i18next-vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
 import { playbackStore } from '@/stores/playbackStore';
+import { settingsStore } from '@/stores/settingsStore';
+import { pickPaletteColor } from '@/lib/images/urls';
 
 /*
  * APK MiniPlayerTv: 40dp pill with palette-gradient background, 40dp
@@ -19,6 +21,19 @@ const track = computed(() => playbackStore.music.track.value);
 const isPlaying = computed(() => playbackStore.music.playing.value);
 const title = computed(() => track.value?.name ?? '');
 const artist = computed(() => track.value?.artist ?? '');
+
+// MiniPlayer.kt:63-70: the song's own palette, or the theme color (the CSS fallback) with auto colors off.
+const pillStyle = computed(() => {
+	const palette = track.value?.color_palette;
+	const source = palette?.cover ?? palette?.image ?? palette?.backdrop ?? palette?.profile ?? null;
+	const color = settingsStore.useAutoThemeColors.value
+		? pickPaletteColor(source, 20, 160)
+		: '';
+
+	return color
+		? { '--mini-color': color }
+		: undefined;
+});
 
 const el = ref<HTMLElement | null>(null);
 
@@ -38,6 +53,7 @@ useFocusEntry({
 		v-if="track"
 		ref="el"
 		class="mini-player"
+		:style="pillStyle"
 		data-focusable
 		tabindex="0"
 		:aria-label="t('layout.mini_player.aria', { title })"
@@ -53,8 +69,8 @@ useFocusEntry({
 				v-else
 				class="play-icon"
 				icon="nmPlay"
-				width="14"
-				height="14"
+				width="20"
+				height="20"
 			/>
 		</div>
 		<div class="meta">
@@ -75,7 +91,8 @@ useFocusEntry({
 	gap: 8px;
 	padding: 0 16px 0 0;
 	height: 40px;
-	background: linear-gradient(180deg, var(--color-primary, oklch(0.7 0.2 285 / 0.4)) 0%, oklch(0 0 0 / 0.4) 100%);
+	position: relative;
+	isolation: isolate;
 	border: 2px solid transparent;
 	border-radius: 999px;
 	color: var(--cast-text-primary);
@@ -90,22 +107,44 @@ useFocusEntry({
 .mini-player:focus-visible {
 	border-color: var(--color-primary, oklch(0.7 0.2 285));
 }
+/* MiniPlayer.kt:98-105: the color at 40% down to black at 40%, drawn under the border too. */
+.mini-player::before {
+	content: '';
+	position: absolute;
+	inset: -2px;
+	z-index: -1;
+	border-radius: inherit;
+	background: linear-gradient(
+		180deg,
+		var(--mini-color, var(--color-primary, oklch(0.7 0.2 285))) 0%,
+		oklch(0 0 0) 100%
+	);
+	opacity: 0.4;
+}
 .art {
 	position: relative;
+	isolation: isolate;
 	width: 40px;
 	height: 40px;
 	border-radius: 50%;
 	overflow: hidden;
-	background: oklch(0.18 0.01 250);
 	flex: 0 0 auto;
 	display: grid;
 	place-items: center;
 	color: var(--cast-text-primary);
 }
+/* MiniPlayer.kt:174-186: the same gradient, turned -95 deg. */
+.art::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: -1;
+	background: linear-gradient(85deg, var(--mini-color, var(--color-primary, oklch(0.7 0.2 285))) 0%, oklch(0 0 0) 100%);
+	opacity: 0.4;
+}
 .eq {
 	position: absolute;
 	inset: 0;
-	background: oklch(0 0 0 / 0.4);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -139,9 +178,7 @@ useFocusEntry({
 	}
 }
 .play-icon {
-	background: oklch(0 0 0 / 0.5);
-	border-radius: 50%;
-	padding: 2px;
+	color: var(--cast-text-primary);
 }
 .meta {
 	min-width: 0;
