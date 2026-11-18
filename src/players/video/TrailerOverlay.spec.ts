@@ -172,6 +172,39 @@ describe('the trailer controls are the tv-ui panels', () => {
 		player.subtitles.mockReturnValue([]);
 		wrapper.unmount();
 	});
+
+	// TrailerOverlayPlayer.kt:173-180: the UI plugin consumes Back first, else the trailer dismisses.
+	it('Back closes the trailer and consumes the key, so the receiver app stays open', async () => {
+		const wrapper = await mountTrailer();
+		const event = new KeyboardEvent('keydown', {
+			key: 'Escape',
+			bubbles: true,
+			cancelable: true,
+		});
+
+		window.dispatchEvent(event);
+
+		expect(wrapper.emitted('close')).toHaveLength(1);
+		expect(event.defaultPrevented).toBe(true);
+
+		wrapper.unmount();
+	});
+
+	it('Back closes an open panel first and the trailer only on the next press', async () => {
+		player.subtitles.mockReturnValue([{ label: 'English' }]);
+		const wrapper = await mountTrailer();
+
+		press('l');
+		press('GoBack');
+		expect(container.querySelector('.tvui-languages')).toBeNull();
+		expect(wrapper.emitted('close')).toBeUndefined();
+
+		press('GoBack');
+		expect(wrapper.emitted('close')).toHaveLength(1);
+
+		player.subtitles.mockReturnValue([]);
+		wrapper.unmount();
+	});
 });
 
 // The player appends a bare <video>. Without a rule it keeps its own pixel size at the top left
