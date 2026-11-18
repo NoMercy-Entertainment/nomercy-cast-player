@@ -147,8 +147,8 @@ describe('the D-pad moves focus row to row on screens that own their focus group
 		await walk(InfoScreen, 'down', 2, { type: 'movies', id: 'title-1' });
 	});
 
-	it('now playing: Right walks the utility row', async () => {
-		await walk(NowPlayingScreen, 'right', 3, {}, '.utility-row [data-focusable]');
+	it('now playing: Right walks the bottom bar', async () => {
+		await walk(NowPlayingScreen, 'right', 8, {}, '.bar-wrap [data-focusable]');
 	});
 
 	it('music list: the play button registers in the list group', async () => {

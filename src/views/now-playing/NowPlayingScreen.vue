@@ -11,14 +11,13 @@ import QueuePeek from '@/players/music/QueuePeek.vue';
 import Lyrics from '@/players/music/Lyrics.vue';
 import { leaveToPreviousOrHome } from '@/router/leave';
 import { playbackStore } from '@/stores/playbackStore';
-import { buildImageUrl } from '@/lib/images/urls';
-import { applyThemeColor } from '@/lib/theme';
+import { settingsStore } from '@/stores/settingsStore';
+import { buildImageUrl, pickPaletteColor } from '@/lib/images/urls';
+import { applyThemeColor, constrainGroundColor } from '@/lib/theme';
 
 /*
- * APK FullPlayerScreenTV: artist backdrop fills the screen, scrim ramps
- * darker on the controls side, palette color tints the play button,
- * controls auto-hide after 5s of no input. We mirror the same envelope
- * here — backdrop layer → scrim → content grid.
+ * FullPlayerScreenTV: the artist backdrop, a ground-color scrim, the title row sitting
+ * above a bottom bar that slides away after 5 s without input.
  */
 
 const { t } = useTranslation();
@@ -40,30 +39,50 @@ const utilityGroup = useFocusGroup({
 });
 
 const closeEl = ref<HTMLElement | null>(null);
-const likeEl = ref<HTMLElement | null>(null);
-const lyricsEl = ref<HTMLElement | null>(null);
 
 const track = playbackStore.music.track;
 const lyricsOpen = playbackStore.music.lyricsOpen;
+const dark = settingsStore.tvDarkMode;
+const hasQueue = computed(() => playbackStore.music.queue.value.length > 0);
 
+// FullPlayerScreen.kt:170-180: only the track's own backdrop, none in dark mode.
 const backdropUrl = computed(() => {
-	const t = track.value;
+	const path = track.value?.backdrop;
 
-	if (!t)
-		return null;
-
-	const path = t.backdrop ?? t.cover ?? null;
-
-	if (!path)
+	if (!path || dark.value)
 		return null;
 
 	return buildImageUrl(path, { width: 1920 });
 });
 
-watch(track, (next) => {
-	const palette = next?.color_palette;
+const palette = computed(() => {
+	const p = track.value?.color_palette;
 
-	applyThemeColor(palette?.cover ?? palette?.image ?? palette?.backdrop ?? null);
+	return p?.cover ?? p?.image ?? p?.backdrop ?? p?.profile ?? p?.poster ?? null;
+});
+
+// FullPlayerScreen.kt:321-333: the ground color at 0.55 (1 without a backdrop) down to black at 0.85 (1).
+const scrim = computed(() => {
+	const top = backdropUrl.value
+		? 0.55
+		: 1;
+	const bottom = backdropUrl.value
+		? 0.85
+		: 1;
+	const hex = dark.value
+		? ''
+		: pickPaletteColor(palette.value);
+	const n = hex
+		? Number.parseInt(constrainGroundColor(hex).replace('#', ''), 16)
+		: 0;
+
+	return `linear-gradient(180deg, rgba(${(n >> 16) & 0xFF}, ${(n >> 8) & 0xFF}, ${n & 0xFF}, ${top}), rgba(0, 0, 0, ${bottom}))`;
+});
+
+watch(track, (next) => {
+	const p = next?.color_palette;
+
+	applyThemeColor(p?.cover ?? p?.image ?? p?.backdrop ?? null);
 }, { immediate: true });
 
 useFocusEntry({
@@ -72,26 +91,6 @@ useFocusEntry({
 	el: closeEl,
 	onAction: () => {
 		leaveToPreviousOrHome(router);
-	},
-});
-
-useFocusEntry({
-	key: 'np-like',
-	group: utilityGroup,
-	el: likeEl,
-	onAction: () => {
-		const next = !track.value?.favorite;
-
-		playbackStore.music.applyFavorite(next);
-	},
-});
-
-useFocusEntry({
-	key: 'np-lyrics',
-	group: utilityGroup,
-	el: lyricsEl,
-	onAction: () => {
-		playbackStore.music.applyLyricsOpen(!lyricsOpen.value);
 	},
 });
 
@@ -127,13 +126,17 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div ref="containerEl" class="now-playing" :class="[{ 'controls-hidden': idleHide }]">
+	<div
+		ref="containerEl"
+		class="now-playing"
+		:class="{ 'controls-hidden': idleHide, 'is-lyrics': lyricsOpen, 'is-dark': dark }"
+	>
 		<div
 			v-if="backdropUrl"
 			class="art-backdrop"
 			:style="{ backgroundImage: `url(${backdropUrl})` }"
 		/>
-		<div class="art-scrim" />
+		<div class="art-scrim" :style="{ background: scrim }" />
 
 		<div ref="utilityRowEl" class="utility-row">
 			<button
@@ -145,36 +148,18 @@ onUnmounted(() => {
 			>
 				<MoooomIcon icon="cross" width="22" height="22" />
 			</button>
-			<button
-				ref="likeEl"
-				data-focusable
-				tabindex="0"
-				class="util-btn"
-				:class="{ active: track?.favorite }"
-				:aria-label="t('views.music.like')"
-			>
-				<MoooomIcon :icon="track?.favorite ? 'heartFilled' : 'heart'" width="22" height="22" />
-			</button>
-			<button
-				ref="lyricsEl"
-				data-focusable
-				tabindex="0"
-				class="util-btn"
-				:class="{ active: lyricsOpen }"
-				:aria-label="t('music.player.lyrics')"
-			>
-				<MoooomIcon icon="lyrics" width="22" height="22" />
-			</button>
 		</div>
 
 		<div class="content">
-			<div class="left">
-				<NowPlayingHero :compact="lyricsOpen" />
-				<Lyrics v-show="lyricsOpen" />
-				<ProgressControls />
+			<Lyrics v-show="lyricsOpen" class="lyrics-layer" />
+			<div class="top-row" :class="{ 'has-queue': hasQueue }">
+				<NowPlayingHero :compact="lyricsOpen" :idle="idleHide" />
 			</div>
 			<div class="right">
 				<QueuePeek />
+			</div>
+			<div class="bar-wrap" :class="{ 'is-hidden': idleHide }">
+				<ProgressControls />
 			</div>
 		</div>
 	</div>
@@ -186,24 +171,24 @@ onUnmounted(() => {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
+	background: oklch(0 0 0);
 }
+/* FullPlayerScreen.kt:303-313: scaled 1.35 from the top center so the bottom hangs off and is clipped. */
 .art-backdrop {
 	position: absolute;
-	inset: -10%;
+	inset: 0;
 	background-size: cover;
-	background-position: center;
-	filter: blur(40px) brightness(0.6);
+	background-position: top center;
+	transform: scale(1.35);
+	transform-origin: 50% 0;
 	z-index: 0;
-	transform: scale(1.05);
 }
 .art-scrim {
 	position: absolute;
 	inset: 0;
-	background:
-		linear-gradient(180deg, oklch(0 0 0 / 0.15) 0%, oklch(0 0 0 / 0.45) 60%, oklch(0 0 0 / 0.85) 100%),
-		linear-gradient(90deg, oklch(0 0 0 / 0.55) 0%, oklch(0 0 0 / 0.35) 50%, oklch(0 0 0 / 0.55) 100%);
 	z-index: 1;
 }
+/* The close button has no KMP twin (Back closes there); it stays in its corner. */
 .utility-row {
 	position: absolute;
 	top: 32px;
@@ -234,41 +219,65 @@ onUnmounted(() => {
 		border-color var(--motion-fast);
 	border: 3px solid transparent;
 }
-.util-btn.active {
-	color: var(--color-primary, var(--color-accent));
-}
 .util-btn:focus-visible {
 	transform: scale(1.08);
 	background: oklch(0 0 0 / 0.7);
 	border-color: var(--cast-white);
 }
+/* FullPlayerScreen.kt:341-353: 48 dp each side over a transparent to black 0.7 wash. */
 .content {
-	position: relative;
+	position: absolute;
+	inset: 0;
 	z-index: 2;
-	display: grid;
-	grid-template-columns: 1fr minmax(280px, auto);
-	gap: 48px;
-	padding: 80px 48px 48px;
-	height: 100%;
-	align-items: end;
-	transition: transform 400ms ease;
+	padding: 0 48px;
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
 }
-.controls-hidden .content {
-	transform: translateY(0);
+.lyrics-layer {
+	position: absolute;
+	inset: 60px 60px 0;
 }
-.left {
-	display: flex;
-	flex-direction: column;
-	gap: 32px;
-	align-items: stretch;
+/* FullPlayerScreen.kt:209-231: bottom 198 above the bar (48 with it hidden), top 32 with lyrics. */
+.top-row {
+	position: absolute;
+	left: 48px;
+	right: 48px;
+	top: calc(100% - 198px - 160px);
+	transition: top 500ms ease;
+}
+.top-row.has-queue {
+	right: calc(48px + 360px + 48px);
+}
+.now-playing.controls-hidden .top-row {
+	top: calc(100% - 48px - 120px);
+}
+.now-playing.is-lyrics .top-row {
+	top: 32px;
 }
 .right {
-	align-self: end;
-	padding-bottom: 24px;
+	position: absolute;
+	right: 48px;
+	bottom: 198px;
 	transition: opacity 300ms ease;
 }
 .controls-hidden .right {
 	opacity: 0;
 	pointer-events: none;
+}
+/* FullPlayerScreen.kt:414-421: the bar floats 48 dp above the edge and slides out of view. */
+.bar-wrap {
+	position: absolute;
+	left: 48px;
+	right: 48px;
+	bottom: 48px;
+	transition: transform 300ms ease;
+}
+.bar-wrap.is-hidden {
+	transform: translateY(calc(100% + 48px));
+}
+/* FullPlayerScreen.kt:153-154, 553-554: dark mode tints with black and turns the play button white. */
+.now-playing.is-dark {
+	--color-primary: oklch(0 0 0);
+	--play-bg: var(--cast-white);
+	--play-fg: oklch(0 0 0);
 }
 </style>

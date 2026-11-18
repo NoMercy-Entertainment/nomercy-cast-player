@@ -38,14 +38,15 @@ describe('nav matches TvNavigationBar.kt', () => {
 		expect(decls('layout/ProfileChip.vue', '.profile-chip')['box-shadow']).toBe('0 2px 4px rgba(0, 0, 0, 0.3)');
 	});
 
-	it('nav.miniplayer: 360 wide, gap 8, text 10 / 12 (MiniPlayer.kt:119-215)', () => {
+	// The artist line is TrackLinks.kt:44 labelSmall; Typography.kt:5-7 overrides nothing, so Material3's 11.
+	it('nav.miniplayer: 360 wide, gap 8, title 10 / 12, artist 11 (MiniPlayer.kt:119-215)', () => {
 		const m = decls('layout/TvMiniPlayer.vue', '.mini-player');
 
 		expect(m.width).toBe('360px');
 		expect(m.gap).toBe('8px');
 		expect(decls('layout/TvMiniPlayer.vue', '.title')['font-size']).toBe('10px');
 		expect(decls('layout/TvMiniPlayer.vue', '.title')['line-height']).toBe('12px');
-		expect(decls('layout/TvMiniPlayer.vue', '.artist')['font-size']).toBe('10px');
+		expect(decls('layout/TvMiniPlayer.vue', '.artist')['font-size']).toBe('11px');
 		expect(decls('layout/TvMiniPlayer.vue', '.mini-player:focus-visible').transform).toBeUndefined();
 	});
 
@@ -74,8 +75,9 @@ describe('focus rings match the KMP theme (TvFocusRing.kt:50-55, AppSettingsScre
 	it('focus.ring.indicator: 3 px white, 1.08 scale kept (TvFocusRing.kt:50-55)', () => {
 		const p = 'players/music/ProgressControls.vue';
 
-		expect(decls(p, '.ctrl-btn:focus-visible').outline).toBe('3px solid var(--cast-white)');
-		expect(decls(p, '.ctrl-play:focus-visible')['box-shadow']).toBe('0 0 0 3px var(--cast-white)');
+		// Chrome 92 outlines ignore border-radius, so the ring is the 3 px border, as the nav util buttons do.
+		expect(decls(p, '.ctrl-btn:focus-visible')['border-color']).toBe('var(--cast-white)');
+		expect(decls(p, '.ctrl-btn').border).toBe('3px solid transparent');
 		const n = 'views/now-playing/NowPlayingScreen.vue';
 
 		expect(decls(n, '.util-btn').border).toBe('3px solid transparent');

@@ -12,7 +12,9 @@ import FallbackPoster from '@/components/cards/FallbackPoster.vue';
  */
 
 // FullPlayerScreen.kt: while lyrics show, artwork is 60dp and the title scales to 0.72.
-defineProps<{ compact?: boolean }>();
+// FullPlayerScreen.kt:188-207: with the controls hidden, artwork is 120dp and the title scales to 0.85.
+const props = defineProps<{ compact?: boolean; idle?: boolean }>();
+const idleOnly = computed(() => props.idle === true && !props.compact);
 
 const track = playbackStore.music.track;
 const cover = computed(() =>
@@ -23,7 +25,7 @@ const cover = computed(() =>
 </script>
 
 <template>
-	<div class="hero" :class="{ 'is-compact': compact }">
+	<div class="hero" :class="{ 'is-compact': compact, 'is-idle': idleOnly }">
 		<div class="art">
 			<img v-if="cover"
 				class="nm-cover-top"
@@ -54,20 +56,41 @@ const cover = computed(() =>
 	gap: 16px;
 	width: 100%;
 }
+/* CoverArtwork (mobile FullPlayerScreen.kt:475): 8 dp corners; the TV row adds no shadow. */
 .art {
 	width: 160px;
 	height: 160px;
-	border-radius: 16px;
+	border-radius: 8px;
 	overflow: hidden;
-	box-shadow: 0 16px 48px oklch(0 0 0 / 0.5);
 	flex: 0 0 auto;
+	transition:
+		width 500ms ease,
+		height 500ms ease;
+}
+.hero.is-idle .art {
+	width: 120px;
+	height: 120px;
 }
 .hero.is-compact .art {
 	width: 60px;
 	height: 60px;
 }
+.hero.is-idle .title {
+	font-size: calc(36px * 0.85);
+}
+.hero.is-idle .artist,
+.hero.is-idle .album {
+	font-size: calc(22px * 0.85);
+}
 .hero.is-compact .title {
-	font-size: 26px;
+	font-size: calc(36px * 0.72);
+}
+.hero.is-compact .artist,
+.hero.is-compact .album {
+	font-size: calc(22px * 0.72);
+}
+.hero.is-compact .meta {
+	gap: 2px;
 }
 .meta {
 	min-width: 0;
@@ -75,16 +98,16 @@ const cover = computed(() =>
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
+	transition: gap 500ms ease;
 }
 .title {
 	margin: 0;
 	font-size: 36px;
 	font-weight: 800;
-	letter-spacing: -0.02em;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+	transition: font-size 500ms ease;
 }
 .artist,
 .album {
@@ -95,6 +118,6 @@ const cover = computed(() =>
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+	transition: font-size 500ms ease;
 }
 </style>

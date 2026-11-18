@@ -45,11 +45,12 @@ describe('full player matches FullPlayerScreen.kt', () => {
 		expect(decls(h, '.hero').gap).toBe('16px');
 	});
 
-	it('music.full.bottom-bar: pill h90 pad 32 black .4 r16, play 64 (:539-554)', () => {
+	it('music.full.bottom-bar: pill h90, 32 outside and 24 inside, black .4 r16, play 64 (:539-554)', () => {
 		const b = decls(PC, '.buttons');
 
 		expect(b.height).toBe('90px');
-		expect(b.padding).toBe('0 32px');
+		expect(b.margin).toBe('0 32px');
+		expect(b.padding).toBe('0 24px');
 		expect(b.background).toBe('rgba(0, 0, 0, 0.4)');
 		expect(b['border-radius']).toBe('16px');
 		const p = decls(PC, '.ctrl-play');
@@ -65,6 +66,6 @@ describe('full player matches FullPlayerScreen.kt', () => {
 	});
 
 	it('music.full.scrim: side padding 48 (:267-374)', () => {
-		expect(decls('views/now-playing/NowPlayingScreen.vue', '.content').padding).toBe('80px 48px 48px');
+		expect(decls('views/now-playing/NowPlayingScreen.vue', '.content').padding).toBe('0 48px');
 	});
 });

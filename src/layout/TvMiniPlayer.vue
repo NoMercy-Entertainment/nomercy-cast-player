@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useTranslation } from 'i18next-vue';
 import { useFocusEntry } from '@/composables/useFocusEntry';
@@ -36,6 +36,24 @@ const pillStyle = computed(() => {
 });
 
 const el = ref<HTMLElement | null>(null);
+const artistEl = ref<HTMLElement | null>(null);
+const artistTextEl = ref<HTMLElement | null>(null);
+const marqueeShift = ref(0);
+
+// Marquee.kt:30-67: a line wider than its box scrolls by the overflow plus the 16 dp end padding and 16 dp of scroll padding.
+function measureArtist(): void {
+	const box = artistEl.value;
+	const text = artistTextEl.value;
+
+	marqueeShift.value = box && text && text.offsetWidth > box.clientWidth
+		? -(text.offsetWidth - box.clientWidth + 32)
+		: 0;
+}
+
+onMounted(measureArtist);
+
+watch(artist, () =>
+	void nextTick(measureArtist));
 
 useFocusEntry({
 	key: 'topnav-mini-player',
@@ -64,6 +82,8 @@ useFocusEntry({
 				<span />
 				<span />
 				<span />
+				<span />
+				<span />
 			</div>
 			<MoooomIcon
 				v-else
@@ -77,8 +97,14 @@ useFocusEntry({
 			<p class="title">
 				{{ title }}
 			</p>
-			<p v-if="artist" class="artist">
-				{{ artist }}
+			<p
+				v-if="artist"
+				ref="artistEl"
+				class="artist"
+				:class="{ 'is-marquee': marqueeShift !== 0 }"
+				:style="marqueeShift !== 0 ? { '--marquee-shift': `${marqueeShift}px` } : undefined"
+			>
+				<span ref="artistTextEl" class="artist-text">{{ artist }}</span>
 			</p>
 		</div>
 	</button>
@@ -89,7 +115,6 @@ useFocusEntry({
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
-	padding: 0 16px 0 0;
 	height: 40px;
 	position: relative;
 	isolation: isolate;
@@ -142,45 +167,61 @@ useFocusEntry({
 	background: linear-gradient(85deg, var(--mini-color, var(--color-primary, oklch(0.7 0.2 285))) 0%, oklch(0 0 0) 100%);
 	opacity: 0.4;
 }
+/* EqSpinner.kt:24-60: five 2 dp bars 1 dp apart in a 16 dp box, each with its own delay and brightness. */
 .eq {
-	position: absolute;
-	inset: 0;
 	display: flex;
-	align-items: center;
+	align-items: flex-end;
 	justify-content: center;
-	gap: 2px;
+	gap: 1px;
+	width: 16px;
+	height: 16px;
+	overflow: hidden;
 }
 .eq span {
-	width: 3px;
-	background: var(--cast-white);
-	border-radius: 1px;
-	animation: eq-bounce 850ms ease-in-out infinite;
+	width: 2px;
+	height: 100%;
+	background: var(--color-primary);
+	border-radius: 2px 2px 0 0;
+	transform-origin: bottom;
+	animation: eq-bounce 800ms cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;
 }
 .eq span:nth-child(1) {
-	height: 6px;
-	animation-delay: 0ms;
+	animation-delay: 600ms;
+	filter: brightness(1.3);
 }
 .eq span:nth-child(2) {
-	height: 14px;
-	animation-delay: 180ms;
+	animation-delay: 800ms;
+	filter: brightness(1.7);
 }
 .eq span:nth-child(3) {
-	height: 10px;
-	animation-delay: 360ms;
+	animation-delay: 200ms;
+	filter: brightness(1.2);
+}
+.eq span:nth-child(4) {
+	animation-delay: 0ms;
+	filter: brightness(1.5);
+}
+.eq span:nth-child(5) {
+	animation-delay: 400ms;
+	filter: brightness(1.1);
 }
 @keyframes eq-bounce {
-	0%,
-	100% {
+	from {
 		transform: scaleY(0.4);
 	}
-	50% {
+	to {
 		transform: scaleY(1);
 	}
 }
 .play-icon {
 	color: var(--cast-text-primary);
 }
+/* MiniPlayer.kt:206-208: the text column takes the rest of the pill and spaces its two lines evenly. */
 .meta {
+	display: flex;
+	flex: 1 1 0;
+	flex-direction: column;
+	justify-content: space-evenly;
 	min-width: 0;
 	text-align: left;
 }
@@ -192,16 +233,47 @@ useFocusEntry({
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 220px;
-	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
+/* TrackLinks.kt:44-46: labelSmall (Material3 default 11 / 16) Medium at 0.7 alpha, inside a Marquee. */
 .artist {
-	margin: 1px 0 0;
-	font-size: 10px;
-	color: oklch(1 0 0 / 0.85);
+	margin: 0;
+	font-size: 11px;
+	line-height: 16px;
+	font-weight: 500;
+	color: oklch(1 0 0 / 0.7);
 	white-space: nowrap;
 	overflow: hidden;
-	text-overflow: ellipsis;
-	max-width: 220px;
+}
+.artist-text {
+	display: inline-block;
+	padding-right: 16px;
+}
+/* Marquee.kt:49-67: wait 1.5 s, scroll 5 s, wait 1.5 s, fade out 0.5 s, reset, fade in 0.5 s. */
+.artist.is-marquee .artist-text {
+	animation: artist-marquee 9000ms linear infinite;
+}
+@keyframes artist-marquee {
+	0%,
+	16.67% {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	72.22%,
+	88.89% {
+		transform: translateX(var(--marquee-shift));
+		opacity: 1;
+	}
+	94.43% {
+		transform: translateX(var(--marquee-shift));
+		opacity: 0;
+	}
+	94.44% {
+		transform: translateX(0);
+		opacity: 0;
+	}
+	100% {
+		transform: translateX(0);
+		opacity: 1;
+	}
 }
 </style>

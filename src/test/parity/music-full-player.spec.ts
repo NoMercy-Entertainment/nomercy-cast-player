@@ -95,7 +95,7 @@ describe('the bottom bar matches BottomBar and MusicProgressRow', () => {
 		expect(icon('Previous track').attributes('width')).toBe('28');
 		expect(icon('Next track').attributes('width')).toBe('28');
 		expect(wrapper.find('.ctrl-play svg').attributes('width')).toBe('36');
-		expect(decls(BAR, '.ctrl-play').color).toBe('var(--cast-white)');
+		expect(decls(BAR, '.ctrl-play').color).toBe('var(--play-fg, var(--cast-white))');
 		expect(decls(BAR, '.ctrl-aux').color).toBeUndefined();
 	});
 
@@ -131,12 +131,12 @@ describe('the bottom bar matches BottomBar and MusicProgressRow', () => {
 	it('music-25: the end label shows what is left when the account chose remaining (Progressbar.kt:111-117)', () => {
 		const wrapper = mount(ProgressControls);
 
-		expect(wrapper.findAll('.time')[1].text()).toBe('3:20');
+		expect(wrapper.find('.time-end').text()).toBe('3:20');
 		syncedSettings.value = { timeChoice: 'remaining' };
 		playbackStore.music.applyTime(50000);
 
 		return wrapper.vm.$nextTick().then(() => {
-			expect(wrapper.findAll('.time')[1].text()).toBe('2:30');
+			expect(wrapper.find('.time-end').text()).toBe('2:30');
 		});
 	});
 
@@ -159,11 +159,11 @@ describe('the bottom bar matches BottomBar and MusicProgressRow', () => {
 	it('music-26: lyrics and dark mode buttons act, the sun shows while dark (TvBarControls.kt:37-41)', async () => {
 		const wrapper = mount(ProgressControls);
 
-		await wrapper.find('[aria-label="Dark mode"]').trigger('click');
+		await wrapper.find('[aria-label="Dark mode"]').trigger('keydown', { key: 'Enter' });
 		expect(settingsStore.tvDarkMode.value).toBe(true);
-		expect(wrapper.find('[aria-label="Dark mode"] svg').attributes('data-icon')).toBe('sun1');
+		expect(wrapper.find('[aria-label="Dark mode"] svg').attributes('data-icon')).toBe('sun');
 
-		await wrapper.find('[aria-label="Lyrics"]').trigger('click');
+		await wrapper.find('[aria-label="Lyrics"]').trigger('keydown', { key: 'Enter' });
 		expect(playbackStore.music.lyricsOpen.value).toBe(true);
 	});
 });
@@ -210,7 +210,8 @@ describe('the screen matches FullPlayerScreenTV', () => {
 		track({ color_palette: palette });
 		const plain = mount(NowPlayingScreen).find<HTMLElement>('.art-scrim').element.style.background;
 
-		expect(plain).toContain('rgba(0, 0, 0, 1)');
+		expect(plain).toContain('rgb(0, 0, 0)');
+		expect(plain).not.toContain('0.85');
 		expect(plain).not.toContain('0.55');
 		expect(decls(SCREEN, '.content').background).toContain('rgba(0, 0, 0, 0.7)');
 	});

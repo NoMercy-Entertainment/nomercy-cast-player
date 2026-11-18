@@ -19,6 +19,7 @@ interface SettingsShape {
 	useAutoThemeColors: boolean;
 	subtitleHints: boolean;
 	crashReports: boolean;
+	tvDarkMode: boolean;
 }
 
 const DEFAULTS = {
@@ -26,6 +27,7 @@ const DEFAULTS = {
 	useAutoThemeColors: true,
 	subtitleHints: true,
 	crashReports: false,
+	tvDarkMode: false,
 } as const satisfies SettingsShape;
 
 function load() {
@@ -50,6 +52,8 @@ const useAutoThemeColors = ref(stored.useAutoThemeColors);
 const subtitleHints = ref(stored.subtitleHints);
 // Opt-in: only an explicit true uploads a crash report.
 const crashReports = ref(stored.crashReports === true);
+// FullPlayerScreen.kt:117-129: the full player's dark mode survives closing the player.
+const tvDarkMode = ref(stored.tvDarkMode === true);
 
 // SyncedSettingsRegistry.kt:67-68, SharedMainScreen.kt:168: account values, defaults 10 s and 5 min.
 const videoSeekStep = ref(10);
@@ -62,6 +66,7 @@ function persist(): void {
 			useAutoThemeColors: useAutoThemeColors.value,
 			subtitleHints: subtitleHints.value,
 			crashReports: crashReports.value,
+			tvDarkMode: tvDarkMode.value,
 		} as const satisfies SettingsShape;
 
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -79,8 +84,10 @@ watch(autoSkipChapters, (next) => {
 watch(useAutoThemeColors, persist);
 watch(subtitleHints, persist);
 watch(crashReports, persist);
+watch(tvDarkMode, persist);
 
 export const settingsStore = {
+	tvDarkMode,
 	autoSkipChapters,
 	useAutoThemeColors,
 	subtitleHints,

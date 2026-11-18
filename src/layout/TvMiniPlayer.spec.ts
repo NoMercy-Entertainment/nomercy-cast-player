@@ -118,7 +118,7 @@ describe('the mini player matches MiniPlayer.kt', () => {
 		expect(a['font-size']).toBe('11px');
 		expect(a['font-weight']).toBe('500');
 		expect(a.color).toBe('oklch(1 0 0 / 0.7)');
-		expect(a.margin).toBeUndefined();
+		expect(a.margin).toBe('0');
 	});
 
 	// Marquee.kt:30-67: pause 1.5 s, scroll 5 s, pause 1.5 s, fade out 0.5 s, reset, fade in 0.5 s;
@@ -132,18 +132,28 @@ describe('the mini player matches MiniPlayer.kt', () => {
 		Object.defineProperty(proto, 'offsetWidth', {
 			configurable: true,
 			get(this: HTMLElement) {
-				return this.classList.contains('artist-text') ? widths.text : 0;
+				return this.classList.contains('artist-text')
+					? widths.text
+					: 0;
 			},
 		});
 
 		Object.defineProperty(proto, 'clientWidth', {
 			configurable: true,
 			get(this: HTMLElement) {
-				return this.classList.contains('artist') ? 200 : 0;
+				return this.classList.contains('artist')
+					? 200
+					: 0;
 			},
 		});
 
 		try {
+			playbackStore.music.applyTrack({
+				id: 't4',
+				name: 'Song',
+				artist: 'A very long list of artists',
+			} as never, []);
+
 			const wrapper = mount(TvMiniPlayer);
 
 			await wrapper.vm.$nextTick();
@@ -157,8 +167,13 @@ describe('the mini player matches MiniPlayer.kt', () => {
 			await short.vm.$nextTick();
 			expect(short.find('.artist').classes()).not.toContain('is-marquee');
 		} finally {
-			if (offset) Object.defineProperty(proto, 'offsetWidth', offset);
-			if (client) Object.defineProperty(proto, 'clientWidth', client);
+			if (offset) {
+				Object.defineProperty(proto, 'offsetWidth', offset);
+			}
+
+			if (client) {
+				Object.defineProperty(proto, 'clientWidth', client);
+			}
 		}
 	});
 });
