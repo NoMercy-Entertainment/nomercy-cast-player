@@ -40,6 +40,20 @@ describe('the search bar matches the native SearchBar', () => {
 	});
 });
 
+// SetThemeColor.kt:51-59: a screen's accent leaves the override stack with the screen, and the search
+// page sets none, so it draws on the theme accent with the star noise of PosterBackground.kt:216-260.
+describe('the search page keeps no hero accent and lays star noise over its background', () => {
+	it('clears the accent the previous page left, and draws the star layer', () => {
+		Element.prototype.scrollIntoView = vi.fn();
+		document.documentElement.style.setProperty('--color-primary', '#2a6f4e');
+
+		const wrapper = mount(SearchScreen);
+
+		expect(document.documentElement.style.getPropertyValue('--color-primary')).toBe('');
+		expect(wrapper.find('.search-stars').exists()).toBe(true);
+	});
+});
+
 describe('search when the search request fails', () => {
 	// jsdom has no layout, so it has no scrollIntoView.
 	Element.prototype.scrollIntoView = vi.fn();

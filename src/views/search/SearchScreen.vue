@@ -10,6 +10,8 @@ import { hasContent } from '@/server-components/hasContent';
 import LoadingIndicator from '@/components/feedback/LoadingIndicator.vue';
 import ErrorPanel from '@/components/feedback/ErrorPanel.vue';
 import MoooomIcon from '@/components/icons/MoooomIcon.vue';
+import StarNoise from '@/components/StarNoise.vue';
+import { clearThemeColor } from '@/lib/theme';
 import SearchKeyboard from './SearchKeyboard.vue';
 
 const { t } = useTranslation();
@@ -28,6 +30,7 @@ useNavFocusBridge({ handle: screenGroup, containerEl });
 
 // SearchScreen.kt:60: the A key takes focus on entry, also from the top nav.
 onMounted(() => {
+	clearThemeColor();
 	queueMicrotask(() => focusStore.requestFocus('kb-a'));
 });
 
@@ -82,6 +85,7 @@ function setMode(next: 'video' | 'music'): void {
 
 <template>
 	<div ref="containerEl" class="search">
+		<StarNoise class="search-stars" />
 		<aside class="left">
 			<SearchKeyboard
 				:mode="mode"
@@ -132,6 +136,10 @@ function setMode(next: 'video' | 'music'): void {
 	gap: 16px;
 	padding: 64px 36px 24px;
 	height: 100%;
+	position: relative;
+}
+.search > :not(.search-stars) {
+	position: relative;
 }
 .left {
 	display: flex;
