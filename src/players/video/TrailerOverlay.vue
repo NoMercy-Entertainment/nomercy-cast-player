@@ -297,11 +297,25 @@ function dialogKey(event: KeyboardEvent): void {
 	}
 }
 
-// Keys the focus system does not route to a modal: arrows are swallowed by a
-// modal group with a focused entry, so they are read here. Enter and Back go
-// through the focus system below.
+// An open panel closes itself on Back; the trailer waits its turn.
+function backOut(): void {
+	if (!closePanel()) {
+		close();
+	}
+}
+
+// useDPad stands down while a .tvui-root is mounted, so the focus system never
+// sees Back here and the receiver app would close. The trailer takes it itself.
 function onKey(e: KeyboardEvent): void {
-	if (!player || keyOf(e) === 'back') return;
+	if (keyOf(e) === 'back') {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		backOut();
+
+		return;
+	}
+
+	if (!player) return;
 
 	screensaverStore.resetIdle();
 
@@ -353,10 +367,7 @@ const group = useFocusGroup({
 		if (dir !== 'back')
 			return true;
 
-		// An open panel closes itself on Back; the trailer waits its turn.
-		if (!closePanel()) {
-			close();
-		}
+		backOut();
 
 		return true;
 	},
