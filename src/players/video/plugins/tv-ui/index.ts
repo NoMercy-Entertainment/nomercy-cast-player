@@ -802,7 +802,8 @@ export class TvUiPlugin extends Plugin<NMVideoPlayer, TvUiOptions, TvUiEvents> {
 
 		return frame
 			? {
-					url: frame.spriteUrl,
+					// The source's lookup returns the raw cue url; the authed blob is the one that loads.
+					url: this.spriteBlob ?? frame.spriteUrl,
 					x: frame.x,
 					y: frame.y,
 					w: frame.w,
