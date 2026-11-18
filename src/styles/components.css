@@ -75,6 +75,15 @@
 	object-fit: cover;
 	object-position: center;
 }
+/* BackdropImageWithOverlay.kt:216-233: 83 % of the width at the right edge, cropped from the top center. */
+.nm-cover-music {
+	display: block;
+	width: 83%;
+	height: 100%;
+	margin-left: auto;
+	object-fit: cover;
+	object-position: top;
+}
 
 /* ─── Hero scrim (APK BackdropImageWithOverlay radial) ──────────────── */
 

@@ -3,6 +3,7 @@ import { flushPromises, mount } from '@vue/test-utils';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { decls } from '@/test/cssDecl';
+import { authStore } from '@/stores/authStore';
 import HomeHero from './HomeHero.vue';
 
 const CSS = 'styles/components.css';
@@ -53,6 +54,29 @@ describe('the hero backdrop follows the native hero (NMLolomo.kt:169)', () => {
 
 		expect(wrapper.find('.art img').classes()).toContain('nm-cover-center');
 		expect(wrapper.find('.art img').classes()).not.toContain('nm-cover-top');
+	});
+
+	// BackdropImageWithOverlay.kt:216-233: a music cover is cropped from the top center, 83 % of the
+	// width at the right edge, so the artist's head stays in view.
+	it('crops a music cover from the top center at 83 % width', () => {
+		authStore.serverUrl.value = 'https://192.0.2.10:7626';
+
+		const wrapper = mount(HomeHero, { props: { card: {
+			id: 'm',
+			title: 'Artist',
+			backdrop: '/images/music/artist.jpg',
+		} } });
+
+		expect(wrapper.find('.art img').classes()).toContain('nm-cover-music');
+		expect(wrapper.find('.art img').classes()).not.toContain('nm-cover-center');
+		expect(decls(CSS, '.nm-cover-music')).toMatchObject({
+			'width': '83%',
+			'height': '100%',
+			'margin-left': 'auto',
+			'object-fit': 'cover',
+			'object-position': 'top',
+		});
+		authStore.serverUrl.value = null;
 	});
 });
 

@@ -43,6 +43,9 @@ const transitionKey = computed(() => props.card.id ?? props.card.title ?? '');
 // finishes, and only the newest request follows. The bottom layer is the shown image.
 const WIPE_MS = HERO_CHANGE_MS;
 
+// BackdropImageWithOverlay.kt:181,218: the server's music covers are drawn apart from TMDB backdrops.
+const MUSIC_IMAGES = '/images/music';
+
 interface Layer { url: string; key: number }
 
 let layerKey = 0;
@@ -145,7 +148,7 @@ onBeforeUnmount(() => {
 			>
 				<div class="hero-layer-art">
 					<img
-						class="nm-cover-center"
+						:class="layer.url.includes(MUSIC_IMAGES) ? 'nm-cover-music' : 'nm-cover-center'"
 						:src="layer.url"
 						:alt="card.title ?? ''"
 						loading="eager"
