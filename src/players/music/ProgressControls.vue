@@ -81,7 +81,7 @@ useFocusEntry({
 	group: controlsGroup,
 	el: repeatEl,
 	onAction: () => {
-		playbackStore.music.applyRepeat(REPEAT_AFTER[playbackStore.music.repeat.value]);
+		musicSyncBridge.setRepeat(REPEAT_AFTER[playbackStore.music.repeat.value]);
 	},
 });
 

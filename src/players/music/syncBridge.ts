@@ -61,6 +61,7 @@ export interface MusicEngineLike {
 	currentSong?: { id?: string | number } | null;
 	playTrack?: (track: ServerTrack, tracks?: ServerTrack[]) => void;
 	shuffle?: (on: boolean) => void;
+	repeat?: (mode: MusicEvents['repeat']) => void;
 }
 
 interface ServerTrack {
@@ -445,6 +446,22 @@ export const musicSyncBridge = {
 			engine.shuffle(on);
 		} else {
 			playbackStore.music.applyShuffle(on);
+		}
+	},
+	// The server's repeat verb ignores its data and cycles the mode (MusicPlaybackCommandHandler.cs:66-69).
+	setRepeat(mode: MusicEvents['repeat']): void {
+		const passive = activeDeviceId !== null && activeDeviceId !== castDeviceId();
+
+		if (passive) {
+			void socketStore.musicHub.value?.invoke('PlaybackCommand', 'repeat', null);
+
+			return;
+		}
+
+		if (engine?.repeat) {
+			engine.repeat(mode);
+		} else {
+			playbackStore.music.applyRepeat(mode);
 		}
 	},
 };
