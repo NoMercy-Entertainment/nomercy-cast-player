@@ -176,6 +176,10 @@
 	padding: 32px;
 	background: rgb(0 0 0 / 0.8);
 }
+/* PreScreenDialog.kt:118 reads black over an empty surface; here the video poster would show through. */
+.tvui-pre-screen {
+	background: var(--cast-black);
+}
 .tvui-column {
 	flex: 1;
 	display: flex;

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { decls } from '@/test/cssDecl';
 import { moveFocus } from './dom';
 import { centerMessage, loadingLayer } from './overlays';
 import { bottomBar, episodeDialog, errorDialog, languageDialog, messageDialog, preScreen, settingsPanel, subtitleDialog, topBar } from './panels';
@@ -543,6 +544,14 @@ describe('media absent dialog (MediaAbsentDialog.kt)', () => {
 		dialog.root.querySelectorAll<HTMLElement>('.tvui-button').forEach((button) => button.click());
 		expect(calls).toEqual(['skip', 'exit']);
 		detach();
+	});
+});
+
+// PreScreenDialog.kt:118: Black at 0.8 over the empty native video surface, so the screen reads black.
+// On the web the video's poster sits under that 0.8 and shows through, so the pre-screen is solid black.
+describe('the pre-screen hides the poster behind it', () => {
+	it('has a solid black background', () => {
+		expect(decls('players/video/plugins/tv-ui/style.css', '.tvui-pre-screen').background).toBe('var(--cast-black)');
 	});
 });
 
