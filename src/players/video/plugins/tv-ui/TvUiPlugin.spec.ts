@@ -876,7 +876,9 @@ describe('seek strip thumbnails (sprite cue from the item tracks)', () => {
 
 	beforeEach(() => {
 		requested.length = 0;
+
 		authStore.serverUrl.value = SERVER;
+
 		vi.stubGlobal('fetch', vi.fn(async (url: string) => {
 			requested.push(url);
 
@@ -887,12 +889,20 @@ describe('seek strip thumbnails (sprite cue from the item tracks)', () => {
 
 		URL.createObjectURL = vi.fn(() => 'blob:sprite-1');
 		URL.revokeObjectURL = vi.fn();
-		vi.stubGlobal('Image', class {
+
+		class FakeImage {
 			onload: (() => void) | null = null;
-			set src(_value: string) {
-				queueMicrotask(() => this.onload?.());
+			src = '';
+
+			constructor() {
+				Object.defineProperty(this, 'src', {
+					set: () => queueMicrotask(() => this.onload?.()),
+					get: () => '',
+				});
 			}
-		});
+		}
+
+		vi.stubGlobal('Image', FakeImage);
 	});
 
 	afterEach(() => {
@@ -904,6 +914,7 @@ describe('seek strip thumbnails (sprite cue from the item tracks)', () => {
 		const { player, root } = setup();
 
 		player.length = 20;
+
 		player.items[0]!.tracks = [
 			{ kind: 'sprite', file: `${FOLDER}thumbs_320x180.webp` },
 			{ kind: 'thumbnails', file: `${FOLDER}thumbs_320x180.vtt` },

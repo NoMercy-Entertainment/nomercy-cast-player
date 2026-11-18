@@ -139,7 +139,8 @@ describe('musicSyncBridge outbound calls', () => {
 	});
 
 	it('the repeat button goes through the bridge like the shuffle button', () => {
-		const source = readFileSync(resolve(process.cwd(), 'src/players/music/ProgressControls.vue'), 'utf8');
+		const file = resolve(process.cwd(), 'src/players/music/ProgressControls.vue');
+		const source = readFileSync(file, 'utf8');
 
 		expect(source).toContain('musicSyncBridge.setRepeat(');
 		expect(source).not.toContain('playbackStore.music.applyRepeat(');

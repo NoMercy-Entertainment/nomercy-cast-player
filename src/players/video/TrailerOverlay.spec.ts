@@ -174,7 +174,7 @@ describe('the trailer controls are the tv-ui panels', () => {
 	});
 
 	// TrailerOverlayPlayer.kt:173-180: the UI plugin consumes Back first, else the trailer dismisses.
-	it('Back closes the trailer and consumes the key, so the receiver app stays open', async () => {
+	it('back closes the trailer and consumes the key, so the receiver app stays open', async () => {
 		const wrapper = await mountTrailer();
 		const event = new KeyboardEvent('keydown', {
 			key: 'Escape',
@@ -190,7 +190,7 @@ describe('the trailer controls are the tv-ui panels', () => {
 		wrapper.unmount();
 	});
 
-	it('Back closes an open panel first and the trailer only on the next press', async () => {
+	it('back closes an open panel first and the trailer only on the next press', async () => {
 		player.subtitles.mockReturnValue([{ label: 'English' }]);
 		const wrapper = await mountTrailer();
 
