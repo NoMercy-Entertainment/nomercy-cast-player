@@ -109,6 +109,15 @@ function bumpIdle(): void {
 	}, 5000);
 }
 
+// FullPlayerScreen.kt:246-251: when the bar comes back, the play button takes focus after 200 ms.
+watch(idleHide, (hidden) => {
+	if (hidden) return;
+
+	window.setTimeout(() => {
+		containerEl.value?.querySelector<HTMLElement>('.ctrl-play')?.focus({ preventScroll: true });
+	}, 200);
+});
+
 onMounted(() => {
 	bumpIdle();
 	window.addEventListener('keydown', bumpIdle);
@@ -151,7 +160,9 @@ onUnmounted(() => {
 		</div>
 
 		<div class="content">
-			<Lyrics v-show="lyricsOpen" class="lyrics-layer" />
+			<Transition name="lyrics-fade">
+				<Lyrics v-show="lyricsOpen" class="lyrics-layer" />
+			</Transition>
 			<div class="top-row" :class="{ 'has-queue': hasQueue }">
 				<NowPlayingHero :compact="lyricsOpen" :idle="idleHide" />
 			</div>
@@ -171,7 +182,7 @@ onUnmounted(() => {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-	background: oklch(0 0 0);
+	background: var(--cast-black);
 }
 /* FullPlayerScreen.kt:303-313: scaled 1.35 from the top center so the bottom hangs off and is clipped. */
 .art-backdrop {
@@ -205,7 +216,6 @@ onUnmounted(() => {
 	width: 44px;
 	height: 44px;
 	border-radius: 50%;
-	border: 0;
 	background: oklch(0 0 0 / 0.45);
 	color: oklch(1 0 0 / 0.85);
 	display: grid;
@@ -217,7 +227,7 @@ onUnmounted(() => {
 		background var(--motion-fast),
 		color var(--motion-fast),
 		border-color var(--motion-fast);
-	border: 3px solid transparent;
+	border: var(--focus-ring-width) solid transparent;
 }
 .util-btn:focus-visible {
 	transform: scale(1.08);
@@ -232,9 +242,21 @@ onUnmounted(() => {
 	padding: 0 48px;
 	background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
 }
+/* FullPlayerScreen.kt:351, 374: the 48 dp content padding plus 60 dp. */
 .lyrics-layer {
 	position: absolute;
-	inset: 60px 60px 0;
+	inset: 60px 108px 0;
+}
+/* FullPlayerScreen.kt:356-359: fade in over 500 ms, out over 300 ms. */
+.lyrics-fade-enter-active {
+	transition: opacity 500ms ease;
+}
+.lyrics-fade-leave-active {
+	transition: opacity 300ms ease;
+}
+.lyrics-fade-enter-from,
+.lyrics-fade-leave-to {
+	opacity: 0;
 }
 /* FullPlayerScreen.kt:209-231: bottom 198 above the bar (48 with it hidden), top 32 with lyrics. */
 .top-row {
@@ -271,13 +293,18 @@ onUnmounted(() => {
 	bottom: 48px;
 	transition: transform 300ms ease;
 }
+/* Hidden after the slide, so its buttons leave the focus order. */
 .bar-wrap.is-hidden {
 	transform: translateY(calc(100% + 48px));
+	visibility: hidden;
+	transition:
+		transform 300ms ease,
+		visibility 0s linear 300ms;
 }
 /* FullPlayerScreen.kt:153-154, 553-554: dark mode tints with black and turns the play button white. */
 .now-playing.is-dark {
-	--color-primary: oklch(0 0 0);
+	--color-primary: var(--cast-black);
 	--play-bg: var(--cast-white);
-	--play-fg: oklch(0 0 0);
+	--play-fg: var(--cast-black);
 }
 </style>

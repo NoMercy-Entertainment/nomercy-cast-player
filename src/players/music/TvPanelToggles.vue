@@ -68,7 +68,7 @@ useFocusEntry({
 .toggle-btn {
 	width: 40px;
 	height: 40px;
-	border: 3px solid transparent;
+	border: var(--focus-ring-width) solid transparent;
 	border-radius: 50%;
 	background: transparent;
 	color: var(--cast-text-primary);

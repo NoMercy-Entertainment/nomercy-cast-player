@@ -265,7 +265,7 @@ describe('the screen matches FullPlayerScreenTV', () => {
 		vi.advanceTimersByTime(5100);
 		await wrapper.vm.$nextTick();
 		expect(decls(SCREEN, '.bar-wrap.is-hidden').visibility).toBe('hidden');
-		expect(decls(SCREEN, '.bar-wrap').transition).toContain('visibility 0s linear 300ms');
+		expect(decls(SCREEN, '.bar-wrap.is-hidden').transition).toContain('visibility 0s linear 300ms');
 
 		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
 		await wrapper.vm.$nextTick();

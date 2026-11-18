@@ -40,13 +40,13 @@ const artistEl = ref<HTMLElement | null>(null);
 const artistTextEl = ref<HTMLElement | null>(null);
 const marqueeShift = ref(0);
 
-// Marquee.kt:30-67: a line wider than its box scrolls by the overflow plus the 16 dp end padding and 16 dp of scroll padding.
+// Marquee.kt:35,65: the text box holds the 16 dp end padding, so it scrolls only past it, by the whole overflow.
 function measureArtist(): void {
 	const box = artistEl.value;
 	const text = artistTextEl.value;
 
-	marqueeShift.value = box && text && text.offsetWidth > box.clientWidth
-		? -(text.offsetWidth - box.clientWidth + 32)
+	marqueeShift.value = box && text && text.offsetWidth - 16 > box.clientWidth
+		? -(text.offsetWidth - box.clientWidth)
 		: 0;
 }
 
@@ -142,7 +142,7 @@ useFocusEntry({
 	background: linear-gradient(
 		180deg,
 		var(--mini-color, var(--color-primary, oklch(0.7 0.2 285))) 0%,
-		oklch(0 0 0) 100%
+		var(--cast-black) 100%
 	);
 	opacity: 0.4;
 }
@@ -164,7 +164,11 @@ useFocusEntry({
 	position: absolute;
 	inset: 0;
 	z-index: -1;
-	background: linear-gradient(85deg, var(--mini-color, var(--color-primary, oklch(0.7 0.2 285))) 0%, oklch(0 0 0) 100%);
+	background: linear-gradient(
+		85deg,
+		var(--mini-color, var(--color-primary, oklch(0.7 0.2 285))) 0%,
+		var(--cast-black) 100%
+	);
 	opacity: 0.4;
 }
 /* EqSpinner.kt:24-60: five 2 dp bars 1 dp apart in a 16 dp box, each with its own delay and brightness. */
@@ -180,7 +184,7 @@ useFocusEntry({
 .eq span {
 	width: 2px;
 	height: 100%;
-	background: var(--color-primary);
+	background: var(--color-primary, oklch(0.7 0.2 285));
 	border-radius: 2px 2px 0 0;
 	transform-origin: bottom;
 	animation: eq-bounce 800ms cubic-bezier(0.4, 0, 0.2, 1) infinite alternate;

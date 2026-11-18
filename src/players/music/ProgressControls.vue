@@ -267,7 +267,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 .side-btn {
 	width: 40px;
 	height: 40px;
-	border: 3px solid transparent;
+	border: var(--focus-ring-width) solid transparent;
 	border-radius: 50%;
 	background: transparent;
 	color: var(--cast-text-primary);
@@ -301,7 +301,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 .ctrl-btn {
 	width: 48px;
 	height: 48px;
-	border: 3px solid transparent;
+	border: var(--focus-ring-width) solid transparent;
 	border-radius: 50%;
 	background: transparent;
 	color: var(--cast-text-primary);
@@ -321,7 +321,7 @@ const pct = computed(() => progressPercent(track.value, time.value));
 	width: 64px;
 	height: 64px;
 	margin: 0 8px;
-	background: linear-gradient(var(--play-bg, var(--color-primary, var(--color-accent))), oklch(0.12 0.01 250 / 0.1));
+	background: linear-gradient(var(--play-bg, var(--color-primary, var(--color-accent))), var(--cast-bg-base));
 	box-shadow: 0 12px 12px rgba(0, 0, 0, 0.3);
 	color: var(--play-fg, var(--cast-white));
 }
