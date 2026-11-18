@@ -69,13 +69,15 @@ describe('the hero backdrop follows the native hero (NMLolomo.kt:169)', () => {
 
 		expect(wrapper.find('.art img').classes()).toContain('nm-cover-music');
 		expect(wrapper.find('.art img').classes()).not.toContain('nm-cover-center');
+
 		expect(decls(CSS, '.nm-cover-music')).toMatchObject({
-			'width': '83%',
-			'height': '100%',
+			width: '83%',
+			height: '100%',
 			'margin-left': 'auto',
 			'object-fit': 'cover',
 			'object-position': 'top',
 		});
+
 		authStore.serverUrl.value = null;
 	});
 });

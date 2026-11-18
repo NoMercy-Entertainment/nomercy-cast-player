@@ -94,6 +94,7 @@ export function useHeroSeed(components: Ref<Component[]>): void {
 	onDeactivated(() => {
 		setAside = true;
 	});
+
 	onActivated(() => {
 		if (!setAside) return;
 

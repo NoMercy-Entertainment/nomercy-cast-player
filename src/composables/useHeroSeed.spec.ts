@@ -10,7 +10,11 @@ import type { Component } from '@/server-components/types';
 // AutoThemeColors.kt:16 / NMLolomo.kt:150-172: the pill follows the hero palette from the first frame.
 // The home page is kept alive; a page that cleared the theme while it sat aside must not leave it purple.
 
-const palette = { darkVibrant: '#2a6f4e', primary: '#2a6f4e', dominant: '#2a6f4e' };
+const palette = {
+	darkVibrant: '#2a6f4e',
+	primary: '#2a6f4e',
+	dominant: '#2a6f4e',
+};
 
 const rows = [{
 	id: 'home',
@@ -25,7 +29,12 @@ const rows = [{
 				items: [{
 					id: 'card',
 					component: 'NMCard',
-					props: { data: { id: '00000000-0000-4000-8000-000000000001', title: 'A', backdrop: '/a.jpg', color_palette: { poster: palette } } },
+					props: { data: {
+						id: '00000000-0000-4000-8000-000000000001',
+						title: 'A',
+						backdrop: '/a.jpg',
+						color_palette: { poster: palette },
+					} },
 				}],
 			},
 		}],
@@ -55,7 +64,9 @@ describe('a kept-alive hero page re-applies the hero palette when it comes back'
 		});
 		const page = ref<'home' | 'info'>('home');
 		const Shell = defineComponent({
-			setup: () => () => h(KeepAlive, null, { default: () => h(page.value === 'home' ? Home : Info) }),
+			setup: () => () => h(KeepAlive, null, { default: () => h(page.value === 'home'
+				? Home
+				: Info) }),
 		});
 
 		vi.useFakeTimers();

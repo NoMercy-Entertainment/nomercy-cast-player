@@ -15,7 +15,9 @@ onMounted(() => {
 
 	if (!context) return;
 
-	context.putImageData(new ImageData(starNoiseTile(TILE), TILE, TILE), 0, 0);
+	const image = new ImageData(starNoiseTile(TILE), TILE, TILE);
+
+	context.putImageData(image, 0, 0);
 	url.value = canvas.toDataURL();
 });
 </script>

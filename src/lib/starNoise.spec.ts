@@ -13,7 +13,9 @@ describe('the star tile follows the native noise math', () => {
 		let lit = 0;
 
 		for (let i = 3; i < tile.length; i += 4) {
-			if (tile[i]! > 0) lit++;
+			if (tile[i]! > 0) {
+				lit++;
+			}
 		}
 
 		expect(lit).toBeGreaterThan(0);

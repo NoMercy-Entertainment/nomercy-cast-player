@@ -74,11 +74,12 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 					? 'instant'
 					: 'smooth';
 				// RowTopAlignLayoutManager: a row's top, title included, sits at the list's top padding.
-				const row = group?.type === 'horizontal'
-					? el.closest<HTMLElement>('.nm-hero-rails > .rail-section')
-					: opts.alignRow
-						? el.closest<HTMLElement>('.info-list > .info-seasons')
-						: null;
+				const rowSelector = group?.type === 'horizontal'
+					? '.nm-hero-rails > .rail-section'
+					: opts.alignRow && '.info-list > .info-seasons';
+				const row = rowSelector
+					? el.closest<HTMLElement>(rowSelector)
+					: null;
 				const port = row?.parentElement;
 				// Chrome 92 (the TV) ignores scroll-margin and scroll-padding here, so the list top is set by hand.
 				const rowTop = row && port

@@ -15,8 +15,8 @@ function pseudoNoise(x: number): number {
 	return v - Math.floor(v);
 }
 
-export function starNoiseTile(size: number): Uint8ClampedArray {
-	const pixels = new Uint8ClampedArray(size * size * 4);
+export function starNoiseTile(size: number): Uint8ClampedArray<ArrayBuffer> {
+	const pixels = new Uint8ClampedArray(new ArrayBuffer(size * size * 4));
 
 	for (let y = 0; y < size; y++) {
 		for (let x = 0; x < size; x++) {
@@ -32,7 +32,9 @@ export function starNoiseTile(size: number): Uint8ClampedArray {
 			pixels[i] = 216;
 			pixels[i + 1] = 229;
 			pixels[i + 2] = 255;
-			pixels[i + 3] = Math.floor(Math.min(1, Math.max(0, glow * 0.8)) * 255);
+			const alpha = Math.min(1, Math.max(0, glow * 0.8));
+
+			pixels[i + 3] = Math.floor(alpha * 255);
 		}
 	}
 
