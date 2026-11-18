@@ -85,4 +85,80 @@ describe('the mini player matches MiniPlayer.kt', () => {
 		expect(icon.attributes('width')).toBe('20');
 		expect(decls('layout/TvMiniPlayer.vue', '.play-icon').background).toBeUndefined();
 	});
+
+	// EqSpinner.kt:24-27: five bars, 2 wide, 1 apart, in a 16 high box, the theme color (MiniPlayer.kt:193).
+	it('music-33: the equalizer is five 2 px bars 1 px apart in a 16 px box', () => {
+		playbackStore.music.applyPlayState(true);
+		const wrapper = mount(TvMiniPlayer);
+
+		expect(wrapper.findAll('.eq span')).toHaveLength(5);
+		expect(decls('layout/TvMiniPlayer.vue', '.eq span').width).toBe('2px');
+		expect(decls('layout/TvMiniPlayer.vue', '.eq span').background).toBe('var(--color-primary)');
+		expect(decls('layout/TvMiniPlayer.vue', '.eq').gap).toBe('1px');
+		expect(decls('layout/TvMiniPlayer.vue', '.eq').height).toBe('16px');
+	});
+
+	// MiniPlayer.kt:117-167, :206-208: no end padding, the text column fills the rest and spaces evenly.
+	it('music-34: the pill has no end padding and the text column fills the rest, evenly spaced', () => {
+		const pill = decls('layout/TvMiniPlayer.vue', '.mini-player');
+		const meta = decls('layout/TvMiniPlayer.vue', '.meta');
+
+		expect(pill.padding).toBeUndefined();
+		expect(meta.flex).toBe('1 1 0');
+		expect(meta.display).toBe('flex');
+		expect(meta['justify-content']).toBe('space-evenly');
+		expect(decls('layout/TvMiniPlayer.vue', '.title')['max-width']).toBeUndefined();
+		expect(decls('layout/TvMiniPlayer.vue', '.artist')['max-width']).toBeUndefined();
+	});
+
+	// TrackLinks.kt:44-46: labelSmall (11) Medium at 0.7 alpha; MiniPlayer.kt:220: in a Marquee.
+	it('music-35: the artist line is 11 px Medium at 0.7 alpha', () => {
+		const a = decls('layout/TvMiniPlayer.vue', '.artist');
+
+		expect(a['font-size']).toBe('11px');
+		expect(a['font-weight']).toBe('500');
+		expect(a.color).toBe('oklch(1 0 0 / 0.7)');
+		expect(a.margin).toBeUndefined();
+	});
+
+	// Marquee.kt:30-67: pause 1.5 s, scroll 5 s, pause 1.5 s, fade out 0.5 s, reset, fade in 0.5 s;
+	// the scroll is the overflow plus the 16 dp end padding plus 16 dp of scroll padding.
+	it('music-36: an artist line wider than its box scrolls as a marquee over 9 s, a short one stays still', async () => {
+		const widths = { text: 300 };
+		const proto = HTMLElement.prototype;
+		const offset = Object.getOwnPropertyDescriptor(proto, 'offsetWidth');
+		const client = Object.getOwnPropertyDescriptor(proto, 'clientWidth');
+
+		Object.defineProperty(proto, 'offsetWidth', {
+			configurable: true,
+			get(this: HTMLElement) {
+				return this.classList.contains('artist-text') ? widths.text : 0;
+			},
+		});
+
+		Object.defineProperty(proto, 'clientWidth', {
+			configurable: true,
+			get(this: HTMLElement) {
+				return this.classList.contains('artist') ? 200 : 0;
+			},
+		});
+
+		try {
+			const wrapper = mount(TvMiniPlayer);
+
+			await wrapper.vm.$nextTick();
+			expect(wrapper.find('.artist').classes()).toContain('is-marquee');
+			expect(wrapper.find<HTMLElement>('.artist').element.style.getPropertyValue('--marquee-shift')).toBe('-132px');
+			expect(decls('layout/TvMiniPlayer.vue', '.artist.is-marquee .artist-text').animation).toContain('9000ms');
+
+			widths.text = 100;
+			const short = mount(TvMiniPlayer);
+
+			await short.vm.$nextTick();
+			expect(short.find('.artist').classes()).not.toContain('is-marquee');
+		} finally {
+			if (offset) Object.defineProperty(proto, 'offsetWidth', offset);
+			if (client) Object.defineProperty(proto, 'clientWidth', client);
+		}
+	});
 });
