@@ -1344,9 +1344,9 @@ __metadata:
   linkType: hard
 
 "@nomercy-entertainment/nomercy-subtitle-octopus@npm:^0.2.0":
-  version: 0.2.3
-  resolution: "@nomercy-entertainment/nomercy-subtitle-octopus@npm:0.2.3"
-  checksum: 10c0/35603d922771e9dec832f484918c5dd8150882b0c2994000cfcffa14f5f6e5b71f3229f6f80b30ce07999f2183a442d776ecba2e9ac2e04dcca622f9bb1b5ba7
+  version: 0.2.4
+  resolution: "@nomercy-entertainment/nomercy-subtitle-octopus@npm:0.2.4"
+  checksum: 10c0/313b2768b1d20f66bfdb484bf46dda8dfdf01ed43ed5616617b1121daac0319680f0f371713e800cbadb57405c4655ce5d3351cc5d16e355fe51452e73d96002
   languageName: node
   linkType: hard
 
