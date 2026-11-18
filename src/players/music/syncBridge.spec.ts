@@ -3,6 +3,8 @@
 // PlaybackCommand(command, data) and CurrentTimeForItemCommand(seconds, itemId).
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import { castDeviceId } from '@/lib/diagnostics/deviceId';
 import { socketStore } from '@/stores/socketStore';
@@ -33,6 +35,7 @@ function fakeEngine() {
 		currentTrack: () => ({ id: 4821 }),
 		volume: vi.fn(),
 		shuffle: vi.fn(),
+		repeat: vi.fn(),
 	};
 }
 
@@ -116,6 +119,30 @@ describe('musicSyncBridge outbound calls', () => {
 
 		expect(engine.shuffle).not.toHaveBeenCalled();
 		expect(invoke).toHaveBeenCalledExactlyOnceWith('PlaybackCommand', 'shuffle', null);
+	});
+
+	// MusicPlaybackCommandHandler.cs:66-69: the server's repeat verb ignores its data and cycles the mode.
+	it('repeat on the active device sets the engine mode', () => {
+		serverNamesActive(castDeviceId());
+		musicSyncBridge.setRepeat('all');
+
+		expect(engine.repeat).toHaveBeenCalledExactlyOnceWith('all');
+		expect(invoke).not.toHaveBeenCalled();
+	});
+
+	it('repeat on a passive device sends the repeat verb to the active one', () => {
+		serverNamesActive('phone-1');
+		musicSyncBridge.setRepeat('all');
+
+		expect(engine.repeat).not.toHaveBeenCalled();
+		expect(invoke).toHaveBeenCalledExactlyOnceWith('PlaybackCommand', 'repeat', null);
+	});
+
+	it('the repeat button goes through the bridge like the shuffle button', () => {
+		const source = readFileSync(resolve(process.cwd(), 'src/players/music/ProgressControls.vue'), 'utf8');
+
+		expect(source).toContain('musicSyncBridge.setRepeat(');
+		expect(source).not.toContain('playbackStore.music.applyRepeat(');
 	});
 
 	it('music-02: binds to a music hub that arrives after attach and to a replaced hub', () => {
