@@ -103,6 +103,21 @@ describe('a focused card puts its row top at the list top padding (RowTopAlignLa
 
 	// On the TV, scrollIntoView's block 'nearest' scrolled the list too (card bottom at the screen bottom)
 	// and won over the list scroll, so the row above stayed half visible under the hero.
+	// TvRowFocus.kt:136-141 moves the list by the row top alone. The browser's own focus scroll put a
+	// row's card at the list bottom (card top 364) or top (262) before the row align ran.
+	it('never lets the browser scroll the list on focus, so the row align is the only scroll', () => {
+		Element.prototype.scrollIntoView = vi.fn();
+		const { entry, port } = mountCard();
+		const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+
+		port.scrollTo = vi.fn() as unknown as HTMLElement['scrollTo'];
+
+		entry.focus();
+
+		expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+		focus.mockRestore();
+	});
+
 	it('scrolls the row track to the card and never calls scrollIntoView, so nothing fights the list scroll', () => {
 		const into = vi.fn();
 

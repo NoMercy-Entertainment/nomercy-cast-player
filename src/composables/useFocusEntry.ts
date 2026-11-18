@@ -64,7 +64,8 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 
 			const scroll = !focusStore.isAutoFocus();
 
-			el.focus({ preventScroll: !scroll });
+			// The browser's own focus scroll lands a card at the list edge and fights the row align below.
+			el.focus({ preventScroll: true });
 
 			if (scroll) {
 				const behavior = focusStore.isRestoringFocus()
