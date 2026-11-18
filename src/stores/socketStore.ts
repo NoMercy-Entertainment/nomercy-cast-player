@@ -133,7 +133,7 @@ function bindDeviceList(hub: TypedHub): void {
 let lastAppliedMusicSeq = 0;
 let lastAppliedVideoSeq = 0;
 
-function bindMusicPlayerState(hub: TypedHub): void {
+export function bindMusicPlayerState(hub: TypedHub): void {
 	hub.on('MusicPlayerState', (payload?: MusicPlayerStateMsg) => {
 		for (const e of payload?.events ?? []) {
 			if (e.type !== 'PlayerStateChanged') continue;
@@ -158,6 +158,7 @@ function bindMusicPlayerState(hub: TypedHub): void {
 						favorite: false,
 						plugin_id: state.item.plugin_id ?? null,
 						live: state.item.live ?? false,
+						duration_ms: state.duration_ms,
 					},
 					playbackStore.music.queue.value,
 				);
