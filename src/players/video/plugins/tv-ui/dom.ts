@@ -118,14 +118,52 @@ export function moveFocus(root: HTMLElement, direction: Direction): boolean {
 		best = list.querySelectorAll<HTMLElement>('[data-focusable]')[Number(list.dataset.entry)] ?? best;
 	}
 
-	// preventScroll: a plain focus() jumps the list; LazyColumn scrolls only as far as needed, animated.
+	// preventScroll: a plain focus() jumps the list; LazyColumn on a TV pivots instead (bringToPivot).
 	best?.focus({ preventScroll: true });
 
-	best?.scrollIntoView({
-		behavior: 'smooth',
-		block: 'nearest',
-		inline: 'nearest',
-	});
+	if (best) {
+		bringToPivot(best);
+	}
 
 	return best !== null;
+}
+
+const PIVOT_FRACTION = 0.3;
+
+function scrollingList(node: HTMLElement): HTMLElement | null {
+	for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+		const overflow = getComputedStyle(parent).overflowY;
+
+		if (overflow === 'auto' || overflow === 'scroll')
+			return parent;
+	}
+
+	return null;
+}
+
+// Compose's TV default, PivotBringIntoViewSpec (BringIntoViewSpec.android.kt:46-76): the focused
+// item's top lands at 30% of the list, or as low as still shows all of it; animated.
+function bringToPivot(node: HTMLElement): void {
+	const list = scrollingList(node);
+
+	if (!list) {
+		node.scrollIntoView({
+			behavior: 'smooth',
+			block: 'nearest',
+			inline: 'nearest',
+		});
+
+		return;
+	}
+
+	const box = list.getBoundingClientRect();
+	const item = node.getBoundingClientRect();
+	const size = list.clientHeight || box.height;
+	const offset = item.top - box.top;
+	const pivot = PIVOT_FRACTION * size;
+	const target = item.height <= size && size - pivot < item.height
+		? size - item.height
+		: pivot;
+
+	list.scrollTo({ top: list.scrollTop + offset - target, behavior: 'smooth' });
 }

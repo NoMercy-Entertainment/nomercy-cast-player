@@ -510,11 +510,24 @@ export function episodeDialog(opts: {
 		? currentIndex
 		: 0);
 
+	const seasonKeys = [...seasons.keys()];
+	const seasonRows: HTMLElement[] = [];
+
+	// EpisodeDialog.kt:72-73,135-142,175-180: the rail lights the season the D-pad is in.
+	const light = (season: number | undefined): void => {
+		seasonRows.forEach((seasonRow, i) =>
+			seasonRow.classList.toggle('tvui-selected', seasonKeys[i] === season));
+	};
+
 	cards.forEach((card, index) => card.addEventListener('focus', () => {
 		list.dataset.entry = String(index);
+
+		if (opts.items[index]?.season != null) {
+			light(opts.items[index]?.season);
+		}
 	}));
 
-	const seasonRows = [...seasons.entries()].map(([season, item]) => {
+	seasonRows.push(...[...seasons.entries()].map(([season, item]) => {
 		const first = Math.max(0, opts.items.findIndex((i) => i.season === season));
 
 		// EpisodeDialog.kt:85-90,131-143: a scroll rail with no check mark; focus stays on the row.
@@ -523,10 +536,12 @@ export function episodeDialog(opts: {
 
 			if (!card) return;
 
+			light(season);
 			list.dataset.entry = String(first);
 			list.scrollTo({ top: offsetOf(card), behavior: 'smooth' });
 		}, '', null, false, false);
-	});
+	}));
+
 	const root = el('div', 'tvui-dialog tvui-episodes', el('div', 'tvui-seasons', ...seasonRows), list);
 
 	// EpisodeDialog.kt:43,92-100: the first season row takes focus; the current card lands 110 px below the 52 px padding.

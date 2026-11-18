@@ -461,22 +461,51 @@ describe('episode dialog (EpisodeDialog.kt)', () => {
 		} as const;
 	}
 
-	// LazyColumn brings a focused card into view with an animated, minimal scroll; a plain focus() jumps it.
-	it('e06 a card move scrolls the list smoothly and only as far as needed', () => {
+	// On a TV, LazyColumn brings a focused card in with PivotBringIntoViewSpec (compose foundation
+	// BringIntoViewSpec.android.kt:46-76): its top lands at 30% of the list, animated. A plain focus() jumps it.
+	it('e06 a card move puts the card top at 30% of the list height, smoothly', () => {
 		const { dialog, detach, cards } = laidOut();
+		const list = dialog.root.querySelector<HTMLElement>('.tvui-episode-list')!;
+		const scrollTo = vi.fn();
 		const focus = vi.spyOn(cards[1]!, 'focus');
+
+		list.style.overflowY = 'auto';
+		list.getBoundingClientRect = () => new DOMRect(300, 100, 600, 500);
+		Object.defineProperty(list, 'clientHeight', { value: 500 });
+		Object.defineProperty(list, 'scrollTop', { value: 40, writable: true });
+		list.scrollTo = scrollTo as unknown as HTMLElement['scrollTo'];
 
 		cards[0]!.focus();
 		moveFocus(dialog.root, 'down');
 
 		expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+		// The card top sits 220 px into the list; 30% of 500 is 150, so the list moves 70 px on from 40.
+		expect(scrollTo).toHaveBeenLastCalledWith({ top: 110, behavior: 'smooth' });
+		expect(cards[1]!.scrollIntoView).not.toHaveBeenCalled();
 
-		expect(cards[1]!.scrollIntoView).toHaveBeenCalledWith({
-			behavior: 'smooth',
-			block: 'nearest',
-			inline: 'nearest',
+		detach();
+	});
+
+	// EpisodeDialog.kt:72-73,131-143,175-180: the rail lights the season of the card the D-pad is on.
+	it('e08 the season rail follows the focused card, and a pressed season row lights at once', () => {
+		const dialog = episodeDialog({
+			items,
+			currentIndex: 1,
+			onPick: () => undefined,
 		});
+		const detach = attached(dialog.root);
+		const seasons = Array.from(dialog.root.querySelectorAll<HTMLElement>('.tvui-seasons .tvui-row'));
+		const cards = dialog.root.querySelectorAll<HTMLElement>('.tvui-card');
+		const lit = () => seasons.map((node) => node.classList.contains('tvui-selected'));
 
+		dialog.root.querySelector<HTMLElement>('.tvui-episode-list')!.scrollTo = vi.fn() as unknown as HTMLElement['scrollTo'];
+		dialog.focus();
+		cards[2]!.focus();
+		expect(lit()).toEqual([false, false, true]);
+
+		seasons[0]!.focus();
+		seasons[0]!.click();
+		expect(lit()).toEqual([true, false, false]);
 		detach();
 	});
 
