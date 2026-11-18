@@ -154,7 +154,7 @@ onBeforeUnmount(stop);
 </script>
 
 <template>
-	<div v-if="shown" class="screensaver">
+	<div v-if="shown" class="screensaver" :class="{ 'screensaver--art': hasArt }">
 		<template v-if="hasArt">
 			<div
 				class="stage"
@@ -215,6 +215,9 @@ onBeforeUnmount(stop);
 	inset: 0;
 	z-index: 1000;
 	pointer-events: none;
+}
+/* Black only behind the art; the no-art dim keeps the page visible under it. */
+.screensaver--art {
 	background: oklch(0 0 0);
 }
 .ambient {

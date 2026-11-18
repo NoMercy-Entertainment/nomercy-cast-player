@@ -110,6 +110,19 @@ describe('the screensaver draws the server art', () => {
 		expect(wrapper.find('.dim').exists()).toBe(true);
 		expect(wrapper.find('[data-screensaver-bg]').exists()).toBe(false);
 	});
+
+	it('keeps the page visible under the dim layer: only the art path paints black', () => {
+		items.value = [];
+		wrapper = mount(Host);
+
+		expect(wrapper.find('.screensaver').classes()).not.toContain('screensaver--art');
+	});
+
+	it('paints black behind the art path', () => {
+		wrapper = mount(Host);
+
+		expect(wrapper.find('.screensaver').classes()).toContain('screensaver--art');
+	});
 });
 
 // ScreensaverStore.kt:184,261: sequential, wrapping, one image every 40 s; ImageModal.kt:253,188: 2500 ms fade to black first.
