@@ -112,7 +112,29 @@ describe('the receiver acks a navigate only after the TV accepted it, as native 
 
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(router.push).toHaveBeenCalledWith(WatchRoute);
-		expect(send).toHaveBeenCalledWith(NAMESPACE_GENERAL, 'sender-1', { ack: true, route: WatchRoute });
+
+		expect(send).toHaveBeenCalledWith(NAMESPACE_GENERAL, 'sender-1', {
+			ack: true,
+			route: WatchRoute,
+			visible: true,
+		});
+	});
+
+	it('tells the phone the page is hidden when the TV keeps it behind its launcher', async () => {
+		vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+		const { send } = cast({
+			route: WatchRoute,
+			token: jwt(),
+			server_id: Server.id,
+		});
+
+		await vi.advanceTimersByTimeAsync(2000);
+
+		expect(send).toHaveBeenCalledWith(NAMESPACE_GENERAL, 'sender-1', {
+			ack: true,
+			route: WatchRoute,
+			visible: false,
+		});
 	});
 
 	it('does not ack a route with no token', async () => {

@@ -39,6 +39,7 @@ type OutboundMessage =
 		ack: true;
 		route?: string;
 		launch?: true;
+		visible?: boolean;
 	} |
 	{ renew: true } |
 	Record<string, JsonValue>;
@@ -153,7 +154,12 @@ export function attachMessageBus(ctx: ReceiverContextLike): void {
 		// The ack tells the phone the TV took the route, so a handler sends it after its checks.
 		const ack = (): void => {
 			try {
-				const reply = { ack: true, route: payload.route } as const;
+				// visible=false: the TV keeps this page behind its launcher, so the phone relaunches it.
+				const reply = {
+					ack: true,
+					route: payload.route,
+					visible: document.visibilityState === 'visible',
+				} as const;
 
 				ctx.sendCustomMessage(NAMESPACE_GENERAL, event.senderId, reply);
 			} catch (err) {
