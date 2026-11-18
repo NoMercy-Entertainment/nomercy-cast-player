@@ -111,7 +111,8 @@ describe('the bottom bar matches BottomBar and MusicProgressRow', () => {
 		expect(decls(BAR, '.ctrl-btn').border).toBe('var(--focus-ring-width) solid transparent');
 		expect(decls(BAR, '.side-btn').border).toBe('var(--focus-ring-width) solid transparent');
 		expect(decls('players/music/TvPanelToggles.vue', '.toggle-btn').border).toBe('var(--focus-ring-width) solid transparent');
-		expect(decls(BAR, '.ctrl-play').background).toContain('var(--cast-bg-base)');
+		// The bottom stop stays see-through (FullPlayerScreen.kt:617); an opaque token would darken the button.
+		expect(decls(BAR, '.ctrl-play').background).toContain('oklch(0.12 0.01 250 / 0.1)');
 	});
 
 	it('music-25: the progress row is time | flat 8 px bar | time, monospace ExtraBold 14 (Progressbar.kt:104-165)', () => {
