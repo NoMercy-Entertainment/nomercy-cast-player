@@ -1,4 +1,4 @@
-import { computed, watch } from 'vue';
+import { computed, onActivated, onDeactivated, watch } from 'vue';
 import type { Ref } from 'vue';
 import { focusedCardStore } from '@/stores/focusedCardStore';
 import type { FocusedCardData } from '@/stores/focusedCardStore';
@@ -75,18 +75,30 @@ export function useHeroSeed(components: Ref<Component[]>): void {
 	// LaunchedEffect(rows): a new page re-seeds, a refetch of the same first card does not.
 	let seededKey: string | null = null;
 
-	watch(
-		seedCard,
-		(card) => {
-			if (!card) return;
+	function seed(card: FocusedCardData | null): void {
+		if (!card) return;
 
-			const key = `${card.id ?? ''}|${card.title ?? ''}`;
+		const key = `${card.id ?? ''}|${card.title ?? ''}`;
 
-			if (key === seededKey) return;
+		if (key === seededKey) return;
 
-			seededKey = key;
-			focusedCardStore.seed(card);
-		},
-		{ immediate: true },
-	);
+		seededKey = key;
+		focusedCardStore.seed(card);
+	}
+
+	watch(seedCard, seed, { immediate: true });
+
+	// A kept-alive page set aside lost the theme to the page in front (InfoScreen clears it); coming back seeds it again.
+	let setAside = false;
+
+	onDeactivated(() => {
+		setAside = true;
+	});
+	onActivated(() => {
+		if (!setAside) return;
+
+		setAside = false;
+		seededKey = null;
+		seed(seedCard.value);
+	});
 }
