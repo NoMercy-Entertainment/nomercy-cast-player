@@ -135,3 +135,51 @@ describe('a focused card puts its row top at the list top padding (RowTopAlignLa
 		expect(trackTo).toHaveBeenCalledWith(expect.objectContaining({ left: 260 }));
 	});
 });
+
+// TvRowFocus.kt:136-141: the season chip is the title of its row, so focus puts that row's top at the
+// list top padding like any row (the chip stayed at y=468 on the receiver, KMP moves it up).
+describe('the season chip aligns its row top like a rail card', () => {
+	it('scrolls the info list so the seasons row top sits at the list top padding', () => {
+		const port = document.createElement('div');
+
+		port.className = 'info-list';
+		port.style.scrollPaddingTop = '8px';
+		document.body.appendChild(port);
+
+		const row = document.createElement('section');
+
+		row.className = 'info-seasons';
+		port.appendChild(row);
+		port.getBoundingClientRect = () => rect(264, 276);
+		row.getBoundingClientRect = () => rect(460, 220);
+
+		let entry!: FocusEntry;
+
+		const Chip = defineComponent({
+			setup() {
+				const el = ref<HTMLElement | null>(null);
+
+				entry = useFocusEntry({
+					key: 'season-chip',
+					el,
+					alignRow: true,
+					group: { type: 'vertical', register: () => () => undefined },
+				});
+
+				return () => h('button', { ref: el, 'data-focusable': '' });
+			},
+		});
+
+		mount(Chip, { attachTo: row });
+		Element.prototype.scrollIntoView = vi.fn();
+
+		const scrollTo = vi.fn();
+
+		port.scrollTo = scrollTo as unknown as HTMLElement['scrollTo'];
+
+		entry.focus();
+
+		// 460 - 264 - 8 = 188
+		expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 188 }));
+	});
+});

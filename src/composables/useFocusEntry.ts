@@ -21,6 +21,8 @@ export interface FocusEntryOptions {
 	/** Group to register in. Needed when the component creates its own group, because inject only sees a parent's. */
 	group?: FocusGroupRegistry;
 	order?: number;
+	/** The entry is the title of its row (the season chip): focus puts that row's top at the list top. */
+	alignRow?: boolean;
 	enabled?: Ref<boolean>;
 	el: Ref<HTMLElement | null>;
 	onFocus?: () => void;
@@ -74,7 +76,9 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 				// RowTopAlignLayoutManager: a row's top, title included, sits at the list's top padding.
 				const row = group?.type === 'horizontal'
 					? el.closest<HTMLElement>('.nm-hero-rails > .rail-section')
-					: null;
+					: opts.alignRow
+						? el.closest<HTMLElement>('.info-list > .info-seasons')
+						: null;
 				const port = row?.parentElement;
 				// Chrome 92 (the TV) ignores scroll-margin and scroll-padding here, so the list top is set by hand.
 				const rowTop = row && port
@@ -82,7 +86,7 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 					(Number.parseFloat(getComputedStyle(port).scrollPaddingTop) || 0)
 					: null;
 
-				const track = row
+				const track = row && group?.type === 'horizontal'
 					? el.closest<HTMLElement>('.rail-track')
 					: null;
 
@@ -98,7 +102,7 @@ export function useFocusEntry(opts: FocusEntryOptions): FocusEntry {
 					} else {
 						track.scrollLeft = Math.max(0, left);
 					}
-				} else {
+				} else if (!row) {
 					el.scrollIntoView({
 						behavior,
 						block: 'nearest',

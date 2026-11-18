@@ -384,6 +384,8 @@ async function toggleWatchlist(): Promise<void> {
 	z-index: 1;
 	overflow-y: auto;
 	padding-bottom: 120px;
+	/* VideoContentList.kt:594-597: the list's top padding is where a focused row's top lands. */
+	scroll-padding-top: 8px;
 	scrollbar-width: none;
 }
 .info-list::-webkit-scrollbar {

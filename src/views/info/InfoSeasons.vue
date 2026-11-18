@@ -136,6 +136,7 @@ useFocusEntry({
 	key: 'season-chip',
 	group,
 	order: -1,
+	alignRow: true,
 	el: chipEl,
 	onAction: () => {
 		open.value = true;
