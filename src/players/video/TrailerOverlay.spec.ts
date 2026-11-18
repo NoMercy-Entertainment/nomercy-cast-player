@@ -207,6 +207,121 @@ describe('the trailer controls are the tv-ui panels', () => {
 	});
 });
 
+// TrailerTvUiPlugin.kt:270-272 puts focus on play/pause when the bars appear, :170-178 lets Up and Down
+// move focus once they show, :181 leaves Left and Right to the top bar while it holds focus.
+describe('the trailer controls take D-pad focus', () => {
+	const trailer = {
+		videoId: 'placeholder-video',
+		title: 'Trailer',
+		url: 'https://example.invalid/trailer.mp4',
+		subtitles: [{ language: 'en', file: 'trailer.sdh.srt', url: 'https://example.invalid/trailer.en.vtt' }],
+	};
+
+	beforeAll(() => {
+		document.body.append(container);
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+			const top = this.closest('.tvui-top-bar') ? 0 : 500;
+
+			return { top, bottom: top + 40, left: 0, right: 40, width: 40, height: 40, x: 0, y: top, toJSON: () => ({}) };
+		});
+	});
+
+	afterAll(() => {
+		container.remove();
+		vi.restoreAllMocks();
+	});
+
+	async function mountTrailer() {
+		player.subtitles.mockReturnValue([{ label: 'English SDH (Hearing Impaired)' }]);
+		const wrapper = mount(TrailerOverlay, {
+			props: { trailer, fallbackTitle: 'Fallback' },
+			global: { stubs: { Teleport: true } },
+		});
+
+		await flushPromises();
+
+		return wrapper;
+	}
+
+	function press(key: string): void {
+		window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+	}
+
+	const playButton = () => container.querySelector<HTMLElement>('.tvui-bottom-bar .tvui-icon-button');
+	const settingsButton = () => container.querySelector<HTMLElement>('.tvui-top-bar .tvui-icon-button');
+
+	it('puts focus on play/pause when the controls appear', async () => {
+		const wrapper = await mountTrailer();
+
+		expect(document.activeElement).toBe(playButton());
+
+		wrapper.unmount();
+	});
+
+	it('Up moves focus from play/pause to the top bar settings button, which shows the ring target', async () => {
+		const wrapper = await mountTrailer();
+
+		press('ArrowUp');
+
+		expect(document.activeElement).toBe(settingsButton());
+
+		wrapper.unmount();
+	});
+
+	it('Left on the top bar moves focus instead of opening the seek strip', async () => {
+		player.duration.mockReturnValue(100);
+		const wrapper = await mountTrailer();
+
+		press('ArrowUp');
+		press('ArrowLeft');
+
+		expect(container.querySelector('.tvui-seek-strip')).toBeNull();
+
+		player.duration.mockReturnValue(0);
+		wrapper.unmount();
+	});
+
+	it('Enter on the focused settings button opens the subtitle picker, Off first', async () => {
+		const wrapper = await mountTrailer();
+
+		press('ArrowUp');
+		settingsButton()!.click();
+
+		const rows = Array.from(container.querySelectorAll<HTMLElement>('.tvui-languages .tvui-row'));
+
+		expect(rows.map((row) => row.textContent)).toEqual(['Off', 'English SDH (Hearing Impaired)']);
+
+		player.subtitles.mockReturnValue([]);
+		wrapper.unmount();
+	});
+
+	it('gives focus back to the sink when the controls hide, so Enter still plays and pauses', async () => {
+		const wrapper = await mountTrailer();
+
+		Object.defineProperty(player.videoElement, 'paused', { value: false, configurable: true });
+		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+		press('ArrowUp');
+		vi.advanceTimersByTime(4000);
+		vi.useRealTimers();
+
+		expect(container.querySelector('.tvui-bottom-bar')).toBeNull();
+		expect(document.activeElement).not.toBe(settingsButton());
+		expect(document.activeElement?.classList.contains('trailer-focus')).toBe(true);
+
+		Object.defineProperty(player.videoElement, 'paused', { value: true, configurable: true });
+		wrapper.unmount();
+	});
+
+	it('labels each trailer track with the KMP formatter and keeps Off first', async () => {
+		const wrapper = await mountTrailer();
+		const config = setup.mock.calls.at(-1)![0] as { playlist: Array<{ subtitles: Array<{ label: string }> }> };
+
+		expect(config.playlist[0]!.subtitles[0]!.label).toBe('English SDH (Hearing Impaired)');
+
+		wrapper.unmount();
+	});
+});
+
 // The player appends a bare <video>. Without a rule it keeps its own pixel size at the top left
 // (the TV showed a 640x352 box), where the native PlayerSurface is fillMaxSize
 // (TrailerOverlayPlayer.kt:200-203).

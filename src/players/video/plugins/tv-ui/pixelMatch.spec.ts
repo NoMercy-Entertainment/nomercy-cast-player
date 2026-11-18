@@ -2,7 +2,18 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { episodeDialog, languageDialog, preScreen, settingsPanel } from './panels';
 import type { Choice, SettingsData, UiItem } from './panels';
-import { playingAudioIndex, qualityValue, subtitleLabel, trackLabel, wireOrder } from './title';
+import { playingAudioIndex, qualityValue, subtitleLabel, trackLabel, trailerSubtitleLabel, wireOrder } from './title';
+
+// SubtitleLabelFormatter.kt:57-91: language name, then the type tag from the file name, then "(Styled)" for ass and ssa.
+describe('trailerSubtitleLabel', () => {
+	it('names the language and tags the file by its type and style', () => {
+		expect(trailerSubtitleLabel('trailer.en.srt', 'en', 'en')).toBe('English');
+		expect(trailerSubtitleLabel('trailer.eng.sdh.srt', 'en', 'en')).toBe('English SDH (Hearing Impaired)');
+		expect(trailerSubtitleLabel('trailer.ja.sign.ass', 'ja', 'en')).toBe('Japanese Signs/Songs (Styled)');
+		expect(trailerSubtitleLabel('trailer.nl.alt.vtt', 'nl', 'en')).toBe('Dutch Alt');
+		expect(trailerSubtitleLabel('trailer.nl.full.ssa', 'nl', 'en')).toBe('Dutch (Styled)');
+	});
+});
 
 // KMP shows the audio track that plays; the web player reports no selection until one is picked.
 describe('playingAudioIndex', () => {
