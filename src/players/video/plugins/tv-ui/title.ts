@@ -143,6 +143,31 @@ export function subtitleLabel(track: LabeledTrack, locale: string): string {
 	return track.label.trim() || language || 'und';
 }
 
+const TRAILER_SUBTITLE_TYPES = [
+	['sign', 'player_subtitle_type_signs'],
+	['sdh', 'player_subtitle_type_sdh'],
+	['alt', 'player_subtitle_type_alt'],
+] as const satisfies ReadonlyArray<readonly [string, string]>;
+
+// KMP SubtitleLabelFormatter.formatLabel (SubtitleLabelFormatter.kt:57-91): language, type tag from the file name, then "(Styled)".
+export function trailerSubtitleLabel(
+	file: string,
+	language: string,
+	locale: string,
+	translate: Translate,
+): string {
+	const name = file.toLowerCase();
+	const parts = name.split('.');
+	const typeKey = TRAILER_SUBTITLE_TYPES.find(([part]) => parts.includes(part))?.[1];
+	const styled = name.endsWith('.ass') || name.endsWith('.ssa');
+
+	return [
+		languageName(language, locale) ?? language.toUpperCase(),
+		typeKey && translate(typeKey),
+		styled && translate('player_subtitle_styled'),
+	].filter(Boolean).join(' ').trim();
+}
+
 interface WireTrack {
 	language?: string;
 	label?: string;

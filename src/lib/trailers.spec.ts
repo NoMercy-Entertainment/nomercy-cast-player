@@ -10,12 +10,20 @@ describe('the trailer lookup keeps each subtitle file name', () => {
 				videoId: 'placeholder-video',
 				cached: true,
 				downloadUrl: 'https://example.invalid/trailer.mp4',
-				subtitles: [{ file: 'trailer.en.sdh.srt', lang: 'en', url: 'https://example.invalid/trailer.en.vtt' }],
+				subtitles: [{
+					file: 'trailer.en.sdh.srt',
+					lang: 'en',
+					url: 'https://example.invalid/trailer.en.vtt',
+				}],
 			},
 		});
 
 		expect(lookup.state === 'available' && lookup.trailer.subtitles).toEqual([
-			{ file: 'trailer.en.sdh.srt', language: 'en', url: 'https://example.invalid/trailer.en.vtt' },
+			{
+				file: 'trailer.en.sdh.srt',
+				language: 'en',
+				url: 'https://example.invalid/trailer.en.vtt',
+			},
 		]);
 	});
 });

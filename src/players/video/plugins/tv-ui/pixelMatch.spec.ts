@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { t } from './dom';
 import { episodeDialog, languageDialog, preScreen, settingsPanel } from './panels';
 import type { Choice, SettingsData, UiItem } from './panels';
 import { playingAudioIndex, qualityValue, subtitleLabel, trackLabel, trailerSubtitleLabel, wireOrder } from './title';
@@ -7,11 +8,13 @@ import { playingAudioIndex, qualityValue, subtitleLabel, trackLabel, trailerSubt
 // SubtitleLabelFormatter.kt:57-91: language name, then the type tag from the file name, then "(Styled)" for ass and ssa.
 describe('trailerSubtitleLabel', () => {
 	it('names the language and tags the file by its type and style', () => {
-		expect(trailerSubtitleLabel('trailer.en.srt', 'en', 'en')).toBe('English');
-		expect(trailerSubtitleLabel('trailer.eng.sdh.srt', 'en', 'en')).toBe('English SDH (Hearing Impaired)');
-		expect(trailerSubtitleLabel('trailer.ja.sign.ass', 'ja', 'en')).toBe('Japanese Signs/Songs (Styled)');
-		expect(trailerSubtitleLabel('trailer.nl.alt.vtt', 'nl', 'en')).toBe('Dutch Alt');
-		expect(trailerSubtitleLabel('trailer.nl.full.ssa', 'nl', 'en')).toBe('Dutch (Styled)');
+		const label = (file: string, language: string) => trailerSubtitleLabel(file, language, 'en', t);
+
+		expect(label('trailer.en.srt', 'en')).toBe('English');
+		expect(label('trailer.eng.sdh.srt', 'en')).toBe('English SDH (Hearing Impaired)');
+		expect(label('trailer.ja.sign.ass', 'ja')).toBe('Japanese Signs/Songs (Styled)');
+		expect(label('trailer.nl.alt.vtt', 'nl')).toBe('Dutch Alt');
+		expect(label('trailer.nl.full.ssa', 'nl')).toBe('Dutch (Styled)');
 	});
 });
 

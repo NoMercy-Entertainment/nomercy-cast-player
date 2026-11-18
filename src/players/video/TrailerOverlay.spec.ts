@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -52,7 +52,11 @@ describe('the trailer on the receiver', () => {
 					videoId: 'placeholder-video',
 					title: 'Trailer',
 					url: 'https://example.invalid/trailer.mp4',
-					subtitles: [{ language: 'en', url: 'https://example.invalid/trailer.en.vtt' }],
+					subtitles: [{
+						file: 'trailer.en.vtt',
+						language: 'en',
+						url: 'https://example.invalid/trailer.en.vtt',
+					}],
 				},
 				fallbackTitle: 'Fallback',
 			},
@@ -214,15 +218,33 @@ describe('the trailer controls take D-pad focus', () => {
 		videoId: 'placeholder-video',
 		title: 'Trailer',
 		url: 'https://example.invalid/trailer.mp4',
-		subtitles: [{ language: 'en', file: 'trailer.sdh.srt', url: 'https://example.invalid/trailer.en.vtt' }],
+		subtitles: [{
+			language: 'en',
+			file: 'trailer.sdh.srt',
+			url: 'https://example.invalid/trailer.en.vtt',
+		}],
 	};
 
 	beforeAll(() => {
 		document.body.append(container);
-		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-			const top = this.closest('.tvui-top-bar') ? 0 : 500;
+		HTMLElement.prototype.scrollIntoView = vi.fn();
 
-			return { top, bottom: top + 40, left: 0, right: 40, width: 40, height: 40, x: 0, y: top, toJSON: () => ({}) };
+		vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+			const top = this.closest('.tvui-top-bar')
+				? 0
+				: 500;
+
+			return {
+				top,
+				bottom: top + 40,
+				left: 0,
+				right: 40,
+				width: 40,
+				height: 40,
+				x: 0,
+				y: top,
+				toJSON: () => ({}),
+			};
 		});
 	});
 
@@ -236,6 +258,7 @@ describe('the trailer controls take D-pad focus', () => {
 		const wrapper = mount(TrailerOverlay, {
 			props: { trailer, fallbackTitle: 'Fallback' },
 			global: { stubs: { Teleport: true } },
+			attachTo: document.body,
 		});
 
 		await flushPromises();
@@ -244,7 +267,11 @@ describe('the trailer controls take D-pad focus', () => {
 	}
 
 	function press(key: string): void {
-		window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+		window.dispatchEvent(new KeyboardEvent('keydown', {
+			key,
+			bubbles: true,
+			cancelable: true,
+		}));
 	}
 
 	const playButton = () => container.querySelector<HTMLElement>('.tvui-bottom-bar .tvui-icon-button');
@@ -258,7 +285,7 @@ describe('the trailer controls take D-pad focus', () => {
 		wrapper.unmount();
 	});
 
-	it('Up moves focus from play/pause to the top bar settings button, which shows the ring target', async () => {
+	it('up moves focus from play/pause to the top bar settings button, which shows the ring target', async () => {
 		const wrapper = await mountTrailer();
 
 		press('ArrowUp');
@@ -268,7 +295,7 @@ describe('the trailer controls take D-pad focus', () => {
 		wrapper.unmount();
 	});
 
-	it('Left on the top bar moves focus instead of opening the seek strip', async () => {
+	it('left on the top bar moves focus instead of opening the seek strip', async () => {
 		player.duration.mockReturnValue(100);
 		const wrapper = await mountTrailer();
 
@@ -281,7 +308,7 @@ describe('the trailer controls take D-pad focus', () => {
 		wrapper.unmount();
 	});
 
-	it('Enter on the focused settings button opens the subtitle picker, Off first', async () => {
+	it('enter on the focused settings button opens the subtitle picker, Off first', async () => {
 		const wrapper = await mountTrailer();
 
 		press('ArrowUp');
@@ -301,6 +328,8 @@ describe('the trailer controls take D-pad focus', () => {
 		Object.defineProperty(player.videoElement, 'paused', { value: false, configurable: true });
 		vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 		press('ArrowUp');
+		press('ArrowDown');
+		expect(document.activeElement).toBe(playButton());
 		vi.advanceTimersByTime(4000);
 		vi.useRealTimers();
 
@@ -314,7 +343,9 @@ describe('the trailer controls take D-pad focus', () => {
 
 	it('labels each trailer track with the KMP formatter and keeps Off first', async () => {
 		const wrapper = await mountTrailer();
-		const config = setup.mock.calls.at(-1)![0] as { playlist: Array<{ subtitles: Array<{ label: string }> }> };
+		const config = setup.mock.calls.at(-1)![0] as {
+			playlist: Array<{ subtitles: Array<{ label: string }> }>;
+		};
 
 		expect(config.playlist[0]!.subtitles[0]!.label).toBe('English SDH (Hearing Impaired)');
 

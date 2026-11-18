@@ -37,6 +37,7 @@ interface WireResponse {
 }
 
 export interface TrailerSubtitle {
+	file: string;
 	language: string;
 	url: string;
 }
@@ -119,7 +120,11 @@ export function toLookup(body: WireResponse | null) {
 				url: data.downloadUrl,
 				// The API names the language `lang`. Reading any other field
 				// is the bug app-web shipped: every track had no language.
-				subtitles: (data.subtitles ?? []).map((sub) => ({ language: sub.lang, url: sub.url })),
+				subtitles: (data.subtitles ?? []).map((sub) => ({
+					file: sub.file,
+					language: sub.lang,
+					url: sub.url,
+				})),
 			},
 		} as const satisfies TrailerLookup;
 	}

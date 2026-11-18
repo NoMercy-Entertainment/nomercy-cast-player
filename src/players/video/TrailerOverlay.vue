@@ -8,6 +8,7 @@ import type { Direction } from './plugins/tv-ui/dom';
 import { keyOf } from './plugins/tv-ui/keys';
 import { bottomBar, seekStrip, subtitleDialog, topBar } from './plugins/tv-ui/panels';
 import type { BottomBarHandle, Choice, Panel, SeekStripHandle } from './plugins/tv-ui/panels';
+import { trailerSubtitleLabel } from './plugins/tv-ui/title';
 import { cancelSeek, canEnterSeekMode, commitSeek, frameTimesFor, seekStripKey, snapIndex } from './plugins/tv-ui/seek';
 import './plugins/tv-ui/style.css';
 import { mountOverlayHost } from './overlayHost';
@@ -66,14 +67,16 @@ let seek: SeekState | null = null;
 let dialog: Panel | null = null;
 let hideTimer: number | null = null;
 let closed = false;
+let barsShown = false;
 
-function languageLabel(code: string): string {
-	try {
-		return new Intl.DisplayNames([authStore.locale.value, 'en'], { type: 'language', fallback: 'code' }).of(code) ?? code;
-	} catch {
-		// A malformed code throws rather than falling back.
-		return code;
-	}
+function arrowDirection(key: string): Direction | undefined {
+	return Object.entries(ARROWS).find(([name]) => name === key)?.[1];
+}
+
+function barHasFocus(bar: Panel | BottomBarHandle | null): boolean {
+	const focused = document.activeElement;
+
+	return bar !== null && focused instanceof HTMLElement && bar.root.contains(focused);
 }
 
 function title(): string {
@@ -121,18 +124,34 @@ function setControls(visible: boolean): void {
 	if (!host || !top || !bottom) return;
 
 	if (!visible) {
+		// A removed button would drop focus to the body, and Enter would stop playing.
+		if (barHasFocus(top) || barHasFocus(bottom)) {
+			focusSinkEl.value?.focus();
+		}
+
 		top.root.remove();
 		bottom.root.remove();
+		barsShown = false;
 
 		return;
 	}
 
-	if (!seek) {
+	// Re-appending a node that is already in place would blur the focused control.
+	if (!seek && !top.root.isConnected) {
 		host.append(top.root);
 	}
 
-	host.append(bottom.root);
+	if (!bottom.root.isConnected) {
+		host.append(bottom.root);
+	}
+
 	updateBar();
+
+	// TrailerTvUiPlugin.kt:270-272: focus goes to play/pause when the bars appear.
+	if (!barsShown) {
+		barsShown = true;
+		bottom.focus();
+	}
 }
 
 function showControls(): void {
@@ -140,7 +159,8 @@ function showControls(): void {
 	clearHideTimer();
 
 	hideTimer = window.setTimeout(() => {
-		if (!panelOpen() && player && !isPaused()) {
+		// TrailerTvUiPlugin.kt:114: the bars stay while the top bar holds focus.
+		if (!panelOpen() && player && !isPaused() && !barHasFocus(top)) {
 			setControls(false);
 		}
 	}, CONTROLS_TIMEOUT_MS);
@@ -179,6 +199,10 @@ function closeDialog(): void {
 	dialog = null;
 	focusSinkEl.value?.focus();
 	showControls();
+
+	if (barsShown) {
+		bottom?.focus();
+	}
 }
 
 // Closes the open panel, if any, and says whether there was one.
@@ -280,7 +304,7 @@ function seekKey(event: KeyboardEvent): void {
 function dialogKey(event: KeyboardEvent): void {
 	if (!dialog) return;
 
-	const direction = Object.entries(ARROWS).find(([name]) => name === event.key)?.[1];
+	const direction = arrowDirection(event.key);
 
 	if (direction) {
 		event.preventDefault();
@@ -331,16 +355,21 @@ function onKey(e: KeyboardEvent): void {
 		return;
 	}
 
-	if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
-		e.preventDefault();
-		openSeek();
+	const direction = arrowDirection(e.key);
 
-		return;
-	}
-
-	if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+	// TrailerTvUiPlugin.kt:170-188: with the bars up, Up and Down move focus, and so do Left and Right
+	// while the top bar holds it; otherwise Left and Right scrub.
+	if (direction) {
 		e.preventDefault();
-		showControls();
+
+		if (host && barsShown && (direction === 'up' || direction === 'down' || barHasFocus(top))) {
+			moveFocus(host, direction);
+			showControls();
+		} else if (direction === 'up' || direction === 'down') {
+			showControls();
+		} else {
+			openSeek();
+		}
 
 		return;
 	}
@@ -430,7 +459,7 @@ onMounted(async () => {
 				subtitles: props.trailer.subtitles.map((track, index) => ({
 					id: String(index),
 					language: track.language,
-					label: languageLabel(track.language),
+					label: trailerSubtitleLabel(track.file, track.language, authStore.locale.value, t),
 					url: track.url,
 				})),
 			}] as never,
