@@ -59,6 +59,7 @@
 		"GET /api/v1/plugins/ui",
 		"GET /api/v1/search/music/tv",
 		"GET /api/v1/search/video/tv",
+		"GET /api/v1/setup/screensaver",
 		"GET /api/v1/setup/server-info",
 		"GET /api/v1/subtitles/search",
 		"GET /api/v1/userData/favorites",
