@@ -882,7 +882,7 @@ describe('seek strip thumbnails (sprite cue from the item tracks)', () => {
 
 			return url.endsWith('.vtt')
 				? new Response(CUE)
-				: new Response(new Blob(['x'], { type: 'image/webp' }));
+				: new Response('x', { headers: { 'content-type': 'image/webp' } });
 		}));
 
 		URL.createObjectURL = vi.fn(() => 'blob:sprite-1');
